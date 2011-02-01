@@ -30,7 +30,6 @@ import shlex
 import rpm
 
 
-TEST_STATES = {'pending': '[ ]','pass': '[x]','fail': '[!]','na': '[-]'}
 SECTIONS = ['build', 'changelog', 'check', 'clean', 'description', 'files',
                'install', 'package', 'prep', 'pre', 'post', 'preun', 'postun',
                'trigger', 'triggerin', 'triggerun', 'triggerprein',
@@ -38,12 +37,13 @@ SECTIONS = ['build', 'changelog', 'check', 'clean', 'description', 'files',
 SPEC_SECTIONS = re.compile(r"^(\%("+"|".join(SECTIONS)+"))\s*")
 MACROS = re.compile(r"^%(define|global)\s+(\w*)\s+(.*)")
 
-WORK_DIR = 'work/'
-
 class Helpers:
 
     def __init__(self):
-        pass
+        self.work_dir = 'work/'
+        
+    def set_work_dir(self,work_dir):
+        self.work_dir = work_dir
         
     def _run_cmd(self, cmd):
         cmd = cmd.split(' ')
@@ -72,9 +72,9 @@ class Helpers:
     def _get_file(self, link):
         url = urlparse(link)
         fname = os.path.basename(url.path)
-        call('wget --quiet --tries=1 --read-timeout=90 -O %s --referer=%s %s' % (WORK_DIR+fname, link, link) , shell=True)
-        if os.path.exists(WORK_DIR+fname):
-            return  WORK_DIR+fname
+        call('wget --quiet --tries=1 --read-timeout=90 -O %s --referer=%s %s' % (self.work_dir+fname, link, link) , shell=True)
+        if os.path.exists(self.work_dir+fname):
+            return  self.work_dir+fname
         else:
             return None    
             

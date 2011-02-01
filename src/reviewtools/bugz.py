@@ -14,11 +14,10 @@
 #    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
 # (C) 2011 - Tim Lauridsen <timlau@fedoraproject.org>
-
 '''
 Tools for helping Fedora package reviewers
 '''
-
+import re
 from bugzilla import Bugzilla
 
 BZ_URL='https://bugzilla.redhat.com/xmlrpc.cgi'
@@ -40,7 +39,14 @@ class ReviewBug(Helpers):
         self.user = user
         self.bug = self.bugzilla.getbug(self.bug_num)
 
+    def login(self, user, password):
+        if self.bugzilla.login(user=user, password=password):
+            self.login = True
+        else:
+            self.login = False
+
     def find_urls(self):
+        found = True
         if self.bug.longdescs:
             for c in self.bug.longdescs:
                 body = c['body']
@@ -50,8 +56,16 @@ class ReviewBug(Helpers):
                         if url.endswith(".spec"):
                             self.spec_url = url
                         elif url.endswith(".src.rpm"):
-
                             self.srpm_url = url
+        if not self.spec_url:
+            print('not spec file URL found in bug #%s' % self.bug_num)
+            found = False
+        if not self.srpm_url:
+            print('not SRPM file URL found in bug #%s' % self.bug_num)
+            found = False
+        return found
+            
+            
 
     def assign_bug(self):    
         if self.login:
@@ -77,7 +91,10 @@ class ReviewBug(Helpers):
         self.add_comment("".join(lines))
                             
     def download_files(self):
-        if self.spec_url and self.srpm_url:
+        found = True
+        if not self.spec_url or not self.srpm_url:
+            found = self.find_urls()
+        if found and self.spec_url and self.srpm_url:
             self.spec_file = self._get_file(self.spec_url)
             self.srpm_file = self._get_file(self.srpm_url)
             if self.spec_file and self.srpm_file:

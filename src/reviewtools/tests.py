@@ -24,6 +24,8 @@ import os.path
 
 from reviewtools import Helpers, Source, SRPMFile, SpecFile
 
+TEST_STATES = {'pending': '[ ]','pass': '[x]','fail': '[!]','na': '[-]'}
+
 class TestBase(Helpers):
     def __init__(self, tag, base):
         Helpers.__init__(self)
@@ -256,7 +258,7 @@ class TestRpmLint(TestBase):
         else:     
             self.set_passed(False)   
             
-class Tests:
+class Checks:
     def __init__(self, spec_file, srpm_file, src_file=None, src_url=None):
         self.tests = {}
         self.taglist = []
