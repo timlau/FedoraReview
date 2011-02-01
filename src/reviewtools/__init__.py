@@ -191,6 +191,19 @@ class SpecFile:
         self.process_sections()
         
         
+    def get_sources(self):
+        result = {}
+        sources = self.spec_obj.sources
+        for src in sources:
+            (url, num, flags) = src
+            if flags & 1: # rpmspec.h, rpm.org ticket #123
+                srctype = "Source"
+            else:
+                srctype = "Patch"
+            tag = '%s%s' % (srctype, num)
+            result[tag] = url
+        return result
+        
     def get_macros(self):
         for lin in self.lines:
             res = MACROS.search(lin)

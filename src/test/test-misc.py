@@ -69,5 +69,8 @@ class MiscTests(unittest.TestCase):
         self.assertEqual(spec.get_section('%install'),expected)
         expected = {'%files': ['%defattr(-,root,root,-)', '%doc COPYING', '%{python_sitelib}/*']}
         self.assertEqual(spec.get_section('%files'),expected)
+        # Test get_sources (return the Source/Patch lines with macros resolved)
+        expected = {'Source0': 'http://timlau.fedorapeople.org/files/test/review-test/python-test-1.0.tar.gz'}
+        self.assertEqual(spec.get_sources(), expected)
         
         
