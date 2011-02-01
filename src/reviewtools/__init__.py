@@ -171,6 +171,9 @@ class SRPMFile(Helpers) :
         
         
 class SpecFile:
+    '''
+    Wrapper classes for getting information from a .spec file
+    '''
     def __init__(self, filename):
         self._sections = {}
         self._section_list = []
@@ -192,6 +195,7 @@ class SpecFile:
         
         
     def get_sources(self):
+        ''' Get SourceX/PatchX lines with macros resolved '''
         result = {}
         sources = self.spec_obj.sources
         for src in sources:
