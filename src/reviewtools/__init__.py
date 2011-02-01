@@ -213,7 +213,7 @@ class SpecFile:
                     section_lines = []
                     cur_sec = this_sec
             else:
-                if line:
+                if line and line.strip() != '':
                     section_lines.append(line) 
         self._sections[cur_sec] = section_lines
         cur_sec = this_sec
