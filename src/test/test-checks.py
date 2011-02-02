@@ -28,12 +28,12 @@ import os
 import os.path
 import unittest
 from reviewtools import Helpers
-from reviewtools.tests import *
+from reviewtools.checks import *
 from bugzilla import Bugzilla
 from base import *
 
-class TestCaseTests(unittest.TestCase):
-    def __init__(self, methodName='runTest'):
+class CheckCaseChecks(unittest.TestCase):
+    def __init__(self, methodName='runCheck'):
         unittest.TestCase.__init__(self, methodName)
         self.cases = None
         self.srpm = TEST_WORK_DIR + os.path.basename(TEST_SRPM)
@@ -50,21 +50,21 @@ class TestCaseTests(unittest.TestCase):
         helper._get_file(TEST_SPEC)
         del helper 
 
-    def test_all(self):
-        ''' Run all automated review test cases'''
-        print('Setup Tests')
+    def test_all_checks(self):
+        ''' Run all automated review checks'''
+        print('Setup Checks')
         self.cases = Checks(self.spec, self.srpm, self.source)
-        self.cases.add('name', TestName)     
-        self.cases.add('specname', TestSpecName)   
-        self.cases.add('illegal_tag', TestIllegalSpecTags)   
-        self.cases.add('buildroot', TestBuildroot)   
-        self.cases.add('clean', TestClean)   
-        self.cases.add('install', TestInstall)   
-        self.cases.add('defattr', TestDefattr)  
-        self.cases.add('MD5', TestSourceMD5)
-        self.cases.add('build', TestBuild)
-        self.cases.add('rpmlint', TestRpmLint)
-        print('Running All Tests')
+        self.cases.add('name', CheckName)     
+        self.cases.add('specname', CheckSpecName)   
+        self.cases.add('illegal_tag', CheckIllegalSpecTags)   
+        self.cases.add('buildroot', CheckBuildroot)   
+        self.cases.add('clean', CheckClean)   
+        self.cases.add('install', CheckInstall)   
+        self.cases.add('defattr', CheckDefattr)  
+        self.cases.add('MD5', CheckSourceMD5)
+        self.cases.add('build', CheckBuild)
+        self.cases.add('rpmlint', CheckRpmLint)
+        print('Running All Checks')
         self.cases.run_tests()   
         for tag in self.cases.taglist:
             test = self.cases.tests[tag]
