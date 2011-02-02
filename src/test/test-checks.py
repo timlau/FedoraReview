@@ -15,7 +15,7 @@
 #
 # (C) 2011 - Tim Lauridsen <timlau@fedoraproject.org>
 '''
-Unit cases for automatic test of fedora review guidelines
+Unit checks for automatic test of fedora review guidelines
 '''
 
 
@@ -28,14 +28,14 @@ import os
 import os.path
 import unittest
 from reviewtools import Helpers
-from reviewtools.checks import *
+from reviewtools.misc import Checks
 from bugzilla import Bugzilla
 from base import *
 
 class CheckCaseChecks(unittest.TestCase):
     def __init__(self, methodName='runCheck'):
         unittest.TestCase.__init__(self, methodName)
-        self.cases = None
+        self.checks = None
         self.srpm = TEST_WORK_DIR + os.path.basename(TEST_SRPM)
         self.spec = TEST_WORK_DIR + os.path.basename(TEST_SPEC)
         self.source = TEST_WORK_DIR + os.path.basename(TEST_SRC)
@@ -53,21 +53,11 @@ class CheckCaseChecks(unittest.TestCase):
     def test_all_checks(self):
         ''' Run all automated review checks'''
         print('Setup Checks')
-        self.cases = Checks(self.spec, self.srpm, self.source)
-        self.cases.add('name', CheckName)     
-        self.cases.add('specname', CheckSpecName)   
-        self.cases.add('illegal_tag', CheckIllegalSpecTags)   
-        self.cases.add('buildroot', CheckBuildroot)   
-        self.cases.add('clean', CheckClean)   
-        self.cases.add('install', CheckInstall)   
-        self.cases.add('defattr', CheckDefattr)  
-        self.cases.add('MD5', CheckSourceMD5)
-        self.cases.add('build', CheckBuild)
-        self.cases.add('rpmlint', CheckRpmLint)
+        self.checks = Checks(self.spec, self.srpm, self.source)
         print('Running All Checks')
-        self.cases.run_tests()   
-        for tag in self.cases.taglist:
-            test = self.cases.tests[tag]
+        self.checks.run_checks()   
+        for tag in self.checks.taglist:
+            test = self.checks.tests[tag]
             result = test.get_result()
             self.assertEqual(result[1:2],'x')
             

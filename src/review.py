@@ -19,6 +19,108 @@
 Tools for helping Fedora package reviewers
 '''
 
+import argparse
+import sys
+
+from reviewtools.bugz import ReviewBug
+from reviewtools.misc import Checks
+
+class ReviewHelper:
+    
+    def __init__(self):
+        self.bug = None
+        self.checks = None
+        self.args = self.get_args()
+        self.verbose = False
+
+    def get_args(self):
+        parser = argparse.ArgumentParser(description='Review a Fedora Package')
+        parser.add_argument('-b','--bug', metavar='[bug]', required=True,
+                   help='the bug number contain the package review')
+        parser.add_argument('-w','--workdir', default='~/.reviewhelper/', metavar='[dir]',
+                            help='Work directory (default = ~/.reviewhelper)')       
+        parser.add_argument('-o', '--output', type=argparse.FileType('w'), default='-',
+                            metavar='[file]',
+                            help="output file for review report (default = stdout)") 
+        parser.add_argument('--assign', action='store_true',
+                            help = 'Assign the bug and set review flags')        
+        parser.add_argument('-u','--user', metavar='[userid]', 
+                   help='The Fedora Bugzilla userid')
+        parser.add_argument('-p','--password', metavar='[password]', 
+                   help='The Fedora Bugzilla password')
+        parser.add_argument('-v','--verbose',  action='store_true',
+                            help='Show more output')
+        args = parser.parse_args()
+        return args
+    
+    def download_sources(self):
+        self.checks.source.set_work_dir(self.args.workdir)
+        sources = self.checks.spec.get_sources()
+        if sources:
+            for tag in sources:
+                if tag.startswith('Source'):
+                    self.verbose_message("Downloading (%s): %s" % (tag,sources[tag]))
+                    self.checks.source.get_source(sources[tag])
+            return True
+        else:
+            return False
+        
+    def do_report(self):
+        ''' Create a review report'''
+        print('Getting .spec and .srpm Urls from bug report : %s' % self.args.bug)
+        # get urls
+        rc = self.bug.find_urls()
+        if not rc:
+            print('Cant find any .spec and .srpm URLs in bugreport')
+            sys.exit(1)
+        self.verbose_message("  --> Spec url : %s" % self.bug.spec_url)
+        self.verbose_message("  --> SRPM url : %s" % self.bug.srpm_url)
+        # get the spec and SRPM file 
+        print('Downloading .spec and .srpm files')
+        rc = self.bug.download_files()
+        if not rc:
+            print('Cant download .spec and .srpm')
+            sys.exit(1)
+        self.verbose_message("  --> Spec file : %s" % self.bug.spec_file)
+        self.verbose_message("  --> SRPM file : %s" % self.bug.srpm_file)
+        self.checks = Checks(self.bug.spec_file, self.bug.srpm_file)
+        # get upstream sources
+        rc = self.download_sources()
+        if not rc:
+            print('Cant download upstream sources')
+            sys.exit(1)
+        self.checks.run_checks(output=self.args.output, header='header.txt', footer='footer.txt')
+            
+    def do_assign(self):
+        ''' assign bug'''
+        print ("Assign bug to user")
+        if self.args.user and self.args.password:
+            if self.bug.login(self.arrgs.user, self.args.password):
+                self.bug.assign_bug()
+            else:
+                print('Login to bugzilla failed')
+        else:
+                print('userid and password is needed for bug assignment')
+                
+    def verbose_message(self, msg):
+        if self.verbose:
+            print msg
+
+    def run(self):
+        print self.args
+        self.verbose = self.args.verbose
+        if self.args.bug:
+            # get the bug
+            print ("Proccessing review bug : %s" % self.args.bug )
+            self.bug = ReviewBug(self.args.bug)
+            self.bug.set_work_dir(self.args.workdir)
+            self.verbose_message("  --> Working dir : %s" % self.bug.work_dir)
+            if self.args.assign:
+                self.do_assign()            
+            self.do_report()
 
 if __name__ == "__main__":
-    pass
+    review = ReviewHelper()
+    review.run()
+
+

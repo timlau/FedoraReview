@@ -43,6 +43,11 @@ class Helpers:
         self.work_dir = 'work/'
         
     def set_work_dir(self,work_dir):
+        work_dir = os.path.abspath(os.path.expanduser(work_dir))
+        if not os.path.exists(work_dir):
+            os.makedirs(work_dir)
+        if not work_dir[-1] == "/":
+            work_dir += '/'    
         self.work_dir = work_dir
         
     def _run_cmd(self, cmd):
@@ -79,11 +84,12 @@ class Helpers:
             return None    
             
 class Source(Helpers) :
-    def __init__(self,filename=None, URL=None):
+    def __init__(self,filename=None):
         Helpers.__init__(self)
         self.filename = filename
-        if URL:
-            self.filename = self._get_file(URL)
+            
+    def get_source(self, URL):
+        self.filename = self._get_file(URL)
         
     def check_source_md5(self):
         sum,file = self._md5sum(self.filename)      
@@ -92,12 +98,11 @@ class Source(Helpers) :
 
 
 class SRPMFile(Helpers) :
-    def __init__(self,filename,spec):
+    def __init__(self,filename):
         Helpers.__init__(self)
         self.filename = filename
         self.is_installed = False
         self.is_build = False
-        self.spec = spec
         
     def install(self, wipe = True):
         if wipe:
@@ -107,7 +112,7 @@ class SRPMFile(Helpers) :
         
     def build(self, force = False):
         if not force and self.is_build:
-            return -1
+            return 0
         call('rpmdev-wipetree &>/dev/null',shell = True)
         call('sudo yum-builddep -y %s &>yum.log' % self.filename, shell = True)
         rc = call('rpmbuild --rebuild %s &>build.log' % self.filename, shell = True)
@@ -318,5 +323,5 @@ class SpecFile:
                 results[sec] = self._sections[sec]
         return results
 
-            
+
 

@@ -25,6 +25,7 @@ sys.path.insert(0,os.path.abspath('../'))
 
 import os
 import unittest
+import glob
 from reviewtools import Helpers, Source, SRPMFile, SpecFile
 from base import *
 
@@ -41,7 +42,7 @@ class MiscTests(unittest.TestCase):
             os.makedirs(TEST_WORK_DIR)
         self.helper.set_work_dir(TEST_WORK_DIR)
         self.helper._get_file(TEST_SRPM)
-        self.helper._get_file(TEST_SRC)
+        #self.helper._get_file(TEST_SRC)
         self.helper._get_file(TEST_SPEC)
 
 
@@ -72,5 +73,34 @@ class MiscTests(unittest.TestCase):
         # Test get_sources (return the Source/Patch lines with macros resolved)
         expected = {'Source0': 'http://timlau.fedorapeople.org/files/test/review-test/python-test-1.0.tar.gz'}
         self.assertEqual(spec.get_sources(), expected)
+        
+        
+    def test_source_file(self):
+        """ Test the SourceFile class """
+        source = Source()
+        # set the work dir
+        source.set_work_dir(TEST_WORK_DIR)
+        # download the upstream source file
+        source.get_source(TEST_SRC)
+        # check that source exists and source.filename point to the right location
+        self.assertEqual(source.filename, self.source_file)
+        self.assertTrue(os.path.exists(self.source_file))
+        self.assertEqual(source.check_source_md5(), "289cb714af3a85fe36a51fa3612b57ad")
+        
+    def test_srpm_file(self):
+        """ Test the SRPMFile class """
+        srpm = SRPMFile(self.srpm_file)
+        # install the srpm
+        srpm.install()
+        self.assertTrue(srpm.is_installed)
+        src_files = glob.glob(os.path.expanduser('~/rpmbuild/SOURCES/*'))
+        expected = [os.path.expanduser('~/rpmbuild/SOURCES/python-test-1.0.tar.gz')]
+        self.assertEqual(src_files, expected)
+        srpm.build()
+        self.assertTrue(srpm.is_build)
+        rpm_files = glob.glob(os.path.expanduser('~/rpmbuild/RPMS/noarch/*'))
+        dist = self.helper._run_cmd('rpm --eval %dist')[:-1]
+        expected = [os.path.expanduser('~/rpmbuild/RPMS/noarch/python-test-1.0-1%(dist)s.noarch.rpm') % {'dist': dist}]
+        self.assertEqual(rpm_files, expected)
         
         

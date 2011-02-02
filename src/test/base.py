@@ -17,9 +17,10 @@
 '''
 Common code and vars used by unit tests
 '''
+import os
 
 TEST_BUG=672280
 TEST_SPEC='http://timlau.fedorapeople.org/files/test/review-test/python-test.spec'
 TEST_SRPM='http://timlau.fedorapeople.org/files/test/review-test/python-test-1.0-1.fc14.src.rpm'
 TEST_SRC='http://timlau.fedorapeople.org/files/test/review-test/python-test-1.0.tar.gz'
-TEST_WORK_DIR = 'test-work/'
+TEST_WORK_DIR = os.path.abspath('test-work/')+'/'

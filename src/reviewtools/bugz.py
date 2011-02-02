@@ -44,6 +44,7 @@ class ReviewBug(Helpers):
             self.login = True
         else:
             self.login = False
+        return self.login
 
     def find_urls(self):
         found = True
