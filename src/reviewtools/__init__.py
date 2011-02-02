@@ -324,4 +324,10 @@ class SpecFile:
         return results
 
 
+    def find(self, regex):
+        for line in self.lines:
+            res = regex.search(line)
+            if res:
+                return res
+        return None
 

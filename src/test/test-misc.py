@@ -21,6 +21,7 @@ Unit tests for bugzilla bug handling
 
 import sys
 import os.path
+import re
 sys.path.insert(0,os.path.abspath('../'))
 
 import os
@@ -73,6 +74,14 @@ class MiscTests(unittest.TestCase):
         # Test get_sources (return the Source/Patch lines with macros resolved)
         expected = {'Source0': 'http://timlau.fedorapeople.org/files/test/review-test/python-test-1.0.tar.gz'}
         self.assertEqual(spec.get_sources(), expected)
+        # Test find
+        regex = re.compile(r'^Release\s*:\s*(.*)')
+        res = spec.find(regex)
+        if res:
+            self.assertEqual(res.groups(), ('1%{?dist}',))
+        else:
+            self.assertTrue(False)
+            
         
         
     def test_source_file(self):

@@ -26,6 +26,8 @@ from reviewtools.bugz import ReviewBug
 from reviewtools.misc import Checks
 
 class ReviewHelper:
+
+
     
     def __init__(self):
         self.bug = None
@@ -89,7 +91,8 @@ class ReviewHelper:
         if not rc:
             print('Cant download upstream sources')
             sys.exit(1)
-        self.checks.run_checks(output=self.args.output, header='header.txt', footer='footer.txt')
+        print('Running check and generate report\n')
+        self.checks.run_checks(output=self.args.output)
             
     def do_assign(self):
         ''' assign bug'''
