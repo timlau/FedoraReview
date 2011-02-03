@@ -77,9 +77,11 @@ class Helpers:
         else:
             return None,out
 
-    def _get_file(self, link):
+    def _get_file(self, link, overwrite=False):
         url = urlparse(link)
         fname = os.path.basename(url.path)
+        if os.path.exists(self.work_dir+fname) and not overwrite  :
+            return  self.work_dir+fname
         call('wget --quiet --tries=1 --read-timeout=90 -O %s --referer=%s %s' % (self.work_dir+fname, link, link) , shell=True)
         if os.path.exists(self.work_dir+fname):
             return  self.work_dir+fname
