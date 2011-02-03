@@ -64,3 +64,16 @@ class BugzillaTests(unittest.TestCase):
         self.assertTrue(os.path.exists(srpm))
         self.assertTrue(os.path.exists(spec))
         
+    def test_login(self):
+        ''' test login to bugzilla 
+        You need to use BZ_USER=<user> BZ_PASS=<password> make test to active the login test
+        '''
+        # Test failed login
+        rc = self.bug.login(user='dummmy', password='dummy') 
+        self.assertEqual(rc,False)
+        if 'BZ_USER' in os.environ and 'BZ_PASS' in os.environ:
+            user = os.environ['BZ_USER']
+            password = os.environ['BZ_PASS']
+            rc = self.bug.login(user=user, password=password) 
+            self.assertEqual(rc,True)
+        

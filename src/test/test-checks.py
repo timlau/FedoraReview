@@ -56,9 +56,11 @@ class CheckCaseChecks(unittest.TestCase):
         self.checks = Checks(self.spec, self.srpm, self.source)
         print('Running All Checks')
         self.checks.run_checks()   
-        for tag in self.checks.taglist:
-            test = self.checks.tests[tag]
-            result = test.get_result()
-            self.assertEqual(result[1:2],'x')
+        for typ in ['MUST','SHOULD']:
+            # Automatic Checks
+            checks = self.checks.checks[typ]
+            for check in checks:
+                result = check.get_result()
+                self.assertNotEqual(result[1:2],'!')
             
 

@@ -52,6 +52,8 @@ class ReviewHelper:
                    help='The Fedora Bugzilla password')
         parser.add_argument('-v','--verbose',  action='store_true',
                             help='Show more output')
+        parser.add_argument('--no-report',  action='store_true', dest='noreport', 
+                            help='Dont make a review report')
         args = parser.parse_args()
         return args
     
@@ -96,14 +98,11 @@ class ReviewHelper:
             
     def do_assign(self):
         ''' assign bug'''
-        print ("Assign bug to user")
         if self.args.user and self.args.password:
-            if self.bug.login(self.arrgs.user, self.args.password):
-                self.bug.assign_bug()
-            else:
-                print('Login to bugzilla failed')
+            print ("Assigning bug to user")
+            self.bug.assign_bug()
         else:
-                print('userid and password is needed for bug assignment')
+            print('You need to add bugzilla userid/password (-u/-p) to assign bug')
                 
     def verbose_message(self, msg):
         if self.verbose:
@@ -115,12 +114,16 @@ class ReviewHelper:
         if self.args.bug:
             # get the bug
             print ("Proccessing review bug : %s" % self.args.bug )
-            self.bug = ReviewBug(self.args.bug)
+            if self.args.user and self.args.password:
+                self.bug = ReviewBug(self.args.bug, user = self.args.user, password= self.args.password)
+            else:
+                self.bug = ReviewBug(self.args.bug)
             self.bug.set_work_dir(self.args.workdir)
             self.verbose_message("  --> Working dir : %s" % self.bug.work_dir)
             if self.args.assign:
-                self.do_assign()            
-            self.do_report()
+                self.do_assign()
+            if not self.args.noreport:                        
+                self.do_report()
 
 if __name__ == "__main__":
     review = ReviewHelper()
