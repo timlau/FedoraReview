@@ -161,9 +161,10 @@ class CheckClean(CheckBase):
         sec_clean = self.spec.get_section('%clean')
         for sec in sec_clean:
             sec_lines = sec_clean[sec]
+            regex = re.compile('^(rm|%{__rm})\s\-rf\s(%{buildroot}|$RPM_BUILD_ROOT)*.')
             if sec_lines:
                 for line in sec_lines:
-                    if line in ('rm -rf %{buildroot}', 'rm -rf $RPM_BUILD_ROOT'):
+                    if regex.search(line):
                         passed = True
                         break
         self.set_passed(passed)
@@ -179,9 +180,10 @@ class CheckInstall(CheckBase):
         sec_clean = self.spec.get_section('%install')
         for sec in sec_clean:
             sec_lines = sec_clean[sec]
+            regex = re.compile('^(rm|%{__rm})\s\-rf\s(%{buildroot}|$RPM_BUILD_ROOT)*.')
             if sec_lines:
                 for line in sec_lines:
-                    if line in ('rm -rf %{buildroot}', 'rm -rf $RPM_BUILD_ROOT'):
+                    if regex.search(line):
                         passed = True
                         break
         self.set_passed(passed)

@@ -22,6 +22,8 @@ Tools for helping Fedora package reviewers
 import argparse
 import sys
 import logging
+import glob
+import os
 
 from reviewtools.bugz import ReviewBug
 from reviewtools.misc import Checks
@@ -38,7 +40,7 @@ class ReviewHelper:
 
     def get_args(self):
         parser = argparse.ArgumentParser(description='Review a Fedora Package')
-        parser.add_argument('-b','--bug', metavar='[bug]', required=True,
+        parser.add_argument('-b','--bug', metavar='[bug]', 
                    help='the bug number contain the package review')
         parser.add_argument('-w','--workdir', default='~/.reviewhelper/', metavar='[dir]',
                             help='Work directory (default = ~/.reviewhelper)')       
@@ -55,6 +57,8 @@ class ReviewHelper:
                             help='Show more output')
         parser.add_argument('--no-report',  action='store_true', dest='noreport', 
                             help='Dont make a review report')
+        parser.add_argument('-n','--name', metavar='<name prefix>', 
+                   help='run on local <name prefix>.spec & <name prefix>*.src.rpm located in work dir')
         args = parser.parse_args()
         return args
     
@@ -96,6 +100,33 @@ class ReviewHelper:
             sys.exit(1)
         self.log.info('Running checks and generate report\n')
         self.checks.run_checks(output=self.args.output)
+
+    def do_report_local(self):
+        ''' Create a review report on already downloaded .spec & .src.rpm'''
+        work_dir = os.path.abspath(os.path.expanduser(self.args.workdir))
+        spec_filter = '%s/%s*.spec' % (work_dir, self.args.name)
+        srpm_filter = '%s/%s*.src.rpm' % (work_dir, self.args.name)
+        files_spec = glob.glob(spec_filter)
+        files_srpm = glob.glob(srpm_filter)
+        if files_spec and files_srpm:
+            spec = files_spec[0]
+            srpm = files_srpm[0]
+            self.log.debug("  --> Spec file : %s" % spec)
+            self.log.debug("  --> SRPM file : %s" % srpm)
+            self.checks = Checks(spec, srpm)
+            # get upstream sources
+            rc = self.download_sources()
+            if not rc:
+                self.log.info('Cant download upstream sources')
+                sys.exit(1)
+            self.log.info('Running checks and generate report\n')
+            self.checks.run_checks(output=self.args.output)
+        else:
+            if not files_spec:
+                self.log.error('Cant find : %s ' % spec_filter)
+            if not files_srpm:
+                self.log.error('Cant find : %s ' % srpm_filter)
+            
             
     def do_assign(self):
         ''' assign bug'''
@@ -124,6 +155,8 @@ class ReviewHelper:
                 self.do_assign()
             if not self.args.noreport:                        
                 self.do_report()
+        elif self.args.name:
+            self.do_report_local()
 
 if __name__ == "__main__":
     review = ReviewHelper()
