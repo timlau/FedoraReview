@@ -20,6 +20,7 @@ Tools for helping Fedora package reviewers
 '''
 
 import subprocess
+import logging
 from subprocess import call, Popen
 from urlparse import urlparse
 import os.path
@@ -36,6 +37,8 @@ SECTIONS = ['build', 'changelog', 'check', 'clean', 'description', 'files',
                'triggerpostun', 'pretrans', 'posttrans']               
 SPEC_SECTIONS = re.compile(r"^(\%("+"|".join(SECTIONS)+"))\s*")
 MACROS = re.compile(r"^%(define|global)\s+(\w*)\s+(.*)")
+
+LOG_ROOT = 'reviewtools'
 
 class Helpers:
 
@@ -331,3 +334,16 @@ class SpecFile:
                 return res
         return None
 
+def get_logger():
+    return logging.getLogger(LOG_ROOT)
+
+def do_logger_setup(logroot = LOG_ROOT, logfmt='%(message)s', loglvl=logging.INFO):
+    ''' Setup Python logging using a TextViewLogHandler '''
+    logger = logging.getLogger(logroot)
+    logger.setLevel(loglvl)
+    formatter = logging.Formatter(logfmt, "%H:%M:%S")
+    handler = logging.StreamHandler()
+    handler.setFormatter(formatter)
+    handler.propagate = False
+    logger.addHandler(handler)
+    return handler

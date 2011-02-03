@@ -22,7 +22,7 @@ from bugzilla import Bugzilla
 
 BZ_URL='https://bugzilla.redhat.com/xmlrpc.cgi'
 
-from reviewtools import Helpers
+from reviewtools import Helpers, get_logger
 
 class ReviewBug(Helpers):
     def __init__(self,bug,user=None,password=None):
@@ -39,6 +39,7 @@ class ReviewBug(Helpers):
                 self.is_login = True
         self.user = user
         self.bug = self.bugzilla.getbug(self.bug_num)
+        self.log = get_logger()
 
     def login(self, user, password):
         if self.bugzilla.login(user=user, password=password) > 0:
@@ -61,10 +62,10 @@ class ReviewBug(Helpers):
                         elif url.endswith(".src.rpm"):
                             self.srpm_url = url
         if not self.spec_url:
-            print('not spec file URL found in bug #%s' % self.bug_num)
+            self.log.info('not spec file URL found in bug #%s' % self.bug_num)
             found = False
         if not self.srpm_url:
-            print('not SRPM file URL found in bug #%s' % self.bug_num)
+            self.log.info('not SRPM file URL found in bug #%s' % self.bug_num)
             found = False
         return found
             
@@ -79,13 +80,13 @@ class ReviewBug(Helpers):
             self.bug.updateflags(flags)
             self.bug.addcc([self.user])
         else:
-            print("You need to login before assigning a bug")
+            self.log.info("You need to login before assigning a bug")
 
     def add_comment(self,comment):    
         if self.is_login:
             self.bug.addcomment(comment)
         else:
-            print("You need to is_login before commenting on a bug")
+            self.log.info("You need to is_login before commenting on a bug")
 
     def add_comment_from_file(self,fname):
         fd = open(fname,"r")

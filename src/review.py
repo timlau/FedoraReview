@@ -21,19 +21,20 @@ Tools for helping Fedora package reviewers
 
 import argparse
 import sys
+import logging
 
 from reviewtools.bugz import ReviewBug
 from reviewtools.misc import Checks
+from reviewtools import get_logger, do_logger_setup
 
 class ReviewHelper:
-
-
     
     def __init__(self):
         self.bug = None
         self.checks = None
         self.args = self.get_args()
         self.verbose = False
+        self.log = get_logger()
 
     def get_args(self):
         parser = argparse.ArgumentParser(description='Review a Fedora Package')
@@ -63,7 +64,7 @@ class ReviewHelper:
         if sources:
             for tag in sources:
                 if tag.startswith('Source'):
-                    self.verbose_message("Downloading (%s): %s" % (tag,sources[tag]))
+                    self.log.debug("Downloading (%s): %s" % (tag,sources[tag]))
                     self.checks.source.get_source(sources[tag])
             return True
         else:
@@ -71,55 +72,54 @@ class ReviewHelper:
         
     def do_report(self):
         ''' Create a review report'''
-        print('Getting .spec and .srpm Urls from bug report : %s' % self.args.bug)
+        self.log.info('Getting .spec and .srpm Urls from bug report : %s' % self.args.bug)
         # get urls
         rc = self.bug.find_urls()
         if not rc:
-            print('Cant find any .spec and .srpm URLs in bugreport')
+            self.log.info('Cant find any .spec and .srpm URLs in bugreport')
             sys.exit(1)
-        self.verbose_message("  --> Spec url : %s" % self.bug.spec_url)
-        self.verbose_message("  --> SRPM url : %s" % self.bug.srpm_url)
+        self.log.debug("  --> Spec url : %s" % self.bug.spec_url)
+        self.log.debug("  --> SRPM url : %s" % self.bug.srpm_url)
         # get the spec and SRPM file 
-        print('Downloading .spec and .srpm files')
+        self.log.info('Downloading .spec and .srpm files')
         rc = self.bug.download_files()
         if not rc:
-            print('Cant download .spec and .srpm')
+            self.log.info('Cant download .spec and .srpm')
             sys.exit(1)
-        self.verbose_message("  --> Spec file : %s" % self.bug.spec_file)
-        self.verbose_message("  --> SRPM file : %s" % self.bug.srpm_file)
+        self.log.debug("  --> Spec file : %s" % self.bug.spec_file)
+        self.log.debug("  --> SRPM file : %s" % self.bug.srpm_file)
         self.checks = Checks(self.bug.spec_file, self.bug.srpm_file)
         # get upstream sources
         rc = self.download_sources()
         if not rc:
-            print('Cant download upstream sources')
+            self.log.info('Cant download upstream sources')
             sys.exit(1)
-        print('Running check and generate report\n')
+        self.log.info('Running checks and generate report\n')
         self.checks.run_checks(output=self.args.output)
             
     def do_assign(self):
         ''' assign bug'''
         if self.args.user and self.args.password:
-            print ("Assigning bug to user")
+            self.log.info("Assigning bug to user")
             self.bug.assign_bug()
         else:
-            print('You need to add bugzilla userid/password (-u/-p) to assign bug')
+            self.log.info('You need to add bugzilla userid/password (-u/-p) to assign bug')
                 
-    def verbose_message(self, msg):
-        if self.verbose:
-            print msg
-
     def run(self):
-        print self.args
         self.verbose = self.args.verbose
+        if self.verbose:
+            do_logger_setup(loglvl=logging.DEBUG)
+        else:
+            do_logger_setup()
         if self.args.bug:
             # get the bug
-            print ("Proccessing review bug : %s" % self.args.bug )
+            self.log.info("Proccessing review bug : %s" % self.args.bug )
             if self.args.user and self.args.password:
                 self.bug = ReviewBug(self.args.bug, user = self.args.user, password= self.args.password)
             else:
                 self.bug = ReviewBug(self.args.bug)
             self.bug.set_work_dir(self.args.workdir)
-            self.verbose_message("  --> Working dir : %s" % self.bug.work_dir)
+            self.log.debug("  --> Working dir : %s" % self.bug.work_dir)
             if self.args.assign:
                 self.do_assign()
             if not self.args.noreport:                        
