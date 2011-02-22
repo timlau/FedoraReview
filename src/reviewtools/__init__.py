@@ -44,6 +44,7 @@ class Helpers:
 
     def __init__(self):
         self.work_dir = 'work/'
+        self.log = get_logger()
         
     def set_work_dir(self,work_dir):
         work_dir = os.path.abspath(os.path.expanduser(work_dir))
@@ -92,12 +93,19 @@ class Source(Helpers) :
     def __init__(self,filename=None):
         Helpers.__init__(self)
         self.filename = filename
+        self.downloaded = False
             
     def get_source(self, URL):
         self.filename = self._get_file(URL)
-        
+        if self.filename and os.path.exists(self.filename):
+            self.downloaded = True
+               
     def check_source_md5(self):
-        sum,file = self._md5sum(self.filename)      
+        if self.downloaded:
+            self.log.info("Checking source md5 : %s" % self.filename)
+            sum,file = self._md5sum(self.filename)
+        else:
+            sum = "upstream source not found"      
         return sum
 
 
@@ -108,14 +116,39 @@ class SRPMFile(Helpers) :
         self.filename = filename
         self.is_installed = False
         self.is_build = False
+        self.build_failed = False
         
     def install(self, wipe = True):
         if wipe:
             call('rpmdev-wipetree &>/dev/null', shell=True)
         call('rpm -ivh %s &>/dev/null' % self.filename, shell=True)
         self.is_installed = True
-        
+    
     def build(self, force = False):
+        if self.build_failed:
+            return -1
+        return self.mockbuild(force)  
+    
+    def mockbuild(self, force = False):
+        if not force and self.is_build:
+            return 0
+        self.log.info("Building %s using mock" % self.filename )
+        rc = call('mock --rebuild %s' % self.filename, shell = True)
+        if rc == 0:
+            self.is_build = True
+            self.log.info("Build completed ok")
+        else:
+            self.log.info("Build failed rc = %i " % rc )
+            self.build_failed = True
+        return rc
+
+    def get_mock_dir(self):
+        config_opts = get_mock_config()
+        mock_dir = '/var/lib/mock/%s/result' % config_opts['root']
+        print mock_dir
+        return mock_dir
+
+    def localbuild(self, force = False):
         if not force and self.is_build:
             return 0
         call('rpmdev-wipetree &>/dev/null',shell = True)
@@ -125,13 +158,13 @@ class SRPMFile(Helpers) :
             self.is_build = True
         return rc
         
-    def check_source_md5(self):
+    def check_source_md5(self, filename):
         if self.is_installed:
             src_files = glob.glob(os.path.expanduser('~/rpmbuild/SOURCES/*'))
             if src_files:
-                src = src_files[0]         
-                sum,file = self._md5sum(src)    
-                return sum
+                for name in src_files:
+                    sum,file = self._md5sum(name)    
+                    return sum
             else:
                 print('no sources found in install SRPM')
                 return "ERROR"
@@ -166,7 +199,7 @@ class SRPMFile(Helpers) :
         result = ''
         success = True
         self.build()
-        rpms = glob.glob(os.path.expanduser('~/rpmbuild/RPMS/*/*.rpm'))
+        rpms = glob.glob(self.get_mock_dir()+ '/*.rpm')
         for rpm in rpms:
             cmd = 'rpmlint %s' % rpm
             result += "\nrpmlint %s\n" % os.path.basename(rpm)
@@ -335,6 +368,12 @@ class SpecFile:
             if res:
                 return res
         return None
+
+def get_mock_config():
+    config_opts = {}
+    with open('/etc/mock/default.cfg', "r") as fh:
+        exec(fh.read()+"\n", globals(), locals())
+    return config_opts
 
 def get_logger():
     return logging.getLogger(LOG_ROOT)

@@ -24,10 +24,12 @@ import sys
 import logging
 import glob
 import os
+from subprocess import Popen
 
 from reviewtools.bugz import ReviewBug
 from reviewtools.misc import Checks
 from reviewtools import get_logger, do_logger_setup
+from urlparse import urlparse
 
 class ReviewHelper:
     
@@ -37,18 +39,18 @@ class ReviewHelper:
         self.args = self.get_args()
         self.verbose = False
         self.log = get_logger()
+        self.outfile = None
 
     def get_args(self):
         parser = argparse.ArgumentParser(description='Review a Fedora Package')
         parser.add_argument('-b','--bug', metavar='[bug]', 
                    help='the bug number contain the package review')
-        parser.add_argument('-w','--workdir', default='~/.reviewhelper/', metavar='[dir]',
-                            help='Work directory (default = ~/.reviewhelper)')       
-        parser.add_argument('-o', '--output', type=argparse.FileType('w'), default='-',
-                            metavar='[file]',
-                            help="output file for review report (default = stdout)") 
+        parser.add_argument('-w','--workdir', default='~/tmp/reviewhelper/', metavar='[dir]',
+                            help='Work directory (default = ~/tmp/reviewhelper/')       
         parser.add_argument('--assign', action='store_true',
                             help = 'Assign the bug and set review flags')        
+        parser.add_argument('--no-build', action='store_true', dest='nobuild',
+                            help = 'dont build src.rpm')        
         parser.add_argument('-u','--user', metavar='[userid]', 
                    help='The Fedora Bugzilla userid')
         parser.add_argument('-p','--password', metavar='[password]', 
@@ -65,15 +67,15 @@ class ReviewHelper:
     def download_sources(self):
         self.checks.source.set_work_dir(self.args.workdir)
         sources = self.checks.spec.get_sources()
+        found = False
         if sources:
+            found = True
             for tag in sources:
-                if tag.startswith('Source'):
+                if tag.startswith('Source') and urlparse(sources[tag])[0] != '':
                     self.log.debug("Downloading (%s): %s" % (tag,sources[tag]))
                     self.checks.source.get_source(sources[tag])
-            return True
-        else:
-            return False
-        
+        return found 
+    
     def do_report(self):
         ''' Create a review report'''
         self.log.info('Getting .spec and .srpm Urls from bug report : %s' % self.args.bug)
@@ -93,13 +95,23 @@ class ReviewHelper:
         self.log.debug("  --> Spec file : %s" % self.bug.spec_file)
         self.log.debug("  --> SRPM file : %s" % self.bug.srpm_file)
         self.checks = Checks(self.bug.spec_file, self.bug.srpm_file)
+        self.outfile = "%s/%s-review.txt" % (self.bug.work_dir, self.checks.spec.name)
+        output = open(self.outfile,"w")
         # get upstream sources
         rc = self.download_sources()
+        if self.args.nobuild:
+            self.checks.srpm.is_build = True
         if not rc:
             self.log.info('Cant download upstream sources')
             sys.exit(1)
         self.log.info('Running checks and generate report\n')
-        self.checks.run_checks(output=self.args.output)
+        self.checks.run_checks(output=output)
+        output.close()
+        self.show_results()
+
+    def show_results(self):
+        if self.outfile and self.checks.spec.filename:
+            Popen(["/usr/bin/gedit", self.outfile, self.checks.spec.filename])        
 
     def do_report_local(self):
         ''' Create a review report on already downloaded .spec & .src.rpm'''
@@ -114,6 +126,8 @@ class ReviewHelper:
             self.log.debug("  --> Spec file : %s" % spec)
             self.log.debug("  --> SRPM file : %s" % srpm)
             self.checks = Checks(spec, srpm)
+            outfile = "%s/%s-review.txt" % (self.bug.work_dir, self.checks.spec.name)
+            output = open(outfile,"w")
             # get upstream sources
             rc = self.download_sources()
             if not rc:
@@ -121,6 +135,7 @@ class ReviewHelper:
                 sys.exit(1)
             self.log.info('Running checks and generate report\n')
             self.checks.run_checks(output=self.args.output)
+            output.close()
         else:
             if not files_spec:
                 self.log.error('Cant find : %s ' % spec_filter)

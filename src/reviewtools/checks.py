@@ -105,16 +105,25 @@ class CheckBuildroot(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging/NamingGuidelines'
-        self.text = 'Buildroot is correct (%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)).'
+        self.text = 'Buildroot is correct (EPEL5 & Fedora < 10)'
         self.automatic = True
         
     def run(self):
         br = self.spec.find_tag('BuildRoot')
-        legal_buildroots = ['%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)']
+        legal_buildroots = [
+        '%(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)',
+        '%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)',
+        '%{_tmppath}/%{name}-%{version}-%{release}-root']
         if br in legal_buildroots:
-            self.set_passed(True)
+            self.set_passed(True,br)
         else:
             self.set_passed(False,br)
+
+    def is_applicable(self):
+        '''
+        Buildroot tag is ignored for Fedora > 10, but is needed for EPEL5
+        '''
+        return self.spec.find_tag('BuildRoot') != None
                
 
 class CheckSpecName(CheckBase):
@@ -153,7 +162,7 @@ class CheckIllegalSpecTags(CheckBase):
 class CheckClean(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
-        self.text = 'Package has a %clean section, which contains rm -rf %{buildroot} (or $RPM_BUILD_ROOT).'
+        self.text = 'Package has a %clean section, which contains rm -rf %{buildroot} (or $RPM_BUILD_ROOT).(EPEL6 & Fedora < 13)'
         self.automatic = True
         
     def run(self):
@@ -218,7 +227,7 @@ class CheckSourceMD5(CheckBase):
         
     def run(self):
         self.srpm.install()
-        local = self.base.srpm.check_source_md5()
+        local = self.base.srpm.check_source_md5(self.base.source.filename)
         upstream = self.base.source.check_source_md5()
         output = "MD5SUM this package     : %s\n" % local
         output += "MD5SUM upstream package : %s" % upstream     
@@ -235,7 +244,7 @@ class CheckBuild(CheckBase):
         self.automatic = True
         
     def run(self):
-        rc = self.srpm.build(force=True) # Force build
+        rc = self.srpm.build() # Force build
         if rc == 0:
             self.set_passed(True)
         else:
