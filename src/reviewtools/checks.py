@@ -458,7 +458,7 @@ class CheckXNum0016(CheckBase):
 
 
 
-class CheckXNum0017(CheckBase):
+class CheckLDConfig(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
@@ -466,6 +466,11 @@ class CheckXNum0017(CheckBase):
         self.automatic = False
         self.type = 'MUST'
 
+    def is_applicable(self):
+        '''
+        check if this test is applicable 
+        '''
+        return self.has_files('/usr/lib*/*.so.*') or self.has_files('/lib*/*.so.*')
 
 
 class CheckXNum0018(CheckBase):
@@ -546,15 +551,11 @@ class CheckXNum0025(CheckBase):
         self.automatic = False
         self.type = 'MUST'
 
-
-
-class CheckXNum0026(CheckBase):
-    def __init__(self, base):
-        CheckBase.__init__(self, base)
-        self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
-        self.text = 'Package contains a valid .desktop file.'
-        self.automatic = False
-        self.type = 'MUST'
+    def is_applicable(self):
+        '''
+        check if this test is applicable 
+        '''
+        return self.has_files('*.desktop')
 
 
 
@@ -618,7 +619,7 @@ class CheckXNum0032(CheckBase):
 
 
 
-class CheckXNum0033(CheckBase):
+class CheckHeaderFiles(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
@@ -626,15 +627,50 @@ class CheckXNum0033(CheckBase):
         self.automatic = False
         self.type = 'MUST'
 
+    def is_applicable(self):
+        '''
+        check if this test is applicable 
+        '''
+        return self.has_files('*.h')
+
+    def run(self):
+        files = self.get_files_by_pattern('*.h')
+        passed = True
+        extra = ""
+        for rpm in files:
+            for fn in files[rpm]:
+                if not '-devel' in rpm:
+                    passed = False
+                    extra += "%s : %s\n" % (rpm, fn)
+        self.set_passed(passed, extra)
 
 
-class CheckXNum0034(CheckBase):
+
+class CheckStaticLibs(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
         self.text = 'Static libraries in -static subpackage, if present.'
         self.automatic = False
         self.type = 'MUST'
+        
+    def is_applicable(self):
+        '''
+        check if this test is applicable 
+        '''
+        return self.has_files('*.a')
+
+    def run(self):
+        files = self.get_files_by_pattern('*.a')
+        passed = True
+        extra = ""
+        for rpm in files:
+            for fn in files[rpm]:
+                if not '-static' in rpm:
+                    passed = False
+                    extra += "%s : %s\n" % (rpm, fn)
+        self.set_passed(passed, extra)
+        
 
 
 
@@ -648,14 +684,32 @@ class CheckXNum0035(CheckBase):
 
 
 
-class CheckXNum0036(CheckBase):
+class CheckReqPkgConfig(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
-        self.text = 'Package requires pkgconfig, if .pc files are present.'
+        self.text = 'Package requires pkgconfig, if .pc files are present. (EPEL5)'
         self.automatic = False
         self.type = 'MUST'
 
+    def is_applicable(self):
+        '''
+        check if this test is applicable 
+        '''
+        return self.has_files('*.pc')
+
+    def run(self):
+        regex = re.compile("^Require:\s*.*pkgconfig.*",re.I)
+        lines = self.spec.get_section('main')
+        found = False
+        for line in lines:
+            print line
+            res = regex.search(line)
+            if res:
+                found = True
+        self.set_passed(found)
+        
+        
 
 
 class CheckSoFiles(CheckBase):
@@ -694,15 +748,24 @@ class CheckXNum0038(CheckBase):
 
 
 
-class CheckXNum0039(CheckBase):
+class CheckLibToolArchives(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
-        self.text = 'Package does not contain any libtool archives (.la).'
-        self.automatic = False
+        self.text = 'Package does not contain any libtool archives (.la)'
+        self.automatic = True
         self.type = 'MUST'
 
-
+    def run(self):
+        if not self.has_files('*.la'):
+            self.set_passed(True)
+        else:
+            extra = ""
+            files = self.get_files_by_pattern('*.la')
+            for rpm in files:
+                for fn in files:
+                    extra += "%s : %s\n" % (rpm, fn)
+            self.set_passed(False, extra)
 
 class CheckXNum0040(CheckBase):
     def __init__(self, base):
@@ -970,7 +1033,6 @@ class CheckDefine(CheckBase):
         if result:
             extra = ""
             for res in result:
-                print res.group(0)
                 extra += "%s\n" % res.group(0)
             self.set_passed(False, extra)
         else:
@@ -1053,7 +1115,7 @@ class CheckXNum0069(CheckBase):
 
 
 
-class CheckXNum0070(CheckBase):
+class CheckParallelMake(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
@@ -1061,7 +1123,29 @@ class CheckXNum0070(CheckBase):
         self.automatic = False
         self.type = 'SHOULD'
 
-
+    def is_applicable(self):
+        '''
+        check if this test is applicable 
+        '''
+        regex = re.compile(r"^make")
+        lines=self.spec.get_section('build')
+        found = False
+        for line in lines:
+            res = regex.search(line)
+            if res:
+                found = True
+        self.set_passed(found)
+        return found
+                
+    def run(self):
+        regex = re.compile(r"^make*.%{?_smp_mflags}")
+        lines=self.spec.get_section('build')
+        found = False
+        for line in lines:
+            res = regex.search(line)
+            if res:
+                found = True
+        self.set_passed(found)
 
 class CheckXNum0071(CheckBase):
     def __init__(self, base):
