@@ -94,8 +94,10 @@ class Source(Helpers) :
         Helpers.__init__(self)
         self.filename = filename
         self.downloaded = False
+        self.URL = None
             
     def get_source(self, URL):
+        self.URL = URL
         self.filename = self._get_file(URL)
         if self.filename and os.path.exists(self.filename):
             self.downloaded = True
@@ -117,6 +119,7 @@ class SRPMFile(Helpers) :
         self.is_installed = False
         self.is_build = False
         self.build_failed = False
+        self._rpm_files = None
         
     def install(self, wipe = True):
         if wipe:
@@ -133,7 +136,7 @@ class SRPMFile(Helpers) :
         if not force and self.is_build:
             return 0
         self.log.info("Building %s using mock" % self.filename )
-        rc = call('mock --rebuild %s' % self.filename, shell = True)
+        rc = call('mock -r fedora-rawhide-i386  --rebuild %s' % self.filename, shell = True)
         if rc == 0:
             self.is_build = True
             self.log.info("Build completed ok")
@@ -143,9 +146,7 @@ class SRPMFile(Helpers) :
         return rc
 
     def get_mock_dir(self):
-        config_opts = get_mock_config()
-        mock_dir = '/var/lib/mock/%s/result' % config_opts['root']
-        print mock_dir
+        mock_dir = '/var/lib/mock/fedora-rawhide-i386/result'
         return mock_dir
 
     def localbuild(self, force = False):
@@ -212,6 +213,20 @@ class SRPMFile(Helpers) :
             result += sep
         return success, result
         
+    def get_files_rpms(self):
+        if self._rpm_files:
+            return self._rpm_files
+        self.build()
+        rpms = glob.glob(self.get_mock_dir()+ '/*.rpm')
+        rpm_files  = {}
+        for rpm in rpms:
+            if rpm.endswith('.src.rpm'):
+                continue
+            cmd = 'rpm -qpl %s' % rpm
+            rc = self._run_cmd(cmd)  
+            rpm_files[os.path.basename(rpm)] = rc.split('\n')         
+        self._rpm_files = rpm_files
+        return rpm_files
         
 class SpecFile:
     '''
@@ -369,11 +384,13 @@ class SpecFile:
                 return res
         return None
 
-def get_mock_config():
-    config_opts = {}
-    with open('/etc/mock/default.cfg', "r") as fh:
-        exec(fh.read()+"\n", globals(), locals())
-    return config_opts
+    def find_all(self, regex):
+        result = []
+        for line in self.lines:
+            res = regex.search(line)
+            if res:
+                result.append(res)
+        return result
 
 def get_logger():
     return logging.getLogger(LOG_ROOT)

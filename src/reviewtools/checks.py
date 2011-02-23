@@ -23,6 +23,7 @@ import os
 import os.path
 import inspect
 import re
+import fnmatch
 
 from reviewtools import Helpers, get_logger
 
@@ -34,6 +35,7 @@ class CheckBase(Helpers):
         self.base = base
         self.spec = base.spec
         self.srpm = base.srpm
+        self.source = base.source
         self.url = None
         self.text = None
         self.description = None
@@ -77,7 +79,27 @@ class CheckBase(Helpers):
         overload in child class if needed
         '''
         return True
-    
+        
+        
+    def has_files(self, pattern):
+        ''' Check if rpms has file matching a pattern'''
+        rpm_files = self.srpm.get_files_rpms()
+        for rpm in rpm_files:
+            for fn in rpm_files[rpm]:
+                if fnmatch.fnmatch(fn, pattern): 
+                    print fn, pattern
+                    return True
+        return False
+        
+    def get_files_by_pattern(self, pattern):
+        result = {}
+        rpm_files = self.srpm.get_files_rpms()
+        for rpm in rpm_files:
+            result[rpm] = []
+            for fn in rpm_files[rpm]:
+                if fnmatch.fnmatch(fn, pattern): 
+                    result[rpm].append(fn)
+        return result
     
 class CheckName(CheckBase):
     def __init__(self, base):
@@ -244,7 +266,7 @@ class CheckBuild(CheckBase):
         self.automatic = True
         
     def run(self):
-        rc = self.srpm.build() # Force build
+        rc = self.srpm.build() 
         if rc == 0:
             self.set_passed(True)
         else:
@@ -258,14 +280,10 @@ class CheckRpmLint(CheckBase):
         
     def run(self):
         failed = False
-        no_errors, rc = self.srpm.rpmlint()
-        if not no_errors:
-            failed = True
-        self.output_extra = rc
         no_errors, rc = self.srpm.rpmlint_rpms()
         if not no_errors:
             failed = True
-        self.output_extra += rc
+        self.output_extra = rc
         if not failed:
             self.set_passed(True)   
         else:     
@@ -640,14 +658,30 @@ class CheckXNum0036(CheckBase):
 
 
 
-class CheckXNum0037(CheckBase):
+class CheckSoFiles(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
         self.text = 'Development .so files in -devel subpackage, if present.'
-        self.automatic = False
+        self.automatic = True
         self.type = 'MUST'
 
+    def is_applicable(self):
+        '''
+        check if this test is applicable 
+        '''
+        return self.has_files('*.so')
+
+    def run(self):
+        files = self.get_files_by_pattern('*.so')
+        passed = True
+        extra = ""
+        for rpm in files:
+            for fn in files[rpm]:
+                if not '-devel' in rpm:
+                    passed = False
+                    extra += "%s : %s\n" % (rpm, fn)
+        self.set_passed(passed, extra)
 
 
 class CheckXNum0038(CheckBase):
@@ -818,19 +852,41 @@ class CheckSourceUrl(CheckBase):
         self.type = 'SHOULD'
 
     def run(self):
-        # We download the source before running checks, so we will never
-        # get here is Source Url is not working
-        self.set_passed(True)
+        if self.source.downloaded:
+            self.set_passed(True)
+        else:
+            extra = ""
+            if self.source.URL:
+                extra = "%s\n" % self.source.URL
+            self.set_passed(False, extra)
 
 
-class CheckXNum0056(CheckBase):
+class CheckSourcePatchPrefix(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
         self.text = 'SourceX / PatchY prefixed with %{name}.'
-        self.automatic = False
+        self.automatic = True
         self.type = 'SHOULD'
 
+    def run(self):
+        regex = re.compile(r'^(Source|Patch)\d*\s*:\s*(.*)')
+        result = self.spec.find_all(regex)
+        passed = True
+        extra = ""
+        if result:
+            for res in result:
+                value = res.group(2)
+                if value.startswith('%{name}') or value.startswith('%{'):
+                    continue
+                passed = False
+                extra += "%s\n" % res.string[:-1]
+            self.set_passed(False, extra)
+        else:
+            passed = False
+            extra = "No SourceX/PatchX tags found"
+        self.set_passed(passed, extra)
+        
 
 
 class CheckXNum0057(CheckBase):
@@ -863,14 +919,20 @@ class CheckXNum0059(CheckBase):
 
 
 
-class CheckXNum0060(CheckBase):
+class CheckBuildInMock(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
         self.text = 'Reviewer should test that the package builds in mock.'
-        self.automatic = False
+        self.automatic = True
         self.type = 'SHOULD'
 
+    def run(self):
+        rc = self.srpm.build() 
+        if rc == 0:
+            self.set_passed(True)
+        else:
+            self.set_passed(False)
 
 
 class CheckXNum0061(CheckBase):
@@ -894,13 +956,25 @@ class CheckDistTag(CheckBase):
     def run(self):
         self.set_passed(self.spec.find_tag('Release').endswith('%{?dist}'))
 
-class CheckXNum0063(CheckBase):
+class CheckDefine(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
         self.text = 'Spec use %global instead of %define.'
-        self.automatic = False
+        self.automatic = True
         self.type = 'SHOULD'
+
+    def run(self):
+        regex = re.compile('(\%define.*)')
+        result = self.spec.find_all(regex)
+        if result:
+            extra = ""
+            for res in result:
+                print res.group(0)
+                extra += "%s\n" % res.group(0)
+            self.set_passed(False, extra)
+        else:
+            self.set_passed(True)
 
 
 
@@ -914,15 +988,30 @@ class CheckXNum0064(CheckBase):
 
 
 
-class CheckXNum0065(CheckBase):
+class CheckPkgConfigFiles(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
         self.text = 'The placement of pkgconfig(.pc) files are correct.'
-        self.automatic = False
+        self.automatic = True
         self.type = 'SHOULD'
 
+    def is_applicable(self):
+        '''
+        check if this test is applicable 
+        '''
+        return self.has_files('*.pc')
 
+    def run(self):
+        files = self.get_files_by_pattern('*.pc')
+        passed = True
+        extra = ""
+        for rpm in files:
+            for fn in files[rpm]:
+                if not '-devel' in rpm:
+                    passed = False
+                    extra += "%s : %s\n" % (rpm, fn)
+        self.set_passed(passed, extra)
 
 class CheckXNum0066(CheckBase):
     def __init__(self, base):

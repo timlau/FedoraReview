@@ -79,8 +79,11 @@ class Checks:
             # Automatic Checks
             checks = self.checks[typ]
             for test in checks:
-                if test.is_applicable and test.automatic:
-                    test.run()
+                if test.is_applicable():
+                    if test.automatic:
+                        test.run()
+                else:
+                    test.state = 'na'
                 result = test.get_result()
                 if result:
                     output.write(result)
