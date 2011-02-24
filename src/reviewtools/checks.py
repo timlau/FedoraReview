@@ -87,7 +87,6 @@ class CheckBase(Helpers):
         for rpm in rpm_files:
             for fn in rpm_files[rpm]:
                 if fnmatch.fnmatch(fn, pattern):
-                    print fn, pattern
                     return True
         return False
 
@@ -463,7 +462,7 @@ class CheckLDConfig(CheckBase):
         CheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
         self.text = 'ldconfig called in %post and %postun if required.'
-        self.automatic = False
+        self.automatic = True
         self.type = 'MUST'
 
     def is_applicable(self):
@@ -472,6 +471,26 @@ class CheckLDConfig(CheckBase):
         '''
         return self.has_files('/usr/lib*/*.so.*') or self.has_files('/lib*/*.so.*')
 
+    def run(self):
+        sources = ['%post','%postun']
+        for source in sources:
+            passed = False
+            extra = ""
+            sections = self.spec.get_section(source)
+            for section in sections:
+                if section.split(' ')[0] != source: # get_section('%post') will also return %postun
+                    continue
+                if '/sbin/ldconfig' in section:
+                    passed = True
+                else:
+                    for line in sections[section]:
+                        if '/sbin/ldconfig' in section:
+                            passed = True
+                            break
+            if not passed:
+                self.set_passed(False,'/sbin/ldconfig not called in %s' % source)
+                return
+        self.set_passed(True)
 
 class CheckXNum0018(CheckBase):
     def __init__(self, base):
@@ -624,7 +643,7 @@ class CheckHeaderFiles(CheckBase):
         CheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
         self.text = 'Header files in -devel subpackage, if present.'
-        self.automatic = False
+        self.automatic = True
         self.type = 'MUST'
 
     def is_applicable(self):
@@ -639,6 +658,10 @@ class CheckHeaderFiles(CheckBase):
         extra = ""
         for rpm in files:
             for fn in files[rpm]:
+                # header files (.h) under /usr/src/debug/* will be in the -debuginfo package.
+                if  fn.startswith('/usr/src/debug/') and '-debuginfo' in rpm:
+                    continue
+                # All other .h files should be in a -devel package.
                 if not '-devel' in rpm:
                     passed = False
                     extra += "%s : %s\n" % (rpm, fn)
