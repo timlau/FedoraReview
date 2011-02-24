@@ -34,7 +34,7 @@ import rpm
 SECTIONS = ['build', 'changelog', 'check', 'clean', 'description', 'files',
                'install', 'package', 'prep', 'pre', 'post', 'preun', 'postun',
                'trigger', 'triggerin', 'triggerun', 'triggerprein',
-               'triggerpostun', 'pretrans', 'posttrans']               
+               'triggerpostun', 'pretrans', 'posttrans']
 SPEC_SECTIONS = re.compile(r"^(\%("+"|".join(SECTIONS)+"))\s*")
 MACROS = re.compile(r"^%(define|global)\s+(\w*)\s+(.*)")
 
@@ -42,18 +42,19 @@ LOG_ROOT = 'reviewtools'
 
 class Helpers:
 
-    def __init__(self):
+    def __init__(self, cache=False):
         self.work_dir = 'work/'
         self.log = get_logger()
-        
+        self.cache = cache
+
     def set_work_dir(self,work_dir):
         work_dir = os.path.abspath(os.path.expanduser(work_dir))
         if not os.path.exists(work_dir):
             os.makedirs(work_dir)
         if not work_dir[-1] == "/":
-            work_dir += '/'    
+            work_dir += '/'
         self.work_dir = work_dir
-        
+
     def _run_cmd(self, cmd):
         cmd = cmd.split(' ')
         try:
@@ -62,12 +63,12 @@ class Helpers:
         except OSError, e:
             print "OSError : %s" % str(e)
         return output
-    
-    
+
+
     def _md5sum(self, file):
         ''' get the md5sum for a file
-        
-        :arg file: the file to get the the md5sum for 
+
+        :arg file: the file to get the the md5sum for
         :return: (md5sum, file) tuple
         '''
         cmd = "md5sum %s" % file
@@ -78,62 +79,62 @@ class Helpers:
         else:
             return None,out
 
-    def _get_file(self, link, overwrite=False):
+    def _get_file(self, link):
         url = urlparse(link)
         fname = os.path.basename(url.path)
-        if os.path.exists(self.work_dir+fname) and not overwrite  :
+        if os.path.exists(self.work_dir+fname) and self.cache  :
             return  self.work_dir+fname
         call('wget --quiet --tries=1 --read-timeout=90 -O %s --referer=%s %s' % (self.work_dir+fname, link, link) , shell=True)
         if os.path.exists(self.work_dir+fname):
             return  self.work_dir+fname
         else:
-            return None    
-            
+            return None
+
 class Source(Helpers) :
-    def __init__(self,filename=None):
-        Helpers.__init__(self)
+    def __init__(self,filename=None, cache=False):
+        Helpers.__init__(self,cache)
         self.filename = filename
         self.downloaded = False
         self.URL = None
-            
+
     def get_source(self, URL):
         self.URL = URL
         self.filename = self._get_file(URL)
         if self.filename and os.path.exists(self.filename):
             self.downloaded = True
-               
+
     def check_source_md5(self):
         if self.downloaded:
             self.log.info("Checking source md5 : %s" % self.filename)
             sum,file = self._md5sum(self.filename)
         else:
-            sum = "upstream source not found"      
+            sum = "upstream source not found"
         return sum
 
 
 
 class SRPMFile(Helpers) :
-    def __init__(self,filename):
-        Helpers.__init__(self)
+    def __init__(self,filename, cache=False):
+        Helpers.__init__(self, cache)
         self.filename = filename
         self.is_installed = False
         self.is_build = False
         self.build_failed = False
         self._rpm_files = None
-        
+
     def install(self, wipe = True):
         if wipe:
             call('rpmdev-wipetree &>/dev/null', shell=True)
         call('rpm -ivh %s &>/dev/null' % self.filename, shell=True)
         self.is_installed = True
-    
+
     def build(self, force = False):
         if self.build_failed:
             return -1
-        return self.mockbuild(force)  
-    
+        return self.mockbuild(force)
+
     def mockbuild(self, force = False):
-        if not force and self.is_build:
+        if not force and (self.is_build or self.cache):
             return 0
         self.log.info("Building %s using mock" % self.filename )
         rc = call('mock -r fedora-rawhide-i386  --rebuild %s' % self.filename, shell = True)
@@ -149,22 +150,16 @@ class SRPMFile(Helpers) :
         mock_dir = '/var/lib/mock/fedora-rawhide-i386/result'
         return mock_dir
 
-    def localbuild(self, force = False):
-        if not force and self.is_build:
-            return 0
-        call('rpmdev-wipetree &>/dev/null',shell = True)
-        call('sudo yum-builddep -y %s &>yum.log' % self.filename, shell = True)
-        rc = call('rpmbuild --rebuild %s &>build.log' % self.filename, shell = True)
-        if rc == 0:
-            self.is_build = True
-        return rc
-        
+
     def check_source_md5(self, filename):
         if self.is_installed:
             src_files = glob.glob(os.path.expanduser('~/rpmbuild/SOURCES/*'))
             if src_files:
                 for name in src_files:
-                    sum,file = self._md5sum(name)    
+                    if filename and os.path.basename(filename) != os.path.basename(name):
+                        continue
+                    self.log.debug("Checking md5 for %s" % name)
+                    sum,file = self._md5sum(name)
                     return sum
             else:
                 print('no sources found in install SRPM')
@@ -172,7 +167,7 @@ class SRPMFile(Helpers) :
         else:
             print "SRPM is not installed"
             return "ERROR"
-            
+
     def _check_errors(self, out):
         problems = re.compile('(\d+)\serrors\,\s(\d+)\swarnings')
         lines = out.split('\n')[:-1]
@@ -189,12 +184,12 @@ class SRPMFile(Helpers) :
         sep = "%s\n" % (80*"=")
         result = "\nrpmlint %s\n" % os.path.basename(self.filename)
         result += sep
-        out = self._run_cmd(cmd)   
-        no_errors = self._check_errors(out)        
-        result += out 
+        out = self._run_cmd(cmd)
+        no_errors = self._check_errors(out)
+        result += out
         result += sep
         return no_errors,result
-        
+
     def rpmlint_rpms(self):
         sep = "%s\n" % (80*"=")
         result = ''
@@ -205,14 +200,14 @@ class SRPMFile(Helpers) :
             cmd = 'rpmlint %s' % rpm
             result += "\nrpmlint %s\n" % os.path.basename(rpm)
             result += sep
-            rc = self._run_cmd(cmd)           
+            rc = self._run_cmd(cmd)
             no_errors = self._check_errors(rc)
             if not no_errors:
-                success = False      
+                success = False
             result += rc
             result += sep
         return success, result
-        
+
     def get_files_rpms(self):
         if self._rpm_files:
             return self._rpm_files
@@ -223,11 +218,11 @@ class SRPMFile(Helpers) :
             if rpm.endswith('.src.rpm'):
                 continue
             cmd = 'rpm -qpl %s' % rpm
-            rc = self._run_cmd(cmd)  
-            rpm_files[os.path.basename(rpm)] = rc.split('\n')         
+            rc = self._run_cmd(cmd)
+            rpm_files[os.path.basename(rpm)] = rc.split('\n')
         self._rpm_files = rpm_files
         return rpm_files
-        
+
 class SpecFile:
     '''
     Wrapper classes for getting information from a .spec file
@@ -242,16 +237,16 @@ class SpecFile:
              self.lines = f.readlines()
         finally:
              f and f.close()
-        
+
         ts = rpm.TransactionSet()
         self.spec_obj = ts.parseSpec(self.filename)
-        
+
         self.name = self.get_from_spec('name')
         self.version = self.get_from_spec('version')
         self.release = self.get_from_spec('release')
         self.process_sections()
-        
-        
+
+
     def get_sources(self):
         ''' Get SourceX/PatchX lines with macros resolved '''
         result = {}
@@ -265,35 +260,35 @@ class SpecFile:
             tag = '%s%s' % (srctype, num)
             result[tag] = url
         return result
-        
+
     def get_macros(self):
         for lin in self.lines:
             res = MACROS.search(lin)
             if res:
                 print "macro: %s = %s" %(res.group(2),res.group(3))
-            
-              
+
+
     def process_sections(self):
         section_lines = []
         cur_sec = 'main'
         for l in self.lines:
             # check for release
-            line = l[:-1] 
+            line = l[:-1]
             res = SPEC_SECTIONS.search(line)
             if res:
                 this_sec = line
                 if cur_sec != this_sec: # This is a new section, store lines in old one
-                    self._section_list.append(cur_sec)    
+                    self._section_list.append(cur_sec)
                     self._sections[cur_sec] = section_lines
                     section_lines = []
                     cur_sec = this_sec
             else:
                 if line and line.strip() != '':
-                    section_lines.append(line) 
+                    section_lines.append(line)
         self._sections[cur_sec] = section_lines
         cur_sec = this_sec
         #self.dump_sections()
-        
+
     def dump_sections(self, section = None):
         if section:
             sections = self.get_section(section)
@@ -305,7 +300,7 @@ class SpecFile:
             print "-->", sec
             for line in sections[sec]:
                 print "      %s" % line
-             
+
     def get_from_spec(self, macro):
         ''' Use rpm for a value for a given tag (macro is resolved)'''
         qf = '%{' + macro.upper() + "}\n" # The RPM tag to search for
@@ -325,7 +320,7 @@ class SpecFile:
             if rc == '(none)':
                 rc = None
             return rc
-        else: 
+        else:
             if 'unknown tag' in error: # rpm dont know the tag, so it is not found
                 return None
             value = self.find_tag(macro)
@@ -334,7 +329,7 @@ class SpecFile:
             else:
                 print "error : [%s]" % ( error)
                 return False
-            
+
     def get_rpm_eval(self,filter):
         lines = "\n".join(self.get_section('main')['main'])
         #print lines
@@ -348,7 +343,7 @@ class SpecFile:
             print "OSError : %s" % str(e)
             return False
         return output
-             
+
     def find_tag(self, tag):
         '''
         find at given tag in the spec file.
@@ -364,10 +359,10 @@ class SpecFile:
                 value = res.group(1)
                 break
         return value
-    
+
     def get_section(self,section):
-        ''' 
-        get the lines in a section in the spec file 
+        '''
+        get the lines in a section in the spec file
         ex. %install, %clean etc
         '''
         results = {}

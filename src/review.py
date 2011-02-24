@@ -32,7 +32,7 @@ from reviewtools import get_logger, do_logger_setup
 from urlparse import urlparse
 
 class ReviewHelper:
-    
+
     def __init__(self):
         self.bug = None
         self.checks = None
@@ -43,27 +43,27 @@ class ReviewHelper:
 
     def get_args(self):
         parser = argparse.ArgumentParser(description='Review a Fedora Package')
-        parser.add_argument('-b','--bug', metavar='[bug]', 
+        parser.add_argument('-b','--bug', metavar='[bug]',
                    help='the bug number contain the package review')
         parser.add_argument('-w','--workdir', default='~/tmp/reviewhelper/', metavar='[dir]',
-                            help='Work directory (default = ~/tmp/reviewhelper/')       
+                            help='Work directory (default = ~/tmp/reviewhelper/')
         parser.add_argument('--assign', action='store_true',
-                            help = 'Assign the bug and set review flags')        
-        parser.add_argument('--no-build', action='store_true', dest='nobuild',
-                            help = 'dont build src.rpm')        
-        parser.add_argument('-u','--user', metavar='[userid]', 
+                            help = 'Assign the bug and set review flags')
+        parser.add_argument('--cache', action='store_true', dest='cache',
+                            help = 'dont redownload files from bugzilla and dont rebuild')
+        parser.add_argument('-u','--user', metavar='[userid]',
                    help='The Fedora Bugzilla userid')
-        parser.add_argument('-p','--password', metavar='[password]', 
+        parser.add_argument('-p','--password', metavar='[password]',
                    help='The Fedora Bugzilla password')
         parser.add_argument('-v','--verbose',  action='store_true',
                             help='Show more output')
-        parser.add_argument('--no-report',  action='store_true', dest='noreport', 
+        parser.add_argument('--no-report',  action='store_true', dest='noreport',
                             help='Dont make a review report')
-        parser.add_argument('-n','--name', metavar='<name prefix>', 
+        parser.add_argument('-n','--name', metavar='<name prefix>',
                    help='run on local <name prefix>.spec & <name prefix>*.src.rpm located in work dir')
         args = parser.parse_args()
         return args
-    
+
     def download_sources(self):
         self.checks.source.set_work_dir(self.args.workdir)
         sources = self.checks.spec.get_sources()
@@ -74,8 +74,8 @@ class ReviewHelper:
                 if tag.startswith('Source') and urlparse(sources[tag])[0] != '':
                     self.log.debug("Downloading (%s): %s" % (tag,sources[tag]))
                     self.checks.source.get_source(sources[tag])
-        return found 
-    
+        return found
+
     def do_report(self):
         ''' Create a review report'''
         self.log.info('Getting .spec and .srpm Urls from bug report : %s' % self.args.bug)
@@ -86,20 +86,19 @@ class ReviewHelper:
             sys.exit(1)
         self.log.debug("  --> Spec url : %s" % self.bug.spec_url)
         self.log.debug("  --> SRPM url : %s" % self.bug.srpm_url)
-        # get the spec and SRPM file 
-        self.log.info('Downloading .spec and .srpm files')
+        # get the spec and SRPM file
         rc = self.bug.download_files()
         if not rc:
             self.log.info('Cant download .spec and .srpm')
             sys.exit(1)
         self.log.debug("  --> Spec file : %s" % self.bug.spec_file)
         self.log.debug("  --> SRPM file : %s" % self.bug.srpm_file)
-        self.checks = Checks(self.bug.spec_file, self.bug.srpm_file)
+        self.checks = Checks(self.bug.spec_file, self.bug.srpm_file, cache=self.args.cache)
         self.outfile = "%s/%s-review.txt" % (self.bug.work_dir, self.checks.spec.name)
         output = open(self.outfile,"w")
         # get upstream sources
         rc = self.download_sources()
-        if self.args.nobuild:
+        if self.args.cache:
             self.checks.srpm.is_build = True
         if not rc:
             self.log.info('Cant download upstream sources')
@@ -111,7 +110,7 @@ class ReviewHelper:
 
     def show_results(self):
         if self.outfile and self.checks.spec.filename:
-            Popen(["/usr/bin/gedit", self.outfile, self.checks.spec.filename])        
+            Popen(["/usr/bin/gedit", self.outfile, self.checks.spec.filename])
 
     def do_report_local(self):
         ''' Create a review report on already downloaded .spec & .src.rpm'''
@@ -141,8 +140,8 @@ class ReviewHelper:
                 self.log.error('Cant find : %s ' % spec_filter)
             if not files_srpm:
                 self.log.error('Cant find : %s ' % srpm_filter)
-            
-            
+
+
     def do_assign(self):
         ''' assign bug'''
         if self.args.user and self.args.password:
@@ -150,7 +149,7 @@ class ReviewHelper:
             self.bug.assign_bug()
         else:
             self.log.info('You need to add bugzilla userid/password (-u/-p) to assign bug')
-                
+
     def run(self):
         self.verbose = self.args.verbose
         if self.verbose:
@@ -161,14 +160,14 @@ class ReviewHelper:
             # get the bug
             self.log.info("Proccessing review bug : %s" % self.args.bug )
             if self.args.user and self.args.password:
-                self.bug = ReviewBug(self.args.bug, user = self.args.user, password= self.args.password)
+                self.bug = ReviewBug(self.args.bug, user = self.args.user, password= self.args.password, cache=self.args.cache)
             else:
-                self.bug = ReviewBug(self.args.bug)
+                self.bug = ReviewBug(self.args.bug, cache=self.args.cache)
             self.bug.set_work_dir(self.args.workdir)
             self.log.debug("  --> Working dir : %s" % self.bug.work_dir)
             if self.args.assign:
                 self.do_assign()
-            if not self.args.noreport:                        
+            if not self.args.noreport:
                 self.do_report()
         elif self.args.name:
             self.do_report_local()

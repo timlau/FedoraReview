@@ -44,10 +44,10 @@ class CheckBase(Helpers):
         self.result = None
         self.output_extra = None
         self.log = get_logger()
-    
+
     def run(self):
         raise NotImplementedError()
-    
+
     def set_passed(self, result, output_extra = None):
         '''
         Set if the test is passed, failed or N/A
@@ -61,8 +61,8 @@ class CheckBase(Helpers):
             self.state = 'fail'
         if output_extra:
             self.output_extra = output_extra
-            
-    
+
+
     def get_result(self):
         '''
         Get the test report result for this test
@@ -72,42 +72,42 @@ class CheckBase(Helpers):
             for line in self.output_extra.split('\n'):
                 msg += '\n        %s' % line
         return msg
-    
+
     def is_applicable(self):
         '''
-        check if this test is applicable 
+        check if this test is applicable
         overload in child class if needed
         '''
         return True
-        
-        
+
+
     def has_files(self, pattern):
         ''' Check if rpms has file matching a pattern'''
         rpm_files = self.srpm.get_files_rpms()
         for rpm in rpm_files:
             for fn in rpm_files[rpm]:
-                if fnmatch.fnmatch(fn, pattern): 
+                if fnmatch.fnmatch(fn, pattern):
                     print fn, pattern
                     return True
         return False
-        
+
     def get_files_by_pattern(self, pattern):
         result = {}
         rpm_files = self.srpm.get_files_rpms()
         for rpm in rpm_files:
             result[rpm] = []
             for fn in rpm_files[rpm]:
-                if fnmatch.fnmatch(fn, pattern): 
+                if fnmatch.fnmatch(fn, pattern):
                     result[rpm].append(fn)
         return result
-    
+
 class CheckName(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging/NamingGuidelines'
         self.text = 'Package is named according to the Package Naming Guidelines.'
         self.automatic = True
-        
+
     def run(self):
         allowed_chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._+"
         output = ''
@@ -122,14 +122,14 @@ class CheckName(CheckBase):
             self.set_passed(passed)
         else:
             self.set_passed(passed, '%s\n%s' % (self.spec.name,output))
-            
+
 class CheckBuildroot(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging/NamingGuidelines'
         self.text = 'Buildroot is correct (EPEL5 & Fedora < 10)'
         self.automatic = True
-        
+
     def run(self):
         br = self.spec.find_tag('BuildRoot')
         legal_buildroots = [
@@ -146,14 +146,14 @@ class CheckBuildroot(CheckBase):
         Buildroot tag is ignored for Fedora > 10, but is needed for EPEL5
         '''
         return self.spec.find_tag('BuildRoot') != None
-               
+
 
 class CheckSpecName(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
         self.text = 'Spec file name must match the spec package %{name}, in the format %{name}.spec.'
         self.automatic = True
-        
+
     def run(self):
         spec_name = '%s.spec' % self.spec.name
         if os.path.basename(self.spec.filename) == spec_name:
@@ -167,7 +167,7 @@ class CheckIllegalSpecTags(CheckBase):
         CheckBase.__init__(self, base)
         self.text = 'Spec file lacks Packager, Vendor, PreReq tags.'
         self.automatic = True
-        
+
     def run(self):
         passed = True
         output = ''
@@ -186,7 +186,7 @@ class CheckClean(CheckBase):
         CheckBase.__init__(self, base)
         self.text = 'Package has a %clean section, which contains rm -rf %{buildroot} (or $RPM_BUILD_ROOT).(EPEL6 & Fedora < 13)'
         self.automatic = True
-        
+
     def run(self):
         passed = False
         sec_clean = self.spec.get_section('%clean')
@@ -199,13 +199,13 @@ class CheckClean(CheckBase):
                         passed = True
                         break
         self.set_passed(passed)
-            
+
 class CheckInstall(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
         self.text = 'Package run rm -rf %{buildroot} (or $RPM_BUILD_ROOT) and the beginning of %install.'
         self.automatic = True
-        
+
     def run(self):
         passed = False
         sec_clean = self.spec.get_section('%install')
@@ -224,7 +224,7 @@ class CheckDefattr(CheckBase):
         CheckBase.__init__(self, base)
         self.text = 'Each %files section contains %defattr'
         self.automatic = True
-        
+
     def run(self):
         passed = True
         output = ''
@@ -246,13 +246,13 @@ class CheckSourceMD5(CheckBase):
         CheckBase.__init__(self, base)
         self.text = 'Sources used to build the package matches the upstream source, as provided in the spec URL.'
         self.automatic = True
-        
+
     def run(self):
         self.srpm.install()
         local = self.base.srpm.check_source_md5(self.base.source.filename)
         upstream = self.base.source.check_source_md5()
         output = "MD5SUM this package     : %s\n" % local
-        output += "MD5SUM upstream package : %s" % upstream     
+        output += "MD5SUM upstream package : %s" % upstream
         if local == upstream:
             self.set_passed(True, output)
         else:
@@ -264,9 +264,9 @@ class CheckBuild(CheckBase):
         CheckBase.__init__(self, base)
         self.text = 'Package successfully compiles and builds into binary rpms on at least one supported architecture.'
         self.automatic = True
-        
+
     def run(self):
-        rc = self.srpm.build() 
+        rc = self.srpm.build()
         if rc == 0:
             self.set_passed(True)
         else:
@@ -277,7 +277,7 @@ class CheckRpmLint(CheckBase):
         CheckBase.__init__(self, base)
         self.text = 'Rpmlint output is silent.'
         self.automatic = True
-        
+
     def run(self):
         failed = False
         no_errors, rc = self.srpm.rpmlint_rpms()
@@ -285,10 +285,10 @@ class CheckRpmLint(CheckBase):
             failed = True
         self.output_extra = rc
         if not failed:
-            self.set_passed(True)   
-        else:     
-            self.set_passed(False)   
-            
+            self.set_passed(True)
+        else:
+            self.set_passed(False)
+
 
 class CheckXNum0001(CheckBase):
     def __init__(self, base):
@@ -357,7 +357,7 @@ class CheckMakeinstall(CheckBase):
         self.text = "Package use %makeinstall only when make install DESTDIR=... doesn't work."
         self.automatic = True
         self.type = 'MUST'
-        
+
     def run(self):
         regex = re.compile(r'^(%makeinstall.*)')
         res = self.spec.find(regex)
@@ -468,7 +468,7 @@ class CheckLDConfig(CheckBase):
 
     def is_applicable(self):
         '''
-        check if this test is applicable 
+        check if this test is applicable
         '''
         return self.has_files('/usr/lib*/*.so.*') or self.has_files('/lib*/*.so.*')
 
@@ -553,7 +553,7 @@ class CheckXNum0025(CheckBase):
 
     def is_applicable(self):
         '''
-        check if this test is applicable 
+        check if this test is applicable
         '''
         return self.has_files('*.desktop')
 
@@ -629,7 +629,7 @@ class CheckHeaderFiles(CheckBase):
 
     def is_applicable(self):
         '''
-        check if this test is applicable 
+        check if this test is applicable
         '''
         return self.has_files('*.h')
 
@@ -653,10 +653,10 @@ class CheckStaticLibs(CheckBase):
         self.text = 'Static libraries in -static subpackage, if present.'
         self.automatic = False
         self.type = 'MUST'
-        
+
     def is_applicable(self):
         '''
-        check if this test is applicable 
+        check if this test is applicable
         '''
         return self.has_files('*.a')
 
@@ -670,7 +670,7 @@ class CheckStaticLibs(CheckBase):
                     passed = False
                     extra += "%s : %s\n" % (rpm, fn)
         self.set_passed(passed, extra)
-        
+
 
 
 
@@ -694,7 +694,7 @@ class CheckReqPkgConfig(CheckBase):
 
     def is_applicable(self):
         '''
-        check if this test is applicable 
+        check if this test is applicable
         '''
         return self.has_files('*.pc')
 
@@ -708,8 +708,8 @@ class CheckReqPkgConfig(CheckBase):
             if res:
                 found = True
         self.set_passed(found)
-        
-        
+
+
 
 
 class CheckSoFiles(CheckBase):
@@ -722,7 +722,7 @@ class CheckSoFiles(CheckBase):
 
     def is_applicable(self):
         '''
-        check if this test is applicable 
+        check if this test is applicable
         '''
         return self.has_files('*.so')
 
@@ -939,17 +939,17 @@ class CheckSourcePatchPrefix(CheckBase):
         extra = ""
         if result:
             for res in result:
-                value = res.group(2)
+                value = os.path.basename(res.group(2))
                 if value.startswith('%{name}') or value.startswith('%{'):
                     continue
                 passed = False
-                extra += "%s\n" % res.string[:-1]
+                extra += "%s (%s)\n" % (res.string[:-1], value)
             self.set_passed(False, extra)
         else:
             passed = False
             extra = "No SourceX/PatchX tags found"
         self.set_passed(passed, extra)
-        
+
 
 
 class CheckXNum0057(CheckBase):
@@ -991,7 +991,7 @@ class CheckBuildInMock(CheckBase):
         self.type = 'SHOULD'
 
     def run(self):
-        rc = self.srpm.build() 
+        rc = self.srpm.build()
         if rc == 0:
             self.set_passed(True)
         else:
@@ -1060,7 +1060,7 @@ class CheckPkgConfigFiles(CheckBase):
 
     def is_applicable(self):
         '''
-        check if this test is applicable 
+        check if this test is applicable
         '''
         return self.has_files('*.pc')
 
@@ -1125,7 +1125,7 @@ class CheckParallelMake(CheckBase):
 
     def is_applicable(self):
         '''
-        check if this test is applicable 
+        check if this test is applicable
         '''
         regex = re.compile(r"^make")
         lines=self.spec.get_section('build')
@@ -1136,7 +1136,7 @@ class CheckParallelMake(CheckBase):
                 found = True
         self.set_passed(found)
         return found
-                
+
     def run(self):
         regex = re.compile(r"^make*.%{?_smp_mflags}")
         lines=self.spec.get_section('build')

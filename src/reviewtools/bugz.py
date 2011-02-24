@@ -25,7 +25,8 @@ BZ_URL='https://bugzilla.redhat.com/xmlrpc.cgi'
 from reviewtools import Helpers, get_logger
 
 class ReviewBug(Helpers):
-    def __init__(self,bug,user=None,password=None):
+    def __init__(self,bug,user=None,password=None, cache=False):
+        Helpers.__init__(self,cache)
         self.bug_num = bug
         self.spec_url = None
         self.srpm_url = None
@@ -69,10 +70,10 @@ class ReviewBug(Helpers):
             self.log.info('not SRPM file URL found in bug #%s' % self.bug_num)
             found = False
         return found
-            
-            
 
-    def assign_bug(self):    
+
+
+    def assign_bug(self):
         if self.is_login:
             self.bug.setstatus('ASSIGNED')
             self.bug.setassignee(assigned_to=self.user)
@@ -83,7 +84,7 @@ class ReviewBug(Helpers):
         else:
             self.log.info("You need to login before assigning a bug")
 
-    def add_comment(self,comment):    
+    def add_comment(self,comment):
         if self.is_login:
             self.bug.addcomment(comment)
         else:
@@ -94,8 +95,10 @@ class ReviewBug(Helpers):
         lines = fd.readlines()
         fd.close
         self.add_comment("".join(lines))
-                            
+
     def download_files(self):
+        if not self.cache:
+            self.log.info('Downloading .spec and .srpm files')
         found = True
         if not self.spec_url or not self.srpm_url:
             found = self.find_urls()
@@ -106,4 +109,4 @@ class ReviewBug(Helpers):
                 return True
         return False
 
-    
+

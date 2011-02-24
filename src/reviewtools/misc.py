@@ -36,17 +36,21 @@ x = Check
 
 """
 
+from reviewtools import get_logger
+
 
 class Checks:
-    def __init__(self, spec_file, srpm_file, src_file=None, src_url=None):
+    def __init__(self, spec_file, srpm_file, src_file=None, src_url=None, cache=False):
         self.checks = {'MUST' : [], 'SHOULD' : []}
+        self.cache = cache
         self.spec = SpecFile(spec_file)
-        self.source = Source()
+        self.source = Source(cache=cache)
+        self.log = get_logger()
         if src_file:
             self.source.filename=src_file
         elif src_url:
             self.source.get_source(src_url)
-        self.srpm = SRPMFile(srpm_file)
+        self.srpm = SRPMFile(srpm_file, cache=cache)
         self.add_check_classes()
 
     def add_check_classes(self):
@@ -60,25 +64,27 @@ class Checks:
                 base_cls = obj.__bases__
                 if base_cls and base_cls[0].__name__ == 'CheckBase':
                     self.add(obj)
-        
+
     def add(self, class_name):
         cls = class_name(self)
         typ = cls.type
-        self.checks[typ].append(cls) 
-        
+        self.checks[typ].append(cls)
+
     def show_file(self, filename, output=sys.stdout):
         fd = open(filename, "r")
         lines =  fd.readlines()
         fd.close()
         for line in lines:
             output.write(line)
-            
+
     def run_checks(self, output=sys.stdout):
         output.write(HEADER)
+        failed = []
         for typ in ['MUST','SHOULD']:
             # Automatic Checks
             checks = self.checks[typ]
             for test in checks:
+                self.log.debug('----> Running check : %s' % test.__class__)
                 if test.is_applicable():
                     if test.automatic:
                         test.run()
@@ -86,7 +92,12 @@ class Checks:
                     test.state = 'na'
                 result = test.get_result()
                 if result:
+                    if result.startswith('[!] : MUST'):
+                        failed.append(result)
                     output.write(result)
                     output.write('\n')
-                    
+        output.write("\nIssues:\n")
+        for fail in failed:
+            output.write(fail)
+            output.write('\n')
 
