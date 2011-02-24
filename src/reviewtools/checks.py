@@ -415,6 +415,14 @@ class CheckXNum0012(CheckBase):
         self.automatic = False
         self.type = 'MUST'
 
+    def is_applicable(self):
+        '''Check if subpackages exists'''
+        sections = self.spec.get_section("%package")
+        print sections
+        if len(sections) == 0:
+            return False
+        else:
+            return True
 
 
 class CheckXNum0013(CheckBase):
@@ -542,7 +550,7 @@ class CheckXNum0022(CheckBase):
 
 
 
-class CheckXNum0023(CheckBase):
+class CheckNoConfigInUsr(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
@@ -550,15 +558,60 @@ class CheckXNum0023(CheckBase):
         self.automatic = False
         self.type = 'MUST'
 
+    def is_applicable(self):
+        sections = self.spec.get_section('%files')
+        print sections
+        for section in sections:
+            for line in sections[section]:
+                if line.startswith('%config'):
+                    return True
+        return False
 
+    def run(self):
+        passed = True
+        extra = ""
+        sections = self.spec.get_section('%files')
+        print sections
+        for section in sections:
+            for line in sections[section]:
+                if line.startswith('%config'):
+                    fn = line.split(' ')[1]
+                    print fn
+                    if fn.startswith('%{_datadir}'):
+                        passed = False
+                        extra += line
 
-class CheckXNum0024(CheckBase):
+        self.set_passed(passed,extra)
+
+class CheckConfigNoReplace(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
         self.text = '%config files are marked noreplace or the reason is justified.'
-        self.automatic = False
+        self.automatic = True
         self.type = 'MUST'
+
+    def is_applicable(self):
+        sections = self.spec.get_section('%files')
+        print sections
+        for section in sections:
+            for line in sections[section]:
+                if line.startswith('%config'):
+                    return True
+        return False
+
+    def run(self):
+        passed = True
+        extra = ""
+        sections = self.spec.get_section('%files')
+        print sections
+        for section in sections:
+            for line in sections[section]:
+                if line.startswith('%config'):
+                    if not line.startswith('%config(noreplace)'):
+                        passed = False
+                        extra += line
+        self.set_passed(passed,extra)
 
 
 
@@ -761,13 +814,26 @@ class CheckSoFiles(CheckBase):
         self.set_passed(passed, extra)
 
 
-class CheckXNum0038(CheckBase):
+class CheckFullVerReqSub(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
         self.text = 'Fully versioned dependency in subpackages, if present.'
-        self.automatic = False
+        self.automatic = True
         self.type = 'MUST'
+
+    def is_applicable(self):
+        '''Check if subpackages exists'''
+        sections = self.spec.get_section("%package")
+        print sections
+        if len(sections) == 0:
+            return False
+        else:
+            return True
+
+    def run(self):
+        sections = self.spec.get_section("%package")
+
 
 
 
@@ -992,18 +1058,6 @@ class CheckXNum0058(CheckBase):
         self.text = '%check is present and all tests pass.'
         self.automatic = False
         self.type = 'SHOULD'
-
-
-
-class CheckXNum0059(CheckBase):
-    def __init__(self, base):
-        CheckBase.__init__(self, base)
-        self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
-        self.text = 'Usually, subpackages other than devel should require the base package using a fully versioned dependency.'
-        self.automatic = False
-        self.type = 'SHOULD'
-
-
 
 class CheckBuildInMock(CheckBase):
     def __init__(self, base):
