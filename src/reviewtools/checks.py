@@ -375,6 +375,11 @@ class CheckXNum0008(CheckBase):
         self.automatic = False
         self.type = 'MUST'
 
+    def is_applicable(self):
+        return self.has_files("/usr/share/locale/*/LC_MESSAGES/*.mo")
+
+    def run(self):
+
 
 
 class CheckXNum0009(CheckBase):
@@ -418,7 +423,6 @@ class CheckXNum0012(CheckBase):
     def is_applicable(self):
         '''Check if subpackages exists'''
         sections = self.spec.get_section("%package")
-        print sections
         if len(sections) == 0:
             return False
         else:
@@ -560,7 +564,6 @@ class CheckNoConfigInUsr(CheckBase):
 
     def is_applicable(self):
         sections = self.spec.get_section('%files')
-        print sections
         for section in sections:
             for line in sections[section]:
                 if line.startswith('%config'):
@@ -571,12 +574,10 @@ class CheckNoConfigInUsr(CheckBase):
         passed = True
         extra = ""
         sections = self.spec.get_section('%files')
-        print sections
         for section in sections:
             for line in sections[section]:
                 if line.startswith('%config'):
                     fn = line.split(' ')[1]
-                    print fn
                     if fn.startswith('%{_datadir}'):
                         passed = False
                         extra += line
@@ -593,7 +594,6 @@ class CheckConfigNoReplace(CheckBase):
 
     def is_applicable(self):
         sections = self.spec.get_section('%files')
-        print sections
         for section in sections:
             for line in sections[section]:
                 if line.startswith('%config'):
@@ -604,7 +604,6 @@ class CheckConfigNoReplace(CheckBase):
         passed = True
         extra = ""
         sections = self.spec.get_section('%files')
-        print sections
         for section in sections:
             for line in sections[section]:
                 if line.startswith('%config'):
@@ -825,14 +824,28 @@ class CheckFullVerReqSub(CheckBase):
     def is_applicable(self):
         '''Check if subpackages exists'''
         sections = self.spec.get_section("%package")
-        print sections
         if len(sections) == 0:
             return False
         else:
             return True
 
     def run(self):
+        regex = re.compile(r'Requires:\s*%{name}\s*=\s*%{version}-%{release}')
         sections = self.spec.get_section("%package")
+        extra = ""
+        errors = False
+        for section in sections:
+            passed = False
+            for line in sections[section]:
+                if regex.search(line):
+                    passed = True
+            if not passed:
+                extra += "Missing : Requires: \%{name} = \%{version}-\%{release} in %s" % section
+                errors = False
+        if errors:
+            self.set_passed(False,extra)
+        else:
+            self.set_passed(True)
 
 
 
