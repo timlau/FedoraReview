@@ -67,7 +67,7 @@ class ReviewHelper:
         return args
 
     def download_sources(self):
-        self.checks.source.set_work_dir(self.args.workdir)
+        self.checks.source.set_work_dir('%s/%s' % (self.args.workdir, self.args.bug))
         sources = self.checks.spec.get_sources()
         found = False
         if sources:
@@ -116,7 +116,7 @@ class ReviewHelper:
 
     def do_report_local(self):
         ''' Create a review report on already downloaded .spec & .src.rpm'''
-        work_dir = os.path.abspath(os.path.expanduser(self.args.workdir))
+        work_dir = '%s/%s' % (os.path.abspath(os.path.expanduser(self.args.workdir)), self.args.bug)
         spec_filter = '%s/%s*.spec' % (work_dir, self.args.name)
         srpm_filter = '%s/%s*.src.rpm' % (work_dir, self.args.name)
         files_spec = glob.glob(spec_filter)
@@ -165,7 +165,7 @@ class ReviewHelper:
                 self.bug = ReviewBug(self.args.bug, user = self.args.user, password= self.args.password, cache=self.args.cache)
             else:
                 self.bug = ReviewBug(self.args.bug, cache=self.args.cache)
-            self.bug.set_work_dir(self.args.workdir)
+            self.bug.set_work_dir('%s/%s' % (self.args.workdir, self.args.bug))
             self.log.debug("  --> Working dir : %s" % self.bug.work_dir)
             if self.args.assign:
                 self.do_assign()
