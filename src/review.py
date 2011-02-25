@@ -61,6 +61,8 @@ class ReviewHelper:
                             help='Dont make a review report')
         parser.add_argument('-n','--name', metavar='<name prefix>',
                    help='run on local <name prefix>.spec & <name prefix>*.src.rpm located in work dir')
+        parser.add_argument('-D','--dist', metavar='<distribution>', default = 'RAWHIDE',
+                   help='Run check of a given distribution (F13,F14,F15,RAWHIDE,EPEL5 & EPEL6)')
         args = parser.parse_args()
         return args
 
@@ -93,7 +95,7 @@ class ReviewHelper:
             sys.exit(1)
         self.log.debug("  --> Spec file : %s" % self.bug.spec_file)
         self.log.debug("  --> SRPM file : %s" % self.bug.srpm_file)
-        self.checks = Checks(self.bug.spec_file, self.bug.srpm_file, cache=self.args.cache)
+        self.checks = Checks(self.args, self.bug.spec_file, self.bug.srpm_file, cache=self.args.cache)
         self.outfile = "%s/%s-review.txt" % (self.bug.work_dir, self.checks.spec.name)
         output = open(self.outfile,"w")
         # get upstream sources

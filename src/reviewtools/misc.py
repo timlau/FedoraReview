@@ -40,8 +40,9 @@ from reviewtools import get_logger
 
 
 class Checks:
-    def __init__(self, spec_file, srpm_file, src_file=None, src_url=None, cache=False):
+    def __init__(self, args, spec_file, srpm_file, src_file=None, src_url=None, cache=False):
         self.checks = {'MUST' : [], 'SHOULD' : []}
+        self.args = args # Command line arguments & options
         self.cache = cache
         self.spec = SpecFile(spec_file)
         self.source = Source(cache=cache)
@@ -80,11 +81,15 @@ class Checks:
     def run_checks(self, output=sys.stdout):
         output.write(HEADER)
         failed = []
+        self.log.info("Running check for : %s" % self.args.dist)
         for typ in ['MUST','SHOULD']:
             # Automatic Checks
             checks = self.checks[typ]
             for test in checks:
-                self.log.debug('----> Running check : %s' % test.__class__)
+                self.log.debug('----> Running check : %s ' % (test.__class__))
+                self.log.debug('      Distributions : %s ' % (",".join(test.distribution)))
+                if not self.args.dist in test.distribution: # skip test not for the selected distro
+                    continue
                 if test.is_applicable():
                     if test.automatic:
                         test.run()

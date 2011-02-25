@@ -1072,14 +1072,13 @@ class CheckUsefulDebuginfo(CheckBase):
 
 
 
-class CheckPackageGuidelines(CheckBase):
+class CheckRPATH(CheckBase):
     '''
-    MUST: The package must meet the Packaging Guidelines .
-    https://fedoraproject.org/wiki/Packaging:Guidelines
+    http://fedoraproject.org/wiki/Packaging/Guidelines#Beware_of_Rpath
     '''
     def __init__(self, base):
         CheckBase.__init__(self, base)
-        self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
+        self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#Beware_of_Rpath'
         self.text = 'Rpath absent or only used for internal libs.'
         self.automatic = False
         self.type = 'MUST'
