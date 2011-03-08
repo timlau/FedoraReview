@@ -77,7 +77,7 @@ class ReviewBug(Helpers):
         if self.is_login:
             self.bug.setstatus('ASSIGNED')
             self.bug.setassignee(assigned_to=self.user)
-            self.bug.addcomment('I will review this bug')
+            self.bug.addcomment('I will review this package')
             flags = {'fedora-review' : '?'}
             self.bug.updateflags(flags)
             self.bug.addcc([self.user])

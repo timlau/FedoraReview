@@ -44,6 +44,7 @@ class Checks:
         self.checks = {'MUST' : [], 'SHOULD' : []}
         self.args = args # Command line arguments & options
         self.cache = cache
+        self._results = {'PASSED' : [], 'FAILED' : [], 'NA' : [], 'USER' : []}
         self.spec = SpecFile(spec_file)
         self.source = Source(cache=cache)
         self.log = get_logger()
@@ -53,6 +54,9 @@ class Checks:
             self.source.get_source(src_url)
         self.srpm = SRPMFile(srpm_file, cache=cache)
         self.add_check_classes()
+        
+    def reset_results(self):
+        self._results = {'PASSED' : [], 'FAILED' : [], 'NA' : [], 'USER' : []}
 
     def add_check_classes(self):
         """ get all the check classes in the reviewtools.checks and add them
@@ -77,14 +81,34 @@ class Checks:
         fd.close()
         for line in lines:
             output.write(line)
+            
+    def parse_result(self, test):
+        result = test.get_result()
+        if result.startswith('[x]'):
+            self._results['PASSED'].append(result)
+        elif result.startswith('[-]'):
+            self._results['NA'].append(result)
+        elif result.startswith('[!]'):
+            self._results['FAILED'].append(result)
+        elif result.startswith('[ ]'):
+            self._results['USER'].append(result)
+
+    def show_result(self, output):
+        for key in ['PASSED','NA','FAILED','USER']:
+            for line in self._results[key]:
+                output.write(line)
+                output.write('\n')
+                
+        
 
     def run_checks(self, output=sys.stdout):
         output.write(HEADER)
-        failed = []
+        issues = []
         self.log.info("Running check for : %s" % self.args.dist)
         for typ in ['MUST','SHOULD']:
             # Automatic Checks
             checks = self.checks[typ]
+            self.reset_results()
             for test in checks:
                 self.log.debug('----> Running check : %s ' % (test.__class__))
                 self.log.debug('      Distributions : %s ' % (",".join(test.distribution)))
@@ -95,14 +119,14 @@ class Checks:
                         test.run()
                 else:
                     test.state = 'na'
+                self.parse_result(test)
                 result = test.get_result()
                 if result:
                     if result.startswith('[!] : MUST'):
-                        failed.append(result)
-                    output.write(result)
-                    output.write('\n')
+                        issues.append(result)
+            self.show_result(output)
         output.write("\nIssues:\n")
-        for fail in failed:
+        for fail in issues:
             output.write(fail)
             output.write('\n')
 
