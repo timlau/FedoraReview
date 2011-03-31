@@ -25,8 +25,8 @@ BZ_URL='https://bugzilla.redhat.com/xmlrpc.cgi'
 from reviewtools import Helpers, get_logger
 
 class ReviewBug(Helpers):
-    def __init__(self,bug,user=None,password=None, cache=False):
-        Helpers.__init__(self,cache)
+    def __init__(self,bug,user=None,password=None, cache=False, nobuild=False):
+        Helpers.__init__(self,cache, nobuild)
         self.bug_num = bug
         self.spec_url = None
         self.srpm_url = None

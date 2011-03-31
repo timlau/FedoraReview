@@ -42,10 +42,11 @@ LOG_ROOT = 'reviewtools'
 
 class Helpers:
 
-    def __init__(self, cache=False):
+    def __init__(self, cache=False, nobuild=False):
         self.work_dir = 'work/'
         self.log = get_logger()
         self.cache = cache
+        self.nobuild = nobuild
 
     def set_work_dir(self,work_dir):
         work_dir = os.path.abspath(os.path.expanduser(work_dir))
@@ -91,8 +92,8 @@ class Helpers:
             return None
 
 class Source(Helpers) :
-    def __init__(self,filename=None, cache=False):
-        Helpers.__init__(self,cache)
+    def __init__(self,filename=None, cache=False, nobuild=False):
+        Helpers.__init__(self,cache, nobuild)
         self.filename = filename
         self.downloaded = False
         self.URL = None
@@ -114,8 +115,8 @@ class Source(Helpers) :
 
 
 class SRPMFile(Helpers) :
-    def __init__(self,filename, cache=False):
-        Helpers.__init__(self, cache)
+    def __init__(self,filename, cache=False, nobuild=False):
+        Helpers.__init__(self, cache, nobuild)
         self.filename = filename
         self.is_installed = False
         self.is_build = False
@@ -134,7 +135,8 @@ class SRPMFile(Helpers) :
         return self.mockbuild(force)
 
     def mockbuild(self, force = False):
-        if not force and (self.is_build or self.cache):
+        print "MOCKBUILD: ", self.is_build, self.nobuild
+        if not force and (self.is_build or self.nobuild):
             return 0
         self.log.info("Building %s using mock" % self.filename )
         rc = call('mock -r fedora-rawhide-i386  --rebuild %s' % self.filename, shell = True)

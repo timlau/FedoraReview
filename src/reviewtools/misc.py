@@ -40,19 +40,20 @@ from reviewtools import get_logger
 
 
 class Checks:
-    def __init__(self, args, spec_file, srpm_file, src_file=None, src_url=None, cache=False):
+    def __init__(self, args, spec_file, srpm_file, src_file=None, src_url=None, cache=False, nobuild=False):
         self.checks = {'MUST' : [], 'SHOULD' : []}
         self.args = args # Command line arguments & options
         self.cache = cache
+        self.nobuild = nobuild
         self._results = {'PASSED' : [], 'FAILED' : [], 'NA' : [], 'USER' : []}
         self.spec = SpecFile(spec_file)
-        self.source = Source(cache=cache)
+        self.source = Source(cache=cache, nobuild=nobuild)
         self.log = get_logger()
         if src_file:
             self.source.filename=src_file
         elif src_url:
             self.source.get_source(src_url)
-        self.srpm = SRPMFile(srpm_file, cache=cache)
+        self.srpm = SRPMFile(srpm_file, cache=cache, nobuild=nobuild)
         self.add_check_classes()
         
     def reset_results(self):

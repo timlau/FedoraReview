@@ -50,7 +50,9 @@ class ReviewHelper:
         parser.add_argument('--assign', action='store_true',
                             help = 'Assign the bug and set review flags')
         parser.add_argument('--cache', action='store_true', dest='cache',
-                            help = 'dont redownload files from bugzilla and dont rebuild')
+                            help = 'dont redownload files from bugzilla, use the ones in the cache')
+        parser.add_argument('--nobuild', action='store_true', dest='nobuild',
+                            help = 'dont rebuild the srpm, use currently build ones')
         parser.add_argument('-u','--user', metavar='[userid]',
                    help='The Fedora Bugzilla userid')
         parser.add_argument('-p','--password', metavar='[password]',
@@ -95,12 +97,12 @@ class ReviewHelper:
             sys.exit(1)
         self.log.debug("  --> Spec file : %s" % self.bug.spec_file)
         self.log.debug("  --> SRPM file : %s" % self.bug.srpm_file)
-        self.checks = Checks(self.args, self.bug.spec_file, self.bug.srpm_file, cache=self.args.cache)
+        self.checks = Checks(self.args, self.bug.spec_file, self.bug.srpm_file, cache=self.args.cache, nobuild=self.args.nobuild)
         self.outfile = "%s/%s-review.txt" % (self.bug.work_dir, self.checks.spec.name)
         output = open(self.outfile,"w")
         # get upstream sources
         rc = self.download_sources()
-        if self.args.cache:
+        if self.args.nobuild:
             self.checks.srpm.is_build = True
         if not rc:
             self.log.info('Cant download upstream sources')
@@ -164,7 +166,7 @@ class ReviewHelper:
             if self.args.user and self.args.password:
                 self.bug = ReviewBug(self.args.bug, user = self.args.user, password= self.args.password, cache=self.args.cache)
             else:
-                self.bug = ReviewBug(self.args.bug, cache=self.args.cache)
+                self.bug = ReviewBug(self.args.bug, cache=self.args.cache, nobuild=self.args.nobuild)
             self.bug.set_work_dir('%s/%s' % (self.args.workdir, self.args.bug))
             self.log.debug("  --> Working dir : %s" % self.bug.work_dir)
             if self.args.assign:
