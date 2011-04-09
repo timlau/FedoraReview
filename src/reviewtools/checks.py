@@ -1094,7 +1094,7 @@ class CheckNoConflicts(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#Conflicts'
-        self.text = 'Package does not genrate any conflict.'
+        self.text = 'Package does not generates any conflict.'
         self.automatic = False
         self.type = 'MUST'
 

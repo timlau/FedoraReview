@@ -155,7 +155,14 @@ class SRPMFile(Helpers) :
 
     def check_source_md5(self, filename):
         if self.is_installed:
-            src_files = glob.glob(os.path.expanduser('~/rpmbuild/SOURCES/*'))
+            sourcedir= Popen(["rpm", "-E", '%_sourcedir' ], stdout=subprocess.PIPE).stdout.read()[:-1]
+            # replace %{name} by the specname
+            package_name = Popen(["rpm", "-qp", self.filename, '--qf', '%{name}' ], stdout=subprocess.PIPE).stdout.read()
+            sourcedir = sourcedir.replace("%{name}", package_name)
+            sourcedir = sourcedir.replace("%name", package_name)
+
+            src_files = glob.glob( sourcedir + '/*')
+            # src_files = glob.glob(os.path.expanduser('~/rpmbuild/SOURCES/*'))
             if src_files:
                 for name in src_files:
                     if filename and os.path.basename(filename) != os.path.basename(name):
