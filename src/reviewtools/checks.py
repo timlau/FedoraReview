@@ -252,12 +252,14 @@ class CheckDefattr(CheckBase):
     Executables should be set with executable permissions, for example.
     Every %files section must include a %defattr(...) line.
     http://fedoraproject.org/wiki/Packaging/Guidelines#FilePermissions
+    Update: 29-04-2011 This is only for pre rpm 4.4 that this is needed
     '''
     def __init__(self, base):
         CheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#FilePermissions'
         self.text = 'Each %files section contains %defattr'
         self.automatic = True
+        self.distribution = ['EPEL5']
 
     def run(self):
         passed = True
