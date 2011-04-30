@@ -125,7 +125,9 @@ class SRPMFile(Helpers) :
 
     def install(self, wipe = True):
         if wipe:
-            call('rpmdev-wipetree &>/dev/null', shell=True)
+            sourcedir = self.get_source_dir()
+            if sourcedir != "" and sourcedir != "/": # just to be safe
+                call('rm -f %s/*  &>/dev/null' % sourcedir, shell=True)
         call('rpm -ivh %s &>/dev/null' % self.filename, shell=True)
         self.is_installed = True
 
@@ -151,16 +153,18 @@ class SRPMFile(Helpers) :
     def get_mock_dir(self):
         mock_dir = '/var/lib/mock/fedora-rawhide-i386/result'
         return mock_dir
-
+    
+    def get_source_dir(self):
+        sourcedir= Popen(["rpm", "-E", '%_sourcedir' ], stdout=subprocess.PIPE).stdout.read()[:-1]
+        # replace %{name} by the specname
+        package_name = Popen(["rpm", "-qp", self.filename, '--qf', '%{name}' ], stdout=subprocess.PIPE).stdout.read()
+        sourcedir = sourcedir.replace("%{name}", package_name)
+        sourcedir = sourcedir.replace("%name", package_name)
+        return sourcedir
 
     def check_source_md5(self, filename):
         if self.is_installed:
-            sourcedir= Popen(["rpm", "-E", '%_sourcedir' ], stdout=subprocess.PIPE).stdout.read()[:-1]
-            # replace %{name} by the specname
-            package_name = Popen(["rpm", "-qp", self.filename, '--qf', '%{name}' ], stdout=subprocess.PIPE).stdout.read()
-            sourcedir = sourcedir.replace("%{name}", package_name)
-            sourcedir = sourcedir.replace("%name", package_name)
-
+            sourcedir = self.get_source_dir()
             src_files = glob.glob( sourcedir + '/*')
             # src_files = glob.glob(os.path.expanduser('~/rpmbuild/SOURCES/*'))
             if src_files:
