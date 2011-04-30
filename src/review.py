@@ -50,9 +50,9 @@ class ReviewHelper:
         parser.add_argument('--assign', action='store_true',
                             help = 'Assign the bug and set review flags')
         parser.add_argument('--cache', action='store_true', dest='cache',
-                            help = 'dont redownload files from bugzilla, use the ones in the cache')
+                            help = 'do not redownload files from bugzilla, use the ones in the cache')
         parser.add_argument('--nobuild', action='store_true', dest='nobuild',
-                            help = 'dont rebuild the srpm, use currently build ones')
+                            help = 'do not rebuild the srpm, use currently build ones')
         parser.add_argument('-u','--user', metavar='[userid]',
                    help='The Fedora Bugzilla userid')
         parser.add_argument('-p','--password', metavar='[password]',
@@ -60,7 +60,7 @@ class ReviewHelper:
         parser.add_argument('-v','--verbose',  action='store_true',
                             help='Show more output')
         parser.add_argument('--no-report',  action='store_true', dest='noreport',
-                            help='Dont make a review report')
+                            help='Do not make a review report')
         parser.add_argument('-n','--name', metavar='<name prefix>',
                    help='run on local <name prefix>.spec & <name prefix>*.src.rpm located in work dir')
         parser.add_argument('-D','--dist', metavar='<distribution>', default = 'RAWHIDE',
@@ -86,14 +86,14 @@ class ReviewHelper:
         # get urls
         rc = self.bug.find_urls()
         if not rc:
-            self.log.info('Cant find any .spec and .srpm URLs in bugreport')
+            self.log.info('Cannot find any .spec and .srpm URLs in bugreport')
             sys.exit(1)
         self.log.debug("  --> Spec url : %s" % self.bug.spec_url)
         self.log.debug("  --> SRPM url : %s" % self.bug.srpm_url)
         # get the spec and SRPM file
         rc = self.bug.download_files()
         if not rc:
-            self.log.info('Cant download .spec and .srpm')
+            self.log.info('Cannot download .spec and .srpm')
             sys.exit(1)
         self.log.debug("  --> Spec file : %s" % self.bug.spec_file)
         self.log.debug("  --> SRPM file : %s" % self.bug.srpm_file)
@@ -105,7 +105,7 @@ class ReviewHelper:
         if self.args.nobuild:
             self.checks.srpm.is_build = True
         if not rc:
-            self.log.info('Cant download upstream sources')
+            self.log.info('Cannot download upstream sources')
             sys.exit(1)
         self.log.info('Running checks and generate report\n')
         self.checks.run_checks(output=output)
@@ -134,16 +134,16 @@ class ReviewHelper:
             # get upstream sources
             rc = self.download_sources()
             if not rc:
-                self.log.info('Cant download upstream sources')
+                self.log.info('Cannot download upstream sources')
                 sys.exit(1)
             self.log.info('Running checks and generate report\n')
             self.checks.run_checks(output=self.args.output)
             output.close()
         else:
             if not files_spec:
-                self.log.error('Cant find : %s ' % spec_filter)
+                self.log.error('Cannot find : %s ' % spec_filter)
             if not files_srpm:
-                self.log.error('Cant find : %s ' % srpm_filter)
+                self.log.error('Cannot find : %s ' % srpm_filter)
 
 
     def do_assign(self):
@@ -162,7 +162,7 @@ class ReviewHelper:
             do_logger_setup()
         if self.args.bug:
             # get the bug
-            self.log.info("Proccessing review bug : %s" % self.args.bug )
+            self.log.info("Processing review bug : %s" % self.args.bug )
             if self.args.user and self.args.password:
                 self.bug = ReviewBug(self.args.bug, user = self.args.user, password= self.args.password, cache=self.args.cache)
             else:
