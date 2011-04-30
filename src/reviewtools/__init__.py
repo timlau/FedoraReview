@@ -123,7 +123,7 @@ class SRPMFile(Helpers) :
         self.build_failed = False
         self._rpm_files = None
 
-    def install(self, wipe = True):
+    def install(self, wipe = False):
         if wipe:
             sourcedir = self.get_source_dir()
             if sourcedir != "" and sourcedir != "/": # just to be safe
