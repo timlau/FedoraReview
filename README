@@ -1,0 +1,55 @@
+FedoraReview: Tools to helper review packages for inclusion in Fedora
+---------------------------------------------------------------------
+
+This tool automates much of the dirty work when reviewing a package
+for the Fedora Package Collection. 
+
+Like:
+- Downloading SRPM & SPEC from Bugzilla report
+- Download upstream source
+- Check md5sums
+- Do a total review report will both manual & automated checks, ready to
+  complete and paste into the Bugzilla report.
+
+FedoraReview is still under heavy development.
+
+Requirements
+------------
+
+* Python
+* mock
+* python-bugzilla
+* gedit
+
+
+Download
+--------
+Install git and run the command below to clone the source
+
+git clone https://github.com/timlau/FedoraReview
+
+Usage
+-----
+Now switch to the FedoraReview directory and switch to the src/ directory.
+
+./review.py -b <bugzilla report number>
+
+It will download the SPEC & SRPM files from the Bugzilla report and
+build them in mock and run a number of test and generate a report there
+will be opened in gedit along with the spec file, so the stuff no automated
+can be reviewed manually.
+
+You will need to have mock installed and be member of the mock group for
+the build to work.
+
+./review.py --help
+
+Will show you the other options of the tools.
+
+./review.py -b <bugzilla report number> -u <bugzilla user> -p <bugzilla
+password> --assign
+
+This will assign the review to <bugzilla user> and set the review flags in
+the bugzilla report.
+
+FedoraReview is licensed under GPLv2+, for more details check COPYING.
