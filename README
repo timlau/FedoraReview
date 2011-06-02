@@ -21,16 +21,16 @@ Requirements
 * python-bugzilla
 * gedit
 
-
 Download
 --------
-Install git and run the command below to clone the source
+Install git and run the command below to clone the source from github
 
 git clone https://github.com/timlau/FedoraReview
 
 Usage
 -----
-Now switch to the FedoraReview directory and switch to the src/ directory.
+Now switch to the new created FedoraReview directory and switch to the
+src/ directory. Now you can run the tool:
 
 ./review.py -b <bugzilla report number>
 
@@ -40,16 +40,20 @@ will be opened in gedit along with the spec file, so the stuff no automated
 can be reviewed manually.
 
 You will need to have mock installed and be member of the mock group for
-the build to work.
+the build to work. Run as root:
 
-./review.py --help
+usermod -a G mock [your user name] && newgrp mock
 
 Will show you the other options of the tools.
 
-./review.py -b <bugzilla report number> -u <bugzilla user> -p <bugzilla
-password> --assign
+./review.py --help
 
 This will assign the review to <bugzilla user> and set the review flags in
 the bugzilla report.
 
+./review.py -b <bugzilla report number> -u <bugzilla user> -p <bugzilla
+password> --assign
+
+License
+-------
 FedoraReview is licensed under GPLv2+, for more details check COPYING.
