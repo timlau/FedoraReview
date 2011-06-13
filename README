@@ -17,9 +17,10 @@ Requirements
 ------------
 
 * Python
+* rpm & yum
 * mock
 * python-bugzilla
-* gedit
+* gedit (default editor, can be changed in .conf file)
 
 Download
 --------
@@ -53,6 +54,12 @@ the bugzilla report.
 
 ./review.py -b <bugzilla report number> -u <bugzilla user> -p <bugzilla
 password> --assign
+
+At first run a configuration file (~/.config/FedoraReview/settings) will be created, it contains
+default options like
+
+ * editor  : The editor to use for showing the review report & .spec file.
+ * bz_user : The default bugzilla user.
 
 License
 -------

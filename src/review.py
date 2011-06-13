@@ -28,7 +28,7 @@ from subprocess import Popen
 
 from reviewtools.bugz import ReviewBug
 from reviewtools.misc import Checks
-from reviewtools import get_logger, do_logger_setup
+from reviewtools import get_logger, do_logger_setup, Settings
 from urlparse import urlparse
 
 class ReviewHelper:
@@ -36,6 +36,7 @@ class ReviewHelper:
     def __init__(self):
         self.bug = None
         self.checks = None
+        self.settings = Settings()
         self.args = self.get_args()
         self.verbose = False
         self.log = get_logger()
@@ -45,7 +46,7 @@ class ReviewHelper:
         parser = argparse.ArgumentParser(description='Review a Fedora Package')
         parser.add_argument('-b','--bug', metavar='[bug]',
                    help='the bug number contain the package review')
-        parser.add_argument('-w','--workdir', default='~/tmp/reviewhelper/', metavar='[dir]',
+        parser.add_argument('-w','--workdir', default=self.settings.work_dir, metavar='[dir]',
                             help='Work directory (default = ~/tmp/reviewhelper/')
         parser.add_argument('--assign', action='store_true',
                             help = 'Assign the bug and set review flags')
@@ -53,7 +54,7 @@ class ReviewHelper:
                             help = 'do not redownload files from bugzilla, use the ones in the cache')
         parser.add_argument('--nobuild', action='store_true', dest='nobuild',
                             help = 'do not rebuild the srpm, use currently build ones')
-        parser.add_argument('-u','--user', metavar='[userid]',
+        parser.add_argument('-u','--user', metavar='[userid]', default = self.settings.bz_user, 
                    help='The Fedora Bugzilla userid')
         parser.add_argument('-p','--password', metavar='[password]',
                    help='The Fedora Bugzilla password')
@@ -63,7 +64,7 @@ class ReviewHelper:
                             help='Do not make a review report')
         parser.add_argument('-n','--name', metavar='<name prefix>',
                    help='run on local <name prefix>.spec & <name prefix>*.src.rpm located in work dir')
-        parser.add_argument('-D','--dist', metavar='<distribution>', default = 'RAWHIDE',
+        parser.add_argument('-D','--dist', metavar='<distribution>', default = self.settings.distribution,
                    help='Run check of a given distribution (F13,F14,F15,RAWHIDE,EPEL5 & EPEL6)')
         args = parser.parse_args()
         return args
@@ -114,7 +115,7 @@ class ReviewHelper:
 
     def show_results(self):
         if self.outfile and self.checks.spec.filename:
-            Popen(["/usr/bin/gedit", self.outfile, self.checks.spec.filename])
+            Popen([self.settings.editor, self.outfile, self.checks.spec.filename])
 
     def do_report_local(self):
         ''' Create a review report on already downloaded .spec & .src.rpm'''

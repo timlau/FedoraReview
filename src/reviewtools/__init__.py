@@ -22,14 +22,14 @@ Tools for helping Fedora package reviewers
 import subprocess
 import logging
 from subprocess import call, Popen
-from urlparse import urlparse
 import os.path
 import re
 import glob
 import sys
 import shlex
 import rpm
-
+from yum.config import *
+from urlparse import urlparse
 
 SECTIONS = ['build', 'changelog', 'check', 'clean', 'description', 'files',
                'install', 'package', 'prep', 'pre', 'post', 'preun', 'postun',
@@ -40,6 +40,46 @@ MACROS = re.compile(r"^%(define|global)\s+(\w*)\s+(.*)")
 
 LOG_ROOT = 'reviewtools'
 
+class Settings(BaseConfig):
+    """ FedoraReview Config Setting"""
+    editor = Option('/usr/bin/gedit')           # Editor to use to show review report & spec
+    work_dir = Option('~/tmp/reviewhelper/')    # Work dir 
+    bz_user = Option('')                        # Default bugzilla userid.
+    distribution = Option('RAWHIDE')
+    
+    def __init__(self):
+        BaseConfig.__init__(self)
+        self.load_config('.config/FedoraReview/settings','review')
+    
+    def load_config(self, configfile, sec):
+        parser = ConfigParser()
+        configfile = os.environ['HOME'] + "/" + configfile
+        isNew = self.create_conf(configfile,sec)
+        parser.read(configfile)
+        if not parser.has_section(sec):
+            parser.add_section(sec)
+        self.populate(parser, sec)
+        if isNew:
+            self.save_config(configfile)
+
+    def create_conf(self, configfile, sec):
+        if not os.path.exists(configfile):
+            dn = os.path.dirname(configfile)
+            if not os.path.exists(dn):
+                os.makedirs()
+            fd = open(configfile,"w")
+            print >> fd, "[%s]" % sec
+            fd.close()
+            return True
+        return False
+            
+    def save_config(self, configfile):
+        always = tuple([key for key in self.iterkeys()])
+        fn = open(configfile, "w")
+        self.write(fn, always=always)
+        fn.close()
+        
+    
 class Helpers:
 
     def __init__(self, cache=False, nobuild=False):
@@ -81,6 +121,7 @@ class Helpers:
             return None,out
 
     def _get_file(self, link):
+        print "LINK: ", link
         url = urlparse(link)
         fname = os.path.basename(url.path)
         if os.path.exists(self.work_dir+fname) and self.cache  :
