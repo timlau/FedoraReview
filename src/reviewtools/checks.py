@@ -92,6 +92,16 @@ class CheckBase(Helpers):
                     return True
         return False
 
+    def has_files_re(self, pattern_re):
+        ''' Check if rpms has file matching a pattern'''
+        fn_pat = re.compile(pattern_re)
+        rpm_files = self.srpm.get_files_rpms()
+        for rpm in rpm_files:
+            for fn in rpm_files[rpm]:
+                if fn_pat.search(fn):
+                    return True
+        return False
+
     def get_files_by_pattern(self, pattern):
         result = {}
         rpm_files = self.srpm.get_files_rpms()
@@ -586,7 +596,8 @@ class CheckLDConfig(CheckBase):
         '''
         check if this test is applicable
         '''
-        return self.has_files('/usr/lib*/*.so.*') or self.has_files('/lib*/*.so.*')
+        return self.has_files_re('/usr/(lib|lib64)/[\w\-]*\.so\.[0-9]')
+
 
     def run(self):
         sources = ['%post','%postun']
