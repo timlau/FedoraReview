@@ -121,7 +121,6 @@ class Helpers:
             return None,out
 
     def _get_file(self, link):
-        print "LINK: ", link
         url = urlparse(link)
         fname = os.path.basename(url.path)
         if os.path.exists(self.work_dir+fname) and self.cache  :
