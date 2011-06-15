@@ -131,9 +131,44 @@ class Helpers:
         else:
             return None
 
+class Sources:
+    """ Store Source object for each source in Spec file"""
+    def __init__(self, cache):
+        self._sources = {}
+        self.cache = cache
+        self.work_dir = None
+        self.log = get_logger()
+        
+    def set_work_dir(self, work_dir):
+        self.work_dir = work_dir      
+        
+    def add(self, tag, source_url):
+        """Add a new Source Object based on spec tag and URL to source"""
+        if urlparse(source_url)[0] != '': # This is a URL, Download it
+            self.log.info("Downloading (%s): %s" % (tag,source_url))
+            source = Source(cache=self.cache)
+            source.set_work_dir(self.work_dir)
+            source.get_source(source_url)
+        else: # this is a local file in the SRPM
+            self.log.info("No upstream for (%s): %s" % (tag,source_url))
+            source = Source(filename=source_url, cache=self.cache)
+            source.set_work_dir(self.work_dir)
+        self._sources[tag] = source
+        
+    def get(self,tag):
+        """ Get a single Source object"""
+        if tag in self._sources:
+            return self._sources[tag]
+        else:
+            return None
+
+    def get_all(self):
+        """ Get all source objects """
+        return [self._sources[s] for s in self._sources]
+        
 class Source(Helpers) :
-    def __init__(self,filename=None, cache=False, nobuild=False):
-        Helpers.__init__(self,cache, nobuild)
+    def __init__(self,filename=None, cache=False):
+        Helpers.__init__(self,cache)
         self.filename = filename
         self.downloaded = False
         self.URL = None

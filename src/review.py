@@ -70,15 +70,15 @@ class ReviewHelper:
         return args
 
     def download_sources(self):
-        self.checks.source.set_work_dir('%s/%s' % (self.args.workdir, self.args.bug))
+        self.checks.sources.set_work_dir('%s/%s' % (self.args.workdir, self.args.bug))
         sources = self.checks.spec.get_sources()
         found = False
         if sources:
             found = True
             for tag in sources:
-                if tag.startswith('Source') and urlparse(sources[tag])[0] != '':
-                    self.log.debug("Downloading (%s): %s" % (tag,sources[tag]))
-                    self.checks.source.get_source(sources[tag])
+                if tag.startswith('Source'):
+                   self.checks.sources.add(tag,sources[tag])
+                   found = True
         return found
 
     def do_report(self):
@@ -101,13 +101,10 @@ class ReviewHelper:
         self.checks = Checks(self.args, self.bug.spec_file, self.bug.srpm_file, cache=self.args.cache, nobuild=self.args.nobuild)
         self.outfile = "%s/%s-review.txt" % (self.bug.work_dir, self.checks.spec.name)
         output = open(self.outfile,"w")
-        # get upstream sources
-        rc = self.download_sources()
+        # Setup source and download upstream sources into cache
+        self.download_sources()
         if self.args.nobuild:
             self.checks.srpm.is_build = True
-        if not rc:
-            self.log.info('Cannot download upstream sources')
-            sys.exit(1)
         self.log.info('Running checks and generate report\n')
         self.checks.run_checks(output=output)
         output.close()

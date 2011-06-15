@@ -35,7 +35,7 @@ class CheckBase(Helpers):
         self.base = base
         self.spec = base.spec
         self.srpm = base.srpm
-        self.source = base.source
+        self.sources = base.sources
         self.url = None
         self.text = None
         self.description = None
@@ -293,11 +293,17 @@ class CheckSourceMD5(CheckBase):
 
     def run(self):
         self.srpm.install()
-        local = self.base.srpm.check_source_md5(self.base.source.filename)
-        upstream = self.base.source.check_source_md5()
-        output = "MD5SUM this package     : %s\n" % local
-        output += "MD5SUM upstream package : %s" % upstream
-        if local == upstream:
+        passed = True
+        output = ""
+        for source in self.base.sources.get_all():
+            local = self.base.srpm.check_source_md5(source.filename)
+            upstream = source.check_source_md5()
+            output += "%s :\n" % source.filename
+            output += "  MD5SUM this package     : %s\n" % local
+            output += "  MD5SUM upstream package : %s\n" % upstream
+            if local != upstream:
+                passed = False
+        if passed:
             self.set_passed(True, output)
         else:
             self.set_passed(False, output)
@@ -1269,13 +1275,18 @@ class CheckSourceUrl(CheckBase):
         self.type = 'SHOULD'
 
     def run(self):
-        if self.source.downloaded:
+        passed = True
+        output = ""
+        for source in self.sources.get_all():
+            if source.URL: # this source should have an upstream file
+                if not source.downloaded:
+                    passed = False
+                    output += "%s\n" % source.URL
+                    
+        if passed:
             self.set_passed(True)
         else:
-            extra = ""
-            if self.source.URL:
-                extra = "%s\n" % self.source.URL
-            self.set_passed(False, extra)
+            self.set_passed(False, output)
 
 
 class CheckSourcePatchPrefix(CheckBase):
