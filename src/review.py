@@ -48,6 +48,8 @@ class ReviewHelper:
                    help='the bug number contain the package review')
         parser.add_argument('-w','--workdir', default=self.settings.work_dir, metavar='[dir]',
                             help='Work directory (default = ~/tmp/reviewhelper/')
+        parser.add_argument('--other-bz', default=None, metavar='[bugzilla url]', dest='other_bz',
+                            help='alternative bugzilla URL')
         parser.add_argument('--assign', action='store_true',
                             help = 'Assign the bug and set review flags')
         parser.add_argument('--cache', action='store_true', dest='cache',
@@ -162,12 +164,12 @@ class ReviewHelper:
             # get the bug
             self.log.info("Processing review bug : %s" % self.args.bug )
             if self.args.user and self.args.password:
-                self.bug = ReviewBug(self.args.bug, user = self.args.user, password= self.args.password, cache=self.args.cache)
+                self.bug = ReviewBug(self.args.bug, user = self.args.user, password= self.args.password, cache=self.args.cache, other_BZ=self.args.other_bz)
             else:
-                self.bug = ReviewBug(self.args.bug, cache=self.args.cache, nobuild=self.args.nobuild)
+                self.bug = ReviewBug(self.args.bug, cache=self.args.cache, nobuild=self.args.nobuild, other_BZ=self.args.other_bz)
             self.bug.set_work_dir('%s/%s' % (self.args.workdir, self.args.bug))
             self.log.debug("  --> Working dir : %s" % self.bug.work_dir)
-            if self.args.assign:
+            if self.args.assign and not self.args.other_bz: # can't use assign with alternate bugzilla url
                 self.do_assign()
             if not self.args.noreport:
                 self.do_report()
