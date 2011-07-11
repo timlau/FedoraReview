@@ -66,7 +66,7 @@ class Settings(BaseConfig):
         if not os.path.exists(configfile):
             dn = os.path.dirname(configfile)
             if not os.path.exists(dn):
-                os.makedirs()
+                os.makedirs(dn)
             fd = open(configfile,"w")
             print >> fd, "[%s]" % sec
             fd.close()
