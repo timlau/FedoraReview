@@ -1,2 +1,4 @@
 - Fix running on local srpm/spec ("workdir" is weird and has 'None' as
   child when run with -n
+
+- Refactor do_report_local to not duplicate code and work nicely
