@@ -1,13 +1,18 @@
-from generic import CheckBase
+from generic import LangCheckBase
 
-class CheckLDConfig(CheckBase):
+class CCppCheckBase(LangCheckBase):
+    def is_applicable(self):
+        """Need more comprehensive check and return True in valid cases"""
+        return False
+
+class CheckLDConfig(CCppCheckBase):
     '''
     MUST: Every binary RPM package (or subpackage) which stores shared library files (not just symlinks)
     in any of the dynamic linker's default paths, must call ldconfig in %post and %postun.
     http://fedoraproject.org/wiki/Packaging/Guidelines#Shared_Libraries
     '''
     def __init__(self, base):
-        CheckBase.__init__(self, base)
+        CCppCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#Shared_Libraries'
         self.text = 'ldconfig called in %post and %postun if required.'
         self.automatic = True
@@ -41,13 +46,13 @@ class CheckLDConfig(CheckBase):
                 return
         self.set_passed(True)
 
-class CheckHeaderFiles(CheckBase):
+class CheckHeaderFiles(CCppCheckBase):
     '''
     MUST: Header files must be in a -devel package
     http://fedoraproject.org/wiki/Packaging/Guidelines#DevelPackages
     '''
     def __init__(self, base):
-        CheckBase.__init__(self, base)
+        CCppCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#DevelPackages'
         self.text = 'Header files in -devel subpackage, if present.'
         self.automatic = True
@@ -76,13 +81,13 @@ class CheckHeaderFiles(CheckBase):
 
 
 
-class CheckStaticLibs(CheckBase):
+class CheckStaticLibs(CCppCheckBase):
     '''
     MUST: Static libraries must be in a -static package.
     http://fedoraproject.org/wiki/Packaging/Guidelines#StaticLibraries
     '''
     def __init__(self, base):
-        CheckBase.__init__(self, base)
+        CCppCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#StaticLibraries'
         self.text = 'Static libraries in -static subpackage, if present.'
         self.automatic = False
@@ -108,25 +113,25 @@ class CheckStaticLibs(CheckBase):
 
 
 
-class CheckNoStatucExecutables(CheckBase):
+class CheckNoStatucExecutables(CCppCheckBase):
     '''
     http://fedoraproject.org/wiki/Packaging/Guidelines#Staticly_Linking_Executables
     '''
     def __init__(self, base):
-        CheckBase.__init__(self, base)
+        CCppCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#Staticly_Linking_Executables'
         self.text = 'Package contains no static executables.'
         self.automatic = False
         self.type = 'MUST'
 
-class CheckSoFiles(CheckBase):
+class CheckSoFiles(CCppCheckBase):
     '''
     MUST: If a package contains library files with a suffix (e.g. libfoo.so.1.1),
     then library files that end in .so (without suffix) must go in a -devel package.
     http://fedoraproject.org/wiki/Packaging/Guidelines#DevelPackages
     '''
     def __init__(self, base):
-        CheckBase.__init__(self, base)
+        CCppCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#DevelPackages'
         self.text = 'Development .so files in -devel subpackage, if present.'
         self.automatic = True
@@ -149,14 +154,14 @@ class CheckSoFiles(CheckBase):
                     extra += "%s : %s\n" % (rpm, fn)
         self.set_passed(passed, extra)
 
-class CheckLibToolArchives(CheckBase):
+class CheckLibToolArchives(CCppCheckBase):
     '''
     MUST: Packages must NOT contain any .la libtool archives,
     these must be removed in the spec if they are built.
     http://fedoraproject.org/wiki/Packaging/Guidelines#StaticLibraries
     '''
     def __init__(self, base):
-        CheckBase.__init__(self, base)
+        CCppCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#StaticLibraries'
         self.text = 'Package does not contain any libtool archives (.la)'
         self.automatic = True
@@ -174,19 +179,19 @@ class CheckLibToolArchives(CheckBase):
             self.set_passed(False, extra)
 
 
-class CheckRPATH(CheckBase):
+class CheckRPATH(CCppCheckBase):
     '''
     http://fedoraproject.org/wiki/Packaging/Guidelines#Beware_of_Rpath
     '''
     def __init__(self, base):
-        CheckBase.__init__(self, base)
+        CCppCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#Beware_of_Rpath'
         self.text = 'Rpath absent or only used for internal libs.'
         self.automatic = False
         self.type = 'MUST'
 
 
-class CheckNoKernelModules(CheckBase):
+class CheckNoKernelModules(CCppCheckBase):
     '''
     At one point (pre Fedora 8), packages containing "addon" kernel modules were permitted.
     This is no longer the case. Fedora strongly encourages kernel module packagers to
@@ -194,14 +199,14 @@ class CheckNoKernelModules(CheckBase):
     http://fedoraproject.org/wiki/Packaging/Guidelines#No_External_Kernel_Modules
     '''
     def __init__(self, base):
-        CheckBase.__init__(self, base)
+        CCppCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#No_External_Kernel_Modules'
         self.text = 'Package does not contains kernel modules.'
         self.automatic = False
         self.type = 'MUST'
 
 
-class CheckRelocatable(CheckBase):
+class CheckRelocatable(CCppCheckBase):
     '''
     MUST: If the package is designed to be relocatable,
     the packager must state this fact in the request for review,
@@ -210,7 +215,7 @@ class CheckRelocatable(CheckBase):
     http://fedoraproject.org/wiki/Packaging/Guidelines#RelocatablePackages
     '''
     def __init__(self, base):
-        CheckBase.__init__(self, base)
+        CCppCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#RelocatablePackages'
         self.text = 'Package is not relocatable.'
         self.automatic = False
