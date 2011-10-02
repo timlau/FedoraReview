@@ -38,13 +38,14 @@ from straight.plugin import load
 
 from reviewtools import get_logger
 
+
 class Checks(object):
     def __init__(self, args, spec_file, srpm_file, cache=False, nobuild=False):
-        self.checks = {'MUST' : [], 'SHOULD' : []}
-        self.args = args # Command line arguments & options
+        self.checks = {'MUST': [], 'SHOULD': []}
+        self.args = args  # Command line arguments & options
         self.cache = cache
         self.nobuild = nobuild
-        self._results = {'PASSED' : [], 'FAILED' : [], 'NA' : [], 'USER' : []}
+        self._results = {'PASSED': [], 'FAILED': [], 'NA': [], 'USER': []}
         self.spec = SpecFile(spec_file)
         self.sources = Sources(cache=cache)
         self.log = get_logger()
@@ -53,7 +54,7 @@ class Checks(object):
         self.add_check_classes()
 
     def reset_results(self):
-        self._results = {'PASSED' : [], 'FAILED' : [], 'NA' : [], 'USER' : []}
+        self._results = {'PASSED': [], 'FAILED': [], 'NA': [], 'USER': []}
 
     def add_check_classes(self):
         """ get all the check classes in the reviewtools.checks and add them
@@ -75,11 +76,11 @@ class Checks(object):
 
     def show_file(self, filename, output=sys.stdout):
         fd = open(filename, "r")
-        lines =  fd.readlines()
+        lines = fd.readlines()
         fd.close()
         for line in lines:
             output.write(line)
-            
+
     def parse_result(self, test):
         result = test.get_result()
         if result.startswith('[x]'):
@@ -101,7 +102,7 @@ class Checks(object):
         output.write(HEADER)
         issues = []
         self.log.info("Running check for : %s" % self.args.dist)
-        for typ in ['MUST','SHOULD']:
+        for typ in ['MUST', 'SHOULD']:
             # Automatic Checks
             checks = self.checks[typ]
             self.reset_results()
@@ -128,4 +129,3 @@ class Checks(object):
         for fail in issues:
             output.write(fail)
             output.write('\n')
-
