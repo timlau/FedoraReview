@@ -112,6 +112,10 @@ class CheckBase(Helpers):
                     result[rpm].append(fn)
         return result
 
+class LangCheckBase(CheckBase):
+    def is_applicable(self):
+        return False
+
 class CheckName(CheckBase):
     '''
     MUST: The package must be named according to the Package Naming Guidelines .
