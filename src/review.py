@@ -56,7 +56,7 @@ class ReviewHelper:
                             help = 'do not redownload files from bugzilla, use the ones in the cache')
         parser.add_argument('--nobuild', action='store_true', dest='nobuild',
                             help = 'do not rebuild the srpm, use currently build ones')
-        parser.add_argument('-u','--user', metavar='[userid]', default = self.settings.bz_user, 
+        parser.add_argument('-u','--user', metavar='[userid]', default = self.settings.bz_user,
                    help='The Fedora Bugzilla userid')
         parser.add_argument('-p','--password', metavar='[password]',
                    help='The Fedora Bugzilla password')
@@ -129,7 +129,7 @@ class ReviewHelper:
             self.log.debug("  --> Spec file : %s" % spec)
             self.log.debug("  --> SRPM file : %s" % srpm)
             self.checks = Checks(self.args, spec, srpm)
-            outfile = "%s/%s-review.txt" % (self.bug.work_dir, self.checks.spec.name)
+            outfile = "%s/%s-review.txt" % (work_dir, self.checks.spec.name)
             output = open(outfile,"w")
             # get upstream sources
             rc = self.download_sources()
@@ -137,7 +137,7 @@ class ReviewHelper:
                 self.log.info('Cannot download upstream sources')
                 sys.exit(1)
             self.log.info('Running checks and generate report\n')
-            self.checks.run_checks(output=self.args.output)
+            self.checks.run_checks(output=output)
             output.close()
         else:
             if not files_spec:
