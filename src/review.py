@@ -21,7 +21,6 @@ Tools for helping Fedora package reviewers
 import argparse
 import glob
 import logging
-import os
 import sys
 from subprocess import Popen
 
@@ -40,7 +39,6 @@ class ReviewHelper:
         self.verbose = False
         self.log = get_logger()
         self.outfile = None
-        self.work_dir = os.getcwd()
 
     def __get_args(self):
         parser = argparse.ArgumentParser(description='Review a Fedora Package')
@@ -98,26 +96,17 @@ class ReviewHelper:
         if not rc:
             self.log.info('Cannot download .spec and .srpm')
             sys.exit(1)
-        self.log.debug("  --> Spec file : %s" % self.bug.spec_file)
-        self.log.debug("  --> SRPM file : %s" % self.bug.srpm_file)
-        self.checks = Checks(self.args, self.bug.spec_file, self.bug.srpm_file, cache=self.args.cache, nobuild=self.args.nobuild)
-
-        self.__run_checks()
+        self.__do_report_local("%s/%s" % (self.args.workdir, self.args.bug))
         self.__show_results()
 
-    def __do_report_local(self):
+    def __do_report_local(self, file_dir='.'):
         ''' Create a review report on already downloaded .spec & .src.rpm'''
-        spec_filter = '%s/%s*.spec' % (self.work_dir, self.args.name)
-        srpm_filter = '%s/%s*.src.rpm' % (self.work_dir, self.args.name)
+        spec_filter = '%s/%s*.spec' % (file_dir, self.args.name)
+        srpm_filter = '%s/%s*.src.rpm' % (file_dir, self.args.name)
         files_spec = glob.glob(spec_filter)
         files_srpm = glob.glob(srpm_filter)
         if files_spec and files_srpm:
-            spec = files_spec[0]
-            srpm = files_srpm[0]
-            self.log.debug("  --> Spec file : %s" % spec)
-            self.log.debug("  --> SRPM file : %s" % srpm)
-            self.checks = Checks(self.args, spec, srpm)
-            self.__run_checks(self)
+            self.__run_checks(files_spec[0], files_srpm[0])
         else:
             if not files_spec:
                 self.log.error('Cannot find : %s ' % spec_filter)
@@ -129,8 +118,11 @@ class ReviewHelper:
             Popen([self.settings.editor, self.outfile, self.checks.spec.filename])
 
 
-    def __run_checks(self):
-        outfile = "%s/%s-review.txt" % (self.work_dir, self.checks.spec.name)
+    def __run_checks(self, spec, srpm):
+        self.log.debug("  --> Spec file : %s" % self.bug.spec_file)
+        self.log.debug("  --> SRPM file : %s" % self.bug.srpm_file)
+        self.checks = Checks(self.args, spec, srpm, cache=self.args.cache, nobuild = self.args.nobuild)
+        outfile = "%s/%s-review.txt" % (self.args.workdir, self.checks.spec.name)
         with open(outfile,"w") as output:
             # get upstream sources
             rc = self.__download_sources()
