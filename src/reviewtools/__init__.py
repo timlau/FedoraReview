@@ -80,7 +80,7 @@ class Settings(BaseConfig):
         fn.close()
         
     
-class Helpers:
+class Helpers(object):
 
     def __init__(self, cache=False, nobuild=False):
         self.work_dir = 'work/'
@@ -131,7 +131,7 @@ class Helpers:
         else:
             return None
 
-class Sources:
+class Sources(object):
     """ Store Source object for each source in Spec file"""
     def __init__(self, cache):
         self._sources = {}
@@ -311,7 +311,7 @@ class SRPMFile(Helpers) :
         self._rpm_files = rpm_files
         return rpm_files
 
-class SpecFile:
+class SpecFile(object):
     '''
     Wrapper classes for getting information from a .spec file
     '''
