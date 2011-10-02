@@ -252,7 +252,7 @@ class SRPMFile(Helpers):
             # src_files = glob.glob(os.path.expanduser('~/rpmbuild/SOURCES/*'))
             if src_files:
                 for name in src_files:
-                    if filename and
+                    if filename and \
                     os.path.basename(filename) != os.path.basename(name):
                         continue
                     self.log.debug("Checking md5 for %s" % name)
@@ -276,10 +276,13 @@ class SRPMFile(Helpers):
                 return True
         return False
 
-    def rpmlint(self):
-        cmd = 'rpmlint %s' % self.filename
+    def run_rpmlint(self, filename):
+        """ Runs rpmlint against the provided file.
+        karg: filename, the name of the file to run rpmlint on
+        """
+        cmd = 'rpmlint %s' % filename
         sep = "%s\n" % (80 * "=")
-        result = "\nrpmlint %s\n" % os.path.basename(self.filename)
+        result = "\nrpmlint %s\n" % os.path.basename(filename)
         result += sep
         out = self._run_cmd(cmd)
         no_errors = self._check_errors(out)
@@ -287,23 +290,20 @@ class SRPMFile(Helpers):
         result += sep
         return no_errors, result
 
+    def rpmlint(self):
+        return self.run_rpmlint(self.filename)
+
     def rpmlint_rpms(self):
         sep = "%s\n" % (80 * "=")
-        result = ''
+        results = ''
         success = True
-        self.build()
         rpms = glob.glob(self.get_mock_dir() + '/*.rpm')
         for rpm in rpms:
-            cmd = 'rpmlint %s' % rpm
-            result += "\nrpmlint %s\n" % os.path.basename(rpm)
-            result += sep
-            rc = self._run_cmd(cmd)
-            no_errors = self._check_errors(rc)
+            no_errors, result = self.run_rpmlint(rpm)
             if not no_errors:
                 success = False
-            result += rc
-            result += sep
-        return success, result
+            results += result
+        return success, results
 
     def get_files_rpms(self):
         if self._rpm_files:
