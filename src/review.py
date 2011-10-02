@@ -118,7 +118,7 @@ class ReviewHelper:
 
     def do_report_local(self):
         ''' Create a review report on already downloaded .spec & .src.rpm'''
-        work_dir = '%s/*' % (os.path.abspath(os.path.expanduser(self.args.workdir)))
+        work_dir = os.getcwd()
         spec_filter = '%s/%s*.spec' % (work_dir, self.args.name)
         srpm_filter = '%s/%s*.src.rpm' % (work_dir, self.args.name)
         files_spec = glob.glob(spec_filter)
