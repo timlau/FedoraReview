@@ -35,11 +35,11 @@ x = Check
 ? = Not evaluated
 
 """
+from straight.plugin import load
 
 from reviewtools import get_logger
 
-
-class Checks:
+class Checks(object):
     def __init__(self, args, spec_file, srpm_file, cache=False, nobuild=False):
         self.checks = {'MUST' : [], 'SHOULD' : []}
         self.args = args # Command line arguments & options
@@ -50,8 +50,9 @@ class Checks:
         self.sources = Sources(cache=cache)
         self.log = get_logger()
         self.srpm = SRPMFile(srpm_file, cache=cache, nobuild=nobuild)
+        self.plugins = load('reviewtools.checks')
         self.add_check_classes()
-        
+
     def reset_results(self):
         self._results = {'PASSED' : [], 'FAILED' : [], 'NA' : [], 'USER' : []}
 
@@ -59,13 +60,16 @@ class Checks:
         """ get all the check classes in the reviewtools.checks and add them
         to be excuted
         """
-        objs = reviewtools.checks.__dict__
-        for mbr in sorted(objs):
-            if mbr.startswith('Check'):
-                obj = objs[mbr]
-                base_cls = obj.__bases__
-                if base_cls and base_cls[0].__name__ == 'CheckBase':
-                    self.add(obj)
+
+        for module in self.plugins:
+            objs = module.__dict__
+            for mbr in sorted(objs):
+                if mbr.startswith('cc'): print "* ", mbr
+                if mbr.startswith('Check'):
+                    obj = objs[mbr]
+                    base_cls = obj.__bases__
+                    if base_cls and base_cls[0].__name__ == 'CheckBase':
+                        self.add(obj)
 
     def add(self, class_name):
         cls = class_name(self)
