@@ -20,13 +20,15 @@ Tools for helping Fedora package reviewers
 import re
 from bugzilla import Bugzilla
 
-BZ_URL='https://bugzilla.redhat.com/xmlrpc.cgi'
+BZ_URL = 'https://bugzilla.redhat.com/xmlrpc.cgi'
 
 from reviewtools import Helpers, get_logger
 
+
 class ReviewBug(Helpers):
-    def __init__(self,bug,user=None,password=None, cache=False, nobuild=False, other_BZ=None):
-        Helpers.__init__(self,cache, nobuild)
+    def __init__(self, bug, user=None, password=None, cache=False,
+                nobuild=False, other_BZ=None):
+        Helpers.__init__(self, cache, nobuild)
         self.bug_num = bug
         self.spec_url = None
         self.srpm_url = None
@@ -34,8 +36,8 @@ class ReviewBug(Helpers):
         self.srpm_file = None
         self.log = get_logger()
         if other_BZ:
-            self.bugzilla = Bugzilla(url=other_BZ+'/xmlrpc.cgi')
-        else:    
+            self.bugzilla = Bugzilla(url=other_BZ + '/xmlrpc.cgi')
+        else:
             self.bugzilla = Bugzilla(url=BZ_URL)
         self.is_login = False
         if user and password:
@@ -45,7 +47,6 @@ class ReviewBug(Helpers):
                 self.is_login = True
         self.user = user
         self.bug = self.bugzilla.getbug(self.bug_num)
-        
 
     def login(self, user, password):
         if self.bugzilla.login(user=user, password=password) > 0:
@@ -61,7 +62,8 @@ class ReviewBug(Helpers):
             for c in self.bug.longdescs:
                 body = c['body']
                 #self.log.debug(body)
-                urls = re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+~]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', body)
+                urls = re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|\
+                [$-_@.&+~]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', body)
                 if urls:
                     for url in urls:
                         if url.endswith(".spec"):
@@ -76,27 +78,25 @@ class ReviewBug(Helpers):
             found = False
         return found
 
-
-
     def assign_bug(self):
         if self.is_login:
             self.bug.setstatus('ASSIGNED')
             self.bug.setassignee(assigned_to=self.user)
             self.bug.addcomment('I will review this package')
-            flags = {'fedora-review' : '?'}
+            flags = {'fedora-review': '?'}
             self.bug.updateflags(flags)
             self.bug.addcc([self.user])
         else:
             self.log.info("You need to login before assigning a bug")
 
-    def add_comment(self,comment):
+    def add_comment(self, comment):
         if self.is_login:
             self.bug.addcomment(comment)
         else:
             self.log.info("You need to is_login before commenting on a bug")
 
-    def add_comment_from_file(self,fname):
-        fd = open(fname,"r")
+    def add_comment_from_file(self, fname):
+        fd = open(fname, "r")
         lines = fd.readlines()
         fd.close
         self.add_comment("".join(lines))
@@ -113,5 +113,3 @@ class ReviewBug(Helpers):
             if self.spec_file and self.srpm_file:
                 return True
         return False
-
-
