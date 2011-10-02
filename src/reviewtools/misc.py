@@ -22,7 +22,6 @@ import sys
 
 from reviewtools import Sources, SRPMFile, SpecFile
 
-import reviewtools.checks
 
 HEADER = """
 Package Review
@@ -60,11 +59,9 @@ class Checks(object):
         """ get all the check classes in the reviewtools.checks and add them
         to be excuted
         """
-
         for module in self.plugins:
             objs = module.__dict__
             for mbr in sorted(objs):
-                if mbr.startswith('cc'): print "* ", mbr
                 if mbr.startswith('Check'):
                     obj = objs[mbr]
                     base_cls = obj.__bases__
@@ -95,12 +92,10 @@ class Checks(object):
             self._results['USER'].append(result)
 
     def show_result(self, output):
-        for key in ['PASSED','NA','FAILED','USER']:
+        for key in ['PASSED', 'NA', 'FAILED', 'USER']:
             for line in self._results[key]:
                 output.write(line)
                 output.write('\n')
-                
-        
 
     def run_checks(self, output=sys.stdout):
         output.write(HEADER)
@@ -111,9 +106,12 @@ class Checks(object):
             checks = self.checks[typ]
             self.reset_results()
             for test in checks:
-                self.log.debug('----> Running check : %s ' % (test.__class__))
-                self.log.debug('      Distributions : %s ' % (",".join(test.distribution)))
-                if not self.args.dist in test.distribution: # skip test not for the selected distro
+                self.log.debug('----> Running check : %s ' % (
+                                    test.__class__))
+                self.log.debug('      Distributions : %s ' % (
+                                    ",".join(test.distribution)))
+                # skip test not for the selected distro
+                if not self.args.dist in test.distribution:
                     continue
                 if test.is_applicable():
                     if test.automatic:
