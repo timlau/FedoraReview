@@ -118,7 +118,7 @@ class ReviewHelper:
 
     def do_report_local(self):
         ''' Create a review report on already downloaded .spec & .src.rpm'''
-        work_dir = '%s/%s' % (os.path.abspath(os.path.expanduser(self.args.workdir)), self.args.bug)
+        work_dir = '%s/*' % (os.path.abspath(os.path.expanduser(self.args.workdir)))
         spec_filter = '%s/%s*.spec' % (work_dir, self.args.name)
         srpm_filter = '%s/%s*.src.rpm' % (work_dir, self.args.name)
         files_spec = glob.glob(spec_filter)
@@ -128,7 +128,7 @@ class ReviewHelper:
             srpm = files_srpm[0]
             self.log.debug("  --> Spec file : %s" % spec)
             self.log.debug("  --> SRPM file : %s" % srpm)
-            self.checks = Checks(spec, srpm)
+            self.checks = Checks(self.args, spec, srpm)
             outfile = "%s/%s-review.txt" % (self.bug.work_dir, self.checks.spec.name)
             output = open(outfile,"w")
             # get upstream sources
