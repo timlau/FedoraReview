@@ -219,9 +219,9 @@ class SRPMFile(Helpers):
         return self.mockbuild(force)
 
     def mockbuild(self, force=False):
-        print "MOCKBUILD: ", self.is_build, self.nobuild
         if not force and (self.is_build or self.nobuild):
             return 0
+        #print "MOCKBUILD: ", self.is_build, self.nobuild
         self.log.info("Building %s using mock" % self.filename)
         rc = call('mock -r fedora-rawhide-i386  --rebuild %s' %
             self.filename, shell=True)
