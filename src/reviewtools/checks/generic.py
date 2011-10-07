@@ -891,7 +891,7 @@ class CheckFullVerReqSub(CheckBase):
                     passed = True
             if not passed:
                 # Requires: %{name}%{?_isa} = %{version}-%{release}
-                extra += "Missing : Requires: \%{name}\%{?_isa} = \%{version}-\%{release} in %s" % section
+                extra += "Missing : Requires: %%{name}%%{?_isa} = %%{version}-%%{release} in %s" % section
                 errors = False
         if errors:
             self.set_passed(False,extra)
