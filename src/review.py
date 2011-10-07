@@ -22,6 +22,7 @@ import argparse
 import glob
 import logging
 import sys
+import os
 from subprocess import Popen
 
 from reviewtools import get_logger, do_logger_setup, Settings
@@ -36,6 +37,7 @@ class ReviewHelper:
         self.checks = None
         self.settings = Settings()
         self.args = self.__get_args()
+        self.args.workdir = os.path.expanduser(self.args.workdir)
         self.verbose = False
         self.log = get_logger()
         self.outfile = None
@@ -96,6 +98,7 @@ class ReviewHelper:
         if not rc:
             self.log.info('Cannot download .spec and .srpm')
             sys.exit(1)
+        self.args.name = os.path.basename(self.bug.spec_file).rsplit('.',1)[0]
         self.__do_report_local("%s/%s" % (self.args.workdir, self.args.bug))
         self.__show_results()
 
@@ -121,8 +124,10 @@ class ReviewHelper:
     def __run_checks(self, spec, srpm):
         self.log.debug("  --> Spec file : %s" % spec)
         self.log.debug("  --> SRPM file : %s" % srpm)
-        self.checks = Checks(self.args, spec, srpm, cache=self.args.cache, nobuild = self.args.nobuild)
-        outfile = "%s/%s-review.txt" % (self.args.workdir, self.checks.spec.name)
+        self.checks = Checks(self.args, spec, srpm, 
+            cache=self.args.cache, nobuild = self.args.nobuild)
+        outfile = "%s/%s-review.txt" % (
+            self.args.workdir, self.checks.spec.name)
         with open(outfile,"w") as output:
             # get upstream sources
             rc = self.__download_sources()
