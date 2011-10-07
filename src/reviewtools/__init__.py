@@ -47,7 +47,7 @@ class Settings(BaseConfig):
     # Editor to use to show review report & spec
     editor = Option('/usr/bin/gedit')
     # Work dir
-    work_dir = Option('~/tmp/reviewhelper/')
+    work_dir = Option('.')
     # Default bugzilla userid
     bz_user = Option('')
     distribution = Option('RAWHIDE')
