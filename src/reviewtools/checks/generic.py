@@ -60,6 +60,8 @@ class CheckBase(Helpers):
             self.state = 'na'
         elif result == True:
             self.state = 'pass'
+        elif result == "inconclusive":
+            self.state = 'pending'
         else:
             self.state = 'fail'
         if output_extra:
@@ -97,6 +99,7 @@ class CheckBase(Helpers):
         ''' Check if rpms has file matching a pattern'''
         fn_pat = re.compile(pattern_re)
         rpm_files = self.srpm.get_files_rpms()
+        #print rpm_files, pattern_re
         for rpm in rpm_files:
             for fn in rpm_files[rpm]:
                 if fn_pat.search(fn):
@@ -516,9 +519,31 @@ class CheckLicensInDoc(CheckBase):
         self.url = 'http://fedoraproject.org/wiki/Packaging/LicensingGuidelines#License_Text'
         self.text = 'If (and only if) the source package includes the text of the license(s) in its own file, \
 then that file, containing the text of the license(s) for the package is included in %doc.'
-        self.automatic = False
+        self.automatic = True
         self.type = 'MUST'
 
+    def run(self):
+        """ Check if there is a license file and if it is present in the
+        %doc section.
+        """
+        haslicensefile = False
+        licenses = []
+        for f in ['COPYING','LICEN', 'copying', 'licen']:
+            if self.has_files("*" + f + "*"):
+                haslicensefile = True
+                licenses.append(f)
+
+        br = self.spec.find_all(re.compile("%doc.*"))
+        for entry in br:
+            entry = os.path.basename(entry.group(0)).strip()
+            for licensefile in licenses:
+                if entry.startswith(licensefile):
+                    licenses.remove(licensefile)
+        
+        if not haslicensefile:
+            self.set_passed("inconclusive")
+        else:
+            self.set_passed(licenses == [])
 
 
 class CheckLicenseInSubpackages(CheckBase):
@@ -1039,7 +1064,6 @@ class CheckContainsLicenseText(CheckBase):
 upstream, the packager SHOULD query upstream to include it.'
         self.automatic = False
         self.type = 'SHOULD'
-
 
 
 class CheckSpecDescTranlation(CheckBase):
