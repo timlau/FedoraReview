@@ -1,4 +1,6 @@
 #!/usr/bin/python -tt
+#-*- coding: UTF-8 -*-
+
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
 #    the Free Software Foundation; either version 2 of the License, or
@@ -111,5 +113,3 @@ class MiscTests(unittest.TestCase):
         dist = self.helper._run_cmd('rpm --eval %dist')[:-1]
         expected = [os.path.expanduser('~/rpmbuild/RPMS/noarch/python-test-1.0-1%(dist)s.noarch.rpm') % {'dist': dist}]
         self.assertEqual(rpm_files, expected)
-        
-        
