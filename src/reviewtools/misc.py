@@ -64,11 +64,10 @@ class Checks(object):
         for module in self.plugins:
             objs = module.__dict__
             for mbr in sorted(objs):
-                if mbr.startswith('Check'):
+                if 'Check' in mbr and not mbr.endswith('Base'):
                     obj = objs[mbr]
-                    base_cls = obj.__bases__
-                    if base_cls and base_cls[0].__name__ == 'CheckBase':
-                        self.add(obj)
+                    self.log.debug('Add module: %s' % mbr)
+                    self.add(obj)
 
     def add(self, class_name):
         cls = class_name(self)
