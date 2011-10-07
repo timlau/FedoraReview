@@ -107,10 +107,6 @@ class Checks(object):
             checks = self.checks[typ]
             self.reset_results()
             for test in checks:
-                self.log.debug('----> Running check : %s ' % (
-                                    test.__class__))
-                self.log.debug('      Distributions : %s ' % (
-                                    ",".join(test.distribution)))
                 # skip test not for the selected distro
                 if not self.args.dist in test.distribution:
                     continue
@@ -121,6 +117,10 @@ class Checks(object):
                     test.state = 'na'
                 self.parse_result(test)
                 result = test.get_result()
+                self.log.debug('Running check : %s %s [%s] ' % (
+                        test.__class__.__name__,
+                        " " * (30 - len(test.__class__.__name__)),
+                        test.state ))
                 if result:
                     if result.startswith('[!] : MUST'):
                         issues.append(result)
