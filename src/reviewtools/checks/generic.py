@@ -430,7 +430,8 @@ class CheckBuildRequires(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#Exceptions_2'
-        self.text = 'All build dependencies are listed in BuildRequires, except for any that are listed in the exceptions section of Packaging Guidelines.'
+        self.text = 'All build dependencies are listed in BuildRequires, except for any that are \
+listed in the exceptions section of Packaging Guidelines.'
         self.automatic = False
         self.type = 'MUST'
 
@@ -513,7 +514,8 @@ class CheckLicensInDoc(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/LicensingGuidelines#License_Text'
-        self.text = 'If (and only if) the source package includes the text of the license(s) in its own file, then that file, containing the text of the license(s) for the package is included in %doc.'
+        self.text = 'If (and only if) the source package includes the text of the license(s) in its own file, \
+then that file, containing the text of the license(s) for the package is included in %doc.'
         self.automatic = False
         self.type = 'MUST'
 
@@ -548,7 +550,8 @@ class CheckApprovedLicense(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/LicensingGuidelines'
-        self.text = 'Package is licensed with an open-source compatible license and meets other legal requirements as defined in the legal section of Packaging Guidelines.'
+        self.text = 'Package is licensed with an open-source compatible license and meets other legal \
+requirements as defined in the legal section of Packaging Guidelines.'
         self.automatic = False
         self.type = 'MUST'
 
@@ -1032,7 +1035,8 @@ class CheckContainsLicenseText(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/LicensingGuidelines#License_Text'
-        self.text = 'If the source package does not include license text(s) as a separate file from upstream, the packager SHOULD query upstream to include it.'
+        self.text = 'If the source package does not include license text(s) as a separate file from \
+upstream, the packager SHOULD query upstream to include it.'
         self.automatic = False
         self.type = 'SHOULD'
 
@@ -1047,7 +1051,8 @@ class CheckSpecDescTranlation(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#summary'
-        self.text = 'Description and summary sections in the package spec file contains translations for supported Non-English languages, if available.'
+        self.text = 'Description and summary sections in the package spec file contains translations \
+for supported Non-English languages, if available.'
         self.automatic = False
         self.type = 'SHOULD'
 
