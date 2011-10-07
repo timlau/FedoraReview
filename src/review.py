@@ -99,7 +99,7 @@ class ReviewHelper:
         self.__do_report_local("%s/%s" % (self.args.workdir, self.args.bug))
         self.__show_results()
 
-    def __do_report_local(self, file_dir='.'):
+    def __do_report_local(self, file_dir):
         ''' Create a review report on already downloaded .spec & .src.rpm'''
         spec_filter = '%s/%s*.spec' % (file_dir, self.args.name)
         srpm_filter = '%s/%s*.src.rpm' % (file_dir, self.args.name)
@@ -119,8 +119,8 @@ class ReviewHelper:
 
 
     def __run_checks(self, spec, srpm):
-        self.log.debug("  --> Spec file : %s" % self.bug.spec_file)
-        self.log.debug("  --> SRPM file : %s" % self.bug.srpm_file)
+        self.log.debug("  --> Spec file : %s" % spec)
+        self.log.debug("  --> SRPM file : %s" % srpm)
         self.checks = Checks(self.args, spec, srpm, cache=self.args.cache, nobuild = self.args.nobuild)
         outfile = "%s/%s-review.txt" % (self.args.workdir, self.checks.spec.name)
         with open(outfile,"w") as output:
@@ -163,7 +163,7 @@ class ReviewHelper:
             if not self.args.noreport:
                 self.__do_report()
         elif self.args.name:
-            self.__do_report_local()
+            self.__do_report_local(self.args.workdir)
 
 if __name__ == "__main__":
     review = ReviewHelper()
