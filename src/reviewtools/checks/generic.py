@@ -113,10 +113,6 @@ class CheckBase(Helpers):
                     result[rpm].append(fn)
         return result
 
-class LangCheckBase(CheckBase):
-    def is_applicable(self):
-        return False
-
 class CheckName(CheckBase):
     '''
     MUST: The package must be named according to the Package Naming Guidelines .
@@ -1296,8 +1292,6 @@ class CheckManPages(CheckBase):
         self.automatic = False
         self.type = 'SHOULD'
 
-
-
 class CheckParallelMake(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
@@ -1330,6 +1324,7 @@ class CheckParallelMake(CheckBase):
                 found = True
         self.set_passed(found)
 
+
 class CheckPatchComments(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
@@ -1339,3 +1334,9 @@ class CheckPatchComments(CheckBase):
         self.type = 'SHOULD'
 
 
+class LangCheckBase(CheckBase):
+    """ Base class for language specific class. """
+
+    def is_applicable(self):
+        """ By default, language specific check are disabled. """
+        return False
