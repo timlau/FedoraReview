@@ -124,6 +124,7 @@ class Helpers(object):
             return None, out
 
     def _get_file(self, link):
+        self.log.debug("  --> %s : %s" % (self.work_dir, link))
         url = urlparse(link)
         fname = os.path.basename(url.path)
         if os.path.exists(self.work_dir + fname) and self.cache:
