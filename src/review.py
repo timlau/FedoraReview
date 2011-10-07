@@ -122,7 +122,6 @@ class ReviewHelper:
         if self.outfile and self.checks.spec.filename:
             Popen([self.settings.editor, self.outfile, self.checks.spec.filename])
 
-
     def __run_checks(self, spec, srpm):
         self.log.debug("  --> Spec file : %s" % spec)
         self.log.debug("  --> SRPM file : %s" % srpm)
