@@ -74,7 +74,7 @@ class ReviewHelper:
         return args
 
     def __download_sources(self):
-        self.checks.sources.set_work_dir('%s/%s' % (self.args.workdir, self.args.bug))
+        self.checks.sources.set_work_dir(self.args.workdir)
         sources = self.checks.spec.get_sources()
         found = False
         if sources:
@@ -101,7 +101,8 @@ class ReviewHelper:
             self.log.info('Cannot download .spec and .srpm')
             sys.exit(1)
         self.args.name = os.path.basename(self.bug.spec_file).rsplit('.',1)[0]
-        self.__do_report_local("%s/%s" % (self.args.workdir, self.args.bug))
+        self.args.workdir = "%s/%s" % (self.args.workdir, self.args.bug)
+        self.__do_report_local(self.args.workdir)
         self.__show_results()
 
     def __do_report_local(self, file_dir):
@@ -169,7 +170,7 @@ class ReviewHelper:
             if not self.args.noreport:
                 self.__do_report()
         elif self.args.name:
-            self.__do_report_local(self.args.workdir)
+            self.__do_report_local(".")
 
 if __name__ == "__main__":
     review = ReviewHelper()
