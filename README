@@ -82,7 +82,9 @@ For your test to be taken into account, the class should have
 - *Not* end with 'Base' (this is reserved for parent class which don't
 actually run tests).
 - The result of the test should be set using the self.set_passed():
-    None  == na
-    True  == passed
-    False == failed
-
+    None            == na
+    'inconclusive'  == pending
+    True            == passed
+    False           == failed
+The file plugin.tmpl shows the basic structure/idea and implement an
+example test.
