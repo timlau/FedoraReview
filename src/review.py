@@ -170,7 +170,7 @@ class ReviewHelper:
             if not self.args.noreport:
                 self.__do_report()
         elif self.args.name:
-            self.__do_report_local(".")
+            self.__do_report_local(self.args.workdir)
 
 if __name__ == "__main__":
     review = ReviewHelper()
