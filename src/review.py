@@ -47,29 +47,34 @@ class ReviewHelper:
     def __get_args(self):
         parser = argparse.ArgumentParser(description='Review a Fedora Package')
         parser.add_argument('-b','--bug', metavar='[bug]',
-                   help='the bug number contain the package review')
-        parser.add_argument('-w','--workdir', default=self.settings.work_dir, metavar='[dir]',
-                            help='Work directory (default = ~/tmp/reviewhelper/')
+                    help='the bug number contain the package review')
+        parser.add_argument('-w','--workdir',
+                    default=self.settings.work_dir, metavar='[dir]',
+                    help='Work directory (default = ~/tmp/reviewhelper/')
         parser.add_argument('--other-bz', default=None, metavar='[bugzilla url]', dest='other_bz',
-                            help='alternative bugzilla URL')
+                    help='alternative bugzilla URL')
         parser.add_argument('--assign', action='store_true',
-                            help = 'Assign the bug and set review flags')
+                    help = 'Assign the bug and set review flags')
         parser.add_argument('--cache', action='store_true', dest='cache',
-                            help = 'do not redownload files from bugzilla, use the ones in the cache')
+                    help = 'do not redownload files from bugzilla, use the ones in the cache')
         parser.add_argument('--nobuild', action='store_true', dest='nobuild',
-                            help = 'do not rebuild the srpm, use currently build ones')
+                    help = 'do not rebuild the srpm, use currently build ones')
         parser.add_argument('-u','--user', metavar='[userid]', default = self.settings.bz_user,
-                   help='The Fedora Bugzilla userid')
+                    help='The Fedora Bugzilla userid')
         parser.add_argument('-p','--password', metavar='[password]',
-                   help='The Fedora Bugzilla password')
+                    help='The Fedora Bugzilla password')
         parser.add_argument('-v','--verbose',  action='store_true',
-                            help='Show more output')
+                    help='Show more output')
         parser.add_argument('--no-report',  action='store_true', dest='noreport',
-                            help='Do not make a review report')
+                    help='Do not make a review report')
         parser.add_argument('-n','--name', metavar='<name prefix>',
-                   help='run on local <name prefix>.spec & <name prefix>*.src.rpm located in work dir')
-        parser.add_argument('-D','--dist', metavar='<distribution>', default = self.settings.distribution,
-                   help='Run check of a given distribution (F13,F14,F15,RAWHIDE,EPEL5 & EPEL6)')
+                    help='run on local <name prefix>.spec & <name prefix>*.src.rpm located in work dir')
+        parser.add_argument('-D','--dist', metavar='<distribution>',
+                    default = self.settings.distribution,
+                    help='Run check of a given distribution (F13,F14,F15,RAWHIDE,EPEL5 & EPEL6)')
+        parser.add_argument('--mock-release', metavar='<release>',
+                    default = self.settings.mock_dist, dest='mock_dist',
+                    help='Distribution to use for the mock build (default to rawhide, can be 15,16...')
         args = parser.parse_args()
         return args
 
@@ -127,7 +132,8 @@ class ReviewHelper:
         self.log.debug("  --> Spec file : %s" % spec)
         self.log.debug("  --> SRPM file : %s" % srpm)
         self.checks = Checks(self.args, spec, srpm, 
-            cache=self.args.cache, nobuild = self.args.nobuild)
+            cache=self.args.cache, nobuild = self.args.nobuild,
+            mock_dist=self.args.mock_dist)
         outfile = "%s/%s-review.txt" % (
             self.args.workdir, self.checks.spec.name)
         with open(outfile,"w") as output:

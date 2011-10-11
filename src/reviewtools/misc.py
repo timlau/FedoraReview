@@ -41,7 +41,8 @@ from reviewtools import get_logger
 
 
 class Checks(object):
-    def __init__(self, args, spec_file, srpm_file, cache=False, nobuild=False):
+    def __init__(self, args, spec_file, srpm_file, cache=False,
+            nobuild=False, mock_dist='rawhide'):
         self.checks = {'MUST': [], 'SHOULD': []}
         self.args = args  # Command line arguments & options
         self.cache = cache
@@ -50,7 +51,8 @@ class Checks(object):
         self.spec = SpecFile(spec_file)
         self.sources = Sources(cache=cache)
         self.log = get_logger()
-        self.srpm = SRPMFile(srpm_file, cache=cache, nobuild=nobuild)
+        self.srpm = SRPMFile(srpm_file, cache=cache, nobuild=nobuild,
+            mock_dist=mock_dist)
         self.plugins = load('reviewtools.checks')
         self.add_check_classes()
 
