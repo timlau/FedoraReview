@@ -141,6 +141,8 @@ class ReviewHelper:
             self.log.info('Running checks and generate report\n')
             self.checks.run_checks(output=output)
             output.close()
+        print "Review in: %s/%s-review.txt" % (self.args.workdir,
+            self.checks.spec.name)
 
     def __do_assign(self):
         ''' assign bug'''
