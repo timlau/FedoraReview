@@ -439,7 +439,7 @@ class SpecFile(object):
         lines = "\n".join(self.get_section('main')['main'])
         #print lines
         args = ['rpm', '--eval', lines]
-        print len(args), args
+        #print len(args), args
         try:
             proc = Popen(args, stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE, shell=True)
