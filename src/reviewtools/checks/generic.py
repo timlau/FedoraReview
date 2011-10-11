@@ -535,11 +535,12 @@ then that file, containing the text of the license(s) for the package is include
 
         br = self.spec.find_all(re.compile("%doc.*"))
         for entry in br:
-            entry = os.path.basename(entry.group(0)).strip()
-            for licensefile in licenses:
-                if entry.startswith(licensefile):
-                    licenses.remove(licensefile)
-        
+            entries = os.path.basename(entry.group(0)).strip().split()
+            for entry in entries:
+                for licensefile in licenses:
+                    if entry.startswith(licensefile):
+                        licenses.remove(licensefile)
+
         if not haslicensefile:
             self.set_passed("inconclusive")
         else:
@@ -1081,7 +1082,6 @@ for supported Non-English languages, if available.'
         self.type = 'SHOULD'
 
 
-
 class CheckSourceUrl(CheckBase):
     '''
     http://fedoraproject.org/wiki/Packaging/SourceURL
@@ -1138,7 +1138,6 @@ class CheckSourcePatchPrefix(CheckBase):
         self.set_passed(passed, extra)
 
 
-
 class CheckFinalRequiresProvides(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
@@ -1146,7 +1145,6 @@ class CheckFinalRequiresProvides(CheckBase):
         self.text = 'Final provides and requires are sane (rpm -q --provides and rpm -q --requires).'
         self.automatic = False
         self.type = 'SHOULD'
-
 
 
 class CheckTestSuites(CheckBase):
@@ -1194,7 +1192,6 @@ class CheckSupportAllArchs(CheckBase):
         self.type = 'SHOULD'
 
 
-
 class CheckDistTag(CheckBase):
     '''
     http://fedoraproject.org/wiki/DistTag
@@ -1208,6 +1205,7 @@ class CheckDistTag(CheckBase):
 
     def run(self):
         self.set_passed(self.spec.find_tag('Release').endswith('%{?dist}'))
+
 
 class CheckUseGlobal(CheckBase):
     '''
@@ -1232,7 +1230,6 @@ class CheckUseGlobal(CheckBase):
             self.set_passed(True)
 
 
-
 class CheckScriptletSanity(CheckBase):
     '''
     SHOULD: If scriptlets are used, those scriptlets must be sane.
@@ -1245,7 +1242,6 @@ class CheckScriptletSanity(CheckBase):
         self.text = 'Scriptlets must be sane, if used.'
         self.automatic = False
         self.type = 'SHOULD'
-
 
 
 class CheckPkgConfigFiles(CheckBase):
@@ -1295,7 +1291,6 @@ class CheckFileRequires(CheckBase):
         self.type = 'SHOULD'
 
 
-
 class CheckTimeStamps(CheckBase):
     '''
     http://fedoraproject.org/wiki/Packaging/Guidelines#Timestamps
@@ -1320,6 +1315,7 @@ class CheckManPages(CheckBase):
         self.text = 'Man pages included for all executables.'
         self.automatic = False
         self.type = 'SHOULD'
+
 
 class CheckParallelMake(CheckBase):
     def __init__(self, base):
