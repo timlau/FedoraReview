@@ -113,17 +113,17 @@ class Checks(object):
                 if test.is_applicable():
                     if test.automatic:
                         test.run()
-                else:
-                    test.state = 'na'
-                self.parse_result(test)
-                result = test.get_result()
-                self.log.debug('Running check : %s %s [%s] ' % (
+                    else:
+                        test.state = 'na'
+                    self.parse_result(test)
+                    result = test.get_result()
+                    self.log.debug('Running check : %s %s [%s] ' % (
                         test.__class__.__name__,
                         " " * (30 - len(test.__class__.__name__)),
                         test.state ))
-                if result:
-                    if result.startswith('[!] : MUST'):
-                        issues.append(result)
+                    if result:
+                        if result.startswith('[!] : MUST'):
+                            issues.append(result)
             self.show_result(output)
         output.write("\nIssues:\n")
         for fail in issues:
