@@ -82,10 +82,9 @@ class RCheckRequires(RCheckBase):
     def run(self):
         """ Run the check """
         br = self.spec.find_tag('BuildRequires')
-        if 'R ' in br and not 'R-core':
-            self.type= "SHOULD"
-            self.text= "Package should requires R-core rather than R"
-            self.set_passed(False)
+        if 'R ' in br and not 'R-core' in br:
+            self.set_passed(False,
+                "Package should requires R-core rather than R")
         else:
             self.set_passed('R-core' in br)
 
