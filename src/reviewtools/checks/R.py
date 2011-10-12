@@ -117,6 +117,9 @@ class RCheckDoc(RCheckBase):
 
 
 class RCheckLatestVersionIsPackaged(RCheckBase):
+
+    deprecates = ['CheckLatestVersionIsPackaged']
+
     def __init__(self, base):
         """ Instanciate check variable """
         CheckBase.__init__(self, base)
