@@ -5,6 +5,10 @@ from generic import LangCheckBase
 class CCppCheckBase(LangCheckBase):
     def is_applicable(self):
         """Need more comprehensive check and return True in valid cases"""
+        if self.has_files_re('/usr/(lib|lib64)/[\w\-]*\.so\.[0-9]') or \
+           self.has_files('*.h') or \
+           self.has_files('*.a'):
+           return True
         return False
 
 class CheckLDConfig(CCppCheckBase):
