@@ -96,7 +96,6 @@ class RCheckDoc(RCheckBase):
     def __init__(self, base):
         """ Instanciate check variable """
         RCheckBase.__init__(self, base)
-        print self.spec.find_tag('packname')
         self.doc_found = []
         for f in self.doc:
             if self.has_files("*" + f):
