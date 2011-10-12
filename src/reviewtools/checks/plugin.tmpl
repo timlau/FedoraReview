@@ -34,4 +34,30 @@ class RCheckBuildRequires(RCheckBase):
         br = self.spec.find_tag('BuildRequires')
         self.set_passed('R-devel' in br and 'tex(latex)' in br)
 
+
+class RCheckLatestVersionIsPackaged(RCheckBase):
+    """ Check if the lastest version is packaged. """
+
+    # This global variable for this class is used to remove a test
+    # from the list if one test over-rides a generic one.
+    # For example, in R FedoraReview can quite safely check if it is the
+    # latest version which have been packaged, but there is a generic
+    # check for that as in most cases it won't be possible do to so.
+    # Here we therefore specify how to turn off this generic check
+    # and keep only this specific one.
+    deprecates = ['CheckLatestVersionIsPackaged']
+
+    def __init__(self, base):
+        """ Instanciate check variable """
+        CheckBase.__init__(self, base)
+        self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
+        self.text = 'Latest version is packaged.'
+        self.automatic = True
+        self.type = 'SHOULD'
+
+    def run(self):
+        """ Run the check """
+        # do something...
+        self.set_passed(True)
+
 # Other classes doing other tests....

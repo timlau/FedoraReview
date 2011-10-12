@@ -31,6 +31,9 @@ from reviewtools import Helpers, get_logger
 TEST_STATES = {'pending': '[ ]','pass': '[x]','fail': '[!]','na': '[-]'}
 
 class CheckBase(Helpers):
+
+    deprecates = []
+
     def __init__(self, base):
         Helpers.__init__(self)
         self.base = base

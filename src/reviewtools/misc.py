@@ -48,6 +48,7 @@ class Checks(object):
         self.cache = cache
         self.nobuild = nobuild
         self._results = {'PASSED': [], 'FAILED': [], 'NA': [], 'USER': []}
+        self.deprecated = []
         self.spec = SpecFile(spec_file)
         self.sources = Sources(cache=cache)
         self.log = get_logger()
@@ -63,6 +64,7 @@ class Checks(object):
         """ get all the check classes in the reviewtools.checks and add them
         to be excuted
         """
+
         for module in self.plugins:
             objs = module.__dict__
             for mbr in sorted(objs):
@@ -75,6 +77,7 @@ class Checks(object):
         cls = class_name(self)
         typ = cls.type
         self.checks[typ].append(cls)
+        self.deprecated.extend(cls.deprecates)
 
     def show_file(self, filename, output=sys.stdout):
         fd = open(filename, "r")
@@ -112,7 +115,8 @@ class Checks(object):
                 # skip test not for the selected distro
                 if not self.args.dist in test.distribution:
                     continue
-                if test.is_applicable():
+                if test.is_applicable() and test.__class__.__name__ \
+                            not in self.deprecated:
                     if test.automatic:
                         test.run()
                     else:
@@ -127,7 +131,8 @@ class Checks(object):
                         if result.startswith('[!] : MUST'):
                             issues.append(result)
             self.show_result(output)
-        output.write("\nIssues:\n")
+        if issues:
+            output.write("\nIssues:\n")
         for fail in issues:
             output.write(fail)
             output.write('\n')
