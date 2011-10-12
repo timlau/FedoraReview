@@ -1,10 +1,11 @@
 #-*- coding: utf-8 -*-
-import os
 
-from generic import LangCheckBase, CheckBase
+from reviewtools.checks.generic import LangCheckBase
 
 
 class JavaCheckBase(LangCheckBase):
+    """Base check for Java checks"""
+
     def is_applicable(self):
         if self.has_files("*.jar") or self.has_files("*.pom"):
             return True
@@ -12,6 +13,8 @@ class JavaCheckBase(LangCheckBase):
             return False
 
     def _get_javadoc_sub(self):
+        """Returns name of javadoc rpm or None if no such subpackage
+        exists"""
         rpm_files = self.srpm.get_files_rpms()
         for rpm in rpm_files:
             if '-javadoc' in rpm:
@@ -20,9 +23,10 @@ class JavaCheckBase(LangCheckBase):
 
 
 class CheckJavadoc(JavaCheckBase):
+    """Check if javadoc subpackage exists and contains documentation"""
 
     def __init__(self, base):
-        CheckBase.__init__(self, base)
+        JavaCheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Java#Javadoc_installation'
         self.text = 'Javadoc documentation files are generated and included in -javadoc subpackage'
         self.automatic = True
@@ -41,8 +45,10 @@ class CheckJavadoc(JavaCheckBase):
         self.set_passed(False, "No javadoc html files found in %s" % key)
 
 class CheckJavadocdirName(JavaCheckBase):
+    """Check if deprecated javadoc symlinks are present"""
+
     def __init__(self, base):
-        CheckBase.__init__(self, base)
+        JavaCheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Java#Javadoc_installation'
         self.text = 'Javadocs are placed in %{_javadocdir}/%{name} (no -%{version} symlink)'
         self.automatic = True
