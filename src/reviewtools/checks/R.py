@@ -134,5 +134,7 @@ class RCheckLatestVersionIsPackaged(RCheckBase):
         up_version = self.getUpstreamRPackageVersion()
         up_version = up_version.replace('-','.')
 
-        self.set_passed(up_version == cur_version)
+        self.set_passed(up_version == cur_version, "Latest upstream " +
+                "version is %s, packaged version is %s" % 
+                (up_version, cur_version))
         
