@@ -1,4 +1,4 @@
-#-*- coding: UTF-8 -*-
+#-*- coding: utf-8 -*-
 
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -287,7 +287,7 @@ class SRPMFile(Helpers):
         """ Runs rpmlint against the provided file.
         karg: filename, the name of the file to run rpmlint on
         """
-        cmd = 'rpmlint %s' % filename
+        cmd = 'rpmlint -f .rpmlint %s' % filename
         sep = "%s\n" % (80 * "=")
         result = "\nrpmlint %s\n" % os.path.basename(filename)
         result += sep

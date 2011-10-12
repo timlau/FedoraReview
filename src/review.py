@@ -1,5 +1,5 @@
 #!/usr/bin/python -tt
-#-*- coding: UTF-8 -*-
+#-*- coding: utf-8 -*-
 
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -131,7 +131,7 @@ class ReviewHelper:
     def __run_checks(self, spec, srpm):
         self.log.debug("  --> Spec file : %s" % spec)
         self.log.debug("  --> SRPM file : %s" % srpm)
-        self.checks = Checks(self.args, spec, srpm, 
+        self.checks = Checks(self.args, spec, srpm,
             cache=self.args.cache, nobuild = self.args.nobuild,
             mock_dist=self.args.mock_dist)
         outfile = "%s/%s-review.txt" % (
