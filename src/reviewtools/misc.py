@@ -1,4 +1,4 @@
-#-*- coding: UTF-8 -*-
+#-*- coding: utf-8 -*-
 
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -115,7 +115,7 @@ class Checks(object):
                 # skip test not for the selected distro
                 if not self.args.dist in test.distribution:
                     continue
-                if test.is_applicable() and test.__class__.__name__ \
+                if test.is_applicable() and test.__class__ \
                             not in self.deprecated:
                     if test.automatic:
                         test.run()

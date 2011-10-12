@@ -4,7 +4,7 @@
 
 import re
 import os
-from generic import LangCheckBase, CheckBase
+from generic import LangCheckBase, CheckBase, CheckLatestVersionIsPackaged
 
 
 class RCheckBase(LangCheckBase):
@@ -45,7 +45,7 @@ class RCheckLatestVersionIsPackaged(RCheckBase):
     # check for that as in most cases it won't be possible do to so.
     # Here we therefore specify how to turn off this generic check
     # and keep only this specific one.
-    deprecates = ['CheckLatestVersionIsPackaged']
+    deprecates = [CheckLatestVersionIsPackaged]
 
     def __init__(self, base):
         """ Instanciate check variable """

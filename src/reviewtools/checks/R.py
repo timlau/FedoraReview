@@ -3,7 +3,7 @@
 import re
 import os
 import urllib
-from generic import LangCheckBase, CheckBase
+from generic import LangCheckBase, CheckBase, CheckLatestVersionIsPackaged
 from reviewtools import get_logger
 
 
@@ -118,7 +118,7 @@ class RCheckDoc(RCheckBase):
 
 class RCheckLatestVersionIsPackaged(RCheckBase):
 
-    deprecates = ['CheckLatestVersionIsPackaged']
+    deprecates = [CheckLatestVersionIsPackaged]
 
     def __init__(self, base):
         """ Instanciate check variable """
