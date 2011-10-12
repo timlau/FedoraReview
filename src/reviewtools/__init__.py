@@ -457,15 +457,25 @@ class SpecFile(object):
         This get the text precise as in is written in the spec,
         no resolved macros
         '''
-        key = re.compile(r"^%s\d*\s*:\s*(.*)" % tag, re.I)
-        value = None
+        # Maybe we can merge the last two regex in one but using
+        # (define|global) leads to problem with the res.group(1)
+        # so for the time being let's go with 2 regex
+        keys = [ re.compile(r"^%s\d*\s*:\s*(.*)" % tag, re.I),
+                 re.compile(r"^.define\s*%s\s*(.*)" % tag, re.I),
+                 re.compile(r"^.global\s*%s\s*(.*)" % tag, re.I)
+               ]
+        values = []
         for line in self.lines:
             # check for release
-            res = key.search(line)
-            if res:
-                value = res.group(1)
-                break
-        return value
+            for key in keys:
+                res = key.search(line)
+                if res:
+                    value = res.group(1).strip()
+                    values.append(value)
+        if len(values) == 1:  # this should prevent to break old tests
+            return values[0]
+        else:
+            return values
 
     def get_section(self, section):
         '''
