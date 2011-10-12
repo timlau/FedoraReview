@@ -58,7 +58,7 @@ class RCheckBuildRequires(RCheckBase):
 
     def __init__(self, base):
         """ Instanciate check variable """
-        CheckBase.__init__(self, base)
+        RCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging:R'
         self.text = 'Package contains the mandatory BuildRequires.'
         self.automatic = True
@@ -74,7 +74,7 @@ class RCheckRequires(RCheckBase):
 
     def __init__(self, base):
         """ Instanciate check variable """
-        CheckBase.__init__(self, base)
+        RCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging:R'
         self.text = 'Package requires R-core.'
         self.automatic = True
@@ -95,7 +95,7 @@ class RCheckDoc(RCheckBase):
 
     def __init__(self, base):
         """ Instanciate check variable """
-        CheckBase.__init__(self, base)
+        RCheckBase.__init__(self, base)
         print self.spec.find_tag('packname')
         self.doc_found = []
         for f in self.doc:
@@ -122,7 +122,7 @@ class RCheckLatestVersionIsPackaged(RCheckBase):
 
     def __init__(self, base):
         """ Instanciate check variable """
-        CheckBase.__init__(self, base)
+        RCheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
         self.text = 'Latest version is packaged.'
         self.automatic = True
