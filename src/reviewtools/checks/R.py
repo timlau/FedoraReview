@@ -2,11 +2,23 @@
 
 import re
 import os
+import urllib
 from generic import LangCheckBase, CheckBase
+from reviewtools import get_logger
 
 
 class RCheckBase(LangCheckBase):
     """ Base class for all R specific checks. """
+    
+    doc = ['doc','DESCRIPTION','NEWS', 'CITATION']
+    URLS = [
+                'http://www.bioconductor.org/packages/release/data/experiment/src/contrib/PACKAGES',
+                'http://www.bioconductor.org/packages/release/data/annotation/src/contrib/PACKAGES',
+                'http://www.bioconductor.org/packages/release/bioc/src/contrib/PACKAGES',
+                'http://cran.at.r-project.org/src/contrib/PACKAGES',
+                'http://r-forge.r-project.org/src/contrib/PACKAGES',
+                ]
+    log = get_logger()
 
     def is_applicable(self):
         """ Check is the tests are applicable, here it checks whether
@@ -16,6 +28,30 @@ class RCheckBase(LangCheckBase):
             return True
         else:
             return False
+    
+    def getUpstreamRPackageVersion(self):
+        """ Browse the PACKAGE file of the different repo to find the
+        latest version number of the given package name.
+        """
+        name = self.spec.name[2:]
+
+        ok = []
+        version = None
+        for url in self.URLS:
+            f = urllib.urlopen(url)
+            s = f.read()
+            f.close()
+            res = re.search('Package: %s\nVersion:.*' % name, s)
+            if res is not None:
+                self.log.debug("Found in: %s" % url)
+                ok.append(url)
+                if version is None:
+                    ver = res.group().split('\n')[1]
+                    version = ver.replace('Version:','').strip()
+                else:
+                    " * Found two version of the package in %s" %(" ".join(ok))
+        return version
+
 
 class RCheckBuildRequires(RCheckBase):
     """ Check if the BuildRequires have the mandatory elements. """
@@ -61,13 +97,13 @@ class RCheckDoc(RCheckBase):
         """ Instanciate check variable """
         CheckBase.__init__(self, base)
         print self.spec.find_tag('packname')
-        self.doc = []
-        for f in ['doc','DESCRIPTION','NEWS', 'CITATION']:
+        self.doc_found = []
+        for f in self.doc:
             if self.has_files("*" + f):
-                self.doc.append(f)
+                self.doc_found.append(f)
         self.url = 'http://fedoraproject.org/wiki/Packaging:R'
         self.text = 'Package have the default element marked as %%doc : %s' % (
-        ", ".join(self.doc))
+        ", ".join(self.doc_found))
         self.automatic = True
 
     def run(self):
@@ -75,6 +111,25 @@ class RCheckDoc(RCheckBase):
         br = self.spec.find_all(re.compile("%doc.*"))
         for entry in br:
             entry = os.path.basename(entry.group(0)).strip()
-            if str(entry) in self.doc:
-                self.doc.remove(entry)
-        self.set_passed(self.doc == [])
+            if str(entry) in self.doc_found:
+                self.doc_found.remove(entry)
+        self.set_passed(self.doc_found == [])
+
+
+class RCheckLatestVersionIsPackaged(RCheckBase):
+    def __init__(self, base):
+        """ Instanciate check variable """
+        CheckBase.__init__(self, base)
+        self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
+        self.text = 'Latest version is packaged.'
+        self.automatic = True
+        self.type = 'SHOULD'
+    
+    def run(self):
+        """ Run the check """
+        cur_version = self.spec.find_tag('Version')
+        up_version = self.getUpstreamRPackageVersion()
+        up_version = up_version.replace('-','.')
+
+        self.set_passed(up_version == cur_version)
+        
