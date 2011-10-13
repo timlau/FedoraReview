@@ -120,7 +120,7 @@ class Checks(object):
                     if test.automatic:
                         test.run()
                     else:
-                        test.state = 'na'
+                        test.state = 'pending'
                     self.parse_result(test)
                     result = test.get_result()
                     self.log.debug('Running check : %s %s [%s] ' % (
