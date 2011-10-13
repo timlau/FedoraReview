@@ -450,7 +450,7 @@ class SpecFile(object):
             return False
         return output
 
-    def find_tag(self, tag):
+    def find_tag(self, tag, section = None):
         '''
         find at given tag in the spec file.
         Ex. Name:, Version:
@@ -465,7 +465,12 @@ class SpecFile(object):
                  re.compile(r"^.global\s*%s\s*(.*)" % tag, re.I)
                ]
         values = []
-        for line in self.lines:
+        lines = self.lines
+        if section:
+            lines = self.get_section(section)
+            if lines:
+                lines = lines[section]
+        for line in lines:
             # check for release
             for key in keys:
                 res = key.search(line)
