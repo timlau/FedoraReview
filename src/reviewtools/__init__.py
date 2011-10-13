@@ -471,9 +471,9 @@ class SpecFile(object):
                 res = key.search(line)
                 if res:
                     value = res.group(1).strip()
-                    value = value.replace(',', '')
-                    value.extend(value.split())
-                    values.extend(value)
+                    value = value.replace(',', ' ')
+                    value = value.replace('  ', ' ')
+                    values.extend(value.split())
         return values
 
     def get_section(self, section):
