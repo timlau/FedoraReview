@@ -1,5 +1,5 @@
 #-*- coding: utf-8 -*-
-
+import re
 from reviewtools.checks.generic import LangCheckBase
 
 
@@ -72,3 +72,30 @@ class CheckJavadocdirName(JavaCheckBase):
             return
 
         self.set_passed(True)
+
+class CheckJPackageRequires(JavaCheckBase):
+    """Check if (Build)Requires on jpackage-utils are present"""
+
+    def __init__(self, base):
+        JavaCheckBase.__init__(self, base)
+        self.url = 'https://fedoraproject.org/wiki/Packaging:Java'
+        self.text = 'Packages have proper BuildRequires/Requires on jpackage-utils'
+        self.automatic = True
+
+    def run(self):
+        brs = self.spec.find_tag('BuildRequires')
+        rs = self.spec.find_tag('Requires')
+        br_found = False
+        r_found = False
+        for br in brs:
+            if 'jpackage-utils' in br:
+                br_found = True
+
+        # this not not 100% correct since we just look for this
+        # require anywhere in spec.
+        for req in rs:
+            if 'jpackage-utils' in req:
+                r_found = True
+        self.set_passed(br_found and r_found)
+
+
