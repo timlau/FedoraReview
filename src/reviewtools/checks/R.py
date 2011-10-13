@@ -65,16 +65,17 @@ class RCheckBuildRequires(RCheckBase):
 
     def run(self):
         """ Run the check """
-        brs = self.spec.find_tag('BuildRequires')
+        brt = self.spec.find_tag('BuildRequires')
+        brs = []
+        for br in brt:
+            br = br.replace(',', '')
+            brs.extend(br.split())
         tocheck = ['R-devel','tex(latex)']
-        for br in brs:
-            while len(tocheck) > 0 and tocheck[-1] in br:
-                tocheck.pop()
-        if len(tocheck) == 0:
+        if set(tocheck).intersection(set(brs)):
             self.set_passed(True)
         else:
             self.set_passed(False, 'Missing BuildRequires on %s' %
-                                    ', '.join(tocheck))
+                        ', '.join(set(tocheck).difference(set(brs))))
 
 
 class RCheckRequires(RCheckBase):
@@ -89,23 +90,16 @@ class RCheckRequires(RCheckBase):
 
     def run(self):
         """ Run the check """
-        brs = self.spec.find_tag('BuildRequires')
-        r_found = False
-        r_core_found = False
-        r_pattern = re.compile(r'BuildRequires:\s*R[ ><=].*')
-        for br in brs:
-            br = br.strip()
-            if 'R-core' in br:
-                r_core_found = True
-                continue
-            if re.search(r_pattern, br):
-                r_found = True
-
-        if r_found and not r_core_found:
+        brt = self.spec.find_tag('Requires')
+        brs = []
+        for br in brt:
+            br = br.replace(',', '')
+            brs.extend(br.split())
+        if ('R' in brs and not 'R-core' in brs)
             self.set_passed(False,
                 "Package should requires R-core rather than R")
         else:
-            self.set_passed(r_core_found)
+            self.set_passed('R-core' in brs)
 
 
 class RCheckDoc(RCheckBase):
