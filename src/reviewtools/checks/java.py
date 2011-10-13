@@ -99,3 +99,16 @@ class CheckJPackageRequires(JavaCheckBase):
         self.set_passed(br_found and r_found)
 
 
+class CheckJavadocJPackageRequires(JavaCheckBase):
+    """Check if javadoc subpackage has requires on jpackage-utils"""
+
+    def __init__(self, base):
+        JavaCheckBase.__init__(self, base)
+        self.url = 'https://fedoraproject.org/wiki/Packaging:Java'
+        self.text = 'Javadoc subpackages have Requires: jpackage-utils'
+        self.automatic = True
+
+
+    def run(self):
+        brs = self.spec.find_tag('Requires', '%package javadoc')
+        self.set_passed('jpackage-utils' in brs)
