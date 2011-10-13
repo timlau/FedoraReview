@@ -1,4 +1,4 @@
-#-*- coding: UTF-8 -*-
+#-*- coding: utf-8 -*-
 
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -157,7 +157,12 @@ class CheckBuildroot(CheckBase):
         self.automatic = True
 
     def run(self):
-        br = self.spec.find_tag('BuildRoot')
+        br_tags = self.spec.find_tag('BuildRoot')
+        if len(br_tags) > 1:
+            self.set_passed(False, "Multiple BuildRoot definitions found")
+            return
+
+        br = br_tags[0]
         legal_buildroots = [
         '%(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)',
         '%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)',
@@ -171,7 +176,7 @@ class CheckBuildroot(CheckBase):
         '''
         Buildroot tag is ignored for Fedora > 10, but is needed for EPEL5
         '''
-        return self.spec.find_tag('BuildRoot') != None
+        return len(self.spec.find_tag('BuildRoot')) > 0
 
 
 class CheckSpecName(CheckBase):
@@ -1207,7 +1212,12 @@ class CheckDistTag(CheckBase):
         self.type = 'SHOULD'
 
     def run(self):
-        self.set_passed(self.spec.find_tag('Release').endswith('%{?dist}'))
+        rel_tags = self.spec.find_tag('Release')
+        if len(rel_tags) > 1:
+            self.set_passed(False, "Multiple Release tags found")
+            return
+        rel = rel_tags[0]
+        self.set_passed(rel.endswith('%{?dist}'))
 
 
 class CheckUseGlobal(CheckBase):

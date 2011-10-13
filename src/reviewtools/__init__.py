@@ -429,7 +429,7 @@ class SpecFile(object):
             if 'unknown tag' in error:
                 return None
             value = self.find_tag(macro)
-            if value:
+            if len(value) > 0:
                 return value
             else:
                 print "error : [%s]" % (error)
@@ -472,10 +472,7 @@ class SpecFile(object):
                 if res:
                     value = res.group(1).strip()
                     values.append(value)
-        if len(values) == 1:  # this should prevent to break old tests
-            return values[0]
-        else:
-            return values
+        return values
 
     def get_section(self, section):
         '''

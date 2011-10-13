@@ -9,7 +9,7 @@ from reviewtools import get_logger
 
 class RCheckBase(LangCheckBase):
     """ Base class for all R specific checks. """
-    
+
     doc = ['doc','DESCRIPTION','NEWS', 'CITATION']
     URLS = [
                 'http://www.bioconductor.org/packages/release/data/experiment/src/contrib/PACKAGES',
@@ -28,7 +28,7 @@ class RCheckBase(LangCheckBase):
             return True
         else:
             return False
-    
+
     def getUpstreamRPackageVersion(self):
         """ Browse the PACKAGE file of the different repo to find the
         latest version number of the given package name.
@@ -65,8 +65,16 @@ class RCheckBuildRequires(RCheckBase):
 
     def run(self):
         """ Run the check """
-        br = self.spec.find_tag('BuildRequires')
-        self.set_passed('R-devel' in br and 'tex(latex)' in br)
+        brs = self.spec.find_tag('BuildRequires')
+        tocheck = ['R-devel','tex(latex)']
+        for br in brs:
+            while len(tocheck) > 0 and tocheck[-1] in br:
+                tocheck.pop()
+        if len(tocheck) == 0:
+            self.set_passed(True)
+        else:
+            self.set_passed(False, 'Missing BuildRequires on %s' %
+                                    ', '.join(tocheck))
 
 
 class RCheckRequires(RCheckBase):
@@ -81,12 +89,23 @@ class RCheckRequires(RCheckBase):
 
     def run(self):
         """ Run the check """
-        br = self.spec.find_tag('BuildRequires')
-        if 'R ' in br and not 'R-core' in br:
+        brs = self.spec.find_tag('BuildRequires')
+        r_found = False
+        r_core_found = False
+        r_pattern = re.compile(r'BuildRequires:\s*R[ ><=].*')
+        for br in brs:
+            br = br.strip()
+            if 'R-core' in br:
+                r_core_found = True
+                continue
+            if re.search(r_pattern, br):
+                r_found = True
+
+        if r_found and not r_core_found:
             self.set_passed(False,
                 "Package should requires R-core rather than R")
         else:
-            self.set_passed('R-core' in br)
+            self.set_passed(r_core_found)
 
 
 class RCheckDoc(RCheckBase):
@@ -125,14 +144,14 @@ class RCheckLatestVersionIsPackaged(RCheckBase):
         self.text = 'Latest version is packaged.'
         self.automatic = True
         self.type = 'SHOULD'
-    
+
     def run(self):
         """ Run the check """
-        cur_version = self.spec.find_tag('Version')
+        cur_version = self.spec.find_tag('Version')[0]
         up_version = self.getUpstreamRPackageVersion()
         up_version = up_version.replace('-','.')
 
         self.set_passed(up_version == cur_version, "Latest upstream " +
-                "version is %s, packaged version is %s" % 
+                "version is %s, packaged version is %s" %
                 (up_version, cur_version))
-        
+
