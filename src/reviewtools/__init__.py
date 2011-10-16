@@ -45,7 +45,7 @@ LOG_ROOT = 'reviewtools'
 class Settings(BaseConfig):
     """ FedoraReview Config Setting"""
     # Editor to use to show review report & spec
-    editor = Option('/usr/bin/gedit')
+    editor = Option('/usr/bin/xdg-open')
     # Work dir
     work_dir = Option('.')
     # Default bugzilla userid
