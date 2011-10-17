@@ -135,9 +135,9 @@ class ReviewHelper:
         self.checks = Checks(self.args, spec, srpm,
             cache=self.args.cache, nobuild = self.args.nobuild,
             mock_dist=self.args.mock_dist)
-        outfile = "%s/%s-review.txt" % (
+        self.outfile = "%s/%s-review.txt" % (
             self.args.workdir, self.checks.spec.name)
-        with open(outfile,"w") as output:
+        with open(self.outfile,"w") as output:
             # get upstream sources
             rc = self.__download_sources()
             if not rc:
