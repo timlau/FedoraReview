@@ -166,3 +166,19 @@ class RCheckCheckMacro(RCheckBase):
         sec_check = self.spec.get_section('%check')
         self.set_passed(sec_check != None)
 
+
+class RCheckDir(RCheckBase):
+    """ Check if the directory %{packname} is owned by the package """
+
+    def __init__(self, base):
+        """ Instanciate check variable """
+        RCheckBase.__init__(self, base)
+        self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
+        self.text = 'The package owns the created directory.'
+        self.automatic = True
+        self.type = 'MUST'
+
+    def run(self):
+        """ Run the check """
+        dirs = self.spec.find_tag('%dir')
+        print dirs
