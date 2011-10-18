@@ -5,7 +5,7 @@
 import re
 import os
 import urllib
-from generic import LangCheckBase, CheckLatestVersionIsPackaged
+from reviewtools.checks.generic import LangCheckBase, CheckLatestVersionIsPackaged
 from reviewtools import get_logger
 
 
@@ -182,3 +182,35 @@ class RCheckDir(RCheckBase):
         """ Run the check """
         dirs = self.spec.find_tag('%dir')
         print dirs
+
+class RCheckBuildSection(RCheckBase):
+    """ Check if the build section follows the expected behavior """
+
+    def __init__(self, base):
+        """ Instanciate check variable """
+        RCheckBase.__init__(self, base)
+        self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
+        self.text = 'The package owns the created directory.'
+        self.automatic = True
+        self.type = 'MUST'
+
+    def run(self):
+        """ Run the check """
+        b_dir = False
+        b_test = False
+        b_rm = False
+        b_install = False
+        for line in self.spec.spec_lines:
+            if 'mkdir -p' in line and '/R/library' in line:
+                b_dir = True
+            if "test -d %{packname}/src && (cd %{packname}/src; rm -f *.o *.so)" in line:
+                b_test = True
+            if 'rm' in line and '/R/library/R.css' in line:
+                b_rm = True
+            if 'R CMD INSTALL %{packname} -l' in line and '/R/library' in line:
+                b_install = True
+        if b_dir is True and b_test is True and b_rm is True and \
+            b_install is True:
+            self.set_passed(True)
+        else:
+            self.set_passed(False)
