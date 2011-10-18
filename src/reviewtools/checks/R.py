@@ -190,7 +190,7 @@ class RCheckBuildSection(RCheckBase):
         """ Instanciate check variable """
         RCheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
-        self.text = 'The package owns the created directory.'
+        self.text = 'The package has the standard %build section.'
         self.automatic = True
         self.type = 'MUST'
 
@@ -200,7 +200,7 @@ class RCheckBuildSection(RCheckBase):
         b_test = False
         b_rm = False
         b_install = False
-        for line in self.spec.spec_lines:
+        for line in self.spec.lines:
             if 'mkdir -p' in line and '/R/library' in line:
                 b_dir = True
             if "test -d %{packname}/src && (cd %{packname}/src; rm -f *.o *.so)" in line:
@@ -213,4 +213,13 @@ class RCheckBuildSection(RCheckBase):
             b_install is True:
             self.set_passed(True)
         else:
-            self.set_passed(False)
+            cmt = ''
+            if b_dir is False:
+                cmt += "Package doesn't have the standard directory creation.\n"
+            if b_test is False:
+                cmt += "Package doesn't have the standard removal of *.o and *.so.\n"
+            if b_rm is False:
+                cmt += "Package doesn't have the standard removal of the R.css file\n"
+            if b_install is False:
+                cmt += "Package doesn't have the standard R CMD INSTALL function\n"
+            self.set_passed(False, cmt)
