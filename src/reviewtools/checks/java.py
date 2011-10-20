@@ -1,6 +1,6 @@
 #-*- coding: utf-8 -*-
 import re
-from reviewtools.checks.generic import LangCheckBase,CheckFullVerReqSub
+from reviewtools.checks.generic import LangCheckBase,CheckFullVerReqSub, CheckBuildCompilerFlags, CheckUsefulDebuginfo, CheckLargeDocs
 
 
 class JavaCheckBase(LangCheckBase):
@@ -21,6 +21,11 @@ class JavaCheckBase(LangCheckBase):
                 return rpm
         return None
 
+class CheckNotJavaApplicable(JavaCheckBase):
+    deprecates = [CheckBuildCompilerFlags, CheckUsefulDebuginfo, CheckLargeDocs]
+
+    def is_applicable(self):
+        return False
 
 class CheckJavadoc(JavaCheckBase):
     """Check if javadoc subpackage exists and contains documentation"""
