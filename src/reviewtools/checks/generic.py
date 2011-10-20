@@ -1333,6 +1333,9 @@ class CheckManPages(CheckBase):
         self.automatic = False
         self.type = 'SHOULD'
 
+    def is_applicable(self):
+        return self.has_files("[/usr]/[s]bin/*")
+
 
 class CheckParallelMake(CheckBase):
     def __init__(self, base):
