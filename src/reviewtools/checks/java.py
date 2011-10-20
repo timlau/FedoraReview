@@ -1,6 +1,6 @@
 #-*- coding: utf-8 -*-
 import re
-from reviewtools.checks.generic import LangCheckBase
+from reviewtools.checks.generic import LangCheckBase,CheckFullVerReqSub
 
 
 class JavaCheckBase(LangCheckBase):
@@ -112,3 +112,83 @@ class CheckJavadocJPackageRequires(JavaCheckBase):
     def run(self):
         brs = self.spec.find_tag('Requires', '%package javadoc')
         self.set_passed('jpackage-utils' in brs)
+
+class CheckJavaFullVerReqSub(JavaCheckBase):
+    """Check if subpackages have proper Requires on main package
+    except javadoc subpackage that doesn't have this requirement"""
+    deprecates = [CheckFullVerReqSub]
+
+    def __init__(self, base):
+        JavaCheckBase.__init__(self, base)
+        self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#RequiringBasePackage'
+        self.text = 'Fully versioned dependency in subpackages, if present.'
+        self.automatic = True
+        self.type = 'MUST'
+
+    def run(self):
+        regex = re.compile(r'Requires:\s*%{name}\s*=\s*%{version}-%{release}')
+        sections = self.spec.get_section("%package")
+        extra = ""
+        errors = False
+        for section in sections:
+            if section == "%package javadoc":
+                continue
+            passed = False
+            for line in sections[section]:
+                if regex.search(line):
+                    passed = True
+            if not passed:
+                extra += "Missing : Requires: %%{name} = %%{version}-%%{release} in %s" % section
+                errors = False
+        if errors:
+            self.set_passed(False,extra)
+        else:
+            self.set_passed(True)
+
+class CheckNoOldMavenDepmap(JavaCheckBase):
+    """Check if old add_to_maven_depmap macro is being used"""
+
+    def __init__(self, base):
+        JavaCheckBase.__init__(self, base)
+        self.url = 'https://fedoraproject.org/wiki/Packaging:Java#add_maven_depmap_macro'
+        self.text = 'Old add_to_maven_depmap macro is not being used'
+        self.automatic = True
+        self.type = 'MUST'
+        self.regex = re.compile(r'^\s*%add_to_maven_depmap\s+.*')
+
+    def run(self):
+        self.set_passed(not self.spec.find(self.regex))
+
+class CheckAddMavenDepmap(JavaCheckBase):
+    """Check if there is a proper call of add_maven_depmap macro"""
+
+    def __init__(self, base):
+        JavaCheckBase.__init__(self, base)
+        self.url = 'https://fedoraproject.org/wiki/Packaging:Java#add_maven_depmap_macro'
+        self.text = 'Pom files have correct add_maven_depmap call'
+        self.automatic = False
+        self.type = 'MUST'
+        self.regex = re.compile(r'^\s*%add_maven_depmap\s+.*')
+
+    def is_applicable(self):
+        return self.has_files("*.pom")
+
+    def run(self):
+        if not self.spec.find(self.regex):
+            self.set_passed(False, "No add_maven_depmap calls found but pom files present")
+        else:
+            self.set_passed("inconclusive", "Some add_maven_depmap"\
+                             "calls found. Please check if they are correct")
+
+class UseMavenpomdirMacro(JavaCheckBase):
+    """Use proper _mavenpomdir macro instead of old path"""
+    def __init__(self, base):
+        JavaCheckBase.__init__(self, base)
+        self.url = 'https://fedoraproject.org/wiki/Packaging:Java#add_maven_depmap_macro'
+        self.text = 'Packages use %{_mavenpomdir} instead of %{_datadir}/maven2/poms'
+        self.automatic = True
+        self.type = 'MUST'
+        self.regex = re.compile(r'%{_datadir}/maven2/poms')
+
+    def run(self):
+        self.set_passed(self.spec.find(self.regex))
