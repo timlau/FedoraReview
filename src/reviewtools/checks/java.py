@@ -1,6 +1,9 @@
 #-*- coding: utf-8 -*-
+"""Java language specific checks"""
+
 import re
-from reviewtools.checks.generic import LangCheckBase,CheckFullVerReqSub, CheckBuildCompilerFlags, CheckUsefulDebuginfo, CheckLargeDocs
+from reviewtools.checks.generic import LangCheckBase, CheckFullVerReqSub, \
+    CheckBuildCompilerFlags, CheckUsefulDebuginfo, CheckLargeDocs
 
 
 class JavaCheckBase(LangCheckBase):
@@ -21,7 +24,13 @@ class JavaCheckBase(LangCheckBase):
                 return rpm
         return None
 
+    def run(self):
+        """ Run the check """
+        pass
+
+
 class CheckNotJavaApplicable(JavaCheckBase):
+    """Class that disables generic tests that make no sense for java packages"""
     deprecates = [CheckBuildCompilerFlags, CheckUsefulDebuginfo, CheckLargeDocs]
 
     def is_applicable(self):
@@ -43,8 +52,8 @@ class CheckJavadoc(JavaCheckBase):
             self.set_passed(False, "No javadoc subpackage present")
 
         # and now look for at least one html file
-        for f in files[key]:
-            if '.html' in f:
+        for html in files[key]:
+            if '.html' in html:
                 self.set_passed(True)
                 return
         self.set_passed(False, "No javadoc html files found in %s" % key)
@@ -89,16 +98,16 @@ class CheckJPackageRequires(JavaCheckBase):
 
     def run(self):
         brs = self.spec.find_tag('BuildRequires')
-        rs = self.spec.find_tag('Requires')
+        requires = self.spec.find_tag('Requires')
         br_found = False
         r_found = False
-        for br in brs:
-            if 'jpackage-utils' in br:
+        for build_r in brs:
+            if 'jpackage-utils' in build_r:
                 br_found = True
 
         # this not not 100% correct since we just look for this
         # require anywhere in spec.
-        for req in rs:
+        for req in requires:
             if 'jpackage-utils' in req:
                 r_found = True
         self.set_passed(br_found and r_found)
@@ -121,6 +130,7 @@ class CheckJavadocJPackageRequires(JavaCheckBase):
 class CheckJavaFullVerReqSub(JavaCheckBase):
     """Check if subpackages have proper Requires on main package
     except javadoc subpackage that doesn't have this requirement"""
+
     deprecates = [CheckFullVerReqSub]
 
     def __init__(self, base):
@@ -146,7 +156,7 @@ class CheckJavaFullVerReqSub(JavaCheckBase):
                 extra += "Missing : Requires: %%{name} = %%{version}-%%{release} in %s" % section
                 errors = False
         if errors:
-            self.set_passed(False,extra)
+            self.set_passed(False, extra)
         else:
             self.set_passed(True)
 
@@ -187,6 +197,7 @@ class CheckAddMavenDepmap(JavaCheckBase):
 
 class UseMavenpomdirMacro(JavaCheckBase):
     """Use proper _mavenpomdir macro instead of old path"""
+
     def __init__(self, base):
         JavaCheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Java#add_maven_depmap_macro'
