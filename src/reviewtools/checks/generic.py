@@ -1256,6 +1256,10 @@ class CheckScriptletSanity(CheckBase):
         self.automatic = False
         self.type = 'SHOULD'
 
+    def is_applicable(self):
+        regex = re.compile('%(post|postun|posttrans|preun|pretrans|pre)\s+')
+        return self.spec.find(regex)
+
 
 class CheckPkgConfigFiles(CheckBase):
     '''
