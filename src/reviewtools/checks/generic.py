@@ -459,13 +459,17 @@ class CheckMakeinstall(CheckBase):
         self.automatic = True
         self.type = 'MUST'
 
-    def run(self):
+    def is_applicable(self):
         regex = re.compile(r'^(%makeinstall.*)')
         res = self.spec.find(regex)
         if res:
             self.set_passed(False, res.group(0))
+            return True
         else:
-            self.set_passed(True)
+            return False
+
+    def run(self):
+        pass
 
 
 
@@ -1127,6 +1131,9 @@ class CheckSourcePatchPrefix(CheckBase):
         self.automatic = True
         self.type = 'SHOULD'
 
+    def is_applicable(self):
+        return self.spec.has_patches()
+
     def run(self):
         regex = re.compile(r'^(Source|Patch)\d*\s*:\s*(.*)')
         result = self.spec.find_all(regex)
@@ -1377,6 +1384,9 @@ class CheckPatchComments(CheckBase):
         self.text = 'Patches link to upstream bugs/comments/lists or are otherwise justified.'
         self.automatic = False
         self.type = 'SHOULD'
+
+    def is_applicable(self):
+        return self.spec.has_patches()
 
 
 class LangCheckBase(CheckBase):
