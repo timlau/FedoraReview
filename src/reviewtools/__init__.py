@@ -365,6 +365,14 @@ class SpecFile(object):
             result[tag] = url
         return result
 
+    def has_patches(self):
+        '''Returns true if source rpm contains patch files'''
+        sources = self.get_sources()
+        for source in sources.keys():
+            if 'Patch' in source:
+                return True
+        return False
+
     def get_macros(self):
         for lin in self.lines:
             res = MACROS.search(lin)
