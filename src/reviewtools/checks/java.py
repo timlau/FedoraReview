@@ -181,7 +181,7 @@ class CheckAddMavenDepmap(JavaCheckBase):
         JavaCheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Java#add_maven_depmap_macro'
         self.text = 'Pom files have correct add_maven_depmap call'
-        self.automatic = False
+        self.automatic = True
         self.type = 'MUST'
         self.regex = re.compile(r'^\s*%add_maven_depmap\s+.*')
 
@@ -195,7 +195,7 @@ class CheckAddMavenDepmap(JavaCheckBase):
             self.set_passed("inconclusive", "Some add_maven_depmap"\
                              "calls found. Please check if they are correct")
 
-class UseMavenpomdirMacro(JavaCheckBase):
+class CheckUseMavenpomdirMacro(JavaCheckBase):
     """Use proper _mavenpomdir macro instead of old path"""
 
     def __init__(self, base):
@@ -206,5 +206,44 @@ class UseMavenpomdirMacro(JavaCheckBase):
         self.type = 'MUST'
         self.regex = re.compile(r'%{_datadir}/maven2/poms')
 
+    def is_applicable(self):
+        return self.has_files("*.pom")
+
     def run(self):
         self.set_passed(self.spec.find(self.regex))
+
+class CheckUpdateDepmap(JavaCheckBase):
+    """Check if there is deprecated %update_maven_depmap macro being used"""
+
+    def __init__(self, base):
+        JavaCheckBase.__init__(self, base)
+        self.url = 'https://fedoraproject.org/wiki/Packaging:Java#add_maven_depmap_macro'
+        self.text = 'Package DOES NOT use %update_maven_depmap in %post/%postun'
+        self.automatic = True
+        self.type = 'MUST'
+        self.regex = re.compile(r'^\s*%update_maven_depmap\s+.*')
+
+    def is_applicable(self):
+        return self.has_files("*.pom")
+
+    def run(self):
+        self.set_passed(not self.spec.find(self.regex))
+
+class CheckNoRequiresPost(JavaCheckBase):
+    """Check if package still has requires(post/postun) on
+    jpackage-utils"""
+
+    def __init__(self, base):
+        JavaCheckBase.__init__(self, base)
+        self.url = 'https://fedoraproject.org/wiki/Packaging:Java'
+        self.text = 'Packages DOES NOT have Requires(post) and Requires(postun)'\
+                    ' on jpackage-utils for %update_maven_depmap macro'
+        self.automatic = True
+        self.type = 'MUST'
+        self.regex = re.compile(r'^\s*Requires\((post|postun)\):\s*jpackage-utils.*')
+
+    def is_applicable(self):
+        return self.has_files("*.pom")
+
+    def run(self):
+        self.set_passed(not self.spec.find(self.regex))
