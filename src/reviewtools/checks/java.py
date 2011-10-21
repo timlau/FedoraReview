@@ -8,6 +8,7 @@ from reviewtools.checks.generic import LangCheckBase, CheckFullVerReqSub, \
 
 class JavaCheckBase(LangCheckBase):
     """Base check for Java checks"""
+    header="Java"
 
     def is_applicable(self):
         if self.has_files("*.jar") or self.has_files("*.pom"):

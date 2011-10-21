@@ -11,7 +11,7 @@ from reviewtools import get_logger
 
 class RCheckBase(LangCheckBase):
     """ Base class for all R specific checks. """
-
+    header="R"
     DIR = ['%{packname}']
     DOCS = ['doc', 'DESCRIPTION', 'NEWS', 'CITATION']
     URLS = [

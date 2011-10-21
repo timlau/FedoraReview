@@ -33,6 +33,7 @@ TEST_STATES = {'pending': '[ ]','pass': '[x]','fail': '[!]','na': '[-]'}
 class CheckBase(Helpers):
 
     deprecates = []
+    header = "Generic"
 
     def __init__(self, base):
         Helpers.__init__(self)
@@ -1391,6 +1392,7 @@ class CheckPatchComments(CheckBase):
 
 class LangCheckBase(CheckBase):
     """ Base class for language specific class. """
+    header="Language"
 
     def is_applicable(self):
         """ By default, language specific check are disabled. """

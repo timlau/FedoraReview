@@ -20,6 +20,7 @@
 This module contains misc helper funtions and classes
 '''
 import sys
+from operator import attrgetter
 
 from reviewtools import Sources, SRPMFile, SpecFile
 
@@ -43,7 +44,7 @@ from reviewtools import get_logger
 class Checks(object):
     def __init__(self, args, spec_file, srpm_file, cache=False,
             nobuild=False, mock_dist='rawhide'):
-        self.checks = {'MUST': [], 'SHOULD': []}
+        self.checks = []
         self.args = args  # Command line arguments & options
         self.cache = cache
         self.nobuild = nobuild
@@ -58,7 +59,7 @@ class Checks(object):
         self.add_check_classes()
 
     def reset_results(self):
-        self._results = {'PASSED': [], 'FAILED': [], 'NA': [], 'USER': []}
+        self._results = []
 
     def add_check_classes(self):
         """ get all the check classes in the reviewtools.checks and add them
@@ -75,8 +76,7 @@ class Checks(object):
 
     def add(self, class_name):
         cls = class_name(self)
-        typ = cls.type
-        self.checks[typ].append(cls)
+        self.checks.append(cls)
         self.deprecated.extend(cls.deprecates)
 
     def show_file(self, filename, output=sys.stdout):
@@ -88,30 +88,21 @@ class Checks(object):
 
     def parse_result(self, test):
         result = test.get_result()
-        if result.startswith('[x]'):
-            self._results['PASSED'].append(result)
-        elif result.startswith('[-]'):
-            self._results['NA'].append(result)
-        elif result.startswith('[!]'):
-            self._results['FAILED'].append(result)
-        elif result.startswith('[ ]'):
-            self._results['USER'].append(result)
+        self._results.append(result)
 
     def show_result(self, output):
-        for key in ['PASSED', 'NA', 'FAILED', 'USER']:
-            for line in self._results[key]:
-                output.write(line)
-                output.write('\n')
+        for line in self._results:
+            output.write(line)
+            output.write('\n')
 
     def run_checks(self, output=sys.stdout):
         output.write(HEADER)
         issues = []
         self.log.info("Running check for : %s" % self.args.dist)
-        for typ in ['MUST', 'SHOULD']:
-            # Automatic Checks
-            checks = self.checks[typ]
-            self.reset_results()
-            for test in checks:
+        self.reset_results()
+        sorted_checks = sorted(self.checks, key=attrgetter('header','type','__class__.__name__'))
+        current_section = None
+        for test in sorted_checks:
                 # skip test not for the selected distro
                 if not self.args.dist in test.distribution:
                     continue
@@ -121,7 +112,13 @@ class Checks(object):
                         test.run()
                     else:
                         test.state = 'pending'
+
+                    if test.header != current_section:
+                        self._results.append("\n\n==== %s ====\n" % test.header)
+                        current_section = test.header
+
                     self.parse_result(test)
+
                     result = test.get_result()
                     self.log.debug('Running check : %s %s [%s] ' % (
                         test.__class__.__name__,
@@ -130,7 +127,7 @@ class Checks(object):
                     if result:
                         if result.startswith('[!] : MUST'):
                             issues.append(result)
-            self.show_result(output)
+        self.show_result(output)
         if issues:
             output.write("\nIssues:\n")
         for fail in issues:
