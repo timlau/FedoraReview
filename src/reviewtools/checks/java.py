@@ -24,6 +24,39 @@ class JavaCheckBase(LangCheckBase):
             if '-javadoc' in rpm:
                 return rpm
         return None
+    def _search_previous_line(self, section, trigger, pivot, judge):
+        """This function returns True if we find 'judge' regex
+        immediately before pivot (empty lines ignored) in section. This only
+        applies if we find trigger regex after pivot as well. If no
+        trigger is found we return None. Example use on spec like
+        this:
+
+        mvn-rpmbuild -Dmaven.test.skip
+        with: -Dmaven.test.skip being trigger
+              mvn-rpmbuild being pivot
+              any comment would be judge
+        """
+        empty_regex = re.compile(r'^\s*$')
+        found_trigger=False
+        found_pivot=False
+        for line in reversed(section):
+            if trigger.search(line):
+                found_trigger=True
+
+            if found_trigger and pivot.search(line):
+                found_pivot=True
+                continue
+
+            # we already found mvn command. Any non-empty line now has
+            # to be a comment or we fail this test
+            if found_pivot and not empty_regex.search(line):
+                if judge.search(line):
+                    return True
+                else:
+                    self.set_passed(False)
+                    return False
+
+        return None
 
     def run(self):
         """ Run the check """
@@ -248,3 +281,73 @@ class CheckNoRequiresPost(JavaCheckBase):
 
     def run(self):
         self.set_passed(not self.spec.find(self.regex))
+
+class CheckTestSkip(JavaCheckBase):
+    """Check if -Dmaven.test.skip is being used and look for
+    comment"""
+
+    def __init__(self, base):
+        JavaCheckBase.__init__(self, base)
+        self.url = 'https://fedoraproject.org/wiki/Packaging:Java'
+        self.text = 'If package uses "-Dmaven.test.skip=true" explain why it was needed in a comment'
+        self.automatic = True
+        self.type = 'MUST'
+        self.skip_regex = re.compile(r'^\s+-Dmaven.test.skip.*')
+        self.mvn_regex = re.compile(r'^\s*mvn-rpmbuild\s+')
+        self.comment_regex = re.compile(r'^\s*#.*')
+        self.empty_regex = re.compile(r'^\s*$')
+        self.build_sec = self.spec.get_section('%build')['%build']
+
+    def is_applicable(self):
+        return self.spec.find(self.skip_regex)
+
+    def run(self):
+        result = self._search_previous_line(self.build_sec,
+                                            self.skip_regex,
+                                            self.mvn_regex,
+                                            self.comment_regex)
+        if result == None:
+            # weird. It has skip regex but no maven call?
+            self.set_passed(True)
+        else:
+            if result:
+                self.set_passed("inconclusive", "Some comment is used "
+                                    "before mvn-rpmbuild command. Please verify "
+                                    "it explains use of -Dmaven.test.skip")
+            else:
+                self.set_passed(False)
+
+class CheckLocalDepmap(JavaCheckBase):
+    """Check if -Dmaven.local.depmap is being used and look for
+    comment"""
+
+    def __init__(self, base):
+        JavaCheckBase.__init__(self, base)
+        self.url = 'https://fedoraproject.org/wiki/Packaging:Java'
+        self.text = 'If package uses "-Dmaven.local.depmap" explain why it was needed in a comment'
+        self.automatic = True
+        self.type = 'MUST'
+        self.depmap_regex = re.compile(r'^\s+-Dmaven.local.depmap.*')
+        self.mvn_regex = re.compile(r'^\s*mvn-rpmbuild\s+')
+        self.comment_regex = re.compile(r'^\s*#.*')
+        self.empty_regex = re.compile(r'^\s*$')
+        self.build_sec = self.spec.get_section('%build')['%build']
+
+    def is_applicable(self):
+        return self.spec.find(self.depmap_regex)
+
+    def run(self):
+        result = self._search_previous_line(self.build_sec,
+                                            self.depmap_regex,
+                                            self.mvn_regex,
+                                            self.comment_regex)
+        if result == None:
+            # weird. It has skip regex but no maven call?
+            self.set_passed(True)
+        else:
+            if result:
+                self.set_passed("inconclusive", "Some comment is used "
+                                    "before mvn-rpmbuild command. Please verify "
+                                    "it explains use of -Dmaven.local.depmap")
+            else:
+                self.set_passed(False)
