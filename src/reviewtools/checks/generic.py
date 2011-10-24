@@ -48,7 +48,6 @@ class CheckBase(Helpers):
         self.type = 'MUST'
         self.result = None
         self.output_extra = None
-        self.distribution = ['RAWHIDE','F16','F15','F14','F13','EPEL6','EPEL5']
 
         self.log = get_logger()
 
@@ -154,7 +153,6 @@ class CheckBuildroot(CheckBase):
         CheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#BuildRoot_tag'
         self.text = 'Buildroot is correct (EPEL5 & Fedora < 10)'
-        self.distribution = ['EPEL5']
         self.automatic = True
 
     def run(self):
@@ -230,7 +228,6 @@ class CheckClean(CheckBase):
         CheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#.25clean'
         self.text = 'Package has a %clean section, which contains rm -rf %{buildroot} (or $RPM_BUILD_ROOT).(EPEL6 & Fedora < 13)'
-        self.distribution = ['EPEL5','EPEL6']
         self.automatic = True
 
     def run(self):
@@ -254,7 +251,6 @@ class CheckInstall(CheckBase):
         CheckBase.__init__(self, base)
         self.text = 'Package run rm -rf %{buildroot} (or $RPM_BUILD_ROOT) and the beginning of %install. (EPEL5)'
         self.automatic = True
-        self.distribution = ['EPEL5']
 
     def run(self):
         passed = False
@@ -282,7 +278,6 @@ class CheckDefattr(CheckBase):
         self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#FilePermissions'
         self.text = 'Each %files section contains %defattr'
         self.automatic = True
-        self.distribution = ['EPEL5']
 
     def run(self):
         passed = True
@@ -872,7 +867,6 @@ class CheckReqPkgConfig(CheckBase):
         self.url = 'http://fedoraproject.org/wiki/EPEL/GuidelinesAndPolicies#EL5'
         self.text = 'Package requires pkgconfig, if .pc files are present. (EPEL5)'
         self.automatic = False
-        self.distribution = ['EPEL5']
         self.type = 'MUST'
 
     def is_applicable(self):

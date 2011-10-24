@@ -69,9 +69,6 @@ class ReviewHelper:
                     help='Do not make a review report')
         parser.add_argument('-n','--name', metavar='<name prefix>',
                     help='run on local <name prefix>.spec & <name prefix>*.src.rpm located in work dir')
-        parser.add_argument('-D','--dist', metavar='<distribution>',
-                    default = self.settings.distribution,
-                    help='Run check of a given distribution (F13,F14,F15,RAWHIDE,EPEL5 & EPEL6)')
         parser.add_argument('--mock-release', metavar='<release>',
                     default = self.settings.mock_dist, dest='mock_dist',
                     help='Distribution to use for the mock build (default to rawhide, can be 15,16...')
