@@ -828,9 +828,10 @@ class CheckUTF8Filenames(CheckBase):
 
     def run(self):
         print self.srpm.rpmlint_output
-        for output in self.srpm.rpmlint_output:
+        for line in self.srpm.rpmlint_output:
             # TODO: add encoding check
-            if 'wrong-file-end-of-line-encoding' in output:
+            if 'wrong-file-end-of-line-encoding' in line or\
+            'file-not-utf8' in line:
                 self.set_passed(False)
         self.set_passed(True)
 
