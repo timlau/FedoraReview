@@ -98,14 +98,10 @@ class Checks(object):
     def run_checks(self, output=sys.stdout):
         output.write(HEADER)
         issues = []
-        self.log.info("Running check for : %s" % self.args.dist)
         self.reset_results()
         sorted_checks = sorted(self.checks, key=attrgetter('header','type','__class__.__name__'))
         current_section = None
         for test in sorted_checks:
-                # skip test not for the selected distro
-                if not self.args.dist in test.distribution:
-                    continue
                 if test.is_applicable() and test.__class__ \
                             not in self.deprecated:
                     if test.automatic:

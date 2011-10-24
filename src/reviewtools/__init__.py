@@ -50,7 +50,6 @@ class Settings(BaseConfig):
     work_dir = Option('.')
     # Default bugzilla userid
     bz_user = Option('')
-    distribution = Option('RAWHIDE')
     mock_dist = Option('rawhide')
 
     def __init__(self):
