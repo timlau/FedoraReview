@@ -395,10 +395,17 @@ class CheckMacros(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#macros'
-        self.text = 'Package consistently uses macros. instead of hard-coded directory names.'
-        self.automatic = False
+        self.text = 'Package consistently uses macros (instead of hard-coded directory names).'
+        self.automatic = True
         self.type = 'MUST'
 
+    def run(self):
+        br_tag1 = self.spec.find_all(re.compile('.*%{buildroot}.*'))
+        br_tag2 = self.spec.find_all(re.compile('.*\$RPM_BUILD_ROOT.*'))
+        if br_tag1 and br_tag2:
+            self.set_passed(False, 'Using both %{buildroot} and $RPM_BUILD_ROOT')
+        else:
+            self.set_passed('inconclusive')
 
 
 class CheckDescMacroes(CheckBase):
@@ -413,7 +420,6 @@ class CheckDescMacroes(CheckBase):
         self.type = 'MUST'
 
 
-
 class CheckRequires(CheckBase):
     '''
     http://fedoraproject.org/wiki/Packaging/Guidelines#Requires
@@ -424,7 +430,6 @@ class CheckRequires(CheckBase):
         self.text = 'Requires correct, justified where necessary.'
         self.automatic = False
         self.type = 'MUST'
-
 
 
 class CheckBuildRequires(CheckBase):
@@ -441,7 +446,6 @@ class CheckBuildRequires(CheckBase):
 listed in the exceptions section of Packaging Guidelines.'
         self.automatic = False
         self.type = 'MUST'
-
 
 
 class CheckMakeinstall(CheckBase):
@@ -466,7 +470,6 @@ class CheckMakeinstall(CheckBase):
 
     def run(self):
         pass
-
 
 
 class CheckLocale(CheckBase):
@@ -501,7 +504,6 @@ class CheckChangelogFormat(CheckBase):
         self.type = 'MUST'
 
 
-
 class CheckLicenseField(CheckBase):
     '''
     MUST: The License field in the package spec file must match the actual license.
@@ -513,7 +515,6 @@ class CheckLicenseField(CheckBase):
         self.text = 'License field in the package spec file matches the actual license.'
         self.automatic = False
         self.type = 'MUST'
-
 
 
 class CheckLicensInDoc(CheckBase):
@@ -590,7 +591,6 @@ requirements as defined in the legal section of Packaging Guidelines.'
         self.type = 'MUST'
 
 
-
 class CheckCodeAndContent(CheckBase):
     '''
     MUST: The package must contain code, or permissable content.
@@ -614,7 +614,6 @@ class CheckBuildCompilerFlags(CheckBase):
         self.text = '%build honors applicable compiler flags or justifies otherwise.'
         self.automatic = False
         self.type = 'MUST'
-
 
 
 class CheckOwnDirs(CheckBase):
@@ -651,7 +650,6 @@ class CheckOwnOther(CheckBase):
         self.type = 'MUST'
 
 
-
 class CheckDirectoryRequire(CheckBase):
     '''
     http://fedoraproject.org/wiki/Packaging/Guidelines#The_directory_is_also_owned_by_a_package_implementing_required_functionality_of_your_package
@@ -664,7 +662,6 @@ class CheckDirectoryRequire(CheckBase):
         self.type = 'MUST'
 
 
-
 class CheckFilesDuplicates(CheckBase):
     '''
     MUST: A Fedora package must not list a file more than once in the spec file's %files listings.
@@ -675,10 +672,23 @@ class CheckFilesDuplicates(CheckBase):
         CheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#DuplicateFiles'
         self.text = 'Package does not contain duplicates in %files.'
-        self.automatic = False
+        self.automatic = True
         self.type = 'MUST'
 
-
+    def run(self):
+        from subprocess import Popen, PIPE
+        filename = '%s/build.log' % self.srpm.get_mock_dir()
+        try:
+            stream = open(filename)
+            content = stream.read()
+            stream.close()
+            for line in content.split('\n'):
+                if 'File listed twice' in line:
+                    self.set_passed(False, line)
+                    return
+            self.set_passed(True)
+        except Exception, er:
+            self.set_passed('inconclusive')
 
 class CheckFilePermissions(CheckBase):
     '''
@@ -691,9 +701,15 @@ class CheckFilePermissions(CheckBase):
         CheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#FilePermissions'
         self.text = 'Permissions on files are set properly.'
-        self.automatic = False
+        self.automatic = True
         self.type = 'MUST'
 
+    def run(self):
+        for line in self.srpm.rpmlint_output:
+            if 'non-standard-executable-perm' in line:
+                self.set_passed(False, "See rpmlint output")
+                return
+        self.set_passed(True)
 
 
 class CheckNoConfigInUsr(CheckBase):
@@ -807,8 +823,16 @@ class CheckUTF8Filenames(CheckBase):
         CheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#FilenameEncoding'
         self.text = 'File names are valid UTF-8.'
-        self.automatic = False
+        self.automatic = True
         self.type = 'MUST'
+
+    def run(self):
+        print self.srpm.rpmlint_output
+        for output in self.srpm.rpmlint_output:
+            # TODO: add encoding check
+            if 'wrong-file-end-of-line-encoding' in output:
+                self.set_passed(False)
+        self.set_passed(True)
 
 
 class CheckLargeDocs(CheckBase):
