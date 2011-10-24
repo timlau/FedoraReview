@@ -211,7 +211,7 @@ class CheckUseMavenpomdirMacro(JavaCheckBase):
         return self.has_files("*.pom")
 
     def run(self):
-        self.set_passed(self.spec.find(self.regex))
+        self.set_passed(not self.spec.find(self.regex))
 
 class CheckUpdateDepmap(JavaCheckBase):
     """Check if there is deprecated %update_maven_depmap macro being used"""
