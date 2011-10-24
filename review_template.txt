@@ -1,0 +1,170 @@
+Package Review
+==============
+
+Key:
+- = N/A
+x = Check
+! = Problem
+? = Not evaluated
+
+=== REQUIRED ITEMS ===
+[a]  Rpmlint output:
+	Automatic
+
+[a]  Package is named according to the Package Naming Guidelines[1].
+	Automatic - already implemented
+
+[a]  Spec file name must match the base package name, in the format %{name}.spec.
+	Automatic - already implemented
+
+[m]  Package meets the Packaging Guidelines[2].
+	Manual
+
+[a]  Package successfully compiles and builds into binary rpms.
+	Automatic - already implemented
+
+[a]  Buildroot definition is not present
+	Automatic - already implemented
+
+[s]  Package is licensed with an open-source compatible license and meets other legal requirements as defined in the legal section of Packaging Guidelines[3,4].
+	Semi-automatic - save rpmlint output + access license errors
+
+[s]  License field in the package spec file matches the actual license.
+	Semi-automatic - run licensecheck and output number of files of specific licenses
+
+[m]  If (and only if) the source package includes the text of the license(s) in its own file, then that file, containing the text of the license(s) for the package is included in %doc.
+	Manual
+
+[s]  All independent sub-packages have license of their own
+	Semi-automatic - if a subpackage requires the base package, the %doc macro is not required. if not, output a warning suggesting checking if the subpackage has license
+
+[m]  Spec file is legible and written in American English.
+	Manual
+
+[s]  Sources used to build the package matches the upstream source, as provided in the spec URL.
+	Semi-automatic - if the source is a valid url, md5 is checked. otherwise, a warning is shown to check the source package against CVS
+
+[m]  All build dependencies are listed in BuildRequires, except for any that are listed in the exceptions section of Packaging Guidelines[5].
+	Manual
+
+[m]  Package must own all directories that it creates or must require other packages for directories it uses.
+	Manual - insanely costly
+
+[a]  Package does not contain duplicates in %files.
+	Automatic - checking SHA sum of every file for the same checksums
+
+[s]  File sections do not contain %defattr(-,root,root,-) unless changed with good reason
+	Semi-automatic - not enforced in fedora, just print a warning
+
+[s]  Permissions on files are set properly.
+	Semi-automatic - done by rpmlint	
+
+[s]  Package does NOT have a %clean section which contains rm -rf %{buildroot} (or $RPM_BUILD_ROOT). (not needed anymore)
+	Semi-automatic - print warning for EPEL
+
+[m]  Package consistently uses macros (no %{buildroot} and $RPM_BUILD_ROOT mixing)
+	Manual - for now, mostly because using macros vs. hardcoded paths, system commands
+
+[m]  Package contains code, or permissable content.
+	Manual
+
+[a]  Fully versioned dependency in subpackages, if present.
+	Automatic - needs fixing
+
+[s]  Package contains a properly installed %{name}.desktop file if it is a GUI application.
+	Semi-automatic - check what the binary files in /usr/bin are linked against (not 100%, but very accurate)
+
+[m]  Package does not own files or directories owned by other packages.
+	Manual - insanely costly
+
+[a]  Javadoc documentation files are generated and included in -javadoc subpackage
+	Automatic
+
+[a]  Javadocs are placed in %{_javadocdir}/%{name} (no -%{version} symlinks)
+	Automatic - Check for the thing in spec
+
+[a]  Packages have proper BuildRequires/Requires on jpackage-utils
+	Automatic
+
+[a]  Javadoc subpackages have Require: jpackage-utils
+	Automatic
+
+[a]  Package uses %global not %define
+	Automatic - it's up to the reviewer to check it. Return error on %define
+
+[s]  If package uses tarball from VCS include comment how to re-create that tarball (svn export URL, git clone URL, ...)
+	Semi-automatic - If sources are invalid, search for comments above the source line. Either way, display warning
+[s]  If source tarball includes bundled jar/class files these need to be removed prior to building
+	Semi-automatic - Extract the source package, run %prep on it, display warnings if jars found
+
+[a]  All filenames in rpm packages must be valid UTF-8.
+	Automatic - rpmlint
+
+[m]  Jar files are installed to %{_javadir}/%{name}.jar (see [6] for details)
+	Manual
+
+[s]  If package contains pom.xml files install it (including depmaps) even when building with ant
+	Semi-automatic
+
+[?]  pom files has correct add_maven_depmap
+	I am not sure what we agreed on
+
+=== Maven ===
+[a]  Use %{_mavenpomdir} macro for placing pom files instead of %{_datadir}/maven2/poms
+	Automatic
+
+[s]  If package uses "-Dmaven.test.skip=true" explain why it was needed in a comment
+	Semi-automatic - search for comment above maven invocation
+
+[s]  If package uses custom depmap "-Dmaven.local.depmap.file=*" explain why it's needed in a comment
+	Semi-automatic - same as above
+
+[a]  Package DOES NOT use %update_maven_depmap in %post/%postun
+	Automatic - search %post and %postun for %update_maven_depmap
+
+[a]  Packages DOES NOT have Requires(post) and Requires(postun) on jpackage-utils for %update_maven_depmap macro
+	Automatic - search for Requires(post), Requires(postun)
+
+
+=== Other suggestions ===
+[s]  If possible use upstream build method (maven/ant/javac)
+	Semi-automatic - Check for build.xml, pom.xml, either way print warning
+
+[s]  Avoid having BuildRequires on exact NVR unless necessary
+	Semi-automatic - Check BR for specific versions, print warnings
+
+[s]  Package has BuildArch: noarch (if possible)
+	Semi-automatic - print warning if arch != noarch
+
+[m]  Latest version is packaged.
+	Manual
+
+[a]  Reviewer should test that the package builds in mock.
+	Automatic - already implemented
+
+Tested on:
+
+
+=== Issues ===
+1.
+
+=== Final Notes ===
+1.
+
+
+================
+*** APPROVED ***
+================
+
+or
+
+================
+*** REJECTED ***
+================
+
+[1] https://fedoraproject.org/wiki/Packaging:NamingGuidelines
+[2] https://fedoraproject.org/wiki/Packaging:Guidelines
+[3] https://fedoraproject.org/wiki/Packaging:LicensingGuidelines
+[4] https://fedoraproject.org/wiki/Licensing:Main
+[5] https://fedoraproject.org/wiki/Packaging/Guidelines#Exceptions_2 
+[6] https://fedoraproject.org/wiki/Packaging:Java#Filenames

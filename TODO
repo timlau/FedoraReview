@@ -1,0 +1,5 @@
+- check ldconfig - for jni files this doesn't  work
+- make interface (json?) so that checks can be written in different
+  languages
+- automate some checks that can be automated (mostly generic ones)
+- 

@@ -64,3 +64,27 @@ default options like
 License
 -------
 FedoraReview is licensed under GPLv2+, for more details check COPYING.
+
+
+Create a language plugin
+------------------------
+To create a plugin of checks, create a file in src/reviewtools/checks.
+All the files in this folder are automatically loaded.
+
+Your class should inherit from the class `LangCheckBase`.
+You may want to create a Base class for your own language. Then each tests
+is a class. This class has a __init__ method with predefine information
+(such as the link to the guidelines and the text to be printed) and a 
+run method which is what is actually performing the test.
+
+For your test to be taken into account, the class should have
+- 'Check' (case sensitive) in its name
+- *Not* end with 'Base' (this is reserved for parent class which don't
+actually run tests).
+- The result of the test should be set using the self.set_passed():
+    None            == na
+    'inconclusive'  == pending
+    True            == passed
+    False           == failed
+The file plugin.tmpl shows the basic structure/idea and implement an
+example test.

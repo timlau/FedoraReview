@@ -1,4 +1,5 @@
-#!/usr/bin/python -tt
+#-*- coding: utf-8 -*-
+
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
 #    the Free Software Foundation; either version 2 of the License, or
@@ -35,26 +36,31 @@ SECTIONS = ['build', 'changelog', 'check', 'clean', 'description', 'files',
                'install', 'package', 'prep', 'pre', 'post', 'preun', 'postun',
                'trigger', 'triggerin', 'triggerun', 'triggerprein',
                'triggerpostun', 'pretrans', 'posttrans']
-SPEC_SECTIONS = re.compile(r"^(\%("+"|".join(SECTIONS)+"))\s*")
+SPEC_SECTIONS = re.compile(r"^(\%(" + "|".join(SECTIONS) + "))\s*")
 MACROS = re.compile(r"^%(define|global)\s+(\w*)\s+(.*)")
 
 LOG_ROOT = 'reviewtools'
 
+
 class Settings(BaseConfig):
     """ FedoraReview Config Setting"""
-    editor = Option('/usr/bin/gedit')           # Editor to use to show review report & spec
-    work_dir = Option('~/tmp/reviewhelper/')    # Work dir 
-    bz_user = Option('')                        # Default bugzilla userid.
+    # Editor to use to show review report & spec
+    editor = Option('/usr/bin/xdg-open')
+    # Work dir
+    work_dir = Option('.')
+    # Default bugzilla userid
+    bz_user = Option('')
     distribution = Option('RAWHIDE')
-    
+    mock_dist = Option('rawhide')
+
     def __init__(self):
         BaseConfig.__init__(self)
-        self.load_config('.config/FedoraReview/settings','review')
-    
+        self.load_config('.config/FedoraReview/settings', 'review')
+
     def load_config(self, configfile, sec):
         parser = ConfigParser()
         configfile = os.environ['HOME'] + "/" + configfile
-        isNew = self.create_conf(configfile,sec)
+        isNew = self.create_conf(configfile, sec)
         parser.read(configfile)
         if not parser.has_section(sec):
             parser.add_section(sec)
@@ -67,28 +73,30 @@ class Settings(BaseConfig):
             dn = os.path.dirname(configfile)
             if not os.path.exists(dn):
                 os.makedirs(dn)
-            fd = open(configfile,"w")
+            fd = open(configfile, "w")
             print >> fd, "[%s]" % sec
             fd.close()
             return True
         return False
-            
+
     def save_config(self, configfile):
         always = tuple([key for key in self.iterkeys()])
         fn = open(configfile, "w")
         self.write(fn, always=always)
         fn.close()
-        
-    
-class Helpers:
 
-    def __init__(self, cache=False, nobuild=False):
+
+class Helpers(object):
+
+    def __init__(self, cache=False, nobuild=False,
+            mock_dist=Settings.mock_dist):
         self.work_dir = 'work/'
         self.log = get_logger()
         self.cache = cache
         self.nobuild = nobuild
+        self.mock_dist = mock_dist
 
-    def set_work_dir(self,work_dir):
+    def set_work_dir(self, work_dir):
         work_dir = os.path.abspath(os.path.expanduser(work_dir))
         if not os.path.exists(work_dir):
             os.makedirs(work_dir)
@@ -105,7 +113,6 @@ class Helpers:
             print "OSError : %s" % str(e)
         return output
 
-
     def _md5sum(self, file):
         ''' get the md5sum for a file
 
@@ -114,48 +121,51 @@ class Helpers:
         '''
         cmd = "md5sum %s" % file
         out = self._run_cmd(cmd)
-        lines = out.split(' ',1)
+        lines = out.split(' ', 1)
         if len(lines) == 2:
             return lines[0], lines[1][1:-1]
         else:
-            return None,out
+            return None, out
 
     def _get_file(self, link):
+        self.log.debug("  --> %s : %s" % (self.work_dir, link))
         url = urlparse(link)
         fname = os.path.basename(url.path)
-        if os.path.exists(self.work_dir+fname) and self.cache  :
-            return  self.work_dir+fname
-        call('wget --quiet --tries=1 --read-timeout=90 -O %s --referer=%s %s' % (self.work_dir+fname, link, link) , shell=True)
-        if os.path.exists(self.work_dir+fname):
-            return  self.work_dir+fname
+        if os.path.exists(self.work_dir + fname) and self.cache:
+            return  self.work_dir + fname
+        call('wget --quiet --tries=1 --read-timeout=90 -O %s \
+        --referer=%s %s' % (self.work_dir + fname, link, link), shell=True)
+        if os.path.exists(self.work_dir + fname):
+            return  self.work_dir + fname
         else:
             return None
 
-class Sources:
+
+class Sources(object):
     """ Store Source object for each source in Spec file"""
     def __init__(self, cache):
         self._sources = {}
         self.cache = cache
         self.work_dir = None
         self.log = get_logger()
-        
+
     def set_work_dir(self, work_dir):
-        self.work_dir = work_dir      
-        
+        self.work_dir = work_dir
+
     def add(self, tag, source_url):
         """Add a new Source Object based on spec tag and URL to source"""
-        if urlparse(source_url)[0] != '': # This is a URL, Download it
-            self.log.info("Downloading (%s): %s" % (tag,source_url))
+        if urlparse(source_url)[0] != '':  # This is a URL, Download it
+            self.log.info("Downloading (%s): %s" % (tag, source_url))
             source = Source(cache=self.cache)
             source.set_work_dir(self.work_dir)
             source.get_source(source_url)
-        else: # this is a local file in the SRPM
-            self.log.info("No upstream for (%s): %s" % (tag,source_url))
+        else:  # this is a local file in the SRPM
+            self.log.info("No upstream for (%s): %s" % (tag, source_url))
             source = Source(filename=source_url, cache=self.cache)
             source.set_work_dir(self.work_dir)
         self._sources[tag] = source
-        
-    def get(self,tag):
+
+    def get(self, tag):
         """ Get a single Source object"""
         if tag in self._sources:
             return self._sources[tag]
@@ -165,10 +175,11 @@ class Sources:
     def get_all(self):
         """ Get all source objects """
         return [self._sources[s] for s in self._sources]
-        
-class Source(Helpers) :
-    def __init__(self,filename=None, cache=False):
-        Helpers.__init__(self,cache)
+
+
+class Source(Helpers):
+    def __init__(self, filename=None, cache=False):
+        Helpers.__init__(self, cache)
         self.filename = filename
         self.downloaded = False
         self.URL = None
@@ -182,57 +193,61 @@ class Source(Helpers) :
     def check_source_md5(self):
         if self.downloaded:
             self.log.info("Checking source md5 : %s" % self.filename)
-            sum,file = self._md5sum(self.filename)
+            sum, file = self._md5sum(self.filename)
         else:
             sum = "upstream source not found"
         return sum
 
 
-
-class SRPMFile(Helpers) :
-    def __init__(self,filename, cache=False, nobuild=False):
-        Helpers.__init__(self, cache, nobuild)
+class SRPMFile(Helpers):
+    def __init__(self, filename, cache=False, nobuild=False,
+            mock_dist=Settings.mock_dist):
+        Helpers.__init__(self, cache, nobuild, mock_dist)
         self.filename = filename
         self.is_installed = False
         self.is_build = False
         self.build_failed = False
         self._rpm_files = None
 
-    def install(self, wipe = False):
+    def install(self, wipe=False):
         if wipe:
             sourcedir = self.get_source_dir()
-            if sourcedir != "" and sourcedir != "/": # just to be safe
+            if sourcedir != "" and sourcedir != "/":  # just to be safe
                 call('rm -f %s/*  &>/dev/null' % sourcedir, shell=True)
         call('rpm -ivh %s &>/dev/null' % self.filename, shell=True)
         self.is_installed = True
 
-    def build(self, force = False):
+    def build(self, force=False):
         if self.build_failed:
             return -1
         return self.mockbuild(force)
 
-    def mockbuild(self, force = False):
-        print "MOCKBUILD: ", self.is_build, self.nobuild
+    def mockbuild(self, force=False):
         if not force and (self.is_build or self.nobuild):
             return 0
-        self.log.info("Building %s using mock" % self.filename )
-        rc = call('mock -r fedora-rawhide-i386  --rebuild %s' % self.filename, shell = True)
+        #print "MOCKBUILD: ", self.is_build, self.nobuild
+        self.log.info("Building %s using mock fedora-%s-i386" % (
+            self.filename, self.mock_dist))
+        rc = call('mock -r fedora-%s-i386  --rebuild %s' % (
+            self.mock_dist, self.filename), shell=True)
         if rc == 0:
             self.is_build = True
             self.log.info("Build completed ok")
         else:
-            self.log.info("Build failed rc = %i " % rc )
+            self.log.info("Build failed rc = %i " % rc)
             self.build_failed = True
         return rc
 
     def get_mock_dir(self):
-        mock_dir = '/var/lib/mock/fedora-rawhide-i386/result'
+        mock_dir = '/var/lib/mock/fedora-%s-i386/result' % self.mock_dist
         return mock_dir
-    
+
     def get_source_dir(self):
-        sourcedir= Popen(["rpm", "-E", '%_sourcedir' ], stdout=subprocess.PIPE).stdout.read()[:-1]
+        sourcedir = Popen(["rpm", "-E", '%_sourcedir'],
+                stdout=subprocess.PIPE).stdout.read()[:-1]
         # replace %{name} by the specname
-        package_name = Popen(["rpm", "-qp", self.filename, '--qf', '%{name}' ], stdout=subprocess.PIPE).stdout.read()
+        package_name = Popen(["rpm", "-qp", self.filename,
+                '--qf', '%{name}'], stdout=subprocess.PIPE).stdout.read()
         sourcedir = sourcedir.replace("%{name}", package_name)
         sourcedir = sourcedir.replace("%name", package_name)
         return sourcedir
@@ -240,14 +255,15 @@ class SRPMFile(Helpers) :
     def check_source_md5(self, filename):
         if self.is_installed:
             sourcedir = self.get_source_dir()
-            src_files = glob.glob( sourcedir + '/*')
+            src_files = glob.glob(sourcedir + '/*')
             # src_files = glob.glob(os.path.expanduser('~/rpmbuild/SOURCES/*'))
             if src_files:
                 for name in src_files:
-                    if filename and os.path.basename(filename) != os.path.basename(name):
+                    if filename and \
+                    os.path.basename(filename) != os.path.basename(name):
                         continue
                     self.log.debug("Checking md5 for %s" % name)
-                    sum,file = self._md5sum(name)
+                    sum, file = self._md5sum(name)
                     return sum
             else:
                 print('no sources found in install SRPM')
@@ -267,41 +283,41 @@ class SRPMFile(Helpers) :
                 return True
         return False
 
-    def rpmlint(self):
-        cmd = 'rpmlint %s' % self.filename
-        sep = "%s\n" % (80*"=")
-        result = "\nrpmlint %s\n" % os.path.basename(self.filename)
+    def run_rpmlint(self, filename):
+        """ Runs rpmlint against the provided file.
+        karg: filename, the name of the file to run rpmlint on
+        """
+        cmd = 'rpmlint -f .rpmlint %s' % filename
+        sep = "%s\n" % (80 * "=")
+        result = "\nrpmlint %s\n" % os.path.basename(filename)
         result += sep
         out = self._run_cmd(cmd)
         no_errors = self._check_errors(out)
         result += out
         result += sep
-        return no_errors,result
+        return no_errors, result
+
+    def rpmlint(self):
+        return self.run_rpmlint(self.filename)
 
     def rpmlint_rpms(self):
-        sep = "%s\n" % (80*"=")
-        result = ''
+        sep = "%s\n" % (80 * "=")
+        results = ''
         success = True
-        self.build()
-        rpms = glob.glob(self.get_mock_dir()+ '/*.rpm')
+        rpms = glob.glob(self.get_mock_dir() + '/*.rpm')
         for rpm in rpms:
-            cmd = 'rpmlint %s' % rpm
-            result += "\nrpmlint %s\n" % os.path.basename(rpm)
-            result += sep
-            rc = self._run_cmd(cmd)
-            no_errors = self._check_errors(rc)
+            no_errors, result = self.run_rpmlint(rpm)
             if not no_errors:
                 success = False
-            result += rc
-            result += sep
-        return success, result
+            results += result
+        return success, results
 
     def get_files_rpms(self):
         if self._rpm_files:
             return self._rpm_files
         self.build()
-        rpms = glob.glob(self.get_mock_dir()+ '/*.rpm')
-        rpm_files  = {}
+        rpms = glob.glob(self.get_mock_dir() + '/*.rpm')
+        rpm_files = {}
         for rpm in rpms:
             if rpm.endswith('.src.rpm'):
                 continue
@@ -311,7 +327,8 @@ class SRPMFile(Helpers) :
         self._rpm_files = rpm_files
         return rpm_files
 
-class SpecFile:
+
+class SpecFile(object):
     '''
     Wrapper classes for getting information from a .spec file
     '''
@@ -321,10 +338,10 @@ class SpecFile:
         self.filename = filename
         f = None
         try:
-             f = open(filename,"r")
-             self.lines = f.readlines()
+            f = open(filename, "r")
+            self.lines = f.readlines()
         finally:
-             f and f.close()
+            f and f.close()
 
         ts = rpm.TransactionSet()
         self.spec_obj = ts.parseSpec(self.filename)
@@ -334,14 +351,13 @@ class SpecFile:
         self.release = self.get_from_spec('release')
         self.process_sections()
 
-
     def get_sources(self):
         ''' Get SourceX/PatchX lines with macros resolved '''
         result = {}
         sources = self.spec_obj.sources
         for src in sources:
             (url, num, flags) = src
-            if flags & 1: # rpmspec.h, rpm.org ticket #123
+            if flags & 1:  # rpmspec.h, rpm.org ticket #123
                 srctype = "Source"
             else:
                 srctype = "Patch"
@@ -349,12 +365,19 @@ class SpecFile:
             result[tag] = url
         return result
 
+    def has_patches(self):
+        '''Returns true if source rpm contains patch files'''
+        sources = self.get_sources()
+        for source in sources.keys():
+            if 'Patch' in source:
+                return True
+        return False
+
     def get_macros(self):
         for lin in self.lines:
             res = MACROS.search(lin)
             if res:
-                print "macro: %s = %s" %(res.group(2),res.group(3))
-
+                print "macro: %s = %s" % (res.group(2), res.group(3))
 
     def process_sections(self):
         section_lines = []
@@ -365,7 +388,8 @@ class SpecFile:
             res = SPEC_SECTIONS.search(line)
             if res:
                 this_sec = line
-                if cur_sec != this_sec: # This is a new section, store lines in old one
+                # This is a new section, store lines in old one
+                if cur_sec != this_sec:
                     self._section_list.append(cur_sec)
                     self._sections[cur_sec] = section_lines
                     section_lines = []
@@ -377,7 +401,7 @@ class SpecFile:
         cur_sec = this_sec
         #self.dump_sections()
 
-    def dump_sections(self, section = None):
+    def dump_sections(self, section=None):
         if section:
             sections = self.get_section(section)
             lst = sorted(sections)
@@ -391,7 +415,7 @@ class SpecFile:
 
     def get_from_spec(self, macro):
         ''' Use rpm for a value for a given tag (macro is resolved)'''
-        qf = '%{' + macro.upper() + "}\n" # The RPM tag to search for
+        qf = '%{' + macro.upper() + "}\n"  # The RPM tag to search for
          # get the name
         cmd = ['rpm', '-q', '--qf', qf, '--specfile', self.filename]
                 # Run the command
@@ -409,22 +433,24 @@ class SpecFile:
                 rc = None
             return rc
         else:
-            if 'unknown tag' in error: # rpm dont know the tag, so it is not found
+            # rpm dont know the tag, so it is not found
+            if 'unknown tag' in error:
                 return None
             value = self.find_tag(macro)
-            if value:
+            if len(value) > 0:
                 return value
             else:
-                print "error : [%s]" % ( error)
+                print "error : [%s]" % (error)
                 return False
 
-    def get_rpm_eval(self,filter):
+    def get_rpm_eval(self, filter):
         lines = "\n".join(self.get_section('main')['main'])
         #print lines
-        args = ['rpm','--eval', lines]
-        print len(args), args
+        args = ['rpm', '--eval', lines]
+        #print len(args), args
         try:
-            proc = Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+            proc = Popen(args, stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE, shell=True)
             output, error = proc.communicate()
             print "output : [%s], error : [%s]" % (output, error)
         except OSError, e:
@@ -432,23 +458,38 @@ class SpecFile:
             return False
         return output
 
-    def find_tag(self, tag):
+    def find_tag(self, tag, section = None):
         '''
         find at given tag in the spec file.
         Ex. Name:, Version:
-        This get the text precise as in is written in the spec, no resolved macros
+        This get the text precise as in is written in the spec,
+        no resolved macros
         '''
-        key = re.compile(r"^%s\d*\s*:\s*(.*)" % tag, re.I)
-        value = None
-        for line in self.lines:
+        # Maybe we can merge the last two regex in one but using
+        # (define|global) leads to problem with the res.group(1)
+        # so for the time being let's go with 2 regex
+        keys = [ re.compile(r"^%s\d*\s*:\s*(.*)" % tag, re.I),
+                 re.compile(r"^.define\s*%s\s*(.*)" % tag, re.I),
+                 re.compile(r"^.global\s*%s\s*(.*)" % tag, re.I)
+               ]
+        values = []
+        lines = self.lines
+        if section:
+            lines = self.get_section(section)
+            if lines:
+                lines = lines[section]
+        for line in lines:
             # check for release
-            res = key.search(line)
-            if res:
-                value = res.group(1)
-                break
-        return value
+            for key in keys:
+                res = key.search(line)
+                if res:
+                    value = res.group(1).strip()
+                    value = value.replace(',', ' ')
+                    value = value.replace('  ', ' ')
+                    values.extend(value.split())
+        return values
 
-    def get_section(self,section):
+    def get_section(self, section):
         '''
         get the lines in a section in the spec file
         ex. %install, %clean etc
@@ -458,7 +499,6 @@ class SpecFile:
             if sec.startswith(section):
                 results[sec] = self._sections[sec]
         return results
-
 
     def find(self, regex):
         for line in self.lines:
@@ -475,10 +515,13 @@ class SpecFile:
                 result.append(res)
         return result
 
+
 def get_logger():
     return logging.getLogger(LOG_ROOT)
 
-def do_logger_setup(logroot = LOG_ROOT, logfmt='%(message)s', loglvl=logging.INFO):
+
+def do_logger_setup(logroot=LOG_ROOT, logfmt='%(message)s',
+    loglvl=logging.INFO):
     ''' Setup Python logging using a TextViewLogHandler '''
     logger = logging.getLogger(logroot)
     logger.setLevel(loglvl)

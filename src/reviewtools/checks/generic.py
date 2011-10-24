@@ -1,4 +1,5 @@
-#!/usr/bin/python -tt
+#-*- coding: utf-8 -*-
+
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
 #    the Free Software Foundation; either version 2 of the License, or
@@ -30,6 +31,10 @@ from reviewtools import Helpers, get_logger
 TEST_STATES = {'pending': '[ ]','pass': '[x]','fail': '[!]','na': '[-]'}
 
 class CheckBase(Helpers):
+
+    deprecates = []
+    header = "Generic"
+
     def __init__(self, base):
         Helpers.__init__(self)
         self.base = base
@@ -59,6 +64,8 @@ class CheckBase(Helpers):
             self.state = 'na'
         elif result == True:
             self.state = 'pass'
+        elif result == "inconclusive":
+            self.state = 'pending'
         else:
             self.state = 'fail'
         if output_extra:
@@ -96,6 +103,7 @@ class CheckBase(Helpers):
         ''' Check if rpms has file matching a pattern'''
         fn_pat = re.compile(pattern_re)
         rpm_files = self.srpm.get_files_rpms()
+        #print rpm_files, pattern_re
         for rpm in rpm_files:
             for fn in rpm_files[rpm]:
                 if fn_pat.search(fn):
@@ -150,7 +158,12 @@ class CheckBuildroot(CheckBase):
         self.automatic = True
 
     def run(self):
-        br = self.spec.find_tag('BuildRoot')
+        br_tags = self.spec.find_tag('BuildRoot')
+        if len(br_tags) > 1:
+            self.set_passed(False, "Multiple BuildRoot definitions found")
+            return
+
+        br = br_tags[0]
         legal_buildroots = [
         '%(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)',
         '%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)',
@@ -164,7 +177,7 @@ class CheckBuildroot(CheckBase):
         '''
         Buildroot tag is ignored for Fedora > 10, but is needed for EPEL5
         '''
-        return self.spec.find_tag('BuildRoot') != None
+        return len(self.spec.find_tag('BuildRoot')) > 0
 
 
 class CheckSpecName(CheckBase):
@@ -429,7 +442,8 @@ class CheckBuildRequires(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#Exceptions_2'
-        self.text = 'All build dependencies are listed in BuildRequires, except for any that are listed in the exceptions section of Packaging Guidelines.'
+        self.text = 'All build dependencies are listed in BuildRequires, except for any that are \
+listed in the exceptions section of Packaging Guidelines.'
         self.automatic = False
         self.type = 'MUST'
 
@@ -446,13 +460,17 @@ class CheckMakeinstall(CheckBase):
         self.automatic = True
         self.type = 'MUST'
 
-    def run(self):
+    def is_applicable(self):
         regex = re.compile(r'^(%makeinstall.*)')
         res = self.spec.find(regex)
         if res:
             self.set_passed(False, res.group(0))
+            return True
         else:
-            self.set_passed(True)
+            return False
+
+    def run(self):
+        pass
 
 
 
@@ -512,10 +530,34 @@ class CheckLicensInDoc(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/LicensingGuidelines#License_Text'
-        self.text = 'If (and only if) the source package includes the text of the license(s) in its own file, then that file, containing the text of the license(s) for the package is included in %doc.'
-        self.automatic = False
+        self.text = 'If (and only if) the source package includes the text of the license(s) in its own file, \
+then that file, containing the text of the license(s) for the package is included in %doc.'
+        self.automatic = True
         self.type = 'MUST'
 
+    def run(self):
+        """ Check if there is a license file and if it is present in the
+        %doc section.
+        """
+        haslicensefile = False
+        licenses = []
+        for f in ['COPYING','LICEN', 'copying', 'licen']:
+            if self.has_files("*" + f + "*"):
+                haslicensefile = True
+                licenses.append(f)
+
+        br = self.spec.find_all(re.compile("%doc.*"))
+        for entry in br:
+            entries = os.path.basename(entry.group(0)).strip().split()
+            for entry in entries:
+                for licensefile in licenses:
+                    if entry.startswith(licensefile):
+                        licenses.remove(licensefile)
+
+        if not haslicensefile:
+            self.set_passed("inconclusive")
+        else:
+            self.set_passed(licenses == [])
 
 
 class CheckLicenseInSubpackages(CheckBase):
@@ -547,7 +589,8 @@ class CheckApprovedLicense(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/LicensingGuidelines'
-        self.text = 'Package is licensed with an open-source compatible license and meets other legal requirements as defined in the legal section of Packaging Guidelines.'
+        self.text = 'Package is licensed with an open-source compatible license and meets other legal \
+requirements as defined in the legal section of Packaging Guidelines.'
         self.automatic = False
         self.type = 'MUST'
 
@@ -579,47 +622,6 @@ class CheckBuildCompilerFlags(CheckBase):
 
 
 
-class CheckLDConfig(CheckBase):
-    '''
-    MUST: Every binary RPM package (or subpackage) which stores shared library files (not just symlinks)
-    in any of the dynamic linker's default paths, must call ldconfig in %post and %postun.
-    http://fedoraproject.org/wiki/Packaging/Guidelines#Shared_Libraries
-    '''
-    def __init__(self, base):
-        CheckBase.__init__(self, base)
-        self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#Shared_Libraries'
-        self.text = 'ldconfig called in %post and %postun if required.'
-        self.automatic = True
-        self.type = 'MUST'
-
-    def is_applicable(self):
-        '''
-        check if this test is applicable
-        '''
-        return self.has_files_re('/usr/(lib|lib64)/[\w\-]*\.so\.[0-9]')
-
-
-    def run(self):
-        sources = ['%post','%postun']
-        for source in sources:
-            passed = False
-            extra = ""
-            sections = self.spec.get_section(source)
-            for section in sections:
-                if section.split(' ')[0] != source: # get_section('%post') will also return %postun
-                    continue
-                if '/sbin/ldconfig' in section:
-                    passed = True
-                else:
-                    for line in sections[section]:
-                        if '/sbin/ldconfig' in section:
-                            passed = True
-                            break
-            if not passed:
-                self.set_passed(False,'/sbin/ldconfig not called in %s' % source)
-                return
-        self.set_passed(True)
-
 class CheckOwnDirs(CheckBase):
     '''
     MUST: A package must own all directories that it creates.
@@ -633,7 +635,6 @@ class CheckOwnDirs(CheckBase):
         self.text = 'Package must own all directories that it creates.'
         self.automatic = False
         self.type = 'MUST'
-
 
 
 class CheckOwnOther(CheckBase):
@@ -860,86 +861,6 @@ class CheckBundledLibs(CheckBase):
 
 
 
-class CheckHeaderFiles(CheckBase):
-    '''
-    MUST: Header files must be in a -devel package
-    http://fedoraproject.org/wiki/Packaging/Guidelines#DevelPackages
-    '''
-    def __init__(self, base):
-        CheckBase.__init__(self, base)
-        self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#DevelPackages'
-        self.text = 'Header files in -devel subpackage, if present.'
-        self.automatic = True
-        self.type = 'MUST'
-
-    def is_applicable(self):
-        '''
-        check if this test is applicable
-        '''
-        return self.has_files('*.h')
-
-    def run(self):
-        files = self.get_files_by_pattern('*.h')
-        passed = True
-        extra = ""
-        for rpm in files:
-            for fn in files[rpm]:
-                # header files (.h) under /usr/src/debug/* will be in the -debuginfo package.
-                if  fn.startswith('/usr/src/debug/') and '-debuginfo' in rpm:
-                    continue
-                # All other .h files should be in a -devel package.
-                if not '-devel' in rpm:
-                    passed = False
-                    extra += "%s : %s\n" % (rpm, fn)
-        self.set_passed(passed, extra)
-
-
-
-class CheckStaticLibs(CheckBase):
-    '''
-    MUST: Static libraries must be in a -static package.
-    http://fedoraproject.org/wiki/Packaging/Guidelines#StaticLibraries
-    '''
-    def __init__(self, base):
-        CheckBase.__init__(self, base)
-        self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#StaticLibraries'
-        self.text = 'Static libraries in -static subpackage, if present.'
-        self.automatic = False
-        self.type = 'MUST'
-
-    def is_applicable(self):
-        '''
-        check if this test is applicable
-        '''
-        return self.has_files('*.a')
-
-    def run(self):
-        files = self.get_files_by_pattern('*.a')
-        passed = True
-        extra = ""
-        for rpm in files:
-            for fn in files[rpm]:
-                if not '-static' in rpm:
-                    passed = False
-                    extra += "%s : %s\n" % (rpm, fn)
-        self.set_passed(passed, extra)
-
-
-
-
-class CheckNoStatucExecutables(CheckBase):
-    '''
-    http://fedoraproject.org/wiki/Packaging/Guidelines#Staticly_Linking_Executables
-    '''
-    def __init__(self, base):
-        CheckBase.__init__(self, base)
-        self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#Staticly_Linking_Executables'
-        self.text = 'Package contains no static executables.'
-        self.automatic = False
-        self.type = 'MUST'
-
-
-
 class CheckReqPkgConfig(CheckBase):
     '''
     rpm in EPEL5 and below does not automatically create dependencies for pkgconfig files.
@@ -973,36 +894,6 @@ class CheckReqPkgConfig(CheckBase):
 
 
 
-
-class CheckSoFiles(CheckBase):
-    '''
-    MUST: If a package contains library files with a suffix (e.g. libfoo.so.1.1),
-    then library files that end in .so (without suffix) must go in a -devel package.
-    http://fedoraproject.org/wiki/Packaging/Guidelines#DevelPackages
-    '''
-    def __init__(self, base):
-        CheckBase.__init__(self, base)
-        self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#DevelPackages'
-        self.text = 'Development .so files in -devel subpackage, if present.'
-        self.automatic = True
-        self.type = 'MUST'
-
-    def is_applicable(self):
-        '''
-        check if this test is applicable
-        '''
-        return self.has_files('*.so')
-
-    def run(self):
-        files = self.get_files_by_pattern('*.so')
-        passed = True
-        extra = ""
-        for rpm in files:
-            for fn in files[rpm]:
-                if not '-devel' in rpm:
-                    passed = False
-                    extra += "%s : %s\n" % (rpm, fn)
-        self.set_passed(passed, extra)
 
 
 class CheckFullVerReqSub(CheckBase):
@@ -1039,7 +930,7 @@ class CheckFullVerReqSub(CheckBase):
                     passed = True
             if not passed:
                 # Requires: %{name}%{?_isa} = %{version}-%{release}
-                extra += "Missing : Requires: \%{name}\%{?_isa} = \%{version}-\%{release} in %s" % section
+                extra += "Missing : Requires: %%{name}%%{?_isa} = %%{version}-%%{release} in %s" % section
                 errors = False
         if errors:
             self.set_passed(False,extra)
@@ -1048,30 +939,6 @@ class CheckFullVerReqSub(CheckBase):
 
 
 
-
-class CheckLibToolArchives(CheckBase):
-    '''
-    MUST: Packages must NOT contain any .la libtool archives,
-    these must be removed in the spec if they are built.
-    http://fedoraproject.org/wiki/Packaging/Guidelines#StaticLibraries
-    '''
-    def __init__(self, base):
-        CheckBase.__init__(self, base)
-        self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#StaticLibraries'
-        self.text = 'Package does not contain any libtool archives (.la)'
-        self.automatic = True
-        self.type = 'MUST'
-
-    def run(self):
-        if not self.has_files('*.la'):
-            self.set_passed(True)
-        else:
-            extra = ""
-            files = self.get_files_by_pattern('*.la')
-            for rpm in files:
-                for fn in files:
-                    extra += "%s : %s\n" % (rpm, fn)
-            self.set_passed(False, extra)
 
 class CheckUsefulDebuginfo(CheckBase):
     '''
@@ -1091,19 +958,6 @@ class CheckUsefulDebuginfo(CheckBase):
 
 
 
-class CheckRPATH(CheckBase):
-    '''
-    http://fedoraproject.org/wiki/Packaging/Guidelines#Beware_of_Rpath
-    '''
-    def __init__(self, base):
-        CheckBase.__init__(self, base)
-        self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#Beware_of_Rpath'
-        self.text = 'Rpath absent or only used for internal libs.'
-        self.automatic = False
-        self.type = 'MUST'
-
-
-
 class CheckNoConflicts(CheckBase):
     '''
     Whenever possible, Fedora packages should avoid conflicting with each other
@@ -1114,39 +968,6 @@ class CheckNoConflicts(CheckBase):
         CheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#Conflicts'
         self.text = 'Package does not generates any conflict.'
-        self.automatic = False
-        self.type = 'MUST'
-
-
-
-class CheckNoKernelModules(CheckBase):
-    '''
-    At one point (pre Fedora 8), packages containing "addon" kernel modules were permitted.
-    This is no longer the case. Fedora strongly encourages kernel module packagers to
-    submit their code into the upstream kernel tree.
-    http://fedoraproject.org/wiki/Packaging/Guidelines#No_External_Kernel_Modules
-    '''
-    def __init__(self, base):
-        CheckBase.__init__(self, base)
-        self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#No_External_Kernel_Modules'
-        self.text = 'Package does not contains kernel modules.'
-        self.automatic = False
-        self.type = 'MUST'
-
-
-
-class CheckRelocatable(CheckBase):
-    '''
-    MUST: If the package is designed to be relocatable,
-    the packager must state this fact in the request for review,
-    along with the rationalization for relocation of that specific package.
-    Without this, use of Prefix: /usr is considered a blocker.
-    http://fedoraproject.org/wiki/Packaging/Guidelines#RelocatablePackages
-    '''
-    def __init__(self, base):
-        CheckBase.__init__(self, base)
-        self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#RelocatablePackages'
-        self.text = 'Package is not relocatable.'
         self.automatic = False
         self.type = 'MUST'
 
@@ -1253,10 +1074,10 @@ class CheckContainsLicenseText(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/LicensingGuidelines#License_Text'
-        self.text = 'If the source package does not include license text(s) as a separate file from upstream, the packager SHOULD query upstream to include it.'
+        self.text = 'If the source package does not include license text(s) as a separate file from \
+upstream, the packager SHOULD query upstream to include it.'
         self.automatic = False
         self.type = 'SHOULD'
-
 
 
 class CheckSpecDescTranlation(CheckBase):
@@ -1268,10 +1089,10 @@ class CheckSpecDescTranlation(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#summary'
-        self.text = 'Description and summary sections in the package spec file contains translations for supported Non-English languages, if available.'
+        self.text = 'Description and summary sections in the package spec file contains translations \
+for supported Non-English languages, if available.'
         self.automatic = False
         self.type = 'SHOULD'
-
 
 
 class CheckSourceUrl(CheckBase):
@@ -1293,7 +1114,7 @@ class CheckSourceUrl(CheckBase):
                 if not source.downloaded:
                     passed = False
                     output += "%s\n" % source.URL
-                    
+
         if passed:
             self.set_passed(True)
         else:
@@ -1310,6 +1131,9 @@ class CheckSourcePatchPrefix(CheckBase):
         self.text = 'SourceX / PatchY prefixed with %{name}.'
         self.automatic = True
         self.type = 'SHOULD'
+
+    def is_applicable(self):
+        return self.spec.has_patches()
 
     def run(self):
         regex = re.compile(r'^(Source|Patch)\d*\s*:\s*(.*)')
@@ -1330,7 +1154,6 @@ class CheckSourcePatchPrefix(CheckBase):
         self.set_passed(passed, extra)
 
 
-
 class CheckFinalRequiresProvides(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
@@ -1338,7 +1161,6 @@ class CheckFinalRequiresProvides(CheckBase):
         self.text = 'Final provides and requires are sane (rpm -q --provides and rpm -q --requires).'
         self.automatic = False
         self.type = 'SHOULD'
-
 
 
 class CheckTestSuites(CheckBase):
@@ -1386,7 +1208,6 @@ class CheckSupportAllArchs(CheckBase):
         self.type = 'SHOULD'
 
 
-
 class CheckDistTag(CheckBase):
     '''
     http://fedoraproject.org/wiki/DistTag
@@ -1399,7 +1220,13 @@ class CheckDistTag(CheckBase):
         self.type = 'SHOULD'
 
     def run(self):
-        self.set_passed(self.spec.find_tag('Release').endswith('%{?dist}'))
+        rel_tags = self.spec.find_tag('Release')
+        if len(rel_tags) > 1:
+            self.set_passed(False, "Multiple Release tags found")
+            return
+        rel = rel_tags[0]
+        self.set_passed(rel.endswith('%{?dist}'))
+
 
 class CheckUseGlobal(CheckBase):
     '''
@@ -1424,7 +1251,6 @@ class CheckUseGlobal(CheckBase):
             self.set_passed(True)
 
 
-
 class CheckScriptletSanity(CheckBase):
     '''
     SHOULD: If scriptlets are used, those scriptlets must be sane.
@@ -1438,6 +1264,9 @@ class CheckScriptletSanity(CheckBase):
         self.automatic = False
         self.type = 'SHOULD'
 
+    def is_applicable(self):
+        regex = re.compile('%(post|postun|posttrans|preun|pretrans|pre)\s+')
+        return self.spec.find(regex)
 
 
 class CheckPkgConfigFiles(CheckBase):
@@ -1487,7 +1316,6 @@ class CheckFileRequires(CheckBase):
         self.type = 'SHOULD'
 
 
-
 class CheckTimeStamps(CheckBase):
     '''
     http://fedoraproject.org/wiki/Packaging/Guidelines#Timestamps
@@ -1513,6 +1341,8 @@ class CheckManPages(CheckBase):
         self.automatic = False
         self.type = 'SHOULD'
 
+    def is_applicable(self):
+        return self.has_files("[/usr]/[s]bin/*")
 
 
 class CheckParallelMake(CheckBase):
@@ -1547,6 +1377,7 @@ class CheckParallelMake(CheckBase):
                 found = True
         self.set_passed(found)
 
+
 class CheckPatchComments(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
@@ -1555,4 +1386,14 @@ class CheckPatchComments(CheckBase):
         self.automatic = False
         self.type = 'SHOULD'
 
+    def is_applicable(self):
+        return self.spec.has_patches()
 
+
+class LangCheckBase(CheckBase):
+    """ Base class for language specific class. """
+    header="Language"
+
+    def is_applicable(self):
+        """ By default, language specific check are disabled. """
+        return False

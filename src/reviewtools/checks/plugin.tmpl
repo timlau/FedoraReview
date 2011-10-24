@@ -1,0 +1,63 @@
+#-*- coding: UTF-8 -*-
+
+# This is an example file of a language specific plugin
+
+import re
+import os
+from generic import LangCheckBase, CheckBase, CheckLatestVersionIsPackaged
+
+
+class RCheckBase(LangCheckBase):
+    """ Base class for all R specific checks. """
+
+    def is_applicable(self):
+        """ Check is the tests are applicable, here it checks whether
+        it is a R package (spec starts with 'R-') or not.
+        """
+        if self.spec.name.startswith("R-"):
+            return True
+        else:
+            return False
+
+class RCheckBuildRequires(RCheckBase):
+    """ Check if the BuildRequires have the mandatory elements. """
+
+    def __init__(self, base):
+        """ Instanciate check variable """
+        CheckBase.__init__(self, base)
+        self.url = 'http://fedoraproject.org/wiki/Packaging:R'
+        self.text = 'Package contains the mandatory BuildRequires.'
+        self.automatic = True
+
+    def run(self):
+        """ Run the check """
+        br = self.spec.find_tag('BuildRequires')
+        self.set_passed('R-devel' in br and 'tex(latex)' in br)
+
+
+class RCheckLatestVersionIsPackaged(RCheckBase):
+    """ Check if the lastest version is packaged. """
+
+    # This global variable for this class is used to remove a test
+    # from the list if one test over-rides a generic one.
+    # For example, in R FedoraReview can quite safely check if it is the
+    # latest version which have been packaged, but there is a generic
+    # check for that as in most cases it won't be possible do to so.
+    # Here we therefore specify how to turn off this generic check
+    # and keep only this specific one.
+    deprecates = [CheckLatestVersionIsPackaged]
+
+    def __init__(self, base):
+        """ Instanciate check variable """
+        CheckBase.__init__(self, base)
+        self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
+        self.text = 'Latest version is packaged.'
+        self.automatic = True
+        self.type = 'SHOULD'
+
+    def run(self):
+        """ Run the check """
+        # do something...
+        self.set_passed(True)
+
+# Other classes doing other tests....

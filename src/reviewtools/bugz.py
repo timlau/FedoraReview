@@ -1,4 +1,5 @@
-#!/usr/bin/python -tt
+#-*- coding: UTF-8 -*-
+
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
 #    the Free Software Foundation; either version 2 of the License, or
@@ -20,13 +21,28 @@ Tools for helping Fedora package reviewers
 import re
 from bugzilla import Bugzilla
 
-BZ_URL='https://bugzilla.redhat.com/xmlrpc.cgi'
+BZ_URL = 'https://bugzilla.redhat.com/xmlrpc.cgi'
 
 from reviewtools import Helpers, get_logger
 
+
 class ReviewBug(Helpers):
-    def __init__(self,bug,user=None,password=None, cache=False, nobuild=False, other_BZ=None):
-        Helpers.__init__(self,cache, nobuild)
+    """ This class handles interaction with bugzilla.
+    """
+
+    def __init__(self, bug, user=None, password=None, cache=False,
+                nobuild=False, other_BZ=None):
+        """ Constructord.
+        :arg bug, the bug number on bugzilla
+        :kwarg user, the username with which to log in in bugzilla.
+        :kwarg password, the password associated with this account.
+        :kwarg cache, boolean specifying whether the spec and srpm should
+        be re-downloaded or not.
+        :kwarg nobuild, boolean specifying whether to build or not the
+        package.
+        :kwarg other_BZ, url of an eventual other bugzilla system.
+        """
+        Helpers.__init__(self, cache, nobuild)
         self.bug_num = bug
         self.spec_url = None
         self.srpm_url = None
@@ -34,8 +50,8 @@ class ReviewBug(Helpers):
         self.srpm_file = None
         self.log = get_logger()
         if other_BZ:
-            self.bugzilla = Bugzilla(url=other_BZ+'/xmlrpc.cgi')
-        else:    
+            self.bugzilla = Bugzilla(url=other_BZ + '/xmlrpc.cgi')
+        else:
             self.bugzilla = Bugzilla(url=BZ_URL)
         self.is_login = False
         if user and password:
@@ -45,9 +61,13 @@ class ReviewBug(Helpers):
                 self.is_login = True
         self.user = user
         self.bug = self.bugzilla.getbug(self.bug_num)
-        
 
     def login(self, user, password):
+        """ Handles the login of the user into bugzilla.
+        :arg user, the bugzilla username.
+        :arg password, the bugzilla password associated with the given
+        username.
+        """
         if self.bugzilla.login(user=user, password=password) > 0:
             self.is_login = True
             self.user = user
@@ -56,12 +76,16 @@ class ReviewBug(Helpers):
         return self.is_login
 
     def find_urls(self):
+        """ Reads the page on bugzilla, search for all urls and extract
+        the last urls for the spec and the srpm.
+        """
         found = True
         if self.bug.longdescs:
-            for c in self.bug.longdescs:
-                body = c['body']
+            for cat in self.bug.longdescs:
+                body = cat['body']
                 #self.log.debug(body)
-                urls = re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+~]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', body)
+                urls = re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|\
+[$-_@.&+~]|[!*\(\),]|(?:%[0-9a-fA-F~\.][0-9a-fA-F]))+', body)
                 if urls:
                     for url in urls:
                         if url.endswith(".spec"):
@@ -76,32 +100,42 @@ class ReviewBug(Helpers):
             found = False
         return found
 
-
-
     def assign_bug(self):
+        """ Assign the bug to the reviewer.
+        """
         if self.is_login:
             self.bug.setstatus('ASSIGNED')
             self.bug.setassignee(assigned_to=self.user)
             self.bug.addcomment('I will review this package')
-            flags = {'fedora-review' : '?'}
+            flags = {'fedora-review': '?'}
             self.bug.updateflags(flags)
             self.bug.addcc([self.user])
         else:
             self.log.info("You need to login before assigning a bug")
 
-    def add_comment(self,comment):
+    def add_comment(self, comment):
+        """ Add a given comment to the bugzilla page.
+        :arg comment, the comment to be added to the page.
+        """
         if self.is_login:
             self.bug.addcomment(comment)
         else:
             self.log.info("You need to is_login before commenting on a bug")
 
-    def add_comment_from_file(self,fname):
-        fd = open(fname,"r")
-        lines = fd.readlines()
-        fd.close
+    def add_comment_from_file(self, fname):
+        """ Add the content from a file as comment.
+        :arg fname, the filename from which the content is added as
+        comment on the bug.
+        """
+        stream = open(fname, "r")
+        lines = stream.readlines()
+        stream.close
         self.add_comment("".join(lines))
 
     def download_files(self):
+        """ Download the spec file and srpm extracted from the bug
+        report.
+        """
         if not self.cache:
             self.log.info('Downloading .spec and .srpm files')
         found = True
@@ -113,5 +147,3 @@ class ReviewBug(Helpers):
             if self.spec_file and self.srpm_file:
                 return True
         return False
-
-
