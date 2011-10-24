@@ -181,7 +181,7 @@ class RCheckDir(RCheckBase):
     def run(self):
         """ Run the check """
         dirs = self.spec.find_tag('%dir')
-        print dirs
+        #print dirs
 
 class RCheckBuildSection(RCheckBase):
     """ Check if the build section follows the expected behavior """
