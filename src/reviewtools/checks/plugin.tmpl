@@ -58,6 +58,17 @@ class RCheckLatestVersionIsPackaged(RCheckBase):
     def run(self):
         """ Run the check """
         # do something...
+
+        # Access the spec file via:
+        #  self.spec
+        # the spec file itself is at:
+        #  self.spec.lines
+
+        # Access the srpm via:
+        #  self.srpm
+
+        # Access the rpmlint output via:
+        #  self.srpm.rpmlint_output
         self.set_passed(True)
 
 # Other classes doing other tests....

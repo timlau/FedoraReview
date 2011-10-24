@@ -94,6 +94,7 @@ class Helpers(object):
         self.cache = cache
         self.nobuild = nobuild
         self.mock_dist = mock_dist
+        self.rpmlint_output = []
 
     def set_work_dir(self, work_dir):
         work_dir = os.path.abspath(os.path.expanduser(work_dir))
@@ -104,6 +105,7 @@ class Helpers(object):
         self.work_dir = work_dir
 
     def _run_cmd(self, cmd):
+        self.log.debug('Run command: %s' % cmd)
         cmd = cmd.split(' ')
         try:
             proc = Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -291,6 +293,9 @@ class SRPMFile(Helpers):
         result = "\nrpmlint %s\n" % os.path.basename(filename)
         result += sep
         out = self._run_cmd(cmd)
+        for line in out.split('\n'):
+            if line and not 'specfiles checked' in line:
+                self.rpmlint_output.append(line)
         no_errors = self._check_errors(out)
         result += out
         result += sep
