@@ -69,9 +69,9 @@ class ReviewHelper:
                     help='Do not make a review report')
         parser.add_argument('-n','--name', metavar='<name prefix>',
                     help='run on local <name prefix>.spec & <name prefix>*.src.rpm located in work dir')
-        parser.add_argument('--mock-release', metavar='<release>',
-                    default = self.settings.mock_dist, dest='mock_dist',
-                    help='Distribution to use for the mock build (default to rawhide, can be 15,16...')
+        parser.add_argument('--mock-config', metavar='<mock configuration>',
+                    default = self.settings.mock_config, dest='mock_config',
+                    help='Configuration to use for the mock build (Defaults to fedora-rawhide-i686)')
         args = parser.parse_args()
         return args
 
@@ -131,7 +131,7 @@ class ReviewHelper:
         self.log.debug("  --> SRPM file : %s" % srpm)
         self.checks = Checks(self.args, spec, srpm,
             cache=self.args.cache, nobuild = self.args.nobuild,
-            mock_dist=self.args.mock_dist)
+            mock_config=self.args.mock_config)
         self.outfile = "%s/%s-review.txt" % (
             self.args.workdir, self.checks.spec.name)
         with open(self.outfile,"w") as output:

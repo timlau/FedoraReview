@@ -51,7 +51,7 @@ class Settings(BaseConfig):
     work_dir = Option('.')
     # Default bugzilla userid
     bz_user = Option('')
-    mock_dist = Option('rawhide')
+    mock_config = Option('fedora-rawhide-i386')
 
     def __init__(self):
         BaseConfig.__init__(self)
@@ -89,12 +89,12 @@ class Settings(BaseConfig):
 class Helpers(object):
 
     def __init__(self, cache=False, nobuild=False,
-            mock_dist=Settings.mock_dist):
+            mock_config=Settings.mock_config):
         self.work_dir = 'work/'
         self.log = get_logger()
         self.cache = cache
         self.nobuild = nobuild
-        self.mock_dist = mock_dist
+        self.mock_config = mock_config
         self.rpmlint_output = []
 
     def set_work_dir(self, work_dir):
@@ -203,8 +203,8 @@ class Source(Helpers):
 
 class SRPMFile(Helpers):
     def __init__(self, filename, cache=False, nobuild=False,
-            mock_dist=Settings.mock_dist):
-        Helpers.__init__(self, cache, nobuild, mock_dist)
+            mock_config=Settings.mock_config):
+        Helpers.__init__(self, cache, nobuild, mock_config)
         self.filename = filename
         self.is_installed = False
         self.is_build = False
@@ -228,10 +228,10 @@ class SRPMFile(Helpers):
         if not force and (self.is_build or self.nobuild):
             return 0
         #print "MOCKBUILD: ", self.is_build, self.nobuild
-        self.log.info("Building %s using mock fedora-%s-%s" % (
-            self.filename, self.mock_dist, platform.processor()))
-        rc = call('mock -r fedora-%s-%s  --rebuild %s' % (
-            self.mock_dist, platform.processor(), self.filename),
+        self.log.info("Building %s using mock %s" % (
+            self.filename, self.mock_config))
+        rc = call('mock -r %s  --rebuild %s' % (
+            self.mock_config, self.filename),
             shell=True)
         if rc == 0:
             self.is_build = True
@@ -242,7 +242,7 @@ class SRPMFile(Helpers):
         return rc
 
     def get_mock_dir(self):
-        mock_dir = '/var/lib/mock/fedora-%s-i386/result' % self.mock_dist
+        mock_dir = '/var/lib/mock/%s/result' % self.mock_config
         return mock_dir
 
     def get_source_dir(self):
