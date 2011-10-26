@@ -29,6 +29,7 @@ import glob
 import sys
 import shlex
 import rpm
+import platform
 from yum.config import *
 from urlparse import urlparse
 
@@ -227,10 +228,11 @@ class SRPMFile(Helpers):
         if not force and (self.is_build or self.nobuild):
             return 0
         #print "MOCKBUILD: ", self.is_build, self.nobuild
-        self.log.info("Building %s using mock fedora-%s-i386" % (
-            self.filename, self.mock_dist))
-        rc = call('mock -r fedora-%s-i386  --rebuild %s' % (
-            self.mock_dist, self.filename), shell=True)
+        self.log.info("Building %s using mock fedora-%s-%s" % (
+            self.filename, self.mock_dist, platform.processor()))
+        rc = call('mock -r fedora-%s-%s  --rebuild %s' % (
+            self.mock_dist, platform.processor(), self.filename),
+            shell=True)
         if rc == 0:
             self.is_build = True
             self.log.info("Build completed ok")
