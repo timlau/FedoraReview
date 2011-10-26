@@ -1,0 +1,10 @@
+{
+  "command":"has_requires"
+  "subpackage":"javadoc"
+  "name":"jpackage-utils"
+  "version":">= 1.0-15"
+}
+
+{
+  "answer":true
+}
