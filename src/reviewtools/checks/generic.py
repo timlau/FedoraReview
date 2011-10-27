@@ -156,7 +156,7 @@ class CheckBuildroot(CheckBase):
         self.automatic = True
 
     def run(self):
-        br_tags = self.spec.find_tag('BuildRoot', splitted=False)
+        br_tags = self.spec.find_tag('BuildRoot', split_tag=False)
         if len(br_tags) > 1:
             self.set_passed(False, "Multiple BuildRoot definitions found")
             return

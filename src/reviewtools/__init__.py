@@ -464,7 +464,7 @@ class SpecFile(object):
             return False
         return output
 
-    def find_tag(self, tag, section = None, splitted = True):
+    def find_tag(self, tag, section = None, split_tag = True):
         '''
         find at given tag in the spec file.
         Ex. Name:, Version:
@@ -492,7 +492,7 @@ class SpecFile(object):
                     value = res.group(1).strip()
                     value = value.replace(',', ' ')
                     value = value.replace('  ', ' ')
-                    if splitted:
+                    if split_tag:
                         values.extend(value.split())
                     else:
                         values.append(value)
