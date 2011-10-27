@@ -156,7 +156,7 @@ class CheckBuildroot(CheckBase):
         self.automatic = True
 
     def run(self):
-        br_tags = self.spec.find_tag('BuildRoot')
+        br_tags = self.spec.find_tag('BuildRoot', splitted=False)
         if len(br_tags) > 1:
             self.set_passed(False, "Multiple BuildRoot definitions found")
             return
@@ -167,9 +167,9 @@ class CheckBuildroot(CheckBase):
         '%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)',
         '%{_tmppath}/%{name}-%{version}-%{release}-root']
         if br in legal_buildroots:
-            self.set_passed(True,br)
+            self.set_passed(True, br)
         else:
-            self.set_passed(False,br)
+            self.set_passed(False, br)
 
     def is_applicable(self):
         '''
