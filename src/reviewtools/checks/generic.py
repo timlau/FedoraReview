@@ -70,7 +70,6 @@ class CheckBase(Helpers):
         if output_extra:
             self.output_extra = output_extra
 
-
     def get_result(self):
         '''
         Get the test report result for this test
@@ -88,6 +87,13 @@ class CheckBase(Helpers):
         '''
         return True
 
+    def sources_have_files(self, pattern):
+        ''' Check if rpms has file matching a pattern'''
+        sources_files = self.sources.get_files_sources()
+        for source in sources_files:
+            if fnmatch.fnmatch(source, pattern):
+                return True
+        return False
 
     def has_files(self, pattern):
         ''' Check if rpms has file matching a pattern'''
@@ -924,7 +930,7 @@ class CheckReqPkgConfig(CheckBase):
         lines = self.spec.get_section('main')
         found = False
         for line in lines:
-            print line
+            #print line
             res = regex.search(line)
             if res:
                 found = True
