@@ -28,6 +28,7 @@ import re
 import glob
 import sys
 import shlex
+import tarfile
 import rpm
 import platform
 from yum.config import *
@@ -213,7 +214,12 @@ class Sources(object):
         """ Return the list of all files found in the sources. """
         if self._sources_files:
             return self._sources_files
-        self.extract_all()
+        try:
+            self.extract_all()
+        except tarfile.ReadError, error:
+            print "Source", error
+            self._source_files = []
+            return []
         sources_files = []
         for source in self._sources.values():
             # If the sources are not extracted then we add the source itself
@@ -267,7 +273,6 @@ class Source(Helpers):
             except IOError, err:
                 self.log.debug(err)
                 print "Could not generate the folder %s" % self.extract_dir
-        import tarfile
         tar = tarfile.open(self.filename)
         tar.extractall(self.extract_dir)
         tar.close()
