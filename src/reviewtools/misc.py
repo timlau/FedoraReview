@@ -20,10 +20,11 @@
 This module contains misc helper funtions and classes
 '''
 import sys
+import os
 from operator import attrgetter
 
 from reviewtools import Sources, SRPMFile, SpecFile
-
+from reviewtools.jsonapi import JSONPlugin
 
 HEADER = """
 Package Review
@@ -45,6 +46,7 @@ class Checks(object):
     def __init__(self, args, spec_file, srpm_file, cache=False,
             nobuild=False, mock_dist='rawhide'):
         self.checks = []
+        self.ext_checks = []
         self.args = args  # Command line arguments & options
         self.cache = cache
         self.nobuild = nobuild
@@ -74,6 +76,14 @@ class Checks(object):
                     self.log.debug('Add module: %s' % mbr)
                     self.add(obj)
 
+        ext_dirs = os.environ["REVIEW_EXT_DIRS"].split(":")
+        for ext_dir in ext_dirs:
+            for plugin in os.listdir(ext_dir):
+                full_path = "%s/%s" % (ext_dir, plugin)
+                if os.path.isfile(full_path) and os.access(full_path, os.X_OK):
+                    pl = JSONPlugin(self, full_path)
+                    self.ext_checks.append(pl)
+
     def add(self, class_name):
         cls = class_name(self)
         self.checks.append(cls)
@@ -102,27 +112,34 @@ class Checks(object):
         sorted_checks = sorted(self.checks, key=attrgetter('header','type','__class__.__name__'))
         current_section = None
         for test in sorted_checks:
-                if test.is_applicable() and test.__class__ \
-                            not in self.deprecated:
-                    if test.automatic:
-                        test.run()
-                    else:
-                        test.state = 'pending'
+            if test.is_applicable() and test.__class__ \
+                        not in self.deprecated:
+                if test.automatic:
+                    test.run()
+                else:
+                    test.state = 'pending'
 
-                    if test.header != current_section:
-                        self._results.append("\n\n==== %s ====\n" % test.header)
-                        current_section = test.header
+                if test.header != current_section:
+                    self._results.append("\n\n==== %s ====\n" % test.header)
+                    current_section = test.header
 
-                    self.parse_result(test)
+                self.parse_result(test)
 
-                    result = test.get_result()
-                    self.log.debug('Running check : %s %s [%s] ' % (
-                        test.__class__.__name__,
-                        " " * (30 - len(test.__class__.__name__)),
-                        test.state ))
-                    if result:
-                        if result.startswith('[!] : MUST'):
-                            issues.append(result)
+                result = test.get_result()
+                self.log.debug('Running check : %s %s [%s] ' % (
+                    test.__class__.__name__,
+                    " " * (30 - len(test.__class__.__name__)),
+                    test.state ))
+                if result:
+                    if result.startswith('[!] : MUST'):
+                        issues.append(result)
+
+        # run external checks. we probably want to merge this into
+        # previous run, i.e create some layer so that all checks will
+        # be equal and we can sort them etc
+        for ext in self.ext_checks:
+            ext.run()
+
         self.show_result(output)
         if issues:
             output.write("\nIssues:\n")
