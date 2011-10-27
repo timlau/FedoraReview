@@ -69,19 +69,12 @@ class JSONPlugin(Helpers):
 
 
 class ReviewJSONEncoder(JSONEncoder):
-    ''' a custom JSON encoder for MyClass objects '''
+    ''' a custom JSON encoder for JSONAPI subclasses '''
     IGNORED=['__module__', '__dict__', '__doc__', '__init__','__weakref__']
-
-    def isvalid(self, obj):
-        if inspect.ismodule(obj) or inspect.ismethod(obj) or \
-           inspect.isfunction(obj) or inspect.ismodule(obj):
-             return False
-        return True
-
 
     def default(self, encclass):
         if not isinstance (encclass, JSONAPI):
-            print 'You cannot use the JSON custom MyClassEncoder for a non-MyClass object.'
+            print 'You cannot use the ReviewJSONEmcoder for a non-JSONAPI object.'
             return
         ret = {}
         # get things from base classes
