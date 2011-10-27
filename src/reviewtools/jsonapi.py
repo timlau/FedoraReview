@@ -36,7 +36,7 @@ class SetupPlugin(JSONAPI):
         self.srpm = {"path":srpm.filename,
                      "tree":None}
         self.spec = {"path":spec.filename,
-                     "text":None}
+                     "text":spec.get_expanded()}
         self.rpms = []
         for rpm in srpm.get_files_rpms().keys():
             self.rpms.append({"path":rpm,

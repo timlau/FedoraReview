@@ -467,9 +467,22 @@ class SpecFile(object):
             output, error = proc.communicate()
             print "output : [%s], error : [%s]" % (output, error)
         except OSError, e:
-            print "OSError : %s" % str(e)
+            log.error("OSError : %s" % str(e))
             return False
         return output
+
+    def get_expanded(self):
+        cmd = ['rpmspec', '-P', self.filename]
+        try:
+            proc = Popen(cmd, stdin = subprocess.PIPE, stdout = subprocess.PIPE,
+                         stderr = subprocess.PIPE)
+            output, error = proc.communicate()
+            if proc.wait() != 0:
+                return None
+            return output
+        except OSError, e:
+            log.error("OSError: %s" % str(e))
+            return None
 
     def find_tag(self, tag, section = None, split_tag = True):
         '''
