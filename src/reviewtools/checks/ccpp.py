@@ -10,8 +10,9 @@ class CCppCheckBase(LangCheckBase):
         if self.has_files_re('/usr/(lib|lib64)/[\w\-]*\.so\.[0-9]') or \
            self.has_files('*.h') or \
            self.has_files('*.a') or \
-           self.sources_have_files("*.c") or \
-           self.sources_have_files("*.cpp") :
+           self.sources_have_files('*.c') or \
+           self.sources_have_files('*.C') or \
+           self.sources_have_files('*.cpp') :
            return True
         return False
 
