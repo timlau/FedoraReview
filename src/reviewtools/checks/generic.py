@@ -445,9 +445,27 @@ class CheckBuildRequires(CheckBase):
         self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#Exceptions_2'
         self.text = 'All build dependencies are listed in BuildRequires, except for any that are \
 listed in the exceptions section of Packaging Guidelines.'
-        self.automatic = False
+        self.automatic = True
         self.type = 'MUST'
 
+    def run(self):
+        if self.srpm.is_build and not self.srpm.build_failed:
+            brequires = self.spec.find_tag("BuildRequires")
+            pkg_by_default = ['bash', 'bzip2', 'coreutils' ,'cpio', 'diffutils',
+                'fedora-release', 'findutils', 'gawk', 'gcc', 'gcc-c++',
+                'grep', 'gzip', 'info', 'make', 'patch', 'redhat-rpm-config',
+                'rpm-build', 'sed', 'shadow-utils', 'tar', 'unzip', 'util-linux-ng',
+                'which', 'xz']
+            intersec = list(set(brequires).intersection(set(pkg_by_default)))
+            if intersec:
+               self.set_passed(False, 'These BR are not needed: %s' % (
+               ' '.join(intersec)))
+            else:
+                self.set_passed(True)
+        else:
+            self.set_passed(False, 'The package did not built \
+BR could therefore not be checked or the package failed to build because \
+of missing BR')
 
 class CheckMakeinstall(CheckBase):
     '''
