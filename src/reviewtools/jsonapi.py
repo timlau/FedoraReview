@@ -42,6 +42,7 @@ class SetupPlugin(JSONAPI):
             self.rpms.append({"path":rpm,
                               "tree":None})
         self.rpmlint = "\n".join(srpm.rpmlint_output)
+        self.build_dir = srpm.get_build_dir()
 
 
 class JSONPlugin(Helpers):

@@ -56,7 +56,7 @@ class Checks(object):
         self.sources = Sources(cache=cache)
         self.log = get_logger()
         self.srpm = SRPMFile(srpm_file, cache=cache, nobuild=nobuild,
-            mock_config=mock_config)
+            mock_config=mock_config, spec=self.spec)
         self.plugins = load('reviewtools.checks')
         self.add_check_classes()
 

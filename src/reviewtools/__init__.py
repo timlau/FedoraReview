@@ -203,9 +203,10 @@ class Source(Helpers):
 
 class SRPMFile(Helpers):
     def __init__(self, filename, cache=False, nobuild=False,
-            mock_config=Settings.mock_config):
+            mock_config=Settings.mock_config, spec=None):
         Helpers.__init__(self, cache, nobuild, mock_config)
         self.filename = filename
+        self.spec = spec
         self.is_installed = False
         self.is_build = False
         self.build_failed = False
@@ -244,6 +245,12 @@ class SRPMFile(Helpers):
     def get_mock_dir(self):
         mock_dir = '/var/lib/mock/%s/result' % self.mock_config
         return mock_dir
+
+    def get_build_dir(self):
+        mock_dir = self.get_mock_dir()
+        return "%s/../root/builddir/build/BUILD/%s-%s" % (mock_dir,
+                                                          self.spec.name,
+                                                          self.spec.version)
 
     def get_source_dir(self):
         sourcedir = Popen(["rpm", "-E", '%_sourcedir'],
