@@ -28,7 +28,7 @@ import fnmatch
 
 from reviewtools import Helpers, get_logger
 
-TEST_STATES = {'pending': '[ ]','pass': '[x]','fail': '[!]','na': '[-]'}
+TEST_STATES = {'pending': '[ ]', 'pass': '[x]' ,'fail': '[!]', 'na': '[-]'}
 
 class CheckBase(Helpers):
 
@@ -75,7 +75,7 @@ class CheckBase(Helpers):
         '''
         Get the test report result for this test
         '''
-        msg ='%s : %s - %s' % (TEST_STATES[self.state],self.type, self.text)
+        msg ='%s : %s - %s' % (TEST_STATES[self.state], self.type, self.text)
         if self.output_extra:
             for line in self.output_extra.split('\n'):
                 msg += '\n        %s' % line
@@ -143,7 +143,7 @@ class CheckName(CheckBase):
         if passed:
             self.set_passed(passed)
         else:
-            self.set_passed(passed, '%s\n%s' % (self.spec.name,output))
+            self.set_passed(passed, '%s\n%s' % (self.spec.name, output))
 
 class CheckBuildroot(CheckBase):
     '''
@@ -186,7 +186,7 @@ class CheckSpecName(CheckBase):
     '''
     def __init__(self, base):
         CheckBase.__init__(self, base)
-        self.url='http://fedoraproject.org/wiki/Packaging/NamingGuidelines#Spec_file_name'
+        self.url = 'http://fedoraproject.org/wiki/Packaging/NamingGuidelines#Spec_file_name'
         self.text = 'Spec file name must match the spec package %{name}, in the format %{name}.spec.'
         self.automatic = True
 
@@ -195,7 +195,8 @@ class CheckSpecName(CheckBase):
         if os.path.basename(self.spec.filename) == spec_name:
             self.set_passed(True)
         else:
-            self.set_passed(False, "%s should be %s " % (os.path.basename(self.spec.filename),spec_name))
+            self.set_passed(False, "%s should be %s " %
+                (os.path.basename(self.spec.filename), spec_name))
 
 
 class CheckIllegalSpecTags(CheckBase):
@@ -214,7 +215,7 @@ class CheckIllegalSpecTags(CheckBase):
             value = self.spec.get_from_spec(tag)
             if value:
                 passed = False
-                output += 'Found : %s: %s\n' % (tag,value)
+                output += 'Found : %s: %s\n' % (tag, value)
         if not passed:
             self.set_passed(passed, output)
         else:
@@ -293,7 +294,7 @@ class CheckDefattr(CheckBase):
         if passed:
             self.set_passed(passed)
         else:
-            self.set_passed(passed,output)
+            self.set_passed(passed, output)
 
 class CheckSourceMD5(CheckBase):
     '''
@@ -537,7 +538,7 @@ then that file, containing the text of the license(s) for the package is include
         """
         haslicensefile = False
         licenses = []
-        for f in ['COPYING','LICEN', 'copying', 'licen']:
+        for f in ['COPYING', 'LICEN', 'copying', 'licen']:
             if self.has_files("*" + f + "*"):
                 haslicensefile = True
                 licenses.append(f)
@@ -743,7 +744,7 @@ class CheckNoConfigInUsr(CheckBase):
                         passed = False
                         extra += line
 
-        self.set_passed(passed,extra)
+        self.set_passed(passed, extra)
 
 class CheckConfigNoReplace(CheckBase):
     '''
@@ -774,7 +775,7 @@ class CheckConfigNoReplace(CheckBase):
                     if not line.startswith('%config(noreplace)'):
                         passed = False
                         extra += line
-        self.set_passed(passed,extra)
+        self.set_passed(passed, extra)
 
 
 
@@ -901,7 +902,7 @@ class CheckReqPkgConfig(CheckBase):
         return self.has_files('*.pc')
 
     def run(self):
-        regex = re.compile("^Require:\s*.*pkgconfig.*",re.I)
+        regex = re.compile("^Require:\s*.*pkgconfig.*", re.I)
         lines = self.spec.get_section('main')
         found = False
         for line in lines:
@@ -952,7 +953,7 @@ class CheckFullVerReqSub(CheckBase):
                 extra += "Missing : Requires: %%{name}%%{?_isa} = %%{version}-%%{release} in %s" % section
                 errors = False
         if errors:
-            self.set_passed(False,extra)
+            self.set_passed(False, extra)
         else:
             self.set_passed(True)
 
@@ -1377,7 +1378,7 @@ class CheckParallelMake(CheckBase):
         check if this test is applicable
         '''
         regex = re.compile(r"^make")
-        lines=self.spec.get_section('build')
+        lines = self.spec.get_section('build')
         found = False
         for line in lines:
             res = regex.search(line)
@@ -1388,7 +1389,7 @@ class CheckParallelMake(CheckBase):
 
     def run(self):
         regex = re.compile(r"^make*.%{?_smp_mflags}")
-        lines=self.spec.get_section('build')
+        lines = self.spec.get_section('build')
         found = False
         for line in lines:
             res = regex.search(line)
@@ -1411,7 +1412,7 @@ class CheckPatchComments(CheckBase):
 
 class LangCheckBase(CheckBase):
     """ Base class for language specific class. """
-    header="Language"
+    header = "Language"
 
     def is_applicable(self):
         """ By default, language specific check are disabled. """
