@@ -283,7 +283,7 @@ class CheckDefattr(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#FilePermissions'
-        self.text = 'Each %files section contains %defattr'
+        self.text = 'Each %files section contains %defattr if rpm < 4.4'
         self.automatic = True
 
     def run(self):
