@@ -43,7 +43,7 @@ from reviewtools import get_logger
 
 class Checks(object):
     def __init__(self, args, spec_file, srpm_file, cache=False,
-            nobuild=False, mock_dist='rawhide'):
+            nobuild=False, mock_config='fedora-rawhide-i686'):
         self.checks = []
         self.args = args  # Command line arguments & options
         self.cache = cache
@@ -51,10 +51,10 @@ class Checks(object):
         self._results = {'PASSED': [], 'FAILED': [], 'NA': [], 'USER': []}
         self.deprecated = []
         self.spec = SpecFile(spec_file)
-        self.sources = Sources(cache=cache)
+        self.sources = Sources(cache=cache, mock_config=mock_config)
         self.log = get_logger()
         self.srpm = SRPMFile(srpm_file, cache=cache, nobuild=nobuild,
-            mock_dist=mock_dist)
+            mock_config=mock_config)
         self.plugins = load('reviewtools.checks')
         self.add_check_classes()
 
@@ -102,27 +102,28 @@ class Checks(object):
         sorted_checks = sorted(self.checks, key=attrgetter('header','type','__class__.__name__'))
         current_section = None
         for test in sorted_checks:
-                if test.is_applicable() and test.__class__ \
-                            not in self.deprecated:
-                    if test.automatic:
-                        test.run()
-                    else:
-                        test.state = 'pending'
+            if test.is_applicable() and test.__class__ \
+                        not in self.deprecated:
+                if test.automatic:
+                    test.run()
+                else:
+                    test.state = 'pending'
 
-                    if test.header != current_section:
-                        self._results.append("\n\n==== %s ====\n" % test.header)
-                        current_section = test.header
+                if test.header != current_section:
+                    self._results.append("\n\n==== %s ====\n" % test.header)
+                    current_section = test.header
 
-                    self.parse_result(test)
+                self.parse_result(test)
 
-                    result = test.get_result()
-                    self.log.debug('Running check : %s %s [%s] ' % (
-                        test.__class__.__name__,
-                        " " * (30 - len(test.__class__.__name__)),
-                        test.state ))
-                    if result:
-                        if result.startswith('[!] : MUST'):
-                            issues.append(result)
+                result = test.get_result()
+                self.log.debug('Running check : %s %s [%s] ' % (
+                    test.__class__.__name__,
+                    " " * (30 - len(test.__class__.__name__)),
+                    test.state ))
+                if result:
+                    if result.startswith('[!] : MUST'):
+                        issues.append(result)
+
         self.show_result(output)
         if issues:
             output.write("\nIssues:\n")

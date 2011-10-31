@@ -28,7 +28,9 @@ import re
 import glob
 import sys
 import shlex
+import tarfile
 import rpm
+import platform
 from yum.config import *
 from urlparse import urlparse
 
@@ -50,7 +52,7 @@ class Settings(BaseConfig):
     work_dir = Option('.')
     # Default bugzilla userid
     bz_user = Option('')
-    mock_dist = Option('rawhide')
+    mock_config = Option('fedora-rawhide-i386')
 
     def __init__(self):
         BaseConfig.__init__(self)
@@ -88,12 +90,12 @@ class Settings(BaseConfig):
 class Helpers(object):
 
     def __init__(self, cache=False, nobuild=False,
-            mock_dist=Settings.mock_dist):
+            mock_config=Settings.mock_config):
         self.work_dir = 'work/'
         self.log = get_logger()
         self.cache = cache
         self.nobuild = nobuild
-        self.mock_dist = mock_dist
+        self.mock_config = mock_config
         self.rpmlint_output = []
 
     def set_work_dir(self, work_dir):
@@ -103,6 +105,10 @@ class Helpers(object):
         if not work_dir[-1] == "/":
             work_dir += '/'
         self.work_dir = work_dir
+
+    def get_mock_dir(self):
+        mock_dir = '/var/lib/mock/%s/result' % self.mock_config
+        return mock_dir
 
     def _run_cmd(self, cmd):
         self.log.debug('Run command: %s' % cmd)
@@ -144,11 +150,13 @@ class Helpers(object):
 
 class Sources(object):
     """ Store Source object for each source in Spec file"""
-    def __init__(self, cache):
+    def __init__(self, cache, mock_config=Settings.mock_config):
         self._sources = {}
         self.cache = cache
+        self.mock_config = mock_config
         self.work_dir = None
         self.log = get_logger()
+        self._sources_files = None
 
     def set_work_dir(self, work_dir):
         self.work_dir = work_dir
@@ -157,12 +165,13 @@ class Sources(object):
         """Add a new Source Object based on spec tag and URL to source"""
         if urlparse(source_url)[0] != '':  # This is a URL, Download it
             self.log.info("Downloading (%s): %s" % (tag, source_url))
-            source = Source(cache=self.cache)
+            source = Source(cache=self.cache, mock_config=self.mock_config)
             source.set_work_dir(self.work_dir)
             source.get_source(source_url)
         else:  # this is a local file in the SRPM
             self.log.info("No upstream for (%s): %s" % (tag, source_url))
-            source = Source(filename=source_url, cache=self.cache)
+            source = Source(filename=source_url, cache=self.cache,
+            mock_config=self.mock_config)
             source.set_work_dir(self.work_dir)
         self._sources[tag] = source
 
@@ -177,13 +186,64 @@ class Sources(object):
         """ Get all source objects """
         return [self._sources[s] for s in self._sources]
 
+    def extract_all(self):
+        """ Extract all sources which are detected can be extracted based
+        on their extension.
+        """
+        for source in self._sources.values():
+            if os.path.splitext(source.filename)[1] in \
+                ['.zip', '.tar', '.gz', '.bz2']:
+                if not source.extract_dir:
+                    source.extract()
+
+    def extract(self, source_url=None, source_filename=None):
+        """ Extract the source specified by its url or filename.
+        :arg source_url, the url used in the spec as used in the spec
+        :arg souce_filename, the filename of the source as identified
+        in the spec.
+        """
+        if source_url is None and source_name is None:
+            print 'No source set to extract'
+        for source in self._sources:
+            if source_url and source.URL == source_url:
+                source.extract()
+            elif source_filename and source.filename == source_filename:
+                source.extract()
+
+    def get_files_sources(self):
+        """ Return the list of all files found in the sources. """
+        if self._sources_files:
+            return self._sources_files
+        try:
+            self.extract_all()
+        except tarfile.ReadError, error:
+            print "Source", error
+            self._source_files = []
+            return []
+        sources_files = []
+        for source in self._sources.values():
+            # If the sources are not extracted then we add the source itself
+            if not source.extract_dir:
+                self.log.debug('%s cannot be extracted, adding as such \
+as sources' % source.filename)
+                sources_files.append(source.filename)
+            else:
+                self.log.debug('Adding files found in %s' % source.filename)
+                for root, subFolders, files in os.walk(source.extract_dir):
+                    for filename in files:
+                        sources_files.append(os.path.join(root, filename))
+        self._sources_files = sources_files
+        return sources_files
+
 
 class Source(Helpers):
-    def __init__(self, filename=None, cache=False):
-        Helpers.__init__(self, cache)
+    def __init__(self, filename=None, cache=False,
+        mock_config=Settings.mock_config):
+        Helpers.__init__(self, cache, mock_config=mock_config)
         self.filename = filename
         self.downloaded = False
         self.URL = None
+        self.extract_dir = None
 
     def get_source(self, URL):
         self.URL = URL
@@ -199,11 +259,29 @@ class Source(Helpers):
             sum = "upstream source not found"
         return sum
 
+    def extract(self):
+        """ Extract the sources in the mock chroot so that it can be
+        destroy easily by mock.
+        """
+        self.extract_dir = self.get_mock_dir() + \
+                "/../root/builddir/build/sources/"
+        self.log.debug("Extracting %s in %s " % (self.filename,
+                self.extract_dir))
+        if not os.path.exists(self.extract_dir):
+            try:
+                os.mkdir(self.extract_dir)
+            except IOError, err:
+                self.log.debug(err)
+                print "Could not generate the folder %s" % self.extract_dir
+        tar = tarfile.open(self.filename)
+        tar.extractall(self.extract_dir)
+        tar.close()
+
 
 class SRPMFile(Helpers):
     def __init__(self, filename, cache=False, nobuild=False,
-            mock_dist=Settings.mock_dist):
-        Helpers.__init__(self, cache, nobuild, mock_dist)
+            mock_config=Settings.mock_config):
+        Helpers.__init__(self, cache, nobuild, mock_config)
         self.filename = filename
         self.is_installed = False
         self.is_build = False
@@ -227,10 +305,11 @@ class SRPMFile(Helpers):
         if not force and (self.is_build or self.nobuild):
             return 0
         #print "MOCKBUILD: ", self.is_build, self.nobuild
-        self.log.info("Building %s using mock fedora-%s-i386" % (
-            self.filename, self.mock_dist))
-        rc = call('mock -r fedora-%s-i386  --rebuild %s' % (
-            self.mock_dist, self.filename), shell=True)
+        self.log.info("Building %s using mock %s" % (
+            self.filename, self.mock_config))
+        rc = call('mock -r %s  --rebuild %s' % (
+            self.mock_config, self.filename),
+            shell=True)
         if rc == 0:
             self.is_build = True
             self.log.info("Build completed ok")
@@ -238,10 +317,6 @@ class SRPMFile(Helpers):
             self.log.info("Build failed rc = %i " % rc)
             self.build_failed = True
         return rc
-
-    def get_mock_dir(self):
-        mock_dir = '/var/lib/mock/fedora-%s-i386/result' % self.mock_dist
-        return mock_dir
 
     def get_source_dir(self):
         sourcedir = Popen(["rpm", "-E", '%_sourcedir'],
@@ -462,7 +537,7 @@ class SpecFile(object):
             return False
         return output
 
-    def find_tag(self, tag, section = None):
+    def find_tag(self, tag, section = None, split_tag = True):
         '''
         find at given tag in the spec file.
         Ex. Name:, Version:
@@ -490,7 +565,10 @@ class SpecFile(object):
                     value = res.group(1).strip()
                     value = value.replace(',', ' ')
                     value = value.replace('  ', ' ')
-                    values.extend(value.split())
+                    if split_tag:
+                        values.extend(value.split())
+                    else:
+                        values.append(value)
         return values
 
     def get_section(self, section):
