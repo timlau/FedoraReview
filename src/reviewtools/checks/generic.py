@@ -70,7 +70,6 @@ class CheckBase(Helpers):
         if output_extra:
             self.output_extra = output_extra
 
-
     def get_result(self):
         '''
         Get the test report result for this test
@@ -88,6 +87,13 @@ class CheckBase(Helpers):
         '''
         return True
 
+    def sources_have_files(self, pattern):
+        ''' Check if rpms has file matching a pattern'''
+        sources_files = self.sources.get_files_sources()
+        for source in sources_files:
+            if fnmatch.fnmatch(source, pattern):
+                return True
+        return False
 
     def has_files(self, pattern):
         ''' Check if rpms has file matching a pattern'''
@@ -277,7 +283,7 @@ class CheckDefattr(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#FilePermissions'
-        self.text = 'Each %files section contains %defattr'
+        self.text = 'Each %files section contains %defattr if rpm < 4.4'
         self.automatic = True
 
     def run(self):
@@ -445,8 +451,27 @@ class CheckBuildRequires(CheckBase):
         self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#Exceptions_2'
         self.text = 'All build dependencies are listed in BuildRequires, except for any that are \
 listed in the exceptions section of Packaging Guidelines.'
-        self.automatic = False
+        self.automatic = True
         self.type = 'MUST'
+
+    def run(self):
+        if self.srpm.is_build and not self.srpm.build_failed:
+            brequires = self.spec.find_tag("BuildRequires")
+            pkg_by_default = ['bash', 'bzip2', 'coreutils' ,'cpio', 'diffutils',
+                'fedora-release', 'findutils', 'gawk', 'gcc', 'gcc-c++',
+                'grep', 'gzip', 'info', 'make', 'patch', 'redhat-rpm-config',
+                'rpm-build', 'sed', 'shadow-utils', 'tar', 'unzip', 'util-linux-ng',
+                'which', 'xz']
+            intersec = list(set(brequires).intersection(set(pkg_by_default)))
+            if intersec:
+               self.set_passed(False, 'These BR are not needed: %s' % (
+               ' '.join(intersec)))
+            else:
+                self.set_passed(True)
+        else:
+            self.set_passed(False, 'The package did not built \
+BR could therefore not be checked or the package failed to build because \
+of missing BR')
 
 
 class CheckMakeinstall(CheckBase):
@@ -828,7 +853,6 @@ class CheckUTF8Filenames(CheckBase):
         self.type = 'MUST'
 
     def run(self):
-        print self.srpm.rpmlint_output
         for line in self.srpm.rpmlint_output:
             # TODO: add encoding check
             if 'wrong-file-end-of-line-encoding' in line or\
@@ -892,7 +916,7 @@ class CheckReqPkgConfig(CheckBase):
         CheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/EPEL/GuidelinesAndPolicies#EL5'
         self.text = 'Package requires pkgconfig, if .pc files are present. (EPEL5)'
-        self.automatic = False
+        self.automatic = True
         self.type = 'MUST'
 
     def is_applicable(self):
@@ -906,14 +930,11 @@ class CheckReqPkgConfig(CheckBase):
         lines = self.spec.get_section('main')
         found = False
         for line in lines:
-            print line
+            #print line
             res = regex.search(line)
             if res:
                 found = True
-        self.set_passed(found)
-
-
-
+        self.set_passed(found, "Only applicable for EL-5")
 
 
 class CheckFullVerReqSub(CheckBase):
@@ -958,8 +979,6 @@ class CheckFullVerReqSub(CheckBase):
             self.set_passed(True)
 
 
-
-
 class CheckUsefulDebuginfo(CheckBase):
     '''
     Packages should produce useful -debuginfo packages, or explicitly disable them
@@ -975,7 +994,6 @@ class CheckUsefulDebuginfo(CheckBase):
         self.text = 'Useful -debuginfo package or justification otherwise.'
         self.automatic = False
         self.type = 'MUST'
-
 
 
 class CheckNoConflicts(CheckBase):
@@ -1019,7 +1037,6 @@ class CheckPackageInstalls(CheckBase):
         self.type = 'MUST'
 
 
-
 class CheckObeysFHS(CheckBase):
     '''
     http://fedoraproject.org/wiki/Packaging/Guidelines#Filesystem_Layout
@@ -1031,7 +1048,6 @@ class CheckObeysFHS(CheckBase):
         self.text = 'Package obeys FHS, except libexecdir and /usr/target.'
         self.automatic = False
         self.type = 'MUST'
-
 
 
 class CheckMeetPackagingGuidelines(CheckBase):
@@ -1047,7 +1063,6 @@ class CheckMeetPackagingGuidelines(CheckBase):
         self.type = 'MUST'
 
 
-
 class CheckFunctionAsDescribed(CheckBase):
     '''
     SHOULD: The reviewer should test that the package functions as described.
@@ -1061,7 +1076,6 @@ class CheckFunctionAsDescribed(CheckBase):
         self.type = 'SHOULD'
 
 
-
 class CheckLatestVersionIsPackaged(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
@@ -1071,11 +1085,11 @@ class CheckLatestVersionIsPackaged(CheckBase):
         self.type = 'SHOULD'
 
 
-
 class CheckLicenseUpstream(CheckBase):
     '''
     SHOULD: If the source package does not include license text(s)
-    as a separate file from upstream, the packager SHOULD query upstream to include it.
+    as a separate file from upstream, the packager SHOULD query upstream
+    to include it.
     http://fedoraproject.org/wiki/Packaging/LicensingGuidelines#License_Text
     '''
     def __init__(self, base):
@@ -1084,7 +1098,6 @@ class CheckLicenseUpstream(CheckBase):
         self.text = 'Package does not include license text files separate from upstream.'
         self.automatic = False
         self.type = 'SHOULD'
-
 
 
 class CheckContainsLicenseText(CheckBase):
@@ -1103,7 +1116,8 @@ upstream, the packager SHOULD query upstream to include it.'
 class CheckSpecDescTranlation(CheckBase):
     '''
     SHOULD: The description and summary sections in the package spec file
-    should contain translations for supported Non-English languages, if available.
+    should contain translations for supported Non-English languages,
+    if available.
     http://fedoraproject.org/wiki/Packaging/Guidelines#summary
     '''
     def __init__(self, base):
@@ -1292,7 +1306,8 @@ class CheckScriptletSanity(CheckBase):
 class CheckPkgConfigFiles(CheckBase):
     '''
     SHOULD: The placement of pkgconfig(.pc) files depends on their usecase,
-    and this is usually for development purposes, so should be placed in a -devel pkg.
+    and this is usually for development purposes, so should be placed
+    in a -devel pkg.
     A reasonable exception is that the main pkg itself is a devel tool
     not installed in a user runtime, e.g. gcc or gdb.
     http://fedoraproject.org/wiki/Packaging/Guidelines#PkgconfigFiles

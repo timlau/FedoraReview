@@ -88,9 +88,9 @@ class ReviewBug(Helpers):
 [$-_@.&+~]|[!*\(\),]|(?:%[0-9a-fA-F~\.][0-9a-fA-F]))+', body)
                 if urls:
                     for url in urls:
-                        if url.endswith(".spec"):
+                        if ".spec" in url:
                             self.spec_url = url
-                        elif url.endswith(".src.rpm"):
+                        elif ".src.rpm" in url:
                             self.srpm_url = url
         if not self.spec_url:
             self.log.info('not spec file URL found in bug #%s' % self.bug_num)

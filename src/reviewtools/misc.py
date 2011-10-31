@@ -53,7 +53,7 @@ class Checks(object):
         self._results = {'PASSED': [], 'FAILED': [], 'NA': [], 'USER': []}
         self.deprecated = []
         self.spec = SpecFile(spec_file)
-        self.sources = Sources(cache=cache)
+        self.sources = Sources(cache=cache, mock_config=mock_config)
         self.log = get_logger()
         self.srpm = SRPMFile(srpm_file, cache=cache, nobuild=nobuild,
             mock_config=mock_config, spec=self.spec)
