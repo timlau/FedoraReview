@@ -26,9 +26,8 @@ import inspect
 import re
 import fnmatch
 
-from reviewtools import Helpers, get_logger
+from reviewtools import Helpers, get_logger, TestResult
 
-TEST_STATES = {'pending': '[ ]', 'pass': '[x]' ,'fail': '[!]', 'na': '[-]'}
 
 class CheckBase(Helpers):
 
@@ -48,7 +47,6 @@ class CheckBase(Helpers):
         self.type = 'MUST'
         self.result = None
         self.output_extra = None
-
         self.log = get_logger()
 
     def run(self):
@@ -74,11 +72,10 @@ class CheckBase(Helpers):
         '''
         Get the test report result for this test
         '''
-        msg ='%s : %s - %s' % (TEST_STATES[self.state], self.type, self.text)
-        if self.output_extra:
-            for line in self.output_extra.split('\n'):
-                msg += '\n        %s' % line
-        return msg
+        ret = TestResult(self.__class__.__name__, self.url, self.__class__.header,
+                          self.__class__.deprecates, self.text, self.type,
+                          self.state, self.output_extra)
+        return ret
 
     def is_applicable(self):
         '''

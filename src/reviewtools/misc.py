@@ -98,7 +98,7 @@ class Checks(object):
 
     def parse_result(self, test):
         result = test.get_result()
-        self._results.append(result)
+        self._results.append(result.get_text())
 
     def show_result(self, output):
         for line in self._results:
@@ -131,14 +131,17 @@ class Checks(object):
                     " " * (30 - len(test.__class__.__name__)),
                     test.state ))
                 if result:
-                    if result.startswith('[!] : MUST'):
-                        issues.append(result)
+                    if result.type == 'MUST' and result.result == "fail":
+                        issues.append(result.get_text())
 
         # run external checks. we probably want to merge this into
         # previous run, i.e create some layer so that all checks will
         # be equal and we can sort them etc
         for ext in self.ext_checks:
             ext.run()
+            for result in ext.get_results():
+                self._results.append(result.get_text())
+
 
         self.show_result(output)
         if issues:
