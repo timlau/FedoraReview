@@ -618,6 +618,26 @@ class SpecFile(object):
         return result
 
 
+class TestResult(object):
+    def __init__(self, name, url, group, deprecates, text, check_type,
+                 result, output_extra):
+        self.name = name
+        self.url = url
+        self.group = group
+        self.deprecates = deprecates
+        self.text = text
+        self.type = check_type
+        self.result = result
+        self.output_extra = output_extra
+
+    def get_text(self):
+        ret = "%s: %s %s" % (TEST_STATES[self.result], self.type,
+                             self.text)
+        if self.output_extra and self.output_extra != "":
+            for line in self.output_extra.split('\n'):
+                ret += '\n        %s' % line
+        return ret
+
 def get_logger():
     return logging.getLogger(LOG_ROOT)
 
