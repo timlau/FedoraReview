@@ -93,11 +93,6 @@ class Checks(object):
         for line in lines:
             output.write(line)
 
-    def show_result(self, output, results):
-        for line in results:
-            output.write(line)
-            output.write('\n')
-
     def run_checks(self, output=sys.stdout):
         output.write(HEADER)
         issues = []
