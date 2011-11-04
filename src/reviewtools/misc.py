@@ -60,9 +60,6 @@ class Checks(object):
         self.plugins = load('reviewtools.checks')
         self.add_check_classes()
 
-    def reset_results(self):
-        self._results = []
-
     def add_check_classes(self):
         """ get all the check classes in the reviewtools.checks and add them
         to be excuted
@@ -96,21 +93,16 @@ class Checks(object):
         for line in lines:
             output.write(line)
 
-    def parse_result(self, test):
-        result = test.get_result()
-        self._results.append(result.get_text())
-
-    def show_result(self, output):
-        for line in self._results:
+    def show_result(self, output, results):
+        for line in results:
             output.write(line)
             output.write('\n')
 
     def run_checks(self, output=sys.stdout):
         output.write(HEADER)
         issues = []
-        self.reset_results()
+        results = []
         sorted_checks = sorted(self.checks, key=attrgetter('header','type','__class__.__name__'))
-        current_section = None
         for test in sorted_checks:
             if test.is_applicable() and test.__class__ \
                         not in self.deprecated:
@@ -119,13 +111,8 @@ class Checks(object):
                 else:
                     test.state = 'pending'
 
-                if test.header != current_section:
-                    self._results.append("\n\n==== %s ====\n" % test.header)
-                    current_section = test.header
-
-                self.parse_result(test)
-
                 result = test.get_result()
+                results.append(result)
                 self.log.debug('Running check : %s %s [%s] ' % (
                     test.__class__.__name__,
                     " " * (30 - len(test.__class__.__name__)),
@@ -140,10 +127,19 @@ class Checks(object):
         for ext in self.ext_checks:
             ext.run()
             for result in ext.get_results():
-                self._results.append(result.get_text())
+                results.append(result)
+                if result.type == 'MUST' and result.result == "fail":
+                    issues.append(result.get_text())
 
+        current_section = None
+        for res in sorted(results, key=attrgetter('group', 'type', 'name')):
+            if res.group != current_section:
+                output.write("\n\n==== %s ====\n" % res.group)
+                current_section = res.group
 
-        self.show_result(output)
+            output.write(res.get_text())
+            output.write('\n')
+
         if issues:
             output.write("\nIssues:\n")
         for fail in issues:
