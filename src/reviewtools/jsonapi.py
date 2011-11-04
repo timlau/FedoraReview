@@ -23,7 +23,7 @@ import subprocess
 import select
 from json import JSONEncoder, JSONDecoder
 
-from reviewtools import Helpers
+from reviewtools import Helpers, TestResult
 
 class JSONAPI(object):
     supported_api = 1
@@ -110,8 +110,14 @@ class JSONPlugin(Helpers):
 
     def __handle_reply(self, reply):
         if reply.command == "results":
-            # we need to add to our results array
-            pass
+            for result in reply.checks:
+                extra = None
+                if result.has_key("output_extra"):
+                    extra = result["output_extra"]
+                self.results.append(TestResult(result["name"], result["url"],
+                                               result["group"], result["deprecates"],
+                                               result["text"], result["type"], result["result"],
+                                               extra))
 
 
 
