@@ -141,8 +141,9 @@ class ReviewJSONEncoder(JSONEncoder):
                 ret[item] = encclass.__dict__[item]
 
         # slot variables
-        for item in encclass.__slots__:
-            ret[item] = getattr(encclass, item)
+        if hasattr(encclass, "__slots__"):
+            for item in encclass.__slots__:
+                ret[item] = getattr(encclass, item)
 
         for rem in self.IGNORED:
             if ret.has_key(rem):
