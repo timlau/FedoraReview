@@ -20,6 +20,7 @@
 JSON API for FedoraReview plugins
 '''
 import subprocess
+import select
 from json import JSONEncoder, JSONDecoder
 
 from reviewtools import Helpers
@@ -44,7 +45,8 @@ class SetupPlugin(JSONAPI):
         self.rpmlint = "\n".join(srpm.rpmlint_output)
         self.build_dir = srpm.get_build_dir()
 
-
+class PluginResponse(JSONAPI):
+    command = None
 
 class JSONPlugin(Helpers):
     """Plugin for communicating with external review checks using JSON"""
@@ -56,22 +58,61 @@ class JSONPlugin(Helpers):
         self.srpm = base.srpm
         self.sources = base.sources
         self.encoder = ReviewJSONEncoder()
+        self.decoder = JSONDecoder()
+        self.results = []
 
     def run(self):
         # /bin/cat will be normally self.plugin_path
-        plugin_proc = subprocess.Popen("/bin/cat",
-                                       stdout=subprocess.PIPE,
-                                       stderr=subprocess.PIPE,
-                                       stdin=subprocess.PIPE)
+        plugin_proc = subprocess.Popen(self.plugin_path,
+                                       bufsize = -1,
+                                       stdout = subprocess.PIPE,
+                                       stderr = subprocess.PIPE,
+                                       stdin = subprocess.PIPE)
 
         setup = SetupPlugin(self.spec, self.srpm, self.sources)
         plugin_proc.stdin.write(self.encoder.encode(setup))
-        print self.encoder.encode(setup)
-        # plugin_proc.stdout.read()
-        # decode later
+        plugin_proc.stdin.write("\n\n")
+        plugin_proc.stdin.flush()
+
+        final_data = ""
+        while True:
+            rlist, wlist, xlist = select.select([plugin_proc.stdout], [], [])
+            json_obj = None
+            if plugin_proc.stdout in rlist:
+                data = plugin_proc.stdout.read(10)
+                if data == "":
+                    break
+                final_data = final_data + data
+                obj = self.__get_class_from_json(final_data)
+                if obj:
+                    self.__handle_reply(obj)
+                    final_data = ""
+                    break
+
 
     def get_results(self):
-        return []
+        return self.results
+
+    def __get_class_from_json(self, text):
+        ret = None
+        try:
+            json_obj = self.decoder.decode(text)
+            ret = PluginResponse()
+            for key in json_obj.keys():
+                setattr(ret, key, json_obj[key])
+            if not hasattr(ret, "command"):
+                # Reply has have this
+                return None
+        except ValueError, e:
+            # ret is set to None
+            pass
+        return ret
+
+    def __handle_reply(self, reply):
+        if reply.command == "results":
+            # we need to add to our results array
+            pass
+
 
 
 class ReviewJSONEncoder(JSONEncoder):
