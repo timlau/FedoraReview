@@ -45,7 +45,9 @@ class SetupPlugin(JSONAPI):
         self.build_dir = srpm.get_build_dir()
 
 
+
 class JSONPlugin(Helpers):
+    """Plugin for communicating with external review checks using JSON"""
 
     def __init__(self, base, plugin_path):
         Helpers.__init__(self)
@@ -68,10 +70,14 @@ class JSONPlugin(Helpers):
         # plugin_proc.stdout.read()
         # decode later
 
+    def get_results(self):
+        return []
+
 
 class ReviewJSONEncoder(JSONEncoder):
     ''' a custom JSON encoder for JSONAPI subclasses '''
-    IGNORED=['__module__', '__dict__', '__doc__', '__init__','__weakref__']
+    IGNORED=['__module__', '__dict__', '__doc__', '__init__', '__weakref__',
+             '__slots__']
 
     def default(self, encclass):
         if not isinstance (encclass, JSONAPI):
@@ -80,16 +86,22 @@ class ReviewJSONEncoder(JSONEncoder):
         ret = {}
         # get things from base classes
         for base in encclass.__class__.__bases__:
-            for item in base.__dict__:
-                ret[item] = base.__dict__[item]
+            if hasattr(base, "__dict__"):
+                for item in base.__dict__:
+                    ret[item] = base.__dict__[item]
 
         # get things defined in class
         for item in encclass.__class__.__dict__:
             ret[item] = encclass.__class__.__dict__[item]
 
         # instance variables
-        for item in encclass.__dict__:
-             ret[item] = encclass.__dict__[item]
+        if hasattr(encclass, "__dict__"):
+            for item in encclass.__dict__:
+                ret[item] = encclass.__dict__[item]
+
+        # slot variables
+        for item in encclass.__slots__:
+            ret[item] = getattr(encclass, item)
 
         for rem in self.IGNORED:
             if ret.has_key(rem):
