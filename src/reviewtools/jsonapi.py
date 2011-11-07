@@ -45,6 +45,10 @@ class SetupPlugin(JSONAPI):
         self.rpmlint = "\n".join(srpm.rpmlint_output)
         self.build_dir = srpm.get_build_dir()
 
+class GetSectionReply(JSONAPI):
+    def __init__(self, section_text):
+        self.text = section_text
+
 class PluginResponse(JSONAPI):
     command = None
 
@@ -60,6 +64,9 @@ class JSONPlugin(Helpers):
         self.encoder = ReviewJSONEncoder()
         self.decoder = JSONDecoder()
         self.results = []
+        self.plug_in = None
+        self.plug_out = None
+        self.plug_err = None
 
     def run(self):
         # /bin/cat will be normally self.plugin_path
@@ -68,26 +75,24 @@ class JSONPlugin(Helpers):
                                        stdout = subprocess.PIPE,
                                        stderr = subprocess.PIPE,
                                        stdin = subprocess.PIPE)
+        self.plug_in = plugin_proc.stdin
+        self.plug_out = plugin_proc.stdout
+        self.plug_err = plugin_proc.stderr
 
         setup = SetupPlugin(self.spec, self.srpm, self.sources)
-        plugin_proc.stdin.write(self.encoder.encode(setup))
-        plugin_proc.stdin.write("\n\n")
-        plugin_proc.stdin.flush()
+        self.__send_obj(setup)
 
         final_data = ""
         while True:
-            rlist, wlist, xlist = select.select([plugin_proc.stdout], [], [])
             json_obj = None
-            if plugin_proc.stdout in rlist:
-                data = plugin_proc.stdout.read(10)
-                if data == "":
-                    break
-                final_data = final_data + data
-                obj = self.__get_class_from_json(final_data)
-                if obj:
-                    self.__handle_reply(obj)
-                    final_data = ""
-                    break
+            data = plugin_proc.stdout.readline()
+            if data == "":
+                break
+            final_data = final_data + data
+            obj = self.__get_class_from_json(final_data)
+            if obj:
+                self.__handle_reply(obj)
+                final_data = ""
 
 
     def get_results(self):
@@ -101,7 +106,7 @@ class JSONPlugin(Helpers):
             for key in json_obj.keys():
                 setattr(ret, key, json_obj[key])
             if not hasattr(ret, "command"):
-                # Reply has have this
+                # Reply has to have this
                 return None
         except ValueError, e:
             # ret is set to None
@@ -118,6 +123,17 @@ class JSONPlugin(Helpers):
                                                result["group"], result["deprecates"],
                                                result["text"], result["type"], result["result"],
                                                extra))
+        elif reply.command == "get_section":
+            sec_name = "%%%s" % reply.section
+            section_text = "\n".join(self.spec.get_section(sec_name)[sec_name])
+            msg = GetSectionReply(section_text)
+            self.__send_obj(msg)
+
+    def __send_obj(self, obj):
+        self.plug_in.write(self.encoder.encode(obj))
+        self.plug_in.write("\n\n")
+        self.plug_in.flush()
+
 
 
 
