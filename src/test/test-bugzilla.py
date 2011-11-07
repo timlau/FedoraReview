@@ -46,8 +46,10 @@ class BugzillaTests(unittest.TestCase):
         ''' Test that we can get the urls from a bugzilla report'''
         rc = self.bug.find_urls()
         self.assertTrue(rc)
-        self.assertEqual(self.bug.srpm_url,TEST_SRPM)
-        self.assertEqual(self.bug.spec_url,TEST_SPEC)
+        self.assertEqual(self.bug.srpm_url,
+        'http://timlau.fedorapeople.org/files/test/review-test/python-test-1.0-1.fc14.src.rpm')
+        self.assertEqual(self.bug.spec_url,
+        'http://timlau.fedorapeople.org/files/test/review-test/python-test.spec')
 
 
     def test_download_files(self):
@@ -58,10 +60,10 @@ class BugzillaTests(unittest.TestCase):
         print("SRPM : %s " % self.bug.srpm_file)
         print("SPEC : %s " % self.bug.spec_file)
         # check the downloaded files locations
-        srpm = TEST_WORK_DIR + os.path.basename(TEST_SRPM)
-        spec = TEST_WORK_DIR + os.path.basename(TEST_SPEC)
-        self.assertEqual(self.bug.srpm_file,srpm)
-        self.assertEqual(self.bug.spec_file,spec)
+        srpm = TEST_WORK_DIR + 'python-test-1.0-1.fc14.src.rpm'
+        spec = TEST_WORK_DIR + 'python-test.spec'
+        self.assertEqual(self.bug.srpm_file, srpm)
+        self.assertEqual(self.bug.spec_file, spec)
         # check that the downloaded files exists
         self.assertTrue(os.path.exists(srpm))
         self.assertTrue(os.path.exists(spec))
@@ -71,10 +73,13 @@ class BugzillaTests(unittest.TestCase):
         You need to use BZ_USER=<user> BZ_PASS=<password> make test to active the login test
         '''
         # Test failed login
-        rc = self.bug.login(user='dummmy', password='dummy') 
+        rc = self.bug.login(user='dummmy', password='dummy')
         self.assertEqual(rc,False)
         if 'BZ_USER' in os.environ and 'BZ_PASS' in os.environ:
             user = os.environ['BZ_USER']
             password = os.environ['BZ_PASS']
-            rc = self.bug.login(user=user, password=password) 
-            self.assertEqual(rc,True)
+            rc = self.bug.login(user=user, password=password)
+            self.assertEqual(rc, True)
+
+suite = unittest.TestLoader().loadTestsFromTestCase(BugzillaTests)
+unittest.TextTestRunner(verbosity=2).run(suite)
