@@ -20,12 +20,12 @@
 JSON API for FedoraReview plugins
 '''
 import subprocess
-import select
 from json import JSONEncoder, JSONDecoder
 
 from reviewtools import Helpers, TestResult
 
 class JSONAPI(object):
+    """Base class for all JSON plugin communication"""
     supported_api = 1
 
 class SetupPlugin(JSONAPI):
@@ -46,10 +46,12 @@ class SetupPlugin(JSONAPI):
         self.build_dir = srpm.get_build_dir()
 
 class GetSectionReply(JSONAPI):
+    """Reply to get_section JSON command"""
     def __init__(self, section_text):
         self.text = section_text
 
 class PluginResponse(JSONAPI):
+    """Class for plugin responses"""
     command = None
 
 class JSONPlugin(Helpers):
@@ -69,7 +71,7 @@ class JSONPlugin(Helpers):
         self.plug_err = None
 
     def run(self):
-        # /bin/cat will be normally self.plugin_path
+        """Run the plugin to produce results"""
         plugin_proc = subprocess.Popen(self.plugin_path,
                                        bufsize = -1,
                                        stdout = subprocess.PIPE,
@@ -84,7 +86,6 @@ class JSONPlugin(Helpers):
 
         final_data = ""
         while True:
-            json_obj = None
             data = plugin_proc.stdout.readline()
             if data == "":
                 break
@@ -96,9 +97,16 @@ class JSONPlugin(Helpers):
 
 
     def get_results(self):
+        """Returns array of results
+
+        get_result() -> [TestResult, TestResult, ...]"""
         return self.results
 
     def __get_class_from_json(self, text):
+        """Convert JSON reply to simple Python object
+
+        returns None if JSON cannot be decoded
+        """
         ret = None
         try:
             json_obj = self.decoder.decode(text)
@@ -106,14 +114,16 @@ class JSONPlugin(Helpers):
             for key in json_obj.keys():
                 setattr(ret, key, json_obj[key])
             if not hasattr(ret, "command"):
+                self.log.error("Error: plugin returned JSON object without 'command' ")
                 # Reply has to have this
                 return None
-        except ValueError, e:
+        except ValueError:
             # ret is set to None
             pass
         return ret
 
     def __handle_reply(self, reply):
+        """Handle incomming commands and results"""
         if reply.command == "results":
             for result in reply.checks:
                 extra = None
@@ -121,8 +131,8 @@ class JSONPlugin(Helpers):
                     extra = result["output_extra"]
                 self.results.append(TestResult(result["name"], result["url"],
                                                result["group"], result["deprecates"],
-                                               result["text"], result["type"], result["result"],
-                                               extra))
+                                               result["text"], result["type"],
+                                               result["result"], extra))
         elif reply.command == "get_section":
             sec_name = "%%%s" % reply.section
             section_text = "\n".join(self.spec.get_section(sec_name)[sec_name])
@@ -130,6 +140,7 @@ class JSONPlugin(Helpers):
             self.__send_obj(msg)
 
     def __send_obj(self, obj):
+        """Send JSONAPI subclass to JSON plugin"""
         self.plug_in.write(self.encoder.encode(obj))
         self.plug_in.write("\n\n")
         self.plug_in.flush()
@@ -138,8 +149,8 @@ class JSONPlugin(Helpers):
 
 
 class ReviewJSONEncoder(JSONEncoder):
-    ''' a custom JSON encoder for JSONAPI subclasses '''
-    IGNORED=['__module__', '__dict__', '__doc__', '__init__', '__weakref__',
+    """Custom JSON encoder for JSONAPI subclasses"""
+    IGNORED = ['__module__', '__dict__', '__doc__', '__init__', '__weakref__',
              '__slots__']
 
     def default(self, encclass):
@@ -169,7 +180,7 @@ class ReviewJSONEncoder(JSONEncoder):
 
         for rem in self.IGNORED:
             if ret.has_key(rem):
-               ret.pop(rem)
+                ret.pop(rem)
 
         return ret
 
