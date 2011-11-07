@@ -47,12 +47,12 @@ LOG_ROOT = 'reviewtools'
 class Settings(BaseConfig):
     """ FedoraReview Config Setting"""
     # Editor to use to show review report & spec
-    editor = Option('/usr/bin/xdg-open')
+    editor = '/usr/bin/xdg-open'
     # Work dir
-    work_dir = Option('.')
+    work_dir = '.'
     # Default bugzilla userid
-    bz_user = Option('')
-    mock_config = Option('fedora-rawhide-i386')
+    bz_user = ''
+    mock_config = 'fedora-rawhide-i386'
 
     def __init__(self):
         BaseConfig.__init__(self)
