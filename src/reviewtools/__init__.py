@@ -296,19 +296,22 @@ class SRPMFile(Helpers):
         call('rpm -ivh %s &>/dev/null' % self.filename, shell=True)
         self.is_installed = True
 
-    def build(self, force=False):
+    def build(self, force=False, silence=False):
         if self.build_failed:
             return -1
-        return self.mockbuild(force)
+        return self.mockbuild(force, silence=silence)
 
-    def mockbuild(self, force=False):
+    def mockbuild(self, force=False, silence=False):
         if not force and (self.is_build or self.nobuild):
             return 0
         #print "MOCKBUILD: ", self.is_build, self.nobuild
         self.log.info("Building %s using mock %s" % (
             self.filename, self.mock_config))
-        rc = call('mock -r %s  --rebuild %s' % (
-            self.mock_config, self.filename),
+        cmd = 'mock -r %s  --rebuild %s ' % (
+                self.mock_config, self.filename)
+        if silence:
+            cmd = cmd + ' 2>&1 | grep "Results and/or logs" '
+        rc = call(cmd,
             shell=True)
         if rc == 0:
             self.is_build = True
