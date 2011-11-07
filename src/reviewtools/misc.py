@@ -43,7 +43,7 @@ from reviewtools import get_logger
 
 class Checks(object):
     def __init__(self, args, spec_file, srpm_file, cache=False,
-            nobuild=False, mock_config='fedora-rawhide-i686'):
+            nobuild=False, mock_config='fedora-rawhide-i386'):
         self.checks = []
         self.args = args  # Command line arguments & options
         self.cache = cache
