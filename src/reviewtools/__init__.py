@@ -579,7 +579,7 @@ class SpecFile(object):
         results = {}
         for sec in self._section_list:
             if sec.startswith(section):
-                results[sec] = self._sections[sec]
+                results[sec.strip()] = self._sections[sec]
         return results
 
     def find(self, regex):
