@@ -42,14 +42,12 @@ class CheckLDConfig(CCppCheckBase):
             passed = False
             extra = ""
             sections = self.spec.get_section(source)
-            for section in sections:
-                if section.split(' ')[0] != source: # get_section('%post') will also return %postun
-                    continue
+            for section in sections[source]:
                 if '/sbin/ldconfig' in section:
                     passed = True
                 else:
-                    for line in sections[section]:
-                        if '/sbin/ldconfig' in section:
+                    for line in sections[source]:
+                        if '/sbin/ldconfig' in line:
                             passed = True
                             break
             if not passed:
