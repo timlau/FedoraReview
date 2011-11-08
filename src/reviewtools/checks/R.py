@@ -148,6 +148,10 @@ class RCheckLatestVersionIsPackaged(RCheckBase):
         """ Run the check """
         cur_version = self.spec.find_tag('Version')[0]
         up_version = self.get_upstream_r_package_version()
+        if up_version is None:
+            self.set_passed('inconclusive',
+                'The package does not come from one of the standard sources')
+            return
         up_version = up_version.replace('-','.')
 
         self.set_passed(up_version == cur_version, "Latest upstream " +
