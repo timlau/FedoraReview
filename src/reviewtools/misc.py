@@ -97,8 +97,7 @@ class Checks(object):
         output.write(HEADER)
         issues = []
         results = []
-        sorted_checks = sorted(self.checks, key=attrgetter('header','type','__class__.__name__'))
-        for test in sorted_checks:
+        for test in self.checks:
             if test.is_applicable() and test.__class__ \
                         not in self.deprecated:
                 if test.automatic:
@@ -111,7 +110,7 @@ class Checks(object):
                 self.log.debug('Running check : %s %s [%s] ' % (
                     test.__class__.__name__,
                     " " * (30 - len(test.__class__.__name__)),
-                    test.state ))
+                    test.state))
                 if result:
                     if result.type == 'MUST' and result.result == "fail":
                         issues.append(result.get_text())
