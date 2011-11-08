@@ -48,12 +48,12 @@ LOG_ROOT = 'reviewtools'
 class Settings(BaseConfig):
     """ FedoraReview Config Setting"""
     # Editor to use to show review report & spec
-    editor = Option('/usr/bin/xdg-open')
+    editor = '/usr/bin/xdg-open'
     # Work dir
-    work_dir = Option('.')
+    work_dir = '.'
     # Default bugzilla userid
-    bz_user = Option('')
-    mock_config = Option('fedora-rawhide-i386')
+    bz_user = ''
+    mock_config = 'fedora-rawhide-i386'
 
     def __init__(self):
         BaseConfig.__init__(self)
@@ -298,19 +298,22 @@ class SRPMFile(Helpers):
         call('rpm -ivh %s &>/dev/null' % self.filename, shell=True)
         self.is_installed = True
 
-    def build(self, force=False):
+    def build(self, force=False, silence=False):
         if self.build_failed:
             return -1
-        return self.mockbuild(force)
+        return self.mockbuild(force, silence=silence)
 
-    def mockbuild(self, force=False):
+    def mockbuild(self, force=False, silence=False):
         if not force and (self.is_build or self.nobuild):
             return 0
         #print "MOCKBUILD: ", self.is_build, self.nobuild
         self.log.info("Building %s using mock %s" % (
             self.filename, self.mock_config))
-        rc = call('mock -r %s  --rebuild %s' % (
-            self.mock_config, self.filename),
+        cmd = 'mock -r %s  --rebuild %s ' % (
+                self.mock_config, self.filename)
+        if silence:
+            cmd = cmd + ' 2>&1 | grep "Results and/or logs" '
+        rc = call(cmd,
             shell=True)
         if rc == 0:
             self.is_build = True
@@ -600,7 +603,7 @@ class SpecFile(object):
         results = {}
         for sec in self._section_list:
             if sec.startswith(section):
-                results[sec] = self._sections[sec]
+                results[sec.strip()] = self._sections[sec]
         return results
 
     def find(self, regex):

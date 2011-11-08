@@ -55,12 +55,14 @@ class CheckCaseChecks(unittest.TestCase):
     def test_all_checks(self):
         ''' Run all automated review checks'''
         print('Setup Checks')
-        self.checks = Checks(self.spec, self.srpm, self.source)
+        self.checks = Checks(None, spec_file=self.spec, srpm_file=self.srpm)
         print('Running All Checks')
-        self.checks.run_checks()   
-        for typ in ['MUST','SHOULD']:
-            # Automatic Checks
-            checks = self.checks.checks[typ]
-            for check in checks:
-                result = check.get_result()
-                self.assertNotEqual(result[1:2],'!')
+        self.checks.run_checks()
+        # Automatic Checks
+        checks = self.checks.checks
+        for check in checks:
+            result = check.get_result()
+            self.assertNotEqual(result, None)
+
+suite = unittest.TestLoader().loadTestsFromTestCase(CheckCaseChecks)
+unittest.TextTestRunner(verbosity=2).run(suite)

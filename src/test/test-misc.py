@@ -59,11 +59,11 @@ class MiscTests(unittest.TestCase):
         dist = self.helper._run_cmd('rpm --eval %dist')[:-1]
         self.assertEqual(spec.release,'1'+dist)
         # test misc rpm values (without macro resolve)
-        self.assertEqual(spec.find_tag('Release'),'1%{?dist}')
-        self.assertEqual(spec.find_tag('License'),'GPLv2+')
-        self.assertEqual(spec.find_tag('Group'),'Development/Languages')
+        self.assertEqual(spec.find_tag('Release'), ['1%{?dist}'])
+        self.assertEqual(spec.find_tag('License'), ['GPLv2+'])
+        self.assertEqual(spec.find_tag('Group'), ['Development/Languages'])
         # Test rpm value not there
-        self.assertEqual(spec.find_tag('PreReq'),None)
+        self.assertEqual(spec.find_tag('PreReq'), [])
         # Test get sections
         expected = {'%clean': ['rm -rf $RPM_BUILD_ROOT']}
         self.assertEqual(spec.get_section('%clean'), expected)
@@ -105,11 +105,22 @@ class MiscTests(unittest.TestCase):
         srpm.install()
         self.assertTrue(srpm.is_installed)
         src_files = glob.glob(os.path.expanduser('~/rpmbuild/SOURCES/*'))
-        expected = [os.path.expanduser('~/rpmbuild/SOURCES/python-test-1.0.tar.gz')]
-        self.assertEqual(src_files, expected)
-        srpm.build()
+        expected = os.path.expanduser('~/rpmbuild/SOURCES/python-test-1.0.tar.gz')
+        self.assertTrue(expected in src_files)
+        # Generate the config file for the current OS run
+        release = self.helper._run_cmd('rpm --eval %{fedora}')[:-1]
+        arch = self.helper._run_cmd('arch')[:-1]
+        srpm.mock_config = 'fedora-%s-%s' % (release, arch)
+        # Do the mock build
+        srpm.build(silence=True)
         self.assertTrue(srpm.is_build)
-        rpm_files = glob.glob(os.path.expanduser('~/rpmbuild/RPMS/noarch/*'))
+        # Retrieve the list of files in the mock folder and below
+        rpm_files = []
+        for root, dirs, files in os.walk(srpm.get_mock_dir()):
+            rpm_files.extend(files)
         dist = self.helper._run_cmd('rpm --eval %dist')[:-1]
-        expected = [os.path.expanduser('~/rpmbuild/RPMS/noarch/python-test-1.0-1%(dist)s.noarch.rpm') % {'dist': dist}]
-        self.assertEqual(rpm_files, expected)
+        expected = os.path.expanduser('python-test-1.0-1%(dist)s.noarch.rpm') % {'dist': dist}
+        self.assertTrue(expected in rpm_files)
+
+suite = unittest.TestLoader().loadTestsFromTestCase(MiscTests)
+unittest.TextTestRunner(verbosity=2).run(suite)

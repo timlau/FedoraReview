@@ -44,7 +44,7 @@ from reviewtools import get_logger
 
 class Checks(object):
     def __init__(self, args, spec_file, srpm_file, cache=False,
-            nobuild=False, mock_config='fedora-rawhide-i686'):
+            nobuild=False, mock_config='fedora-rawhide-i386'):
         self.checks = []
         self.ext_checks = []
         self.args = args  # Command line arguments & options
@@ -93,8 +93,7 @@ class Checks(object):
         for line in lines:
             output.write(line)
 
-    def run_checks(self, output=sys.stdout):
-        output.write(HEADER)
+    def run_checks(self, output=sys.stdout, writedown=True):
         issues = []
         results = []
         for test in self.checks:
@@ -125,8 +124,15 @@ class Checks(object):
                 if result.type == 'MUST' and result.result == "fail":
                     issues.append(result.get_text())
 
+        if writedown:
+            self.__show_output(output,
+                               sorted(results, key=attrgetter('group', 'type', 'name')),
+                               issues)
+
+    def __show_output(self, output, results, issues):
+        output.write(HEADER)
         current_section = None
-        for res in sorted(results, key=attrgetter('group', 'type', 'name')):
+        for res in results:
             if res.group != current_section:
                 output.write("\n\n==== %s ====\n" % res.group)
                 current_section = res.group
@@ -136,6 +142,6 @@ class Checks(object):
 
         if issues:
             output.write("\nIssues:\n")
-        for fail in issues:
-            output.write(fail)
-            output.write('\n')
+            for fail in issues:
+                output.write(fail)
+                output.write('\n')
