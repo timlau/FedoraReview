@@ -24,9 +24,11 @@ from json import JSONEncoder, JSONDecoder
 
 from reviewtools import Helpers, TestResult
 
+
 class JSONAPI(object):
     """Base class for all JSON plugin communication"""
     supported_api = 1
+
 
 class SetupPlugin(JSONAPI):
     """First-contact API with plugin"""
@@ -34,25 +36,28 @@ class SetupPlugin(JSONAPI):
         self.pkgname = spec.name
         self.version = spec.version
         self.release = spec.release
-        self.srpm = {"path":srpm.filename,
-                     "tree":None}
-        self.spec = {"path":spec.filename,
-                     "text":spec.get_expanded()}
+        self.srpm = {"path": srpm.filename,
+                     "tree": None}
+        self.spec = {"path": spec.filename,
+                     "text": spec.get_expanded()}
         self.rpms = []
         for rpm in srpm.get_files_rpms().keys():
-            self.rpms.append({"path":rpm,
-                              "tree":None})
+            self.rpms.append({"path": rpm,
+                              "tree": None})
         self.rpmlint = "\n".join(srpm.rpmlint_output)
         self.build_dir = srpm.get_build_dir()
+
 
 class GetSectionReply(JSONAPI):
     """Reply to get_section JSON command"""
     def __init__(self, section_text):
         self.text = section_text
 
+
 class PluginResponse(JSONAPI):
     """Class for plugin responses"""
     command = None
+
 
 class JSONPlugin(Helpers):
     """Plugin for communicating with external review checks using JSON"""
@@ -73,10 +78,10 @@ class JSONPlugin(Helpers):
     def run(self):
         """Run the plugin to produce results"""
         plugin_proc = subprocess.Popen(self.plugin_path,
-                                       bufsize = -1,
-                                       stdout = subprocess.PIPE,
-                                       stderr = subprocess.PIPE,
-                                       stdin = subprocess.PIPE)
+                                       bufsize=-1,
+                                       stdout=subprocess.PIPE,
+                                       stderr=subprocess.PIPE,
+                                       stdin=subprocess.PIPE)
         self.plug_in = plugin_proc.stdin
         self.plug_out = plugin_proc.stdout
         self.plug_err = plugin_proc.stderr
@@ -94,7 +99,6 @@ class JSONPlugin(Helpers):
             if obj:
                 self.__handle_reply(obj)
                 final_data = ""
-
 
     def get_results(self):
         """Returns array of results
@@ -127,11 +131,14 @@ class JSONPlugin(Helpers):
         if reply.command == "results":
             for result in reply.checks:
                 extra = None
-                if result.has_key("output_extra"):
+                if "output_extra" in result:
                     extra = result["output_extra"]
-                self.results.append(TestResult(result["name"], result["url"],
-                                               result["group"], result["deprecates"],
-                                               result["text"], result["type"],
+                self.results.append(TestResult(result["name"],
+                                               result["url"],
+                                               result["group"],
+                                               result["deprecates"],
+                                               result["text"],
+                                               result["type"],
                                                result["result"], extra))
         elif reply.command == "get_section":
             sec_name = "%%%s" % reply.section
@@ -146,15 +153,13 @@ class JSONPlugin(Helpers):
         self.plug_in.flush()
 
 
-
-
 class ReviewJSONEncoder(JSONEncoder):
     """Custom JSON encoder for JSONAPI subclasses"""
     IGNORED = ['__module__', '__dict__', '__doc__', '__init__', '__weakref__',
              '__slots__']
 
     def default(self, encclass):
-        if not isinstance (encclass, JSONAPI):
+        if not isinstance(encclass, JSONAPI):
             print 'You cannot use the ReviewJSONEmcoder for a non-JSONAPI object.'
             return
         ret = {}
@@ -179,8 +184,7 @@ class ReviewJSONEncoder(JSONEncoder):
                 ret[item] = getattr(encclass, item)
 
         for rem in self.IGNORED:
-            if ret.has_key(rem):
+            if rem in ret:
                 ret.pop(rem)
 
         return ret
-
