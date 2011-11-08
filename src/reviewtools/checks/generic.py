@@ -816,7 +816,7 @@ class CheckDesktopInstall(CheckBase):
         CheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#desktop'
         self.text = 'Package contains a properly installed %{name}.desktop using desktop-file-install file if it is a GUI application.'
-        self.automatic = False
+        self.automatic = True
         self.type = 'MUST'
 
     def is_applicable(self):
@@ -824,6 +824,14 @@ class CheckDesktopInstall(CheckBase):
         check if this test is applicable
         '''
         return self.has_files('*.desktop')
+    
+    def run(self):
+        passed = True
+        regex = re.compile(r'(desktop-file-install|desktop-file-validate)(.*\\\n)*.*desktop')
+        result = self.spec.find_all(regex)
+        if not result:
+            passed = False
+        self.set_passed(passed)
 
 
 
