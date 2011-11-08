@@ -91,12 +91,12 @@ class Checks(object):
         self._results.append(result)
 
     def show_result(self, output):
+        output.write(HEADER)
         for line in self._results:
             output.write(line)
             output.write('\n')
 
-    def run_checks(self, output=sys.stdout):
-        output.write(HEADER)
+    def run_checks(self, output=sys.stdout, writedown=True):
         issues = []
         self.reset_results()
         sorted_checks = sorted(self.checks, key=attrgetter('header','type','__class__.__name__'))
@@ -124,9 +124,10 @@ class Checks(object):
                     if result.startswith('[!] : MUST'):
                         issues.append(result)
 
-        self.show_result(output)
-        if issues:
+        if writedown:
+            self.show_result(output)
+        if issues and writedown:
             output.write("\nIssues:\n")
-        for fail in issues:
-            output.write(fail)
-            output.write('\n')
+            for fail in issues:
+                output.write(fail)
+                output.write('\n')
