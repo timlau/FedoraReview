@@ -210,13 +210,16 @@ class RCheckBuildSection(RCheckBase):
         b_rm = False
         b_install = False
         for line in self.spec.lines:
-            if 'mkdir -p' in line and '/R/library' in line:
+            if 'mkdir -p' in line and ('/R/library' in line or 'rlibdir' in line):
                 b_dir = True
             if "test -d %{packname}/src && (cd %{packname}/src; rm -f *.o *.so)" in line:
                 b_test = True
-            if 'rm' in line and '/R/library/R.css' in line:
+            if 'rm' in line and 'R.css' in line:
                 b_rm = True
-            if 'R CMD INSTALL %{packname} -l' in line and '/R/library' in line:
+            if 'R CMD INSTALL' in line \
+                    and '-l ' in line \
+                    and '%{packname}' in line \
+                    and ('/R/library' in line or 'rlibdir' in line):
                 b_install = True
         if b_dir is True and b_test is True and b_rm is True and \
             b_install is True:
