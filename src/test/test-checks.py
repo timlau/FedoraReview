@@ -58,12 +58,11 @@ class CheckCaseChecks(unittest.TestCase):
         self.checks = Checks(None, spec_file=self.spec, srpm_file=self.srpm)
         print('Running All Checks')
         self.checks.run_checks()
-        for typ in ['MUST','SHOULD']:
-            # Automatic Checks
-            checks = self.checks.checks
-            for check in checks:
-                result = check.get_result()
-                self.assertNotEqual(result, None)
+        # Automatic Checks
+        checks = self.checks.checks
+        for check in checks:
+            result = check.get_result()
+            self.assertNotEqual(result, None)
 
 suite = unittest.TestLoader().loadTestsFromTestCase(CheckCaseChecks)
 unittest.TextTestRunner(verbosity=2).run(suite)
