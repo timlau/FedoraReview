@@ -41,9 +41,14 @@ class RCheckBase(LangCheckBase):
         ok = []
         version = None
         for url in self.URLS:
-            stream = urllib.urlopen(url)
-            content = stream.read()
-            stream.close()
+            try:
+                stream = urllib.urlopen(url)
+                content = stream.read()
+                stream.close()
+            except IOError, err:
+                print 'Could not retrieve info from %s' % url
+                self.log.debug('Error: %s' % err)
+                continue
             res = re.search('Package: %s\nVersion:.*' % name, content)
             if res is not None:
                 self.log.debug("Found in: %s" % url)
