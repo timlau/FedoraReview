@@ -100,6 +100,12 @@ class JSONPlugin(Helpers):
                 self.__handle_reply(obj)
                 final_data = ""
 
+        errout = self.plug_err.read()
+        while errout != "":
+            self.log.debug("ERROR: %s: %s" % (self.plugin_path, errout))
+            errout = self.plug_err.read()
+
+
     def get_results(self):
         """Returns array of results
 
