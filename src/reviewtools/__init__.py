@@ -54,6 +54,7 @@ class Settings(BaseConfig):
     # Default bugzilla userid
     bz_user = ''
     mock_config = 'fedora-rawhide-i386'
+    ext_dirs =  "/usr/share/FedoraReview/plugins:%s" % os.environ['HOME'] + "/.config/FedoraReview/plugins"
 
     def __init__(self):
         BaseConfig.__init__(self)

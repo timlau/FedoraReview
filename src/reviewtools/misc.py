@@ -39,7 +39,7 @@ x = Check
 """
 from straight.plugin import load
 
-from reviewtools import get_logger
+from reviewtools import get_logger, Settings
 
 
 class Checks(object):
@@ -73,11 +73,17 @@ class Checks(object):
                     self.log.debug('Add module: %s' % mbr)
                     self.add(obj)
 
-        ext_dirs = os.environ["REVIEW_EXT_DIRS"].split(":")
+        ext_dirs = []
+        if "REVIEW_EXT_DIRS" in os.environ:
+            ext_dirs = os.environ["REVIEW_EXT_DIRS"].split(":")
+        ext_dirs.extend(Settings.ext_dirs.split(":"))
         for ext_dir in ext_dirs:
+            if not os.path.isdir(ext_dir):
+                continue
             for plugin in os.listdir(ext_dir):
                 full_path = "%s/%s" % (ext_dir, plugin)
                 if os.path.isfile(full_path) and os.access(full_path, os.X_OK):
+                    self.log.debug('Add external module: %s' % full_path)
                     pl = JSONPlugin(self, full_path)
                     self.ext_checks.append(pl)
 
@@ -118,6 +124,7 @@ class Checks(object):
         # previous run, i.e create some layer so that all checks will
         # be equal and we can sort them etc
         for ext in self.ext_checks:
+            self.log.debug('Running external module : %s' % ext.plugin_path)
             ext.run()
             for result in ext.get_results():
                 results.append(result)
