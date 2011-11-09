@@ -370,9 +370,11 @@ class SRPMFile(Helpers):
 
     def get_build_dir(self):
         mock_dir = self.get_mock_dir()
-        return "%s/../root/builddir/build/BUILD/%s-%s" % (mock_dir,
-                                                          self.spec.name,
-                                                          self.spec.version)
+        bdir_root = "%s/../root/builddir/build/BUILD/" % mock_dir
+        for entry in os.listdir(bdir_root):
+            if os.path.isdir(bdir_root + entry):
+                return bdir_root + entry
+        return None
 
     def get_source_dir(self):
         sourcedir = Popen(["rpm", "-E", '%_sourcedir'],
