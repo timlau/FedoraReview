@@ -57,7 +57,7 @@ class CheckCaseChecks(unittest.TestCase):
         print('Setup Checks')
         self.checks = Checks(None, spec_file=self.spec, srpm_file=self.srpm)
         print('Running All Checks')
-        self.checks.run_checks()
+        self.checks.run_checks(writedown=False)
         # Automatic Checks
         checks = self.checks.checks
         for check in checks:
