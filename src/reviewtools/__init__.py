@@ -31,7 +31,7 @@ import shlex
 import tarfile
 import rpm
 import platform
-from yum.config import *
+import ConfigParser
 from urlparse import urlparse
 
 SECTIONS = ['build', 'changelog', 'check', 'clean', 'description', 'files',
@@ -45,7 +45,7 @@ TEST_STATES = {'pending': '[ ]', 'pass': '[x]' ,'fail': '[!]', 'na': '[-]'}
 LOG_ROOT = 'reviewtools'
 
 
-class Settings(BaseConfig):
+class Settings(object):
     """ FedoraReview Config Setting"""
     # Editor to use to show review report & spec
     editor = '/usr/bin/xdg-open'
@@ -57,37 +57,81 @@ class Settings(BaseConfig):
     ext_dirs =  "/usr/share/FedoraReview/plugins:%s" % os.environ['HOME'] + "/.config/FedoraReview/plugins"
 
     def __init__(self):
-        BaseConfig.__init__(self)
+        '''Constructor of the Settings object.
+        This instanciate the Settings object and load into the _dict
+        attributes the default configuration which each available option.
+        '''
+        self._dict = {'editor' : self.editor,
+                    'work_dir' : self.work_dir,
+                    'bz_user' : self.bz_user,
+                    'mock_config' : self.mock_config,
+                    'ext_dirs' : self.ext_dirs}
         self.load_config('.config/FedoraReview/settings', 'review')
 
     def load_config(self, configfile, sec):
-        parser = ConfigParser()
+        '''Load the configuration in memory.
+
+        :arg configfile, name of the configuration file loaded.
+        :arg sec, section of the configuration retrieved.
+        '''
+        parser = ConfigParser.ConfigParser()
         configfile = os.environ['HOME'] + "/" + configfile
-        isNew = self.create_conf(configfile, sec)
+        isNew = self.create_conf(configfile)
         parser.read(configfile)
         if not parser.has_section(sec):
             parser.add_section(sec)
         self.populate(parser, sec)
         if isNew:
-            self.save_config(configfile)
+            self.save_config(configfile, parser)
 
-    def create_conf(self, configfile, sec):
+    def create_conf(self, configfile):
+        '''Check if the provided configuration file exists, generate the
+        folder if it does not and return True or False according to the
+        initial check.
+
+        :arg configfile, name of the configuration file looked for.
+        '''
         if not os.path.exists(configfile):
             dn = os.path.dirname(configfile)
             if not os.path.exists(dn):
                 os.makedirs(dn)
-            fd = open(configfile, "w")
-            print >> fd, "[%s]" % sec
-            fd.close()
             return True
         return False
 
-    def save_config(self, configfile):
-        always = tuple([key for key in self.iterkeys()])
-        fn = open(configfile, "w")
-        self.write(fn, always=always)
-        fn.close()
+    def save_config(self, configfile, parser):
+        '''Save the configuration into the specified file.
 
+        :arg configfile, name of the file in which to write the configuration
+        :arg parser, ConfigParser object containing the configuration to
+        write down.
+        '''
+        with open(configfile, 'w') as conf:
+                parser.write(conf)
+
+    def __getitem__(self, key):
+        hash = self._get_hash(key)
+        if not hash:
+            raise KeyError(key)
+        return self._dict.get(hash)
+
+    def populate(self,parser, section):
+        '''Set option values from a INI file section.
+
+        :arg parser: ConfigParser instance (or subclass)
+        :arg section: INI file section to read use.
+        '''
+        if parser.has_section(section):
+            opts = set(parser.options(section))
+        else:
+            opts = set()
+
+        for name in self._dict.iterkeys():
+            value = None
+            if name in opts:
+                value = parser.get(section, name)
+                parser.set(section, name, value)
+            else:
+                parser.set(section, name, self._dict[name])
 
 class Helpers(object):
 
