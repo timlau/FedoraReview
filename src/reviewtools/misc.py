@@ -103,7 +103,7 @@ class Checks(object):
         issues = []
         results = []
         for test in self.checks:
-            if test.is_applicable() and test.__class__ \
+            if test.is_applicable() and test.__class__.__name__ \
                         not in self.deprecated:
                 if test.automatic:
                     test.run()
