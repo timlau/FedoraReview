@@ -102,6 +102,16 @@ class Checks(object):
     def run_checks(self, output=sys.stdout, writedown=True):
         issues = []
         results = []
+        # run external checks first so we can get what they deprecate
+        for ext in self.ext_checks:
+            self.log.debug('Running external module : %s' % ext.plugin_path)
+            ext.run()
+            for result in ext.get_results():
+                results.append(result)
+                if result.type == 'MUST' and result.result == "fail":
+                    issues.append(result.get_text())
+                self.deprecated.extend(result.deprecates)
+
         for test in self.checks:
             if test.is_applicable() and test.__class__.__name__ \
                         not in self.deprecated:
@@ -119,17 +129,6 @@ class Checks(object):
                 if result:
                     if result.type == 'MUST' and result.result == "fail":
                         issues.append(result.get_text())
-
-        # run external checks. we probably want to merge this into
-        # previous run, i.e create some layer so that all checks will
-        # be equal and we can sort them etc
-        for ext in self.ext_checks:
-            self.log.debug('Running external module : %s' % ext.plugin_path)
-            ext.run()
-            for result in ext.get_results():
-                results.append(result)
-                if result.type == 'MUST' and result.result == "fail":
-                    issues.append(result.get_text())
 
         if writedown:
             self.__show_output(output,
