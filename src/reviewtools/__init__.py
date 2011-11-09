@@ -40,6 +40,7 @@ SECTIONS = ['build', 'changelog', 'check', 'clean', 'description', 'files',
                'triggerpostun', 'pretrans', 'posttrans']
 SPEC_SECTIONS = re.compile(r"^(\%(" + "|".join(SECTIONS) + "))\s*")
 MACROS = re.compile(r"^%(define|global)\s+(\w*)\s+(.*)")
+TEST_STATES = {'pending': '[ ]', 'pass': '[x]' ,'fail': '[!]', 'na': '[-]'}
 
 LOG_ROOT = 'reviewtools'
 
@@ -53,6 +54,7 @@ class Settings(BaseConfig):
     # Default bugzilla userid
     bz_user = ''
     mock_config = 'fedora-rawhide-i386'
+    ext_dirs =  "/usr/share/FedoraReview/plugins:%s" % os.environ['HOME'] + "/.config/FedoraReview/plugins"
 
     def __init__(self):
         BaseConfig.__init__(self)
@@ -280,9 +282,10 @@ class Source(Helpers):
 
 class SRPMFile(Helpers):
     def __init__(self, filename, cache=False, nobuild=False,
-            mock_config=Settings.mock_config):
+            mock_config=Settings.mock_config, spec=None):
         Helpers.__init__(self, cache, nobuild, mock_config)
         self.filename = filename
+        self.spec = spec
         self.is_installed = False
         self.is_build = False
         self.build_failed = False
@@ -320,6 +323,12 @@ class SRPMFile(Helpers):
             self.log.info("Build failed rc = %i " % rc)
             self.build_failed = True
         return rc
+
+    def get_build_dir(self):
+        mock_dir = self.get_mock_dir()
+        return "%s/../root/builddir/build/BUILD/%s-%s" % (mock_dir,
+                                                          self.spec.name,
+                                                          self.spec.version)
 
     def get_source_dir(self):
         sourcedir = Popen(["rpm", "-E", '%_sourcedir'],
@@ -536,9 +545,22 @@ class SpecFile(object):
             output, error = proc.communicate()
             print "output : [%s], error : [%s]" % (output, error)
         except OSError, e:
-            print "OSError : %s" % str(e)
+            log.error("OSError : %s" % str(e))
             return False
         return output
+
+    def get_expanded(self):
+        cmd = ['rpmspec', '-P', self.filename]
+        try:
+            proc = Popen(cmd, stdin = subprocess.PIPE, stdout = subprocess.PIPE,
+                         stderr = subprocess.PIPE)
+            output, error = proc.communicate()
+            if proc.wait() != 0:
+                return None
+            return output
+        except OSError, e:
+            log.error("OSError: %s" % str(e))
+            return None
 
     def find_tag(self, tag, section = None, split_tag = True):
         '''
@@ -600,6 +622,26 @@ class SpecFile(object):
                 result.append(res)
         return result
 
+
+class TestResult(object):
+    def __init__(self, name, url, group, deprecates, text, check_type,
+                 result, output_extra):
+        self.name = name
+        self.url = url
+        self.group = group
+        self.deprecates = deprecates
+        self.text = text
+        self.type = check_type
+        self.result = result
+        self.output_extra = output_extra
+
+    def get_text(self):
+        ret = "%s: %s %s" % (TEST_STATES[self.result], self.type,
+                             self.text)
+        if self.output_extra and self.output_extra != "":
+            for line in self.output_extra.split('\n'):
+                ret += '\n        %s' % line
+        return ret
 
 def get_logger():
     return logging.getLogger(LOG_ROOT)
