@@ -20,10 +20,11 @@
 This module contains misc helper funtions and classes
 '''
 import sys
+import os
 from operator import attrgetter
 
 from reviewtools import Sources, SRPMFile, SpecFile
-
+from reviewtools.jsonapi import JSONPlugin
 
 HEADER = """
 Package Review
@@ -38,13 +39,14 @@ x = Check
 """
 from straight.plugin import load
 
-from reviewtools import get_logger
+from reviewtools import get_logger, Settings
 
 
 class Checks(object):
     def __init__(self, args, spec_file, srpm_file, cache=False,
             nobuild=False, mock_config='fedora-rawhide-i386'):
         self.checks = []
+        self.ext_checks = []
         self.args = args  # Command line arguments & options
         self.cache = cache
         self.nobuild = nobuild
@@ -54,12 +56,9 @@ class Checks(object):
         self.sources = Sources(cache=cache, mock_config=mock_config)
         self.log = get_logger()
         self.srpm = SRPMFile(srpm_file, cache=cache, nobuild=nobuild,
-            mock_config=mock_config)
+            mock_config=mock_config, spec=self.spec)
         self.plugins = load('reviewtools.checks')
         self.add_check_classes()
-
-    def reset_results(self):
-        self._results = []
 
     def add_check_classes(self):
         """ get all the check classes in the reviewtools.checks and add them
@@ -74,6 +73,20 @@ class Checks(object):
                     self.log.debug('Add module: %s' % mbr)
                     self.add(obj)
 
+        ext_dirs = []
+        if "REVIEW_EXT_DIRS" in os.environ:
+            ext_dirs = os.environ["REVIEW_EXT_DIRS"].split(":")
+        ext_dirs.extend(Settings.ext_dirs.split(":"))
+        for ext_dir in ext_dirs:
+            if not os.path.isdir(ext_dir):
+                continue
+            for plugin in os.listdir(ext_dir):
+                full_path = "%s/%s" % (ext_dir, plugin)
+                if os.path.isfile(full_path) and os.access(full_path, os.X_OK):
+                    self.log.debug('Add external module: %s' % full_path)
+                    pl = JSONPlugin(self, full_path)
+                    self.ext_checks.append(pl)
+
     def add(self, class_name):
         cls = class_name(self)
         self.checks.append(cls)
@@ -86,22 +99,10 @@ class Checks(object):
         for line in lines:
             output.write(line)
 
-    def parse_result(self, test):
-        result = test.get_result()
-        self._results.append(result)
-
-    def show_result(self, output):
-        output.write(HEADER)
-        for line in self._results:
-            output.write(line)
-            output.write('\n')
-
     def run_checks(self, output=sys.stdout, writedown=True):
         issues = []
-        self.reset_results()
-        sorted_checks = sorted(self.checks, key=attrgetter('header','type','__class__.__name__'))
-        current_section = None
-        for test in sorted_checks:
+        results = []
+        for test in self.checks:
             if test.is_applicable() and test.__class__ \
                         not in self.deprecated:
                 if test.automatic:
@@ -109,24 +110,44 @@ class Checks(object):
                 else:
                     test.state = 'pending'
 
-                if test.header != current_section:
-                    self._results.append("\n\n==== %s ====\n" % test.header)
-                    current_section = test.header
-
-                self.parse_result(test)
-
                 result = test.get_result()
+                results.append(result)
                 self.log.debug('Running check : %s %s [%s] ' % (
                     test.__class__.__name__,
                     " " * (30 - len(test.__class__.__name__)),
-                    test.state ))
+                    test.state))
                 if result:
-                    if result.startswith('[!] : MUST'):
-                        issues.append(result)
+                    if result.type == 'MUST' and result.result == "fail":
+                        issues.append(result.get_text())
+
+        # run external checks. we probably want to merge this into
+        # previous run, i.e create some layer so that all checks will
+        # be equal and we can sort them etc
+        for ext in self.ext_checks:
+            self.log.debug('Running external module : %s' % ext.plugin_path)
+            ext.run()
+            for result in ext.get_results():
+                results.append(result)
+                if result.type == 'MUST' and result.result == "fail":
+                    issues.append(result.get_text())
 
         if writedown:
-            self.show_result(output)
-        if issues and writedown:
+            self.__show_output(output,
+                               sorted(results, key=attrgetter('group', 'type', 'name')),
+                               issues)
+
+    def __show_output(self, output, results, issues):
+        output.write(HEADER)
+        current_section = None
+        for res in results:
+            if res.group != current_section:
+                output.write("\n\n==== %s ====\n" % res.group)
+                current_section = res.group
+
+            output.write(res.get_text())
+            output.write('\n')
+
+        if issues:
             output.write("\nIssues:\n")
             for fail in issues:
                 output.write(fail)

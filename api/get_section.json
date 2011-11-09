@@ -1,0 +1,17 @@
+{
+  "command":"get_section"
+  "section":"build"
+  "expand_macros":false
+}
+
+{
+  "text":"ant
+ant apidocs
+
+# remove bat files
+rm bin/*.bat
+
+pushd yecht
+ant ext-ruby-jar
+"
+}
