@@ -69,6 +69,15 @@ Results object ::=
 
 == Additional RPC calls ==
 
+After each call plugin can receive an error reply in following format:
+
+error_reply ::=
+{
+"error":"textual description of error"
+"code":code_number
+}
+
+
 === Get Section ===
 
 Use: Get section of spec file
