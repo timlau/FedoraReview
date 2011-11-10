@@ -24,6 +24,9 @@ from json import JSONEncoder, JSONDecoder
 
 from reviewtools import Helpers, TestResult
 
+class ERR_CODE(object):
+    ERR_NO_COMMAND = 1
+
 
 class JSONAPI(object):
     """Base class for all JSON plugin communication"""
@@ -55,10 +58,11 @@ class GetSectionReply(JSONAPI):
 class ErrorReply(JSONAPI):
     """Reply used when we encounter error in processing the request
 
-    This is usually caused by unknown call
+    This is usually caused by unknown call or other error
     """
-    def __init__(self, error_text):
+    def __init__(self, error_text, code):
         self.error = error_text
+        self.code = code
 
 
 class PluginResponse(JSONAPI):
@@ -109,7 +113,7 @@ class JSONPlugin(Helpers):
 
         errout = self.plug_err.read()
         while errout != "":
-            self.log.debug("ERROR: %s: %s" % (self.plugin_path, errout))
+            self.__error(errout)
             errout = self.plug_err.read()
 
 
@@ -131,7 +135,7 @@ class JSONPlugin(Helpers):
             for key in json_obj.keys():
                 setattr(ret, key, json_obj[key])
             if not hasattr(ret, "command"):
-                self.log.error("Error: plugin returned JSON object without 'command' ")
+                self.__error("plugin returned JSON object without 'command' ")
                 # Reply has to have this
                 return None
         except ValueError:
@@ -142,6 +146,7 @@ class JSONPlugin(Helpers):
     def __handle_reply(self, reply):
         """Handle incomming commands and results"""
         if reply.command == "results":
+            self.__debug("Processing results")
             for result in reply.checks:
                 extra = None
                 if "output_extra" in result:
@@ -154,6 +159,7 @@ class JSONPlugin(Helpers):
                                                result["type"],
                                                result["result"], extra))
         elif reply.command == "get_section":
+            self.__debug("get_section call")
             sec_name = "%%%s" % reply.section
             gs_ret = self.spec.get_section(sec_name)
             if sec_name not in gs_ret:
@@ -166,9 +172,9 @@ class JSONPlugin(Helpers):
             msg = GetSectionReply(section_text)
             self.__send_obj(msg)
         else:
-            self.log.debug("Received unrecognized message command %s from"
-                           "plugin %s" % (reply.command, self.plugin_path))
-            self.__send_obj(ErrorReply("Unrecognized command %s" % reply.command))
+            msg = "unrecognized message command %s"  % reply.command
+            self.__error(msg)
+            self.__send_obj(ErrorReply(msg, ERR_CODE.ERR_NO_COMMAND))
 
     def __send_obj(self, obj):
         """Send JSONAPI subclass to JSON plugin"""
@@ -176,6 +182,11 @@ class JSONPlugin(Helpers):
         self.plug_in.write("\n\n")
         self.plug_in.flush()
 
+    def __debug(self, msg):
+        self.log.debug("Plugin %s: %s" % (self.plugin_path,msg))
+
+    def __error(self, msg):
+        self.log.error("Plugin %s: %s" % (self.plugin_path,msg))
 
 class ReviewJSONEncoder(JSONEncoder):
     """Custom JSON encoder for JSONAPI subclasses"""
