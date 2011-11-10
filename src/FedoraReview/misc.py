@@ -23,8 +23,8 @@ import sys
 import os
 from operator import attrgetter
 
-from reviewtools import Sources, SRPMFile, SpecFile
-from reviewtools.jsonapi import JSONPlugin
+from FedoraReview import Sources, SRPMFile, SpecFile
+from FedoraReview.jsonapi import JSONPlugin
 
 HEADER = """
 Package Review
@@ -39,7 +39,7 @@ x = Check
 """
 from straight.plugin import load
 
-from reviewtools import get_logger, Settings
+from FedoraReview import get_logger, Settings
 
 
 class Checks(object):
@@ -57,12 +57,12 @@ class Checks(object):
         self.log = get_logger()
         self.srpm = SRPMFile(srpm_file, cache=cache, nobuild=nobuild,
             mock_config=mock_config, spec=self.spec)
-        self.plugins = load('reviewtools.checks')
+        self.plugins = load('FedoraReview.checks')
         self.add_check_classes()
 
     def add_check_classes(self):
-        """ get all the check classes in the reviewtools.checks and add them
-        to be excuted
+        """ get all the check classes in the FedoraReview.checks and add
+        them to be excuted
         """
 
         for module in self.plugins:

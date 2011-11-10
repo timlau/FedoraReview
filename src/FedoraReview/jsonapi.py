@@ -22,7 +22,7 @@ JSON API for FedoraReview plugins
 import subprocess
 from json import JSONEncoder, JSONDecoder
 
-from reviewtools import Helpers, TestResult
+from FedoraReview import Helpers, TestResult
 
 class ERR_CODE(object):
     ERR_NO_COMMAND = 1

@@ -27,9 +27,9 @@ import sys
 import os
 from subprocess import Popen
 
-from reviewtools import get_logger, do_logger_setup, Settings
-from reviewtools.bugz import ReviewBug
-from reviewtools.misc import Checks
+from FedoraReview import get_logger, do_logger_setup, Settings
+from FedoraReview.bugz import ReviewBug
+from FedoraReview.misc import Checks
 
 
 class ReviewHelper:

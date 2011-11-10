@@ -26,7 +26,7 @@ import inspect
 import re
 import fnmatch
 
-from reviewtools import Helpers, get_logger, TestResult
+from FedoraReview import Helpers, get_logger, TestResult
 
 
 class CheckBase(Helpers):

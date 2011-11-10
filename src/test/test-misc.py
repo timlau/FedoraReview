@@ -29,7 +29,7 @@ sys.path.insert(0,os.path.abspath('../'))
 import os
 import unittest
 import glob
-from reviewtools import Helpers, Source, SRPMFile, SpecFile
+from FedoraReview import Helpers, Source, SRPMFile, SpecFile
 from base import *
 
 class MiscTests(unittest.TestCase):

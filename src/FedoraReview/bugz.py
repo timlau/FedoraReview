@@ -23,7 +23,7 @@ from bugzilla import Bugzilla
 
 BZ_URL = 'https://bugzilla.redhat.com/xmlrpc.cgi'
 
-from reviewtools import Helpers, get_logger
+from FedoraReview import Helpers, get_logger
 
 
 class ReviewBug(Helpers):

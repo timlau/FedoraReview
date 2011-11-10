@@ -42,7 +42,7 @@ SPEC_SECTIONS = re.compile(r"^(\%(" + "|".join(SECTIONS) + "))\s*")
 MACROS = re.compile(r"^%(define|global)\s+(\w*)\s+(.*)")
 TEST_STATES = {'pending': '[ ]', 'pass': '[x]' ,'fail': '[!]', 'na': '[-]'}
 
-LOG_ROOT = 'reviewtools'
+LOG_ROOT = 'FedoraReview'
 
 
 class Settings(object):

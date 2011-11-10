@@ -5,8 +5,8 @@
 import re
 import os
 import urllib
-from reviewtools.checks.generic import LangCheckBase, CheckLatestVersionIsPackaged
-from reviewtools import get_logger
+from FedoraReview.checks.generic import LangCheckBase, CheckLatestVersionIsPackaged
+from FedoraReview import get_logger
 
 
 class RCheckBase(LangCheckBase):

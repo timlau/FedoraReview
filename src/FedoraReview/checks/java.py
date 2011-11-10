@@ -2,7 +2,7 @@
 """Java language specific checks"""
 
 import re
-from reviewtools.checks.generic import LangCheckBase, CheckFullVerReqSub, \
+from FedoraReview.checks.generic import LangCheckBase, CheckFullVerReqSub, \
     CheckBuildCompilerFlags, CheckUsefulDebuginfo, CheckLargeDocs
 
 

@@ -28,7 +28,7 @@ sys.path.insert(0,os.path.abspath('../'))
 import os
 import os.path
 import unittest
-from reviewtools.bugz import ReviewBug
+from FedoraReview.bugz import ReviewBug
 from bugzilla import Bugzilla
 from base import *
 
