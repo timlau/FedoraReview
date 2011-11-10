@@ -1,0 +1,71 @@
+.TH "fedora-review" 1
+.SH NAME
+fedora-review \- Automatically review RPM packages for Fedora.
+
+.SH SYNOPSIS
+.B fedora-review
+-b <bug number>  
+.br
+.B fedora-review
+-s <package name>
+
+.SH USAGE
+This program runs a number of checks  for packages in Fedora.
+.sp
+Usage:  fedora-review -b <bug number>
+        fedora-review -n <package name>
+
+The configuration file for fedora-review is located under:
+ ~/.conf/FedoraReview/
+
+.SH DESCRIPTION
+
+This tool make reviews of rpm package for Fedora. It tries to automate most of the process.
+Through a json API the checks can be extended in any programming language and for any programming language.
+We have at the moment checks for C/C++, R, Java and perl packages.
+
+.SH OPTIONS
+.B -b / --bug
+    Identifier of the ticket on the bugzilla where is the package to review.
+.sp
+.B -n / --name
+    Runs the checks against the named spec and source rpm located in the current working directory.
+.sp
+.B -w / --workdir
+    Specify in which working directory to work.
+.sp
+.B --other-bz
+    URL for another bugzilla.
+.sp
+.B --assign
+    Assign the bugzilla ticket to yourself.
+.sp
+.B --cache
+    Do not redownload the files from bugzilla, used the local one.
+.sp
+.B --nobuild
+    Do not rebuild the source rpm, use the currently built one.
+.sp
+.B -u / --user
+    Bugzilla user name.
+.sp
+.B  -p / --password
+   Bugzilla password.
+.sp
+.B  -v / --verbose
+   Provides a more detailed output of what's going on.
+.sp
+.B --no-report
+   Do not generate the review report.
+.sp
+.B --mock-config
+   Specify which mock config to use
+
+.SH AUTHOR 
+  Stanislav Ochotnicky <sochotnicky@redhat.com>
+  Tim Lauridsen <tim.lauridsen@gmail.com>
+  Pierre-Yves Chibon <pingou@pingoured.fr>
+
+.sp
+.sp
+No known bugs at this time
