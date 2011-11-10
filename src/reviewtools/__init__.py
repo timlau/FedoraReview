@@ -248,7 +248,7 @@ class Sources(object):
         :arg souce_filename, the filename of the source as identified
         in the spec.
         """
-        if source_url is None and source_name is None:
+        if source_url is None and source_filename is None:
             print 'No source set to extract'
         for source in self._sources:
             if source_url and source.URL == source_url:
@@ -438,7 +438,6 @@ class SRPMFile(Helpers):
         return self.run_rpmlint(self.filename)
 
     def rpmlint_rpms(self):
-        sep = "%s\n" % (80 * "=")
         results = ''
         success = True
         rpms = glob.glob(self.get_mock_dir() + '/*.rpm')
@@ -473,6 +472,7 @@ class SpecFile(object):
         self._sections = {}
         self._section_list = []
         self.filename = filename
+        self.log = get_logger()
         f = None
         try:
             f = open(filename, "r")
@@ -591,7 +591,7 @@ class SpecFile(object):
             output, error = proc.communicate()
             print "output : [%s], error : [%s]" % (output, error)
         except OSError, e:
-            log.error("OSError : %s" % str(e))
+            self.log.error("OSError : %s" % str(e))
             return False
         return output
 
@@ -605,7 +605,7 @@ class SpecFile(object):
                 return None
             return output
         except OSError, e:
-            log.error("OSError: %s" % str(e))
+            self.log.error("OSError: %s" % str(e))
             return None
 
     def find_tag(self, tag, section = None, split_tag = True):
