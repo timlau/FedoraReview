@@ -10,6 +10,8 @@ plugins. First a few basic rules:
    call (except final "results" call)
  * Messages are separated by newlines (0x0A, LF, \n character)
  * Text containing newlines is encoded with literal "\n"
+ * Each transferred JSON message must have "supported_api" key with
+   value equal to highest supported API version
 
 == Communication diagram ==
 
@@ -68,6 +70,9 @@ Results object ::=
 
 
 == Additional RPC calls ==
+
+*Note*: All messages MUST contain "supported_api". It is not included
+        in examples for brewity
 
 After each call plugin can receive an error reply in following format:
 
