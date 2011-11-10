@@ -52,6 +52,15 @@ class GetSectionReply(JSONAPI):
         self.text = section_text
 
 
+class ErrorReply(JSONAPI):
+    """Reply used when we encounter error in processing the request
+
+    This is usually caused by unknown call
+    """
+    def __init__(self, error_text):
+        self.error = error_text
+
+
 class PluginResponse(JSONAPI):
     """Class for plugin responses"""
     command = None
@@ -146,9 +155,20 @@ class JSONPlugin(Helpers):
                                                result["result"], extra))
         elif reply.command == "get_section":
             sec_name = "%%%s" % reply.section
-            section_text = "\n".join(self.spec.get_section(sec_name)[sec_name])
+            gs_ret = self.spec.get_section(sec_name)
+            if sec_name not in gs_ret:
+                section_text = ""
+                self.log.debug("Plugin %s asked for non-existent"
+                               "section %s" % (self.plugin_path,
+                                               sec_name))
+            else:
+                section_text = "\n".join(gs_ret[sec_name])
             msg = GetSectionReply(section_text)
             self.__send_obj(msg)
+        else:
+            self.log.debug("Received unrecognized message command %s from"
+                           "plugin %s" % (reply.command, self.plugin_path))
+            self.__send_obj(ErrorReply("Unrecognized command %s" % reply.command))
 
     def __send_obj(self, obj):
         """Send JSONAPI subclass to JSON plugin"""
