@@ -36,14 +36,12 @@ class SetupPlugin(JSONAPI):
         self.pkgname = spec.name
         self.version = spec.version
         self.release = spec.release
-        self.srpm = {"path": srpm.filename,
-                     "tree": None}
+        self.srpm = srpm.filename
         self.spec = {"path": spec.filename,
                      "text": spec.get_expanded()}
         self.rpms = []
         for rpm in srpm.get_files_rpms().keys():
-            self.rpms.append({"path": rpm,
-                              "tree": None})
+            self.rpms.append(rpm)
         self.rpmlint = "\n".join(srpm.rpmlint_output)
         self.build_dir = srpm.get_build_dir()
 
