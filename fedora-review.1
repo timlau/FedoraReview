@@ -7,7 +7,7 @@ fedora-review \- Automatically review RPM packages for Fedora.
 -b <bug number>  
 .br
 .B fedora-review
--s <package name>
+-n <package name>
 
 .SH USAGE
 This program runs a number of checks  for packages in Fedora.
@@ -15,12 +15,11 @@ This program runs a number of checks  for packages in Fedora.
 Usage:  fedora-review -b <bug number>
         fedora-review -n <package name>
 
-The configuration file for fedora-review is located under:
- ~/.conf/FedoraReview/
+Configuration file for fedora-review is located under ~/.conf/FedoraReview/
 
 .SH DESCRIPTION
 
-This tool make reviews of rpm package for Fedora. It tries to automate most of the process.
+This tool makes reviews of rpm packages for Fedora easier. It tries to automate most of the process.
 Through a json API the checks can be extended in any programming language and for any programming language.
 We have at the moment checks for C/C++, R, Java and perl packages.
 
@@ -64,8 +63,7 @@ We have at the moment checks for C/C++, R, Java and perl packages.
 .SH ENVIRONMENT
 .sp
 .B  REVIEW_EXT_DIRS 
-    If REVIEW_EXT_DIRS is set, it specifies additional directories that
-    will be searched for external plugins
+    If REVIEW_EXT_DIRS is set, it specifies additional directories that will be searched for external plugins
 
 .SH AUTHORS
   Original author: Tim Lauridsen <tim.lauridsen@gmail.com>
