@@ -3,3 +3,4 @@
 .pydev*
 test-work/
 *.log
+build/
