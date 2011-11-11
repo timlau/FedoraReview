@@ -4,24 +4,39 @@ fedora-review \- Automatically review RPM packages for Fedora.
 
 .SH SYNOPSIS
 .B fedora-review
--b <bug number>  
+-b <bug number>
 .br
 .B fedora-review
 -n <package name>
-
-.SH USAGE
-This program runs a number of checks  for packages in Fedora.
-.sp
-Usage:  fedora-review -b <bug number>
-        fedora-review -n <package name>
-
-Configuration file for fedora-review is located under ~/.conf/FedoraReview/
 
 .SH DESCRIPTION
 
 This tool makes reviews of rpm packages for Fedora easier. It tries to automate most of the process.
 Through a json API the checks can be extended in any programming language and for any programming language.
 We have at the moment checks for C/C++, R, Java and perl packages.
+
+.SH USAGE
+This program runs a number of checks  for packages in Fedora.
+.HP
+fedora-review -b <bug number>
+
+It will download the SPEC & SRPM files from the Bugzilla report and
+build them in mock and run a number of test and generate a report
+there will be opened in editor along with the spec file, so the things
+not automated can be reviewed manually.
+
+.HP
+fedora-review -n <package name>
+
+This alternative usage expects <package name>.spec and source rpm in current
+directory.
+
+.PP
+You will need to have mock installed and be member of the mock group
+for the build to work. Run as root:
+.HP
+ usermod -a G mock [your user name] && newgrp mock
+
 
 .SH OPTIONS
 .B -b / --bug
@@ -60,9 +75,25 @@ We have at the moment checks for C/C++, R, Java and perl packages.
 .B --mock-config
    Specify which mock config to use
 
+.SH FILES
+.I $HOME/.conf/fedora-review/settings
+.RS
+User configuration files for fedora-review
+.RE
+
+.I /usr/share/fedora-review/plugins
+.RS
+System-wide external plugins directory
+.RE
+
+.I $HOME/.conf/fedora-review/plugins/
+.RS
+User supplied external plugins directory
+.RE
+
 .SH ENVIRONMENT
-.sp
-.B  REVIEW_EXT_DIRS 
+.TP
+.B  REVIEW_EXT_DIRS
     If REVIEW_EXT_DIRS is set, it specifies additional directories that will be searched for external plugins
 
 .SH AUTHORS
