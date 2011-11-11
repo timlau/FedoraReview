@@ -1,8 +1,8 @@
-FedoraReview: Tools to helper review packages for inclusion in Fedora
+fedora-review: Tools to helpe review packages for inclusion in Fedora
 ---------------------------------------------------------------------
 
 This tool automates much of the dirty work when reviewing a package
-for the Fedora Package Collection. 
+for the Fedora Package Collection.
 
 Like:
 - Downloading SRPM & SPEC from Bugzilla report
@@ -11,7 +11,7 @@ Like:
 - Do a total review report will both manual & automated checks, ready to
   complete and paste into the Bugzilla report.
 
-FedoraReview is still under heavy development.
+fedora-review is still under heavy development.
 
 Requirements
 ------------
@@ -20,50 +20,25 @@ Requirements
 * rpm & yum
 * mock
 * python-bugzilla
-* gedit (default editor, can be changed in .conf file)
+* editor
 
 Download
 --------
-Install git and run the command below to clone the source from github
+Install git and run the command below to clone the source:
 
-git clone https://github.com/timlau/FedoraReview
+git clone http://git.fedorahosted.org/git/FedoraReview.git
+
+Alternative repository for users wishing to use github:
+git clone git://github.com/timlau/FedoraReview.git
 
 Usage
 -----
-Now switch to the new created FedoraReview directory and switch to the
-src/ directory. Now you can run the tool:
 
-./review.py -b <bugzilla report number>
-
-It will download the SPEC & SRPM files from the Bugzilla report and
-build them in mock and run a number of test and generate a report there
-will be opened in gedit along with the spec file, so the stuff no automated
-can be reviewed manually.
-
-You will need to have mock installed and be member of the mock group for
-the build to work. Run as root:
-
-usermod -a G mock [your user name] && newgrp mock
-
-Will show you the other options of the tools.
-
-./review.py --help
-
-This will assign the review to <bugzilla user> and set the review flags in
-the bugzilla report.
-
-./review.py -b <bugzilla report number> -u <bugzilla user> -p <bugzilla
-password> --assign
-
-At first run a configuration file (~/.config/FedoraReview/settings) will be created, it contains
-default options like
-
- * editor  : The editor to use for showing the review report & .spec file.
- * bz_user : The default bugzilla user.
+See man fedora-review.1
 
 License
 -------
-FedoraReview is licensed under GPLv2+, for more details check COPYING.
+fedora-review is licensed under GPLv2+, for more details check COPYING.
 
 
 Create a language plugin
@@ -74,7 +49,7 @@ All the files in this folder are automatically loaded.
 Your class should inherit from the class `LangCheckBase`.
 You may want to create a Base class for your own language. Then each tests
 is a class. This class has a __init__ method with predefine information
-(such as the link to the guidelines and the text to be printed) and a 
+(such as the link to the guidelines and the text to be printed) and a
 run method which is what is actually performing the test.
 
 For your test to be taken into account, the class should have
@@ -88,3 +63,8 @@ actually run tests).
     False           == failed
 The file plugin.tmpl shows the basic structure/idea and implement an
 example test.
+
+External plugins
+----------------
+It is also possible to create plugins in different languages than
+Python. See api/README for details
