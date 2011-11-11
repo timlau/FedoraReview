@@ -60,6 +60,7 @@ Results object ::=
          "url":"URL to guidelines usually",
          "group":"Group for this test.(Java, Perl, etc.)",
          "text":"Check description that shows on review template",
+         "deprecates":["DeprecatedTest", ...]
          "type":"MUST"|"SHOULD",
          "result":"pass"|"fail"|"inconclusive",
          "extra_output":"text",
