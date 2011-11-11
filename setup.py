@@ -7,7 +7,7 @@ from distutils.core import setup
 
 
 setup(
-    name = 'FedoraReview',
+    name = 'fedora-review',
     description = 'Tools to help review packages for inclusion in Fedora',
     description_long = '',
     data_files = [('/usr/share/man/man1/', [ 'fedora-review.1' ] ) ],
