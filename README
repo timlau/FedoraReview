@@ -8,7 +8,7 @@ Like:
 - Downloading SRPM & SPEC from Bugzilla report
 - Download upstream source
 - Check md5sums
-- Do a total review report will both manual & automated checks, ready to
+- Generate review report will both manual & automated checks, ready to
   complete and paste into the Bugzilla report.
 
 fedora-review is still under heavy development.

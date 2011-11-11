@@ -11,6 +11,8 @@ BuildArch:  noarch
 
 BuildRequires:  python-devel
 Requires:       python-straight-plugin
+Requires:       python-bugzilla
+Requires:       fedora-packager
 
 %description
 FedoraReview: Tools to help review packages for inclusion in Fedora
@@ -23,7 +25,7 @@ Like:
     * Downloading SRPM & SPEC from Bugzilla report
     * Download upstream source
     * Check md5sums
-    * Do a total review report will both manual & automated checks,
+    * Generate a review report will both manual & automated checks,
       ready to complete and paste into the Bugzilla report.
 
 This tool can be extended with a collection of plugins for each
