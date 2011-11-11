@@ -1,0 +1,4 @@
+This directory contains some example external plugins
+
+- ext1.sh - mock external plugin that doesn't really do anything
+- ext2.pl - example plugin doing few perl related checks

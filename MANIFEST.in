@@ -1,1 +1,2 @@
 include COPYING TODO README AUTHORS fedora-review.spec
+include api/README api/examples/*
