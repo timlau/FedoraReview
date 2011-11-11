@@ -1,15 +1,16 @@
-Name:		FedoraReview
-Version:	0.1.0
-Release:	1%{?dist}
-Summary:	Review tool for fedora rpm packages 
+Name:       fedora-review
+Version:    0.1.0
+Release:    1%{?dist}
+Summary:    Review tool for fedora rpm packages
 
-License:	GPLv2+
-URL:		https://fedorahosted.org/FedoraReview/
-Source0:	https://fedorahosted.org/releases/F/e/FedoraReview-0.1.0.tar.gz
-BuildRoot:	%(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
+License:    GPLv2+
+URL:        https://fedorahosted.org/FedoraReview/
+Source0:    https://fedorahosted.org/releases/F/e/%{name}-%{version}.tar.gz
+BuildRoot:  %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
+BuildArch:  noarch
 
-BuildRequires:	python-devel
-Requires:	python-straight-plugin
+BuildRequires:  python-devel
+Requires:       python-straight-plugin
 
 %description
 FedoraReview: Tools to help review packages for inclusion in Fedora
@@ -23,10 +24,11 @@ Like:
     * Download upstream source
     * Check md5sums
     * Do a total review report will both manual & automated checks,
-      ready to complete and paste into the Bugzilla report. 
+      ready to complete and paste into the Bugzilla report.
 
-This tool can and i extended with a collection of plugin for each 
-programming language.
+This tool can be extended with a collection of plugins for each
+programming language. There is also support for external plugins that
+can be written in any language supporting JSON format.
 
 %prep
 %setup -q
@@ -38,15 +40,18 @@ programming language.
 rm -rf $RPM_BUILD_ROOT
 %{__python} setup.py install -O1 --skip-build --root $RPM_BUILD_ROOT
 
+install -d -m755 $RPM_BUILD_ROOT/%{_datadir}/%{name}
+
 %clean
 rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root,-)
-%doc COPYING AUTHORS
+%doc COPYING AUTHORS TODO README
 %{python_sitelib}/*
 %{_bindir}/fedora-review
 %{_mandir}/man1/%{name}.1.*
+%dir %{_datadir}/%{name}
 
 %changelog
 * Thu Nov 10 2011 Pierre-Yves Chibon <pingou@pingoured.fr> - 0.1.0-1
