@@ -54,7 +54,8 @@ class Settings(object):
     # Default bugzilla userid
     bz_user = ''
     mock_config = 'fedora-rawhide-i386'
-    ext_dirs =  "/usr/share/FedoraReview/plugins:%s" % os.environ['HOME'] + "/.config/FedoraReview/plugins"
+    ext_dirs =  "/usr/share/fedora-review/plugins:%s" % os.environ['HOME'] \
+        + "/.config/fedora-review/plugins"
 
     def __init__(self):
         '''Constructor of the Settings object.
@@ -66,7 +67,7 @@ class Settings(object):
                     'bz_user' : self.bz_user,
                     'mock_config' : self.mock_config,
                     'ext_dirs' : self.ext_dirs}
-        self.load_config('.config/FedoraReview/settings', 'review')
+        self.load_config('.config/fedora-review/settings', 'review')
 
     def load_config(self, configfile, sec):
         '''Load the configuration in memory.
