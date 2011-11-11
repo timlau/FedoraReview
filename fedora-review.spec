@@ -9,7 +9,7 @@ Source0:    https://fedorahosted.org/releases/F/e/%{name}-%{version}.tar.gz
 BuildRoot:  %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 BuildArch:  noarch
 
-BuildRequires:  python-devel
+BuildRequires:  python2-devel
 Requires:       python-straight-plugin
 Requires:       python-bugzilla
 Requires:       fedora-packager
@@ -42,18 +42,19 @@ can be written in any language supporting JSON format.
 rm -rf $RPM_BUILD_ROOT
 %{__python} setup.py install -O1 --skip-build --root $RPM_BUILD_ROOT
 
-install -d -m755 $RPM_BUILD_ROOT/%{_datadir}/%{name}
+install -d -m755 $RPM_BUILD_ROOT/%{_datadir}/%{name}/plugins
 
 %clean
 rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root,-)
-%doc COPYING AUTHORS TODO README
+%doc COPYING AUTHORS TODO README api
 %{python_sitelib}/*
 %{_bindir}/fedora-review
 %{_mandir}/man1/%{name}.1.*
 %dir %{_datadir}/%{name}
+%dir %{_datadir}/%{name}/plugins
 
 %changelog
 * Thu Nov 10 2011 Pierre-Yves Chibon <pingou@pingoured.fr> - 0.1.0-1
