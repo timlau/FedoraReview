@@ -5,7 +5,8 @@ Summary:    Review tool for fedora rpm packages
 
 License:    GPLv2+
 URL:        https://fedorahosted.org/FedoraReview/
-Source0:    https://fedorahosted.org/releases/F/e/%{name}-%{version}.tar.gz
+Source0:    https://fedorahosted.org/released/FedoraReview/%{name}-%{version}.tar.gz
+
 BuildRoot:  %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 BuildArch:  noarch
 
@@ -34,6 +35,7 @@ can be written in any language supporting JSON format.
 
 %prep
 %setup -q
+chmod -x api/examples/*
 
 %build
 %{__python} setup.py build
