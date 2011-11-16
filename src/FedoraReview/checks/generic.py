@@ -461,8 +461,8 @@ listed in the exceptions section of Packaging Guidelines.'
                 'which', 'xz']
             intersec = list(set(brequires).intersection(set(pkg_by_default)))
             if intersec:
-               self.set_passed(False, 'These BR are not needed: %s' % (
-               ' '.join(intersec)))
+                self.set_passed(False, 'These BR are not needed: %s' % (
+                ' '.join(intersec)))
             else:
                 self.set_passed(True)
         else:
