@@ -210,7 +210,7 @@ class CheckNoKernelModules(CCppCheckBase):
     def __init__(self, base):
         CCppCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#No_External_Kernel_Modules'
-        self.text = 'Package does not contains kernel modules.'
+        self.text = 'Package does not contain kernel modules.'
         self.automatic = False
         self.type = 'MUST'
 
