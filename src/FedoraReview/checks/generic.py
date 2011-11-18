@@ -52,7 +52,7 @@ class CheckBase(Helpers):
     def run(self):
         raise NotImplementedError()
 
-    def set_passed(self, result, output_extra = None):
+    def set_passed(self, result, output_extra=None):
         '''
         Set if the test is passed, failed or N/A
         and set optional extra output to be shown in repost
@@ -122,9 +122,11 @@ class CheckBase(Helpers):
                     result[rpm].append(fn)
         return result
 
+
 class CheckName(CheckBase):
     '''
-    MUST: The package must be named according to the Package Naming Guidelines .
+    MUST: The package must be named according to the Package Naming
+    Guidelines.
     http://fedoraproject.org/wiki/Packaging/NamingGuidelines
     '''
     def __init__(self, base):
@@ -147,6 +149,7 @@ class CheckName(CheckBase):
             self.set_passed(passed)
         else:
             self.set_passed(passed, '%s\n%s' % (self.spec.name, output))
+
 
 class CheckBuildroot(CheckBase):
     '''
@@ -229,6 +232,7 @@ class CheckIllegalSpecTags(CheckBase):
         else:
             self.set_passed(passed)
 
+
 class CheckClean(CheckBase):
     '''
     http://fedoraproject.org/wiki/Packaging/Guidelines#.25clean
@@ -254,6 +258,7 @@ class CheckClean(CheckBase):
                         break
         self.set_passed(passed, msg)
 
+
 class CheckInstall(CheckBase):
     '''
     http://fedoraproject.org/wiki/EPEL/GuidelinesAndPolicies#Prepping_BuildRoot_For_.25install
@@ -278,11 +283,12 @@ class CheckInstall(CheckBase):
                         break
         self.set_passed(passed, msg)
 
+
 class CheckDefattr(CheckBase):
     '''
-    MUST: Permissions on files must be set properly.
-    Executables should be set with executable permissions, for example.
-    Every %files section must include a %defattr(...) line.
+    MUST: Permissions on files must be set properly.  Executables
+    should be set with executable permissions, for example.  Every
+    %files section must include a %defattr(...) line.
     http://fedoraproject.org/wiki/Packaging/Guidelines#FilePermissions
     Update: 29-04-2011 This is only for pre rpm 4.4 that this is needed
     '''
@@ -310,12 +316,14 @@ class CheckDefattr(CheckBase):
         else:
             self.set_passed(passed, output)
 
+
 class CheckSourceMD5(CheckBase):
     '''
-    MUST: The sources used to build the package must match the upstream source,
-    as provided in the spec URL. Reviewers should use md5sum for this task.
-    If no upstream URL can be specified for this package,
-    please see the Source URL Guidelines for how to deal with this.
+    MUST: The sources used to build the package must match the
+    upstream source, as provided in the spec URL. Reviewers should use
+    md5sum for this task.  If no upstream URL can be specified for
+    this package, please see the Source URL Guidelines for how to deal
+    with this.
     http://fedoraproject.org/wiki/Packaging/SourceURL
     '''
     def __init__(self, base):
@@ -344,8 +352,8 @@ class CheckSourceMD5(CheckBase):
 
 class CheckBuild(CheckBase):
     '''
-    MUST: The package MUST successfully compile and build into binary rpms
-    on at least one primary architecture.
+    MUST: The package MUST successfully compile and build into binary
+    rpms on at least one primary architecture.
     http://fedoraproject.org/wiki/Packaging/Guidelines#Architecture_Support
     '''
     def __init__(self, base):
@@ -361,10 +369,11 @@ class CheckBuild(CheckBase):
         else:
             self.set_passed(False)
 
+
 class CheckRpmLint(CheckBase):
     '''
-    MUST: rpmlint must be run on the source rpm and all binary rpms the build produces.
-    The output should be posted in the review.
+    MUST: rpmlint must be run on the source rpm and all binary rpms
+    the build produces.  The output should be posted in the review.
     http://fedoraproject.org/wiki/Packaging/Guidelines#rpmlint
     '''
     def __init__(self, base):
@@ -450,8 +459,9 @@ class CheckRequires(CheckBase):
 class CheckBuildRequires(CheckBase):
     '''
     MUST: All build dependencies must be listed in BuildRequires,
-    except for any that are listed in the exceptions section of the Packaging Guidelines
-    Inclusion of those as BuildRequires is optional. Apply common sense.
+    except for any that are listed in the exceptions section of the
+    Packaging Guidelines Inclusion of those as BuildRequires is
+    optional. Apply common sense.
     http://fedoraproject.org/wiki/Packaging/Guidelines#Exceptions_2
     '''
     def __init__(self, base):
@@ -465,7 +475,7 @@ listed in the exceptions section of Packaging Guidelines.'
     def run(self):
         if self.srpm.is_build and not self.srpm.build_failed:
             brequires = self.spec.find_tag("BuildRequires")
-            pkg_by_default = ['bash', 'bzip2', 'coreutils' ,'cpio', 'diffutils',
+            pkg_by_default = ['bash', 'bzip2', 'coreutils', 'cpio', 'diffutils',
                 'fedora-release', 'findutils', 'gawk', 'gcc', 'gcc-c++',
                 'grep', 'gzip', 'info', 'make', 'patch', 'redhat-rpm-config',
                 'rpm-build', 'sed', 'shadow-utils', 'tar', 'unzip', 'util-linux-ng',
@@ -508,8 +518,9 @@ class CheckMakeinstall(CheckBase):
 
 class CheckLocale(CheckBase):
     '''
-    MUST: The spec file MUST handle locales properly.
-    This is done by using the %find_lang macro. Using %{_datadir}/locale/* is strictly forbidden.
+    MUST: The spec file MUST handle locales properly.  This is done by
+    using the %find_lang macro. Using %{_datadir}/locale/* is strictly
+    forbidden.
     http://fedoraproject.org/wiki/Packaging/Guidelines#Handling_Locale_Files
     '''
     def __init__(self, base):
@@ -540,7 +551,8 @@ class CheckChangelogFormat(CheckBase):
 
 class CheckLicenseField(CheckBase):
     '''
-    MUST: The License field in the package spec file must match the actual license.
+    MUST: The License field in the package spec file must match the
+    actual license.
     http://fedoraproject.org/wiki/Packaging/LicensingGuidelines#ValidLicenseShortNames
     '''
     def __init__(self, base):
@@ -553,8 +565,9 @@ class CheckLicenseField(CheckBase):
 
 class CheckLicensInDoc(CheckBase):
     '''
-    MUST: If (and only if) the source package includes the text of the license(s) in its own file,
-    then that file, containing the text of the license(s) for the package must be included in %doc.
+    MUST: If (and only if) the source package includes the text of the
+    license(s) in its own file, then that file, containing the text of
+    the license(s) for the package must be included in %doc.
     http://fedoraproject.org/wiki/Packaging/LicensingGuidelines#License_Text
     '''
     def __init__(self, base):
@@ -652,9 +665,9 @@ class CheckBuildCompilerFlags(CheckBase):
 
 class CheckOwnDirs(CheckBase):
     '''
-    MUST: A package must own all directories that it creates.
-    If it does not create a directory that it uses,
-    then it should require a package which does create that directory.
+    MUST: A package must own all directories that it creates.  If it
+    does not create a directory that it uses, then it should require a
+    package which does create that directory.
     http://fedoraproject.org/wiki/Packaging/Guidelines#FileAndDirectoryOwnership
     '''
     def __init__(self, base):
@@ -667,13 +680,15 @@ class CheckOwnDirs(CheckBase):
 
 class CheckOwnOther(CheckBase):
     '''
-    MUST: Packages must not own files or directories already owned by other packages.
-    The rule of thumb here is that the first package to be installed should own the files
-    or directories that other packages may rely upon.
-    This means, for example, that no package in Fedora should ever share ownership
-    with any of the files or directories owned by the filesystem or man package.
-    If you feel that you have a good reason to own a file or directory that another package owns,
-    then please present that at package review time.
+    MUST: Packages must not own files or directories already owned by
+    other packages.  The rule of thumb here is that the first package
+    to be installed should own the files or directories that other
+    packages may rely upon.  This means, for example, that no package
+    in Fedora should ever share ownership with any of the files or
+    directories owned by the filesystem or man package.  If you feel
+    that you have a good reason to own a file or directory that
+    another package owns, then please present that at package review
+    time.
     http://fedoraproject.org/wiki/Packaging/Guidelines#FileAndDirectoryOwnership
     '''
     def __init__(self, base):
@@ -698,8 +713,9 @@ class CheckDirectoryRequire(CheckBase):
 
 class CheckFilesDuplicates(CheckBase):
     '''
-    MUST: A Fedora package must not list a file more than once in the spec file's %files listings.
-    (Notable exception: license texts in specific situations)
+    MUST: A Fedora package must not list a file more than once in the
+    spec file's %files listings.  (Notable exception: license texts in
+    specific situations)
     http://fedoraproject.org/wiki/Packaging/Guidelines#DuplicateFiles
     '''
     def __init__(self, base):
@@ -724,11 +740,12 @@ class CheckFilesDuplicates(CheckBase):
         except Exception, er:
             self.set_passed('inconclusive')
 
+
 class CheckFilePermissions(CheckBase):
     '''
-    MUST: Permissions on files must be set properly.
-    Executables should be set with executable permissions,
-    for example. Every %files section must include a %defattr(...) line
+    MUST: Permissions on files must be set properly.  Executables
+    should be set with executable permissions, for example. Every
+    %files section must include a %defattr(...) line
     http://fedoraproject.org/wiki/Packaging/Guidelines#FilePermissions
     '''
     def __init__(self, base):
@@ -779,6 +796,7 @@ class CheckNoConfigInUsr(CheckBase):
 
         self.set_passed(passed, extra)
 
+
 class CheckConfigNoReplace(CheckBase):
     '''
     http://fedoraproject.org/wiki/Packaging/Guidelines#Configuration_files
@@ -811,12 +829,12 @@ class CheckConfigNoReplace(CheckBase):
         self.set_passed(passed, extra)
 
 
-
 class CheckDesktopInstall(CheckBase):
     '''
-    MUST: Packages containing GUI applications must include a %{name}.desktop file,
-    and that file must be properly installed with desktop-file-install in the %install section.
-    If you feel that your packaged GUI application does not need a .desktop file,
+    MUST: Packages containing GUI applications must include a
+    %{name}.desktop file, and that file must be properly installed
+    with desktop-file-install in the %install section.  If you feel
+    that your packaged GUI application does not need a .desktop file,
     you must put a comment in the spec file with your explanation.
     http://fedoraproject.org/wiki/Packaging/Guidelines#desktop
     '''
@@ -842,7 +860,6 @@ class CheckDesktopInstall(CheckBase):
         self.set_passed(passed)
 
 
-
 class CheckSysVScripts(CheckBase):
     '''
     http://fedoraproject.org/wiki/Packaging:SysVInitScript
@@ -853,7 +870,6 @@ class CheckSysVScripts(CheckBase):
         self.text = 'Package contains a SysV-style init script if in need of one.'
         self.automatic = False
         self.type = 'MUST'
-
 
 
 class CheckUTF8Filenames(CheckBase):
@@ -880,8 +896,9 @@ class CheckUTF8Filenames(CheckBase):
 class CheckLargeDocs(CheckBase):
     '''
     MUST: Large documentation files must go in a -doc subpackage.
-    (The definition of large is left up to the packager's best judgement,
-    but is not restricted to size. Large can refer to either size or quantity).
+    (The definition of large is left up to the packager's best
+    judgement, but is not restricted to size. Large can refer to
+    either size or quantity).
     http://fedoraproject.org/wiki/Packaging/Guidelines#PackageDocumentation
     '''
     def __init__(self, base):
@@ -892,11 +909,11 @@ class CheckLargeDocs(CheckBase):
         self.type = 'MUST'
 
 
-
 class CheckDocRuntime(CheckBase):
     '''
-    MUST: If a package includes something as %doc, it must not affect the runtime of the application.
-    To summarize: If it is in %doc, the program must run properly if it is not present.
+    MUST: If a package includes something as %doc, it must not affect
+    the runtime of the application.  To summarize: If it is in %doc,
+    the program must run properly if it is not present.
     http://fedoraproject.org/wiki/Packaging/Guidelines#PackageDocumentation
     '''
     def __init__(self, base):
@@ -905,7 +922,6 @@ class CheckDocRuntime(CheckBase):
         self.text = 'Package uses nothing in %doc for runtime.'
         self.automatic = False
         self.type = 'MUST'
-
 
 
 class CheckBundledLibs(CheckBase):
@@ -921,11 +937,11 @@ class CheckBundledLibs(CheckBase):
         self.type = 'MUST'
 
 
-
 class CheckReqPkgConfig(CheckBase):
     '''
-    rpm in EPEL5 and below does not automatically create dependencies for pkgconfig files.
-    Packages containing pkgconfig(.pc) files must Requires: pkgconfig (for directory ownership and usability).
+    rpm in EPEL5 and below does not automatically create dependencies
+    for pkgconfig files.  Packages containing pkgconfig(.pc) files
+    must Requires: pkgconfig (for directory ownership and usability).
     http://fedoraproject.org/wiki/EPEL/GuidelinesAndPolicies#EL5
     '''
     def __init__(self, base):
@@ -997,10 +1013,11 @@ class CheckFullVerReqSub(CheckBase):
 
 class CheckUsefulDebuginfo(CheckBase):
     '''
-    Packages should produce useful -debuginfo packages, or explicitly disable them
-    when it is not possible to generate a useful one but rpmbuild would do it anyway.
-    Whenever a -debuginfo package is explicitly disabled,
-    an explanation why it was done is required in the specfile.
+    Packages should produce useful -debuginfo packages, or explicitly
+    disable them when it is not possible to generate a useful one but
+    rpmbuild would do it anyway.  Whenever a -debuginfo package is
+    explicitly disabled, an explanation why it was done is required in
+    the specfile.
     http://fedoraproject.org/wiki/Packaging/Guidelines#Debuginfo_packages
     http://fedoraproject.org/wiki/Packaging:Debuginfo
     '''
@@ -1028,11 +1045,13 @@ class CheckNoConflicts(CheckBase):
 
 class CheckExcludeArch(CheckBase):
     '''
-    MUST: If the package does not successfully compile, build or work on an architecture,
-    then those architectures should be listed in the spec in ExcludeArch.
-    Each architecture listed in ExcludeArch MUST have a bug filed in bugzilla,
-    describing the reason that the package does not compile/build/work on that architecture.
-    The bug number MUST be placed in a comment, next to the corresponding ExcludeArch line.
+    MUST: If the package does not successfully compile, build or work
+    on an architecture, then those architectures should be listed in
+    the spec in ExcludeArch.  Each architecture listed in ExcludeArch
+    MUST have a bug filed in bugzilla, describing the reason that the
+    package does not compile/build/work on that architecture.  The bug
+    number MUST be placed in a comment, next to the corresponding
+    ExcludeArch line.
     http://fedoraproject.org/wiki/Packaging/Guidelines#Architecture_Build_Failures
     '''
     def __init__(self, base):
@@ -1041,7 +1060,6 @@ class CheckExcludeArch(CheckBase):
         self.text = 'Package is not known to require ExcludeArch.'
         self.automatic = False
         self.type = 'MUST'
-
 
 
 class CheckPackageInstalls(CheckBase):
@@ -1160,7 +1178,7 @@ class CheckSourceUrl(CheckBase):
         passed = True
         output = ""
         for source in self.sources.get_all():
-            if source.URL: # this source should have an upstream file
+            if source.URL:  # this source should have an upstream file
                 if not source.downloaded:
                     passed = False
                     output += "%s\n" % source.URL
@@ -1223,6 +1241,7 @@ class CheckTestSuites(CheckBase):
         self.text = '%check is present and all tests pass.'
         self.automatic = False
         self.type = 'SHOULD'
+
 
 class CheckBuildInMock(CheckBase):
     '''
@@ -1304,7 +1323,8 @@ class CheckUseGlobal(CheckBase):
 class CheckScriptletSanity(CheckBase):
     '''
     SHOULD: If scriptlets are used, those scriptlets must be sane.
-    This is vague, and left up to the reviewers judgement to determine sanity.
+    This is vague, and left up to the reviewers judgement to determine
+    sanity.
     http://fedoraproject.org/wiki/Packaging/Guidelines#Scriptlets
     '''
     def __init__(self, base):
@@ -1321,11 +1341,11 @@ class CheckScriptletSanity(CheckBase):
 
 class CheckPkgConfigFiles(CheckBase):
     '''
-    SHOULD: The placement of pkgconfig(.pc) files depends on their usecase,
-    and this is usually for development purposes, so should be placed
-    in a -devel pkg.
-    A reasonable exception is that the main pkg itself is a devel tool
-    not installed in a user runtime, e.g. gcc or gdb.
+    SHOULD: The placement of pkgconfig(.pc) files depends on their
+    usecase, and this is usually for development purposes, so should
+    be placed in a -devel pkg.  A reasonable exception is that the
+    main pkg itself is a devel tool not installed in a user runtime,
+    e.g. gcc or gdb.
     http://fedoraproject.org/wiki/Packaging/Guidelines#PkgconfigFiles
     '''
     def __init__(self, base):
@@ -1352,11 +1372,12 @@ class CheckPkgConfigFiles(CheckBase):
                     extra += "%s : %s\n" % (rpm, fn)
         self.set_passed(passed, extra)
 
+
 class CheckFileRequires(CheckBase):
     '''
-    SHOULD: If the package has file dependencies outside of
-    /etc, /bin, /sbin, /usr/bin, or /usr/sbin consider requiring
-    the package which provides the file instead of the file itself.
+    SHOULD: If the package has file dependencies outside of /etc,
+    /bin, /sbin, /usr/bin, or /usr/sbin consider requiring the package
+    which provides the file instead of the file itself.
     http://fedoraproject.org/wiki/Packaging/Guidelines#FileDeps
     '''
     def __init__(self, base):
@@ -1381,8 +1402,9 @@ class CheckTimeStamps(CheckBase):
 
 class CheckManPages(CheckBase):
     '''
-    SHOULD: your package should contain man pages for binaries/scripts.
-    If it doesn't, work with upstream to add them where they make sense.
+    SHOULD: your package should contain man pages for binaries or
+    scripts.  If it doesn't, work with upstream to add them where they
+    make sense.
     http://fedoraproject.org/wiki/Packaging/Guidelines#Man_pages
     '''
     def __init__(self, base):
