@@ -236,11 +236,12 @@ class CheckClean(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#.25clean'
-        self.text = 'Package has a %clean section, which contains rm -rf %{buildroot} (or $RPM_BUILD_ROOT).(EPEL6 & Fedora < 13)'
+        self.text = 'Package has no %clean section with rm -rf %{buildroot} (or $RPM_BUILD_ROOT)'
         self.automatic = True
 
     def run(self):
-        passed = False
+        passed = True
+        msg = "Clean would be needed if support for EPEL is required"
         sec_clean = self.spec.get_section('%clean')
         for sec in sec_clean:
             sec_lines = sec_clean[sec]
@@ -248,9 +249,10 @@ class CheckClean(CheckBase):
             if sec_lines:
                 for line in sec_lines:
                     if regex.search(line):
-                        passed = True
+                        passed = False
+                        msg = "Clean is needed only if supporting EPEL"
                         break
-        self.set_passed(passed)
+        self.set_passed(passed, msg)
 
 class CheckInstall(CheckBase):
     '''
