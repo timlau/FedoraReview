@@ -4,6 +4,7 @@ Setup script
 """
 
 from distutils.core import setup
+from src.FedoraReview import __version__
 
 
 setup(
@@ -11,7 +12,7 @@ setup(
     description = 'Tools to help review packages for inclusion in Fedora',
     description_long = '',
     data_files = [('/usr/share/man/man1/', [ 'fedora-review.1' ] ) ],
-    version = '0.1.0',
+    version = __version__,
     license = 'GPLv2+',
     download_url = 'https://fedorahosted.org/releases/F/e/FedoraReview/',
     url = 'https://fedorahosted.org/FedoraReview/',

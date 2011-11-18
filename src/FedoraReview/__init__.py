@@ -34,6 +34,8 @@ import platform
 import ConfigParser
 from urlparse import urlparse
 
+from .version import __version__
+
 SECTIONS = ['build', 'changelog', 'check', 'clean', 'description', 'files',
                'install', 'package', 'prep', 'pre', 'post', 'preun', 'postun',
                'trigger', 'triggerin', 'triggerun', 'triggerprein',
