@@ -155,12 +155,16 @@ class CheckBuildroot(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#BuildRoot_tag'
-        self.text = 'Buildroot is correct (EPEL5 & Fedora < 10)'
+        self.text = 'Buildroot is not present'
         self.automatic = True
 
     def run(self):
         br_tags = self.spec.find_tag('BuildRoot', split_tag=False)
-        if len(br_tags) > 1:
+        if len(br_tags) == 0:
+            self.set_passed(True, "Unless packager wants to package"
+                            " for EPEL5 this is fine")
+            return
+        elif len(br_tags) > 1:
             self.set_passed(False, "Multiple BuildRoot definitions found")
             return
 
@@ -170,15 +174,16 @@ class CheckBuildroot(CheckBase):
         '%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)',
         '%{_tmppath}/%{name}-%{version}-%{release}-root']
         if br in legal_buildroots:
-            self.set_passed(True, br)
+            self.set_passed(False, "Buildroot is not needed unless"
+                            " packager plans to package for EPEL5")
         else:
-            self.set_passed(False, br)
+            self.set_passed(False, "Invalid buildroot found: %s" % br)
 
     def is_applicable(self):
         '''
         Buildroot tag is ignored for Fedora > 10, but is needed for EPEL5
         '''
-        return len(self.spec.find_tag('BuildRoot')) > 0
+        return True
 
 
 class CheckSpecName(CheckBase):
@@ -821,7 +826,7 @@ class CheckDesktopInstall(CheckBase):
         check if this test is applicable
         '''
         return self.has_files('*.desktop')
-    
+
     def run(self):
         passed = True
         regex = re.compile(r'(desktop-file-install|desktop-file-validate)(.*\\\n)*.*desktop')
