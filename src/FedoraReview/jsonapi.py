@@ -76,6 +76,7 @@ class JSONPlugin(Helpers):
     def __init__(self, base, plugin_path):
         Helpers.__init__(self)
         self.plugin_path = plugin_path
+        self.version = None
         self.spec = base.spec
         self.srpm = base.srpm
         self.sources = base.sources
@@ -147,6 +148,9 @@ class JSONPlugin(Helpers):
         """Handle incomming commands and results"""
         if reply.command == "results":
             self.__debug("Processing results")
+            if hasattr(reply, "version"):
+                self.version = reply.version
+
             for result in reply.checks:
                 extra = None
                 if "output_extra" in result:
