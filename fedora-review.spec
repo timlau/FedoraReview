@@ -1,13 +1,12 @@
 Name:       fedora-review
 Version:    0.1.0
-Release:    1%{?dist}
+Release:    2%{?dist}
 Summary:    Review tool for fedora rpm packages
 
 License:    GPLv2+
 URL:        https://fedorahosted.org/FedoraReview/
 Source0:    https://fedorahosted.org/released/FedoraReview/%{name}-%{version}.tar.gz
 
-BuildRoot:  %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 BuildArch:  noarch
 
 BuildRequires:  python2-devel
@@ -41,16 +40,11 @@ chmod -x api/examples/*
 %{__python} setup.py build
 
 %install
-rm -rf $RPM_BUILD_ROOT
 %{__python} setup.py install -O1 --skip-build --root $RPM_BUILD_ROOT
 
 install -d -m755 $RPM_BUILD_ROOT/%{_datadir}/%{name}/plugins
 
-%clean
-rm -rf $RPM_BUILD_ROOT
-
 %files
-%defattr(-,root,root,-)
 %doc COPYING AUTHORS TODO README api
 %{python_sitelib}/*
 %{_bindir}/fedora-review
@@ -59,6 +53,9 @@ rm -rf $RPM_BUILD_ROOT
 %dir %{_datadir}/%{name}/plugins
 
 %changelog
+* Wed Nov 16 2011 Stanislav Ochotnicky <sochotnicky@redhat.com> - 0.1.0-2
+- Remove things not needed in el6+
+
 * Thu Nov 10 2011 Pierre-Yves Chibon <pingou@pingoured.fr> - 0.1.0-1
 - Initial packaging work for Fedora
 
