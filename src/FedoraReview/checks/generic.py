@@ -299,12 +299,14 @@ class CheckDefattr(CheckBase):
         for sec in sec_files:
             sec_lines = sec_files[sec]
             if sec_lines:
-                if not sec_lines[0].startswith('%defattr('):
+                if sec_lines[0].startswith('%defattr('):
                     passed = False
-                    output = 'Missing defattr(....) in %s section' % sec
+                    output = 'defattr(....) present in %s section. This is'
+                    ' OK if packaging for EPEL5. Otherwise not needed' % sec
                     break
         if passed:
-            self.set_passed(passed)
+            self.set_passed(passed, "Note: defattr macros not found. They "
+                            "would be needed for EPEL5")
         else:
             self.set_passed(passed, output)
 
@@ -319,7 +321,7 @@ class CheckSourceMD5(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/SourceURL'
-        self.text = 'Sources used to build the package matches the upstream source, as provided in the spec URL.'
+        self.text = 'Sources used to build the package match the upstream source, as provided in the spec URL.'
         self.automatic = True
 
     def run(self):
