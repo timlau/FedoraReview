@@ -46,9 +46,9 @@ class ReviewHelper:
 
     def __get_args(self):
         parser = argparse.ArgumentParser(description='Review a Fedora Package')
-        parser.add_argument('-b','--bug', metavar='[bug]',
+        parser.add_argument('-b', '--bug', metavar='[bug]',
                     help='the bug number contain the package review')
-        parser.add_argument('-w','--workdir',
+        parser.add_argument('-w', '--workdir',
                     default=self.settings.work_dir, metavar='[dir]',
                     help='Work directory (default = ~/tmp/reviewhelper/')
         parser.add_argument('--other-bz', default=None, metavar='[bugzilla url]', dest='other_bz',
@@ -59,15 +59,15 @@ class ReviewHelper:
                     help = 'do not redownload files from bugzilla, use the ones in the cache')
         parser.add_argument('--nobuild', action='store_true', dest='nobuild',
                     help = 'do not rebuild the srpm, use currently build ones')
-        parser.add_argument('-u','--user', metavar='[userid]', default = self.settings.bz_user,
+        parser.add_argument('-u', '--user', metavar='[userid]', default = self.settings.bz_user,
                     help='The Fedora Bugzilla userid')
-        parser.add_argument('-p','--password', metavar='[password]',
+        parser.add_argument('-p', '--password', metavar='[password]',
                     help='The Fedora Bugzilla password')
-        parser.add_argument('-v','--verbose',  action='store_true',
+        parser.add_argument('-v', '--verbose',  action='store_true',
                     help='Show more output')
         parser.add_argument('--no-report',  action='store_true', dest='noreport',
                     help='Do not make a review report')
-        parser.add_argument('-n','--name', metavar='<name prefix>',
+        parser.add_argument('-n', '--name', metavar='<name prefix>',
                     help='run on local <name prefix>.spec & <name prefix>*.src.rpm located in work dir')
         parser.add_argument('--mock-config', metavar='<mock configuration>',
                     default = self.settings.mock_config, dest='mock_config',
@@ -83,7 +83,7 @@ class ReviewHelper:
             found = True
             for tag in sources:
                 if tag.startswith('Source'):
-                   self.checks.sources.add(tag,sources[tag])
+                   self.checks.sources.add(tag, sources[tag])
                    found = True
         return found
 
