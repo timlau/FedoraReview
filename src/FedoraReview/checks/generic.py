@@ -260,11 +260,12 @@ class CheckInstall(CheckBase):
     '''
     def __init__(self, base):
         CheckBase.__init__(self, base)
-        self.text = 'Package run rm -rf %{buildroot} (or $RPM_BUILD_ROOT) and the beginning of %install. (EPEL5)'
+        self.text = "Package does not run rm -rf %{buildroot} (or $RPM_BUILD_ROOT) at the beginning of %install."
         self.automatic = True
 
     def run(self):
-        passed = False
+        passed = True
+        msg = "rm -rf would be needed if support for EPEL5 is required"
         sec_clean = self.spec.get_section('%install')
         for sec in sec_clean:
             sec_lines = sec_clean[sec]
@@ -272,9 +273,10 @@ class CheckInstall(CheckBase):
             if sec_lines:
                 for line in sec_lines:
                     if regex.search(line):
-                        passed = True
+                        passed = False
+                        msg = "rm -rf is only needed if supporting EPEL5"
                         break
-        self.set_passed(passed)
+        self.set_passed(passed, msg)
 
 class CheckDefattr(CheckBase):
     '''
