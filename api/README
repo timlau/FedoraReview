@@ -5,7 +5,8 @@ plugins. First a few basic rules:
 
  * Communication is done through stdin/stdout/stderr
  * API is using JSON for encoding data (see json.org)
- * Plugin is can exit without providing any output
+ * Plugin is can exit without providing any output (though empty reply
+   is preferred)
  * Communication is serial and plugin can expect reply to every API
    call (except final "results" call)
  * Messages are separated by newlines (0x0A, LF, \n character)
@@ -55,6 +56,7 @@ Results object ::=
 {
     "command":"results",
     "supported_api":1,
+    "version":"version of plugin", # optional, but preferred
     "checks":[
         {"name":"CheckName",
          "url":"URL to guidelines usually",
