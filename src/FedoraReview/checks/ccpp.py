@@ -42,6 +42,10 @@ class CheckLDConfig(CCppCheckBase):
             passed = False
             extra = ""
             sections = self.spec.get_section(source)
+            if not source in sections:
+                self.set_passed(False, '/sbin/ldconfig not called in %s' % source)
+                return
+
             for section in sections[source]:
                 if '/sbin/ldconfig' in section:
                     passed = True
@@ -51,7 +55,7 @@ class CheckLDConfig(CCppCheckBase):
                             passed = True
                             break
             if not passed:
-                self.set_passed(False,'/sbin/ldconfig not called in %s' % source)
+                self.set_passed(False, '/sbin/ldconfig not called in %s' % source)
                 return
         self.set_passed(True)
 
