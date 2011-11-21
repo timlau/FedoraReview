@@ -307,7 +307,7 @@ class CheckDefattr(CheckBase):
             if sec_lines:
                 if sec_lines[0].startswith('%defattr('):
                     passed = False
-                    output = 'defattr(....) present in %s section. This is'
+                    output = 'defattr(....) present in %s section. This is' \
                     ' OK if packaging for EPEL5. Otherwise not needed' % sec
                     break
         if passed:
