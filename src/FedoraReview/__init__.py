@@ -49,8 +49,8 @@ LOG_ROOT = 'FedoraReview'
 
 class Settings(object):
     """ FedoraReview Config Setting"""
-    # Editor to use to show review report & spec
-    editor = '/usr/bin/xdg-open'
+    # Editor to use to show review report & spec (default use EDITOR env)
+    editor = ''
     # Work dir
     work_dir = '.'
     # Default bugzilla userid
@@ -132,6 +132,7 @@ class Settings(object):
             value = None
             if name in opts:
                 value = parser.get(section, name)
+                setattr(self, name, value)
                 parser.set(section, name, value)
             else:
                 parser.set(section, name, self._dict[name])
