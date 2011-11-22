@@ -31,6 +31,8 @@ import shlex
 import tarfile
 import rpm
 import platform
+import StringIO
+from textwrap import TextWrapper
 import ConfigParser
 from urlparse import urlparse
 
@@ -426,7 +428,7 @@ class SRPMFile(Helpers):
         karg: filename, the name of the file to run rpmlint on
         """
         cmd = 'rpmlint -f .rpmlint %s' % filename
-        sep = "%s\n" % (80 * "=")
+        sep = "\n"
         result = "\nrpmlint %s\n" % os.path.basename(filename)
         result += sep
         out = self._run_cmd(cmd)
@@ -557,7 +559,7 @@ class SpecFile(object):
     def get_from_spec(self, macro):
         ''' Use rpm for a value for a given tag (macro is resolved)'''
         qf = '%{' + macro.upper() + "}\n"  # The RPM tag to search for
-         # get the name
+        # get the name
         cmd = ['rpm', '-q', '--qf', qf, '--specfile', self.filename]
                 # Run the command
         try:
@@ -684,14 +686,27 @@ class TestResult(object):
         self.type = check_type
         self.result = result
         self.output_extra = output_extra
+        self.wrapper = TextWrapper(width=78, subsequent_indent=" "*5,
+                                   break_long_words=False)
+        self.nowrap = ["CheckRpmLint","CheckSourceMD5"]
 
     def get_text(self):
-        ret = "%s: %s %s" % (TEST_STATES[self.result], self.type,
-                             self.text)
+        strbuf = StringIO.StringIO()
+        main_lines = self.wrapper.wrap("%s: %s %s" %
+                                                     (TEST_STATES[self.result],
+                                                      self.type,
+                                                      self.text))
+        strbuf.write("%s" % '\n'.join(main_lines))
         if self.output_extra and self.output_extra != "":
-            for line in self.output_extra.split('\n'):
-                ret += '\n        %s' % line
-        return ret
+            strbuf.write("\n")
+            if self.name in self.nowrap:
+                strbuf.write(self.output_extra)
+            else:
+                extra_lines = self.wrapper.wrap("     Note: %s" %
+                                               self.output_extra)
+                strbuf.write('\n'.join(extra_lines))
+
+        return strbuf.getvalue()
 
 def get_logger():
     return logging.getLogger(LOG_ROOT)
