@@ -25,7 +25,8 @@ import glob
 import logging
 import sys
 import os
-from subprocess import Popen
+import subprocess
+import errno
 
 from FedoraReview import get_logger, do_logger_setup, Settings
 from FedoraReview.bugz import ReviewBug
@@ -105,7 +106,6 @@ class ReviewHelper:
         self.args.name = os.path.basename(self.bug.spec_file).rsplit('.',1)[0]
         self.args.workdir = "%s/%s" % (self.args.workdir, self.args.bug)
         self.__do_report_local(self.args.workdir)
-        self.__show_results()
 
     def __do_report_local(self, file_dir):
         ''' Create a review report on already downloaded .spec & .src.rpm'''
@@ -120,11 +120,27 @@ class ReviewHelper:
                 self.log.error('Cannot find : %s ' % spec_filter)
             if not files_srpm:
                 self.log.error('Cannot find : %s ' % srpm_filter)
+        self.__show_results()
 
     def __show_results(self):
         if self.outfile and self.checks.spec.filename:
-            Popen([self.settings.editor, self.outfile])
-            Popen([self.settings.editor, self.checks.spec.filename])
+            editor = self.settings.editor
+            if editor == '':
+                if 'EDITOR' in os.environ:
+                    editor = os.environ['EDITOR']
+                else:
+                    self.log.error("EDITOR variable not set and no"
+                                   " editor set in configuration")
+                    return
+
+            try:
+                subprocess.call([editor, self.outfile, self.checks.spec.filename])
+            except OSError, e:
+                if e.errno == errno.ENOENT:
+                    self.log.error("EDITOR not set correctly or editor
+                                    configuration is incorrect")
+                    return
+                raise e
 
     def __run_checks(self, spec, srpm):
         self.log.debug("  --> Spec file : %s" % spec)
