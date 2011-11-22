@@ -137,8 +137,8 @@ class ReviewHelper:
                 subprocess.call([editor, self.outfile, self.checks.spec.filename])
             except OSError, e:
                 if e.errno == errno.ENOENT:
-                    self.log.error("EDITOR not set correctly or editor
-                                    configuration is incorrect")
+                    self.log.error("EDITOR not set correctly or editor"
+                                    " configuration is incorrect")
                     return
                 raise e
 
