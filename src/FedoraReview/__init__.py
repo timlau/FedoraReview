@@ -682,13 +682,15 @@ class TestResult(object):
         self.url = url
         self.group = group
         self.deprecates = deprecates
-        self.text = text
+        self.text = re.sub("\s+", " ", text)
         self.type = check_type
         self.result = result
         self.output_extra = output_extra
-        self.wrapper = TextWrapper(width=78, subsequent_indent=" "*5,
-                                   break_long_words=False)
-        self.nowrap = ["CheckRpmLint","CheckSourceMD5"]
+        if self.output_extra:
+            self.output_extra = re.sub("\s+", " ", self.output_extra)
+        self.wrapper = TextWrapper(width=78, subsequent_indent=" " * 5,
+                                   break_long_words=False, )
+        self.nowrap = ["CheckRpmLint", "CheckSourceMD5"]
 
     def get_text(self):
         strbuf = StringIO.StringIO()
@@ -707,6 +709,7 @@ class TestResult(object):
                 strbuf.write('\n'.join(extra_lines))
 
         return strbuf.getvalue()
+
 
 def get_logger():
     return logging.getLogger(LOG_ROOT)
