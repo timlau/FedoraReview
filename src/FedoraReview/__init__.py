@@ -676,6 +676,8 @@ class SpecFile(object):
 
 
 class TestResult(object):
+    nowrap = ["CheckRpmLint", "CheckSourceMD5"]
+
     def __init__(self, name, url, group, deprecates, text, check_type,
                  result, output_extra):
         self.name = name
@@ -686,11 +688,10 @@ class TestResult(object):
         self.type = check_type
         self.result = result
         self.output_extra = output_extra
-        if self.output_extra:
+        if self.output_extra and self.name not in TestResult.nowrap:
             self.output_extra = re.sub("\s+", " ", self.output_extra)
         self.wrapper = TextWrapper(width=78, subsequent_indent=" " * 5,
                                    break_long_words=False, )
-        self.nowrap = ["CheckRpmLint", "CheckSourceMD5"]
 
     def get_text(self):
         strbuf = StringIO.StringIO()
@@ -701,7 +702,7 @@ class TestResult(object):
         strbuf.write("%s" % '\n'.join(main_lines))
         if self.output_extra and self.output_extra != "":
             strbuf.write("\n")
-            if self.name in self.nowrap:
+            if self.name in TestResult.nowrap:
                 strbuf.write(self.output_extra)
             else:
                 extra_lines = self.wrapper.wrap("     Note: %s" %
