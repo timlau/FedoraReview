@@ -347,8 +347,78 @@ class CheckLocalDepmap(JavaCheckBase):
             self.set_passed(True)
         else:
             if result:
-                self.set_passed("inconclusive", "Some comment is used "
-                                    "before mvn-rpmbuild command. Please verify "
-                                    "it explains use of -Dmaven.local.depmap")
+                self.set_passed("inconclusive", """Some comment is
+        used before mvn-rpmbuild command. Please verify it explains
+        use of -Dmaven.local.depmap""")
             else:
                 self.set_passed(False)
+
+
+class CheckBundledJars(JavaCheckBase):
+    """Check for bundled jar/class files in source tarball"""
+
+    def __init__(self, base):
+        JavaCheckBase.__init__(self, base)
+        self.url = 'http://fedoraproject.org/wiki/Packaging:Java#Pre-built_JAR_files_.2F_Other_bundled_software'
+        self.text = """If source tarball includes bundled jar/class
+        files these need to be removed prior to building"""
+        self.automatic = False
+        self.type = 'MUST'
+
+
+class JarFilename(JavaCheckBase):
+    """Check correct naming of jar files in _javadir"""
+
+    def __init__(self, base):
+        JavaCheckBase.__init__(self, base)
+        self.text = """Jar files are installed to %{_javadir}/%{name}.jar"""
+        self.url = 'https://fedoraproject.org/wiki/Packaging:Java#JAR_file_installation'
+        self.automatic = False
+        self.type = 'MUST'
+
+
+class CheckPomInstalled(JavaCheckBase):
+    """Check if pom.xml files from source tarballs are installed"""
+    header = "Maven"
+
+    def __init__(self, base):
+        JavaCheckBase.__init__(self, base)
+        self.text = """If package contains pom.xml files install it
+        (including depmaps) even when building with ant"""
+        self.url = 'https://fedoraproject.org/wiki/Packaging:Java#Maven_pom.xml_files_and_depmaps'
+        self.automatic = False
+        self.type = 'MUST'
+
+
+class CheckCorrectDepmap(JavaCheckBase):
+    """Check if installed pom.xml files have valid add_maven_depmap calls"""
+    header = "Maven"
+
+    def __init__(self, base):
+        JavaCheckBase.__init__(self, base)
+        self.text = """pom files have correct add_maven_depmap call"""
+        self.url = 'https://fedoraproject.org/wiki/Packaging:Java#Maven_pom.xml_files_and_depmaps'
+        self.automatic = False
+        self.type = 'MUST'
+
+
+class CheckUpstremBuildMethod(JavaCheckBase):
+    """Verify package uses upstream preferred build method"""
+
+    def __init__(self, base):
+        JavaCheckBase.__init__(self, base)
+        self.text = """Package uses upstream build method (ant/maven/etc.)"""
+        self.url = 'https://fedoraproject.org/wiki/Packaging:Java'
+        self.automatic = False
+        self.type = 'SHOULD'
+
+
+class CheckNoArch(JavaCheckBase):
+    """Package should be noarch in most cases"""
+
+    def __init__(self, base):
+        JavaCheckBase.__init__(self, base)
+        self.text = """Package has BuildArch: noarch (if possible)"""
+        self.url = 'https://fedoraproject.org/wiki/Packaging:Java'
+        self.automatic = False
+        self.type = 'SHOULD'
