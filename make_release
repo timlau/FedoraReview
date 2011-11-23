@@ -2,7 +2,7 @@
 # reads version from setup.py, create a source tarball and optionally
 # upload to fedorahosted
 
-version=`grep version setup.py | sed "s/.*'\(.*\)'.*/\1/"`
+version=`grep version src/FedoraReview/version.py | sed "s/.*'\(.*\)'.*/\1/"`
 dfile="dist/fedora-review-$version.tar.gz"
 if [ -f ${dfile} ]; then
     rm -v $dfile
