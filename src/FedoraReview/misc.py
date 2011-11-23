@@ -32,8 +32,8 @@ Package Review
 
 Key:
 - = N/A
-x = Check
-! = Problem
+x = Pass
+! = Fail
 ? = Not evaluated
 
 """
