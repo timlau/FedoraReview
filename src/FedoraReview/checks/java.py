@@ -90,6 +90,7 @@ class CheckJavadoc(JavaCheckBase):
         key = self._get_javadoc_sub()
         if not key:
             self.set_passed(False, "No javadoc subpackage present")
+            return
 
         # and now look for at least one html file
         for html in files[key]:
