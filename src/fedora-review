@@ -53,13 +53,15 @@ class ReviewHelper:
                     default=self.settings.work_dir, metavar='[dir]',
                     help='Work directory (default = ~/tmp/reviewhelper/')
         parser.add_argument('--other-bz', default=None, metavar='[bugzilla url]', dest='other_bz',
-                    help='alternative bugzilla URL')
+                    help='Alternative bugzilla URL')
         parser.add_argument('--assign', action='store_true',
                     help = 'Assign the bug and set review flags')
         parser.add_argument('--cache', action='store_true', dest='cache',
-                    help = 'do not redownload files from bugzilla, use the ones in the cache')
+                    help = 'Do not redownload files from bugzilla, use the ones in the cache')
         parser.add_argument('--nobuild', action='store_true', dest='nobuild',
-                    help = 'do not rebuild the srpm, use currently build ones')
+                    help = 'Do not rebuild the srpm, use currently build ones')
+        parser.add_argument('-e', '--edit', action='store_true', dest='edit',
+                    help = 'Run editor on spec file and generated template')
         parser.add_argument('-u', '--user', metavar='[userid]', default = self.settings.bz_user,
                     help='The Fedora Bugzilla userid')
         parser.add_argument('-p', '--password', metavar='[password]',
@@ -69,7 +71,7 @@ class ReviewHelper:
         parser.add_argument('--no-report',  action='store_true', dest='noreport',
                     help='Do not make a review report')
         parser.add_argument('-n', '--name', metavar='<name prefix>',
-                    help='run on local <name prefix>.spec & <name prefix>*.src.rpm located in work dir')
+                    help='Run on local <name prefix>.spec & <name prefix>*.src.rpm located in work dir')
         parser.add_argument('--mock-config', metavar='<mock configuration>',
                     default = self.settings.mock_config, dest='mock_config',
                     help='Configuration to use for the mock build (Defaults to fedora-rawhide-i686)')
@@ -120,7 +122,8 @@ class ReviewHelper:
                 self.log.error('Cannot find : %s ' % spec_filter)
             if not files_srpm:
                 self.log.error('Cannot find : %s ' % srpm_filter)
-        self.__show_results()
+        if self.args.edit:
+            self.__show_results()
 
     def __show_results(self):
         if self.outfile and self.checks.spec.filename:
