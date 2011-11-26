@@ -563,7 +563,8 @@ class SpecFile(object):
         cmd = ['rpm', '-q', '--qf', qf, '--specfile', self.filename]
                 # Run the command
         try:
-            proc = Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            proc = Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                         env={'LC_ALL':'C'})
             output, error = proc.communicate()
             #print "output : [%s], error : [%s]" % (output, error)
         except OSError, e:
