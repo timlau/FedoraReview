@@ -97,10 +97,10 @@ class ReviewBug(Helpers):
                         elif ".src.rpm" in url:
                             self.srpm_url = url
         if not self.spec_url:
-            self.log.info('not spec file URL found in bug #%s' % self.bug_num)
+            self.log.info('no spec file URL found in bug #%s' % self.bug_num)
             found = False
         if not self.srpm_url:
-            self.log.info('not SRPM file URL found in bug #%s' % self.bug_num)
+            self.log.info('no SRPM file URL found in bug #%s' % self.bug_num)
             found = False
         return found
 
