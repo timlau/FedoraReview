@@ -322,7 +322,8 @@ class CheckTestSkip(JavaCheckBase):
         self.mvn_regex = re.compile(r'^\s*mvn-rpmbuild\s+')
         self.comment_regex = re.compile(r'^\s*#.*')
         self.empty_regex = re.compile(r'^\s*$')
-        self.build_sec = self.spec.get_section('%build')['%build']
+        if self.spec:
+            self.build_sec = self.spec.get_section('%build')['%build']
 
     def is_applicable(self):
         return self.spec.find(self.skip_regex)
@@ -360,7 +361,8 @@ class CheckLocalDepmap(JavaCheckBase):
         self.mvn_regex = re.compile(r'^\s*mvn-rpmbuild\s+')
         self.comment_regex = re.compile(r'^\s*#.*')
         self.empty_regex = re.compile(r'^\s*$')
-        self.build_sec = self.spec.get_section('%build')['%build']
+        if self.spec:
+            self.build_sec = self.spec.get_section('%build')['%build']
 
     def is_applicable(self):
         return self.spec.find(self.depmap_regex)

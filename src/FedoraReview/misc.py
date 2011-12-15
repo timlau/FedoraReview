@@ -53,11 +53,17 @@ class Checks(object):
         self.nobuild = nobuild
         self._results = {'PASSED': [], 'FAILED': [], 'NA': [], 'USER': []}
         self.deprecated = []
-        self.spec = SpecFile(spec_file)
+        if spec_file:
+            self.spec = SpecFile(spec_file)
+        else:
+            self.spec = None
         self.sources = Sources(cache=cache, mock_config=mock_config)
         self.log = get_logger()
-        self.srpm = SRPMFile(srpm_file, cache=cache, nobuild=nobuild,
-            mock_config=mock_config, spec=self.spec)
+        if srpm_file:
+            self.srpm = SRPMFile(srpm_file, cache=cache, nobuild=nobuild,
+                mock_config=mock_config, spec=self.spec)
+        else:
+            self.srpm = None
         self.plugins = load('FedoraReview.checks')
         self.add_check_classes()
 
@@ -99,6 +105,13 @@ class Checks(object):
         fd.close()
         for line in lines:
             output.write(line)
+
+    def list_checks(self):
+        """ List all the checks available. """
+        for ext in self.ext_checks:
+            print ext
+        for test in self.checks:
+            print test.__class__.__name__, ' -- ', test.text
 
     def run_checks(self, output=sys.stdout, writedown=True):
         issues = []

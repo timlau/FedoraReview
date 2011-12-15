@@ -114,7 +114,7 @@ class RCheckDoc(RCheckBase):
         RCheckBase.__init__(self, base)
         self.doc_found = []
         for doc in self.DOCS:
-            if self.has_files("*" + doc):
+            if self.srpm and self.has_files("*" + doc):
                 self.doc_found.append(doc)
         self.url = 'http://fedoraproject.org/wiki/Packaging:R'
         self.text = 'Package have the default element marked as %%doc : %s' % (

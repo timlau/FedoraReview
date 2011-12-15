@@ -75,6 +75,9 @@ class ReviewHelper:
         parser.add_argument('--mock-config', metavar='<mock configuration>',
                     default = self.settings.mock_config, dest='mock_config',
                     help='Configuration to use for the mock build (Defaults to fedora-rawhide-i686)')
+        parser.add_argument('--list-checks', default = False,
+                    action='store_true',
+                    help='List all the checks available')
         args = parser.parse_args()
         return args
 
@@ -124,6 +127,12 @@ class ReviewHelper:
                 self.log.error('Cannot find : %s ' % srpm_filter)
         if self.args.edit:
             self.__show_results()
+
+    def __list_checks(self):
+        """ List all the checks available.
+        """
+        self.checks = Checks(self.args, None, None)
+        self.checks.list_checks()
 
     def __show_results(self):
         if self.outfile and self.checks.spec.filename:
@@ -181,7 +190,9 @@ class ReviewHelper:
             do_logger_setup(loglvl=logging.DEBUG)
         else:
             do_logger_setup()
-        if self.args.bug:
+        if self.args.list_checks:
+            self.__list_checks()
+        elif self.args.bug:
             # get the bug
             self.log.info("Processing review bug : %s" % self.args.bug )
             if self.args.user and self.args.password:
