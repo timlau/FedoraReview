@@ -65,8 +65,8 @@ class ReviewHelper:
                     help = 'Run editor on spec file and generated template')
         parser.add_argument('-u', '--user', metavar='[userid]', default = self.settings.bz_user,
                     help='The Fedora Bugzilla userid')
-        parser.add_argument('-p', '--password', metavar='[password]',
-                    help='The Fedora Bugzilla password')
+        parser.add_argument('-l', '--login', action='store_true', default=False,
+                    help='Login into Fedora Bugzilla before starting')
         parser.add_argument('-v', '--verbose',  action='store_true',
                     help='Show more output')
         parser.add_argument('--no-report',  action='store_true', dest='noreport',
@@ -179,11 +179,13 @@ class ReviewHelper:
 
     def __do_assign(self):
         ''' assign bug'''
-        if self.args.user and self.args.password:
-            self.log.info("Assigning bug to user")
-            self.bug.assign_bug()
-        else:
-            self.log.info('You need to add bugzilla userid/password (-u/-p) to assign bug')
+        if not self.args.user or self.args.user == "":
+            self.log.error("Error: username not set in cofiguration and not"
+                           " provided as argument (-u/--user).")
+            return
+
+        self.log.info("Assigning bug to user")
+        self.bug.assign_bug()
 
     def run(self):
         try:
@@ -197,10 +199,9 @@ class ReviewHelper:
             elif self.args.bug:
                 # get the bug
                 self.log.info("Processing review bug : %s" % self.args.bug )
-                if self.args.user and self.args.password:
-                    self.bug = ReviewBug(self.args.bug, user = self.args.user, password= self.args.password, cache=self.args.cache, other_BZ=self.args.other_bz)
-                else:
-                    self.bug = ReviewBug(self.args.bug, cache=self.args.cache, nobuild=self.args.nobuild, other_BZ=self.args.other_bz)
+                self.bug = ReviewBug(self.args.bug, user=self.args.user, cache=self.args.cache, other_BZ=self.args.other_bz)
+                if self.args.login:
+                    self.bug.login(self.args.user)
                 self.bug.set_work_dir('%s/%s' % (self.args.workdir, self.args.bug))
                 self.log.debug("  --> Working dir : %s" % self.bug.work_dir)
                 if self.args.assign and not self.args.other_bz: # can't use assign with alternate bugzilla url
@@ -209,7 +210,7 @@ class ReviewHelper:
                     self.__do_report()
             elif self.args.name:
                 self.__do_report_local(self.args.workdir)
-        except FedoraReviewError, err:
+         except FedoraReviewError, err:
             print err
             return 1
         return 0

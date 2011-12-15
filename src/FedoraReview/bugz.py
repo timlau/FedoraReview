@@ -19,6 +19,9 @@
 Tools for helping Fedora package reviewers
 '''
 import re
+import getpass
+
+import xmlrpclib
 from bugzilla import Bugzilla
 
 BZ_URL = 'https://bugzilla.redhat.com/xmlrpc.cgi'
@@ -32,7 +35,7 @@ class ReviewBug(Helpers):
 
     def __init__(self, bug, user=None, password=None, cache=False,
                 nobuild=False, other_BZ=None):
-        """ Constructord.
+        """ Constructor.
         :arg bug, the bug number on bugzilla
         :kwarg user, the username with which to log in in bugzilla.
         :kwarg password, the password associated with this account.
@@ -53,27 +56,22 @@ class ReviewBug(Helpers):
             self.bugzilla = Bugzilla(url=other_BZ + '/xmlrpc.cgi')
         else:
             self.bugzilla = Bugzilla(url=BZ_URL)
-        self.is_login = False
-        if user and password:
-            rc = self.bugzilla.login(user=user, password=password)
-            if rc > 0:
-                self.log.info("You are logged in to bugzilla")
-                self.is_login = True
+
+        self.log.info("Trying bugzilla cookies for authentication")
         self.user = user
         self.bug = self.bugzilla.getbug(self.bug_num)
 
-    def login(self, user, password):
-        """ Handles the login of the user into bugzilla.
+    def login(self, user):
+        """ Handles the login of the user into bugzilla. Will ask for
+        password on the commandline
         :arg user, the bugzilla username.
-        :arg password, the bugzilla password associated with the given
-        username.
         """
-        if self.bugzilla.login(user=user, password=password) > 0:
-            self.is_login = True
-            self.user = user
-        else:
-            self.is_login = False
-        return self.is_login
+        ret = self.bugzilla.login(user=user, password=getpass.getpass())
+        if ret > 0:
+            self.log.info("You are logged in to bugzilla. "
+                          "Credential cookies cached for future.")
+        self.user = user
+        return True
 
     def find_urls(self):
         """ Reads the page on bugzilla, search for all urls and extract
@@ -107,24 +105,36 @@ class ReviewBug(Helpers):
     def assign_bug(self):
         """ Assign the bug to the reviewer.
         """
-        if self.is_login:
+        try:
             self.bug.setstatus('ASSIGNED')
             self.bug.setassignee(assigned_to=self.user)
             self.bug.addcomment('I will review this package')
             flags = {'fedora-review': '?'}
             self.bug.updateflags(flags)
             self.bug.addcc([self.user])
-        else:
-            self.log.info("You need to login before assigning a bug")
+        except xmlrpclib.Fault, e:
+            self.handle_xmlrpc_err(e)
+            self.log.error("Some parts of bug assignment "
+                           "failed. Please check manually")
+        except ValueError, e:
+            self.log.error("Invalid bugzilla values: %s" % e)
+            self.log.error("Some parts of bug assignment "
+                           "failed. Please check manually")
 
     def add_comment(self, comment):
         """ Add a given comment to the bugzilla page.
         :arg comment, the comment to be added to the page.
         """
-        if self.is_login:
+        try:
             self.bug.addcomment(comment)
-        else:
-            self.log.info("You need to is_login before commenting on a bug")
+        except xmlrpclib.Fault, e:
+            self.handle_xmlrpc_err(e)
+            self.log.error("Commnet to bugzilla has not been added")
+
+    def handle_xmlrpc_err(self, exception):
+        self.log.error("Server error: %s" % str(exception))
+        self.log.error("Your bugzilla cookie probably expired."
+                       " Please provide fresh credentials")
 
     def add_comment_from_file(self, fname):
         """ Add the content from a file as comment.
