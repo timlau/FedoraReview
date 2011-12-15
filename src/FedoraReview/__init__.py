@@ -321,7 +321,7 @@ class Source(Helpers):
                 self.extract_dir))
         if not os.path.exists(self.extract_dir):
             try:
-                os.mkdir(self.extract_dir)
+                os.makedirs(self.extract_dir)
             except IOError, err:
                 self.log.debug(err)
                 print "Could not generate the folder %s" % self.extract_dir
