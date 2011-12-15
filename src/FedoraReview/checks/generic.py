@@ -359,7 +359,7 @@ class CheckBuild(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#Architecture_Support'
-        self.text = 'Package successfully compiles and builds into binary rpms on at least one supported architecture.'
+        self.text = 'Package successfully compiles and builds into binary rpms on at least one supported primary architecture.'
         self.automatic = True
 
     def run(self):
