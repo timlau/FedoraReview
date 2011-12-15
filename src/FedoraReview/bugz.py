@@ -83,7 +83,11 @@ class ReviewBug(Helpers):
         if self.bug.longdescs:
             for cat in self.bug.longdescs:
                 body = cat['body']
-                #self.log.debug(body)
+
+                # workaround for bugzilla/xmlrpc bug. When comment
+                # text is pure number it converts to number type (duh)
+                if type(body) != str:
+                    continue
                 urls = re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|\
 [$-_@.&+~]|[!*\(\),]|(?:%[0-9a-fA-F~\.][0-9a-fA-F]))+', body)
                 if urls:
