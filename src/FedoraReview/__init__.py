@@ -48,6 +48,17 @@ TEST_STATES = {'pending': '[ ]', 'pass': '[x]', 'fail': '[!]', 'na': '[-]'}
 
 LOG_ROOT = 'FedoraReview'
 
+class FedoraReviewError(Exception):
+    """ General Error class for fedora-review. """
+
+    def __init__(self, value):
+        """ Instanciante the error. """
+        self.value = value
+
+    def __str__(self):
+        """ Represent the error. """
+        return repr(self.value)
+
 
 class Settings(object):
     """ FedoraReview Config Setting"""
@@ -368,15 +379,16 @@ class SRPMFile(Helpers):
             shell=True)
         if rc == 0:
             self.is_build = True
-            self.log.info("Build completed ok")
+            self.log.info('Build completed ok')
         else:
-            self.log.info("Build failed rc = %i " % rc)
+            self.log.info('Build failed rc = %i ' % rc)
             self.build_failed = True
+            raise FedoraReviewError('Mock build failed.')
         return rc
 
     def get_build_dir(self):
         mock_dir = self.get_mock_dir()
-        bdir_root = "%s/../root/builddir/build/BUILD/" % mock_dir
+        bdir_root = '%s/../root/builddir/build/BUILD/' % mock_dir
         for entry in os.listdir(bdir_root):
             if os.path.isdir(bdir_root + entry):
                 return bdir_root + entry
