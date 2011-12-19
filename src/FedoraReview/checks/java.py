@@ -421,18 +421,6 @@ class CheckPomInstalled(JavaCheckBase):
         self.type = 'MUST'
 
 
-class CheckCorrectDepmap(JavaCheckBase):
-    """Check if installed pom.xml files have valid add_maven_depmap calls"""
-    header = "Maven"
-
-    def __init__(self, base):
-        JavaCheckBase.__init__(self, base)
-        self.text = """pom files have correct add_maven_depmap call"""
-        self.url = 'https://fedoraproject.org/wiki/Packaging:Java#Maven_pom.xml_files_and_depmaps'
-        self.automatic = False
-        self.type = 'MUST'
-
-
 class CheckUpstremBuildMethod(JavaCheckBase):
     """Verify package uses upstream preferred build method"""
 
