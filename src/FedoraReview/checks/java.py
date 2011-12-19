@@ -117,6 +117,7 @@ class CheckJavadocdirName(JavaCheckBase):
         key = self._get_javadoc_sub()
         if not key:
             self.set_passed(False, "No javadoc subpackage present")
+            return
 
         paths = name[key]
         paths_ver = name_ver[key]
