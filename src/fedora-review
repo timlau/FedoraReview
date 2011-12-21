@@ -210,7 +210,7 @@ class ReviewHelper:
                     self.__do_report()
             elif self.args.name:
                 self.__do_report_local(self.args.workdir)
-         except FedoraReviewError, err:
+        except FedoraReviewError, err:
             print err
             return 1
         return 0
