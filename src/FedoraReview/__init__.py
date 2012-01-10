@@ -225,6 +225,11 @@ class Sources(object):
             source = Source(filename=source_url, cache=self.cache,
             mock_config=self.mock_config)
             source.set_work_dir(self.work_dir)
+            ## When sources are not remote we need to extract them from
+            ## the srpm.
+            print 'The source %s in the srpm can not be retrieved. '\
+            'This is a corner case not supported yet.' % source_url
+            return
         self._sources[tag] = source
 
     def get(self, tag):
