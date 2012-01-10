@@ -129,7 +129,7 @@ class ReviewBug(Helpers):
             self.bug.addcomment(comment)
         except xmlrpclib.Fault, e:
             self.handle_xmlrpc_err(e)
-            self.log.error("Commnet to bugzilla has not been added")
+            self.log.error("Comment to bugzilla has not been added")
 
     def handle_xmlrpc_err(self, exception):
         self.log.error("Server error: %s" % str(exception))
