@@ -40,13 +40,13 @@ class CheckLDConfig(CCppCheckBase):
         sources = ['%post','%postun']
         for source in sources:
             passed = False
-            extra = ""
             sections = self.spec.get_section(source)
-            if not source in sections:
-                self.set_passed(False, '/sbin/ldconfig not called in %s' % source)
-                return
+            for seckey in sections.keys():
+                if '/sbin/ldconfig' in seckey:
+                    passed = True
+                    break
 
-            for section in sections[source]:
+            for section in sections:
                 if '/sbin/ldconfig' in section:
                     passed = True
                 else:
