@@ -1,0 +1,63 @@
+.TH "fedora-create-review" 1
+.SH NAME
+fedora-create-review \- Automatically create RPM review request for Fedora.
+
+.SH SYNOPSIS
+.B fedora-create-review
+<specfile> <srpmfile>
+
+
+.SH DESCRIPTION
+
+This tool create review request for rpm packages for Fedora. It starts a
+scratch build on koji, upload your file onto fedorapeople, create the review
+request and add a comment that the scratch-build on koji was successful.
+
+.SH USAGE
+This program creates RPM review request for Fedora.
+.HP
+fedora-create-review <specfile> <srpmfile>
+
+This will start a build on koji using the given srpmfile. If the build is
+successful, both file will be uploaded onto fedorapeople. Finally, the review
+request is generated and a comment is added on the bug about the successful
+scratch-build.
+
+.SH OPTIONS
+.B --user
+    FAS user name.
+.sp
+.B --rename-request
+    To create a rename request instead of a review request.
+.sp
+.B --koji-target
+    Specify the target for the scratch build. Defaults to rawhide. 
+    The list of targets can be obtained using `koji list-targets`.
+.sp
+.B --no-scratch-build
+    To skip the scratch build but still create the review.
+.sp
+.B --debug
+    Provides a more detailed output of what's going on.
+.sp
+.B --test
+    Create the review on a test bugzilla instance instead of the official one.
+
+.SH FILES
+.I $HOME/.config/fedora-create-review
+.RS
+User configuration files for fedora-create-review
+.RE
+
+.SH AUTHORS
+  Original author: Pierre-Yves Chibon <pingou@pingoured.fr>
+
+  Developers:
+      Pierre-Yves Chibon <pingou@pingoured.fr>
+      Stanislav Ochotnicky <sochotnicky@redhat.com>
+
+  For a list of all contributors see AUTHORS file
+
+.sp
+.sp
+No known bugs at this time
