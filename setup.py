@@ -18,5 +18,5 @@ setup(
     url = 'https://fedorahosted.org/FedoraReview/',
     package_dir = {'FedoraReview': 'src/FedoraReview'},
     packages = ['FedoraReview', 'FedoraReview.checks'],
-    scripts=["src/fedora-review"],
+    scripts=["src/fedora-review", "src/fedora-create-review"],
     )
