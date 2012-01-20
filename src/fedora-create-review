@@ -233,8 +233,14 @@ class ReviewRequest(object):
             fasusername = raw_input('FAS username: ')
         complement_url = self.settings.upload_target.split('public_html/')[1]
         url = 'http://%s.fedorapeople.org/%s/' % (fasusername, complement_url)
-        self.info['specurl'] = url + self.specfile.rsplit('/', 1)[1]
-        self.info['srpmurl'] = url + self.srpmfile.rsplit('/', 1)[1]
+        spec = self.specfile
+        if '/' in spec:
+            spec = spec.rsplit('/', 1)[1]
+        srpm = self.srpmfile
+        if '/' in sprm:
+            sprm = sprm.rsplit('/', 1)[1]
+        self.info['specurl'] = url + spec
+        self.info['srpmurl'] = url + sprm
 
     def find_existing_reviews(self):
         """ Return information about the review request(s) sumitted
