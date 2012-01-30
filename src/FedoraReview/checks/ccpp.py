@@ -41,16 +41,14 @@ class CheckLDConfig(CCppCheckBase):
         for source in sources:
             passed = False
             sections = self.spec.get_section(source)
-            for seckey in sections.keys():
+
+            for seckey, section in sections.iteritems():
                 if '/sbin/ldconfig' in seckey:
                     passed = True
-                    break
-
-            for section in sections:
-                if '/sbin/ldconfig' in section:
+                elif '/sbin/ldconfig' in section:
                     passed = True
                 else:
-                    for line in sections[source]:
+                    for line in section:
                         if '/sbin/ldconfig' in line:
                             passed = True
                             break
