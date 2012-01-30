@@ -123,7 +123,7 @@ class Checks(object):
             for result in ext.get_results():
                 results.append(result)
                 if result.type == 'MUST' and result.result == "fail":
-                    issues.append(result.get_text())
+                    issues.append(result)
                 self.deprecated.extend(result.deprecates)
 
         for test in self.checks:
