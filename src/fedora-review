@@ -32,6 +32,7 @@ from FedoraReview import get_logger, do_logger_setup, \
     Settings, FedoraReviewError
 from FedoraReview.bugz import ReviewBug
 from FedoraReview.misc import Checks
+from FedoraReview import __version__
 
 
 class ReviewHelper:
@@ -79,6 +80,9 @@ class ReviewHelper:
         parser.add_argument('--list-checks', default = False,
                     action='store_true',
                     help='List all the checks available')
+        parser.add_argument('-V', '--version', default = False,
+                    action='store_true',
+                    help='Display version information and exit.')
         args = parser.parse_args()
         return args
 
@@ -134,6 +138,9 @@ class ReviewHelper:
         """
         self.checks = Checks(self.args, None, None)
         self.checks.list_checks()
+        
+    def __print_version(self):
+        print('fedora-review version ' + __version__)
 
     def __show_results(self):
         if self.outfile and self.checks.spec.filename:
@@ -196,6 +203,8 @@ class ReviewHelper:
                 do_logger_setup()
             if self.args.list_checks:
                 self.__list_checks()
+            elif self.args.version:
+                self.__print_version()
             elif self.args.bug:
                 # get the bug
                 self.log.info("Processing review bug : %s" % self.args.bug )
