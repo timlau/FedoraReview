@@ -1,6 +1,6 @@
 {
-  "command":"get_section"
-  "section":"build"
+  "command":"get_section",
+  "section":"build",
   "expand_macros":false
 }
 

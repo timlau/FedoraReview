@@ -81,7 +81,7 @@ After each call plugin can receive an error reply in following format:
 
 error_reply ::=
 {
-"error":"textual description of error"
+"error":"textual description of error",
 "code":code_number
 }
 
@@ -98,7 +98,7 @@ Data:
 
 get_section ::=
 {
-  "command":"get_section"
+  "command":"get_section",
   "section":"section_to_return"
 }
 

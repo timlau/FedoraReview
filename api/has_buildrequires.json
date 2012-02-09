@@ -1,6 +1,6 @@
 {
-  "command":"has_buildrequires"
-  "name":"jpackage-utils"
+  "command":"has_buildrequires",
+  "name":"jpackage-utils",
   "version":">= 1.0-15"
 }
 

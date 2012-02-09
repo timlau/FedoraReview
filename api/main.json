@@ -1,33 +1,34 @@
+Question & Answer API
+
 {
-    "supported_api":1
-    "pkgname":"name"
-    "version":"version"
-    "release":"release"
-    "srpm":{path:"/absolute/path",
-            tree:"/path/to/unpacked/srpm"}
-    "spec":{path:"/absolute/path",
-           "text":"expanded spec"}
-    "rpms":[{path:"/absolute/paths",
-             tree:"/path/to/unpacked/rpm"
-            },
-           ]
-    "rpmlint":"rpmlint output"
+    "supported_api":1,
+    "pkgname":"name",
+    "version":"version",
+    "release":"release",
+    "srpm":{"path":"/absolute/path",
+            "tree":"/path/to/unpacked/srpm"},
+    "spec":{"path":"/absolute/path",
+            "text":"expanded spec"},
+    "rpms":[{"path":"/absolute/paths",
+             "tree":"/path/to/unpacked/rpm"
+            }
+           ],
+    "rpmlint":"rpmlint output",
     "build_dir":"/path/to/src/directory/after/build"
 }
 
-- question/answer API
-
 Reply with:
+
 {
-    "command":"results"
-    "supported_api":1
+    "command":"results",
+    "supported_api":1,
     "checks":[
         {"name":"CheckMe",
          "url":"check url",
          "group":"Generic",
          "text":"Check description",
-         "type":"MUST"/"SHOULD",
-         "result":"pass"/"fail"/"inconclusive",
+         "type":"MUST/SHOULD",
+         "result":"pass/fail/inconclusive",
          "extra_output":"text",
         }
     ]
