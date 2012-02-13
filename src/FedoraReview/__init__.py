@@ -352,6 +352,7 @@ class SRPMFile(Helpers):
         Helpers.__init__(self, cache, nobuild, mock_config)
         self.filename = filename
         self.spec = spec
+        self.log = get_logger()
         self.is_installed = False
         self.is_build = False
         self.build_failed = False
@@ -397,6 +398,8 @@ class SRPMFile(Helpers):
             self.filename, self.mock_config))
         cmd = 'mock -r %s  --rebuild %s ' % (
                 self.mock_config, self.filename)
+        if self.log.level == logging.DEBUG:
+            cmd = cmd + ' -v '
         if silence:
             cmd = cmd + ' 2>&1 | grep "Results and/or logs" '
         rc = call(cmd,
