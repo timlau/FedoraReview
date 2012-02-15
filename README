@@ -19,8 +19,11 @@ Requirements
 * Python
 * rpm & yum
 * mock
-* python-bugzilla
 * editor
+* python-requests
+* python-bugzilla
+* fedora-packager
+* python-straight-plugin
 
 Download
 --------

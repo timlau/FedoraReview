@@ -13,6 +13,7 @@ BuildRequires:  python2-devel
 Requires:       python-straight-plugin
 Requires:       python-bugzilla
 Requires:       fedora-packager
+Requires:       python-requests
 
 %description
 FedoraReview: Tools to help review packages for inclusion in Fedora
