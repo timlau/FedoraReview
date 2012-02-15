@@ -22,8 +22,8 @@ This module contains automatic test for Fedora Packaging guidelines
 
 import os
 import os.path
-import inspect
 import re
+import tempfile
 import fnmatch
 
 from FedoraReview import Helpers, get_logger, TestResult
@@ -333,21 +333,27 @@ class CheckSourceMD5(CheckBase):
         self.automatic = True
 
     def run(self):
-        self.srpm.install()
-        passed = True
-        output = ""
-        for source in self.base.sources.get_all():
-            local = self.base.srpm.check_source_md5(source.filename)
-            upstream = source.check_source_md5()
-            output += "%s :\n" % source.filename
-            output += "  MD5SUM this package     : %s\n" % local
-            output += "  MD5SUM upstream package : %s\n" % upstream
-            if local != upstream:
-                passed = False
-        if passed:
-            self.set_passed(True, output)
-        else:
-            self.set_passed(False, output)
+        orig_dir = os.getcwd()
+        try:
+            tmpdirname = tempfile.mkdtemp(suffix="fedora-review")
+            os.chdir(tmpdirname)
+            self.srpm.install()
+            passed = True
+            output = ""
+            for source in self.base.sources.get_all():
+                local = self.base.srpm.check_source_md5(source.filename)
+                upstream = source.check_source_md5()
+                output += "%s :\n" % source.filename
+                output += "  MD5SUM this package     : %s\n" % local
+                output += "  MD5SUM upstream package : %s\n" % upstream
+                if local != upstream:
+                    passed = False
+            if passed:
+                self.set_passed(True, output)
+            else:
+                self.set_passed(False, output)
+        finally:
+            os.chdir(orig_dir)
 
 
 class CheckBuild(CheckBase):
