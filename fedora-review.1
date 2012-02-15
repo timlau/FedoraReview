@@ -16,7 +16,7 @@ Through a json API the checks can be extended in any programming language and fo
 We have at the moment checks for C/C++, R, Java and Perl packages.
 
 .SH USAGE
-This program runs a number of checks  for packages in Fedora.
+This program runs a number of checks for packages in Fedora.
 .HP
 fedora-review -b <bug number>
 
@@ -37,6 +37,10 @@ for the build to work. Run as root:
 .HP
  usermod -a -G mock [your user name] && newgrp mock
 
+.PP
+To assign bugs in bugzilla automatically you will first have to login
+into bugzilla (--login). This will create a bugzilla cookie so you
+don't have to login every time.
 
 .SH OPTIONS
 .B -b / --bug
@@ -60,11 +64,8 @@ for the build to work. Run as root:
 .B --nobuild
     Do not rebuild the source rpm, use the currently built one.
 .sp
-.B -u / --user
-    Bugzilla user name.
-.sp
-.B  -p / --password
-   Bugzilla password.
+.B -l / --login
+    Login into Fedora Bugzilla before starting
 .sp
 .B  -v / --verbose
    Provides a more detailed output of what's going on.
