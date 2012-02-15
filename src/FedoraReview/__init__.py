@@ -26,6 +26,7 @@ from subprocess import call, Popen
 import os.path
 import re
 import glob
+import requests
 import sys
 import shlex
 import tarfile
@@ -200,11 +201,20 @@ class Helpers(object):
     def _get_file(self, link):
         self.log.debug("  --> %s : %s" % (self.work_dir, link))
         url = urlparse(link)
+        request = requests.get(link)
+        if str(request.status_code).startswith('4'):
+            raise FedoraReviewError('Getting error "%s" while trying to download: %s'
+                %(request.status_code, link))
         fname = os.path.basename(url.path)
         if os.path.exists(self.work_dir + fname) and self.cache:
             return  self.work_dir + fname
-        call('wget --quiet --tries=1 --read-timeout=90 -O %s \
-        --referer=%s %s' % (self.work_dir + fname, link, link), shell=True)
+        try:
+            stream = open(self.work_dir + fname, 'w')
+            stream.write(request.content)
+            stream.close()
+        except IOError, err:
+            raise FedoraReviewError('Getting error "%s" while trying to write file: %s'
+                %(err, self.work_dir + fname))
         if os.path.exists(self.work_dir + fname):
             return  self.work_dir + fname
         else:
