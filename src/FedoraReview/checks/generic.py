@@ -1084,19 +1084,6 @@ class CheckObeysFHS(CheckBase):
         self.type = 'MUST'
 
 
-class CheckMeetPackagingGuidelines(CheckBase):
-    '''
-    MUST: The package must meet the Packaging Guidelines
-    https://fedoraproject.org/wiki/Packaging:Guidelines
-    '''
-    def __init__(self, base):
-        CheckBase.__init__(self, base)
-        self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
-        self.text = 'Package meets the Packaging Guidelines.'
-        self.automatic = False
-        self.type = 'MUST'
-
-
 class CheckFunctionAsDescribed(CheckBase):
     '''
     SHOULD: The reviewer should test that the package functions as described.
