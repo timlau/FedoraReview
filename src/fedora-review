@@ -138,7 +138,7 @@ class ReviewHelper:
         """
         self.checks = Checks(self.args, None, None)
         self.checks.list_checks()
-        
+
     def __print_version(self):
         print('fedora-review version ' + __version__)
 

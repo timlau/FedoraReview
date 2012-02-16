@@ -529,16 +529,16 @@ class SRPMFile(Helpers):
             rpm_files[os.path.basename(rpm)] = rc.split('\n')
         self._rpm_files = rpm_files
         return rpm_files
-    
+
     def licensecheck(self, source_files_dir):
         ''' Runs licensecheck from rpmdevtools
         '''
         source_dir = self.get_mock_dir() + \
                 "/../root/builddir/build/sources/" + \
                 source_files_dir
-                
+
         unknown_license = []
-        
+
         if os.path.exists(source_dir):
             cmd = 'licensecheck -r %s' %source_dir
             out = self._run_cmd(cmd)
@@ -548,7 +548,7 @@ class SRPMFile(Helpers):
         else:
             self.log.error('Source directory %s does not exist!' %source_dir)
             unknown_license.append('N/A')
-                
+
         return unknown_license
 
 
