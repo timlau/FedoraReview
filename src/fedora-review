@@ -84,6 +84,7 @@ class ReviewHelper:
                     action='store_true',
                     help='Display version information and exit.')
         args = parser.parse_args()
+        args.workdir = os.path.abspath(os.path.expanduser(args.workdir))
         return args
 
     def __download_sources(self):
