@@ -76,6 +76,7 @@ class ReviewHelper:
                     default = self.settings.mock_config, dest='mock_config',
                     help='Configuration to use for the mock build (Defaults to fedora-rawhide-i686)')
         args = parser.parse_args()
+        args.workdir = os.path.abspath(os.path.expanduser(args.workdir))
         return args
 
     def __download_sources(self):
