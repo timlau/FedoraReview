@@ -573,8 +573,45 @@ class CheckLicenseField(CheckBase):
         CheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/LicensingGuidelines#ValidLicenseShortNames'
         self.text = 'License field in the package spec file matches the actual license.'
-        self.automatic = False
+        self.automatic = True
         self.type = 'MUST'
+
+    def run(self):
+        #Fix it
+        package_dir = self.spec.name + '-' + self.spec.version
+
+        try:
+            #Fix it
+            source_dir = self.srpm.get_mock_dir() + \
+                "/../root/builddir/build/sources/" + \
+                package_dir
+
+            licenses = []
+            
+            filename = '%s/licensecheck.txt' % self.sources.work_dir
+            f = open(filename, 'w')
+
+            if os.path.exists(source_dir):
+                cmd = 'licensecheck -r %s' % source_dir
+                out = self._run_cmd(cmd)
+                f.write(out)
+                f.close()
+                regex = re.compile(':\s.*$', re.MULTILINE)
+                # remove dupes
+                licenses = list(set(regex.findall(out)))
+            else:
+                self.log.error('Source directory %s does not exist!' % source_dir)
+
+            if not licenses:
+                self.set_passed(False, "No licenses found! Please check the source files for licenses manually.")
+            else:
+                output = "Licenses found: \n"
+                for item in licenses:
+                    output += "%s, " % item.strip(': ')
+                output += "For detailed output of licensecheck see file %s" % filename
+                self.set_passed("inconclusive", output)
+        except OSError, e:
+            self.log.error("OSError: %s" % str(e))
 
 
 class CheckLicensInDoc(CheckBase):
@@ -650,31 +687,6 @@ class CheckApprovedLicense(CheckBase):
 requirements as defined in the legal section of Packaging Guidelines.'
         self.automatic = False
         self.type = 'MUST'
-
-#TODO merge with CheckApprovedLicense?
-class CheckLicenseCheck(CheckBase):
-    '''
-    Run licensecheck from rpmdevtools and print files with unknown licenses
-    '''
-    def __init__(self, base):
-        CheckBase.__init__(self, base)
-        self.url = 'http://fedoraproject.org/wiki/Packaging/LicensingGuidelines'
-        self.text = 'Package contains no unknown licenses'
-        self.automatic = False
-        self.type = 'MUST'
-
-    def run(self):
-        source_dir = self.spec.name + '-' + self.spec.version
-        result = self.srpm.licensecheck(source_dir)
-
-        if not result:
-            self.set_passed(True)
-        else:
-            output = "Please check following items:\n"
-            for item in result:
-                output += "%s\n" %item
-
-            self.set_passed(False, output)
 
 
 class CheckCodeAndContent(CheckBase):
