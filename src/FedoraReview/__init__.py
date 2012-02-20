@@ -37,6 +37,8 @@ from textwrap import TextWrapper
 import ConfigParser
 from urlparse import urlparse
 
+from kitchen.text.converters import to_bytes
+
 from .version import __version__
 
 SECTIONS = ['build', 'changelog', 'check', 'clean', 'description', 'files',
@@ -210,7 +212,7 @@ class Helpers(object):
             return  self.work_dir + fname
         try:
             stream = open(self.work_dir + fname, 'w')
-            stream.write(request.content)
+            stream.write(to_bytes(request.content))
             stream.close()
         except IOError, err:
             raise FedoraReviewError('Getting error "%s" while trying to write file: %s'
