@@ -16,6 +16,9 @@ Requires:       fedora-packager
 Requires:       python-requests
 Requires:       python-kitchen
 
+# Let's be consistent with the name used on fedorahosted
+provides:       FedoraReview = %{version}-%{release}
+
 %description
 FedoraReview: Tools to help review packages for inclusion in Fedora
 
