@@ -14,6 +14,7 @@ Requires:       python-straight-plugin
 Requires:       python-bugzilla
 Requires:       fedora-packager
 Requires:       python-requests
+Requires:       python-kitchen
 
 %description
 FedoraReview: Tools to help review packages for inclusion in Fedora

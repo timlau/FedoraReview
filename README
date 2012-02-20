@@ -24,6 +24,7 @@ Requirements
 * python-bugzilla
 * fedora-packager
 * python-straight-plugin
+* python-kitchen
 
 Download
 --------
