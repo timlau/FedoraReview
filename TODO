@@ -1,5 +1,5 @@
 - check ldconfig - for jni files this doesn't  work
-- make interface (json?) so that checks can be written in different
-  languages
+- refactor SRPMFile, Source and related classes so that they really
+  contain functions related only to them (i.e. SRPMFile.get_files_rpms)
 - automate some checks that can be automated (mostly generic ones)
 - 
