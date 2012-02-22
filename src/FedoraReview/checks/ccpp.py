@@ -144,7 +144,7 @@ class CheckSoFiles(CCppCheckBase):
     def __init__(self, base):
         CCppCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#DevelPackages'
-        self.text = 'Development .so files in -devel subpackage, if present.'
+        self.text = 'Development (unversioned) .so files in -devel subpackage, if present.'
         self.automatic = True
         self.type = 'MUST'
 
