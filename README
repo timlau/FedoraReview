@@ -25,6 +25,7 @@ Requirements
 * fedora-packager
 * python-straight-plugin
 * python-kitchen
+* rpmdevtools
 
 Download
 --------

@@ -15,6 +15,7 @@ Requires:       python-bugzilla
 Requires:       fedora-packager
 Requires:       python-requests
 Requires:       python-kitchen
+Requires:       rpmdevtools
 
 # Let's be consistent with the name used on fedorahosted
 provides:       FedoraReview = %{version}-%{release}
