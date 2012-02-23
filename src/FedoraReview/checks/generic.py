@@ -584,6 +584,7 @@ class CheckLicensInDoc(CheckBase):
     the license(s) for the package must be included in %doc.
     http://fedoraproject.org/wiki/Packaging/LicensingGuidelines#License_Text
     '''
+
     def __init__(self, base):
         CheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/LicensingGuidelines#License_Text'
@@ -603,14 +604,17 @@ then that file, containing the text of the license(s) for the package is include
                 haslicensefile = True
                 licenses.append(f)
 
-        br = self.spec.find_all(re.compile("%doc.*"))
-        for match in br:
-            files = match.group(0).strip().split()
-            for entry in files:
-                entry = os.path.basename(entry)
-                for licensefile in licenses:
-                    if entry.startswith(licensefile):
-                        licenses.remove(licensefile)
+        # Checks for license tagged by %doc or directly present in
+        # %{_docdir}
+        for docmotif in ["%doc.*", "%{_docdir}.*"]:
+            br = self.spec.find_all(re.compile(docmotif))
+            for match in br:
+                files = match.group(0).strip().split()
+                for entry in files:
+                    entry = os.path.basename(entry)
+                    for licensefile in licenses:
+                        if entry.startswith(licensefile):
+                            licenses.remove(licensefile)
 
         if not haslicensefile:
             self.set_passed("inconclusive")
