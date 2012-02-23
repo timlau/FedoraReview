@@ -275,7 +275,7 @@ class CheckInstall(CheckBase):
         sec_clean = self.spec.get_section('%install')
         for sec in sec_clean:
             sec_lines = sec_clean[sec]
-            regex = re.compile('^(rm|%{__rm})\s\-rf\s(%{buildroot}|$RPM_BUILD_ROOT)\s*$')
+            regex = re.compile('^(rm|%{__rm})\s\-rf\s(%{buildroot}|\$RPM_BUILD_ROOT)\s*$')
             if sec_lines:
                 for line in sec_lines:
                     if regex.search(line):
