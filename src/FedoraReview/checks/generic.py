@@ -587,15 +587,15 @@ class CheckLicenseField(CheckBase):
                 package_dir
 
             licenses = []
-            
-            filename = '%s/licensecheck.txt' % self.sources.work_dir
-            f = open(filename, 'w')
 
             if os.path.exists(source_dir):
                 cmd = 'licensecheck -r %s' % source_dir
                 out = self._run_cmd(cmd)
-                f.write(out)
-                f.close()
+                if out:
+                    filename = '%s/licensecheck.txt' % self.sources.work_dir
+                    stream = open(filename, 'w')
+                    stream.write(out)
+                    stream.close()
                 regex = re.compile(':\s.*$', re.MULTILINE)
                 # remove dupes
                 licenses = list(set(regex.findall(out)))
