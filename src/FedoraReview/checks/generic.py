@@ -579,6 +579,7 @@ class CheckLicenseField(CheckBase):
     def run(self):
         #Fix it
         package_dir = self.spec.name + '-' + self.spec.version
+        sources_files = self.sources.get_files_sources()
 
         try:
             #Fix it
