@@ -72,6 +72,7 @@ class Settings(object):
     # Default bugzilla userid
     bz_user = ''
     mock_config = 'fedora-rawhide-i386'
+    mock_options = None
     ext_dirs = "/usr/share/fedora-review/plugins:%s" % os.environ['HOME'] \
         + "/.config/fedora-review/plugins"
 
@@ -156,12 +157,14 @@ class Settings(object):
 class Helpers(object):
 
     def __init__(self, cache=False, nobuild=False,
-            mock_config=Settings.mock_config):
+            mock_config=Settings.mock_config,
+            mock_options=Settings.mock_options):
         self.work_dir = 'work/'
         self.log = get_logger()
         self.cache = cache
         self.nobuild = nobuild
         self.mock_config = mock_config
+        self.mock_options = mock_options
         self.rpmlint_output = []
 
     def set_work_dir(self, work_dir):
@@ -360,8 +363,10 @@ class Source(Helpers):
 
 class SRPMFile(Helpers):
     def __init__(self, filename, cache=False, nobuild=False,
-            mock_config=Settings.mock_config, spec=None):
-        Helpers.__init__(self, cache, nobuild, mock_config)
+            mock_config=Settings.mock_config,
+            mock_options=Settings.mock_options,
+            spec=None):
+        Helpers.__init__(self, cache, nobuild, mock_config, mock_options)
         self.filename = filename
         self.spec = spec
         self.log = get_logger()
@@ -412,10 +417,12 @@ class SRPMFile(Helpers):
                 self.mock_config, self.filename)
         if self.log.level == logging.DEBUG:
             cmd = cmd + ' -v '
+        if self.mock_options:
+            cmd = cmd + ' ' + self.mock_options
         if silence:
             cmd = cmd + ' 2>&1 | grep "Results and/or logs" '
-        rc = call(cmd,
-            shell=True)
+        self.log.debug('Mock command: %s' % cmd)
+        rc = call(cmd, shell=True)
         if rc == 0:
             self.is_build = True
             self.log.info('Build completed ok')
