@@ -597,7 +597,7 @@ class CheckLicenseField(CheckBase):
                     stream = open(filename, 'w')
                     stream.write(out)
                     stream.close()
-                regex = re.compile(':\s.*$', re.MULTILINE)
+                regex = re.compile(':\s(.*)$', re.MULTILINE)
                 # remove dupes
                 licenses = list(set(regex.findall(out)))
             else:
@@ -606,11 +606,10 @@ class CheckLicenseField(CheckBase):
             if not licenses:
                 self.set_passed(False, "No licenses found! Please check the source files for licenses manually.")
             else:
-                output = "Licenses found: \n"
-                for item in licenses:
-                    output += "%s, " % item.strip(': ')
-                output += "For detailed output of licensecheck see file %s" % filename
-                self.set_passed("inconclusive", output)
+                output = 'Licenses found: "%s" For detailed output of \
+                licensecheck see file: %s' % ('", "'.join(licenses),
+                    filename)
+                self.set_passed('inconclusive', output)
         except OSError, e:
             self.log.error("OSError: %s" % str(e))
 
