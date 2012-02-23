@@ -33,7 +33,7 @@ from FedoraReview import Helpers, get_logger, TestResult
 class CheckBase(Helpers):
 
     deprecates = []
-    header = "Generic"
+    header = 'Generic'
 
     def __init__(self, base):
         Helpers.__init__(self)
@@ -62,7 +62,7 @@ class CheckBase(Helpers):
             self.state = 'na'
         elif result == True:
             self.state = 'pass'
-        elif result == "inconclusive":
+        elif result == 'inconclusive':
             self.state = 'pending'
         else:
             self.state = 'fail'
@@ -137,12 +137,12 @@ class CheckName(CheckBase):
         self.automatic = True
 
     def run(self):
-        allowed_chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._+"
+        allowed_chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._+'
         output = ''
         passed = True
         for char in self.spec.name:
             if not char in allowed_chars:
-                output += "^"
+                output += '^'
                 passed = False
             else:
                 output += ' '
@@ -165,11 +165,11 @@ class CheckBuildroot(CheckBase):
     def run(self):
         br_tags = self.spec.find_tag('BuildRoot', split_tag=False)
         if len(br_tags) == 0:
-            self.set_passed(True, "Unless packager wants to package"
-                            " for EPEL5 this is fine")
+            self.set_passed(True, 'Unless packager wants to package'
+                            ' for EPEL5 this is fine')
             return
         elif len(br_tags) > 1:
-            self.set_passed(False, "Multiple BuildRoot definitions found")
+            self.set_passed(False, 'Multiple BuildRoot definitions found')
             return
 
         br = br_tags[0]
@@ -178,10 +178,10 @@ class CheckBuildroot(CheckBase):
         '%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)',
         '%{_tmppath}/%{name}-%{version}-%{release}-root']
         if br in legal_buildroots:
-            self.set_passed(False, "Buildroot is not needed unless"
-                            " packager plans to package for EPEL5")
+            self.set_passed(False, 'Buildroot is not needed unless'
+                            ' packager plans to package for EPEL5')
         else:
-            self.set_passed(False, "Invalid buildroot found: %s" % br)
+            self.set_passed(False, 'Invalid buildroot found: %s' % br)
 
     def is_applicable(self):
         '''
@@ -207,7 +207,7 @@ class CheckSpecName(CheckBase):
         if os.path.basename(self.spec.filename) == spec_name:
             self.set_passed(True)
         else:
-            self.set_passed(False, "%s should be %s " %
+            self.set_passed(False, '%s should be %s ' %
                 (os.path.basename(self.spec.filename), spec_name))
 
 
@@ -246,7 +246,7 @@ class CheckClean(CheckBase):
 
     def run(self):
         passed = True
-        msg = "Clean would be needed if support for EPEL is required"
+        msg = 'Clean would be needed if support for EPEL is required'
         sec_clean = self.spec.get_section('%clean')
         for sec in sec_clean:
             sec_lines = sec_clean[sec]
@@ -255,7 +255,7 @@ class CheckClean(CheckBase):
                 for line in sec_lines:
                     if regex.search(line):
                         passed = False
-                        msg = "Clean is needed only if supporting EPEL"
+                        msg = 'Clean is needed only if supporting EPEL'
                         break
         self.set_passed(passed, msg)
 
@@ -266,12 +266,12 @@ class CheckInstall(CheckBase):
     '''
     def __init__(self, base):
         CheckBase.__init__(self, base)
-        self.text = "Package does not run rm -rf %{buildroot} (or $RPM_BUILD_ROOT) at the beginning of %install."
+        self.text = 'Package does not run rm -rf %{buildroot} (or $RPM_BUILD_ROOT) at the beginning of %install.'
         self.automatic = True
 
     def run(self):
         passed = True
-        msg = "rm -rf would be needed if support for EPEL5 is required"
+        msg = 'rm -rf would be needed if support for EPEL5 is required'
         sec_clean = self.spec.get_section('%install')
         for sec in sec_clean:
             sec_lines = sec_clean[sec]
@@ -280,7 +280,7 @@ class CheckInstall(CheckBase):
                 for line in sec_lines:
                     if regex.search(line):
                         passed = False
-                        msg = "rm -rf is only needed if supporting EPEL5"
+                        msg = 'rm -rf is only needed if supporting EPEL5'
                         break
         self.set_passed(passed, msg)
 
@@ -312,8 +312,8 @@ class CheckDefattr(CheckBase):
                     ' OK if packaging for EPEL5. Otherwise not needed' % sec
                     break
         if passed:
-            self.set_passed(passed, "Note: defattr macros not found. They "
-                            "would be needed for EPEL5")
+            self.set_passed(passed, 'Note: defattr macros not found. They '
+                            'would be needed for EPEL5')
         else:
             self.set_passed(passed, output)
 
@@ -336,25 +336,25 @@ class CheckSourceMD5(CheckBase):
     def run(self):
         sources = self.base.sources.get_all()
         if len(sources) == 0:
-            self.log.debug("No testable sources")
-            self.set_passed('inconclusive', "Package has no sources or they"
-                            " are generated by developer")
+            self.log.debug('No testable sources')
+            self.set_passed('inconclusive', 'Package has no sources or they'
+                            ' are generated by developer')
             return
         orig_dir = os.getcwd()
-        tmpdirname = tempfile.mkdtemp(suffix="fedora-review")
+        tmpdirname = tempfile.mkdtemp(suffix='fedora-review')
         passed = False
-        output = ""
+        output = ''
         try:
             os.chdir(tmpdirname)
             self.srpm.install()
-            output = ""
+            output = ''
             all_sources_passed = True
             for source in sources:
                 local = self.base.srpm.check_source_md5(source.filename)
                 upstream = source.check_source_md5()
-                output += "%s :\n" % source.filename
-                output += "  MD5SUM this package     : %s\n" % local
-                output += "  MD5SUM upstream package : %s\n" % upstream
+                output += '%s :\n' % source.filename
+                output += '  MD5SUM this package     : %s\n' % local
+                output += '  MD5SUM upstream package : %s\n' % upstream
                 if local != upstream:
                     all_sources_passed = False
             passed = all_sources_passed
@@ -392,7 +392,7 @@ class CheckRpmLint(CheckBase):
     '''
     def __init__(self, base):
         CheckBase.__init__(self, base)
-        self.url = "http://fedoraproject.org/wiki/Packaging/Guidelines#rpmlint"
+        self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#rpmlint'
         self.text = 'Rpmlint output is silent.'
         self.automatic = True
 
@@ -488,7 +488,7 @@ listed in the exceptions section of Packaging Guidelines.'
 
     def run(self):
         if self.srpm.is_build and not self.srpm.build_failed:
-            brequires = self.spec.find_tag("BuildRequires")
+            brequires = self.spec.find_tag('BuildRequires')
             pkg_by_default = ['bash', 'bzip2', 'coreutils', 'cpio', 'diffutils',
                 'fedora-release', 'findutils', 'gawk', 'gcc', 'gcc-c++',
                 'grep', 'gzip', 'info', 'make', 'patch', 'redhat-rpm-config',
@@ -513,7 +513,7 @@ class CheckMakeinstall(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#Why_the_.25makeinstall_macro_should_not_be_used'
-        self.text = "Package use %makeinstall only when make install DESTDIR=... doesn't work."
+        self.text = 'Package use %makeinstall only when make install DESTDIR=... doesn't work.'
         self.automatic = True
         self.type = 'MUST'
 
@@ -545,7 +545,7 @@ class CheckLocale(CheckBase):
         self.type = 'MUST'
 
     def is_applicable(self):
-        return self.has_files("/usr/share/locale/*/LC_MESSAGES/*.mo")
+        return self.has_files('/usr/share/locale/*/LC_MESSAGES/*.mo')
 
     def run(self):
         pass
@@ -584,7 +584,7 @@ class CheckLicenseField(CheckBase):
         try:
             #Fix it
             source_dir = self.srpm.get_mock_dir() + \
-                "/../root/builddir/build/sources/" + \
+                '/../root/builddir/build/sources/' + \
                 package_dir
 
             licenses = []
@@ -604,14 +604,14 @@ class CheckLicenseField(CheckBase):
                 self.log.error('Source directory %s does not exist!' % source_dir)
 
             if not licenses:
-                self.set_passed(False, "No licenses found! Please check the source files for licenses manually.")
+                self.set_passed(False, 'No licenses found! Please check the source files for licenses manually.')
             else:
                 output = 'Licenses found: "%s" For detailed output of \
                 licensecheck see file: %s' % ('", "'.join(licenses),
                     filename)
                 self.set_passed('inconclusive', output)
         except OSError, e:
-            self.log.error("OSError: %s" % str(e))
+            self.log.error('OSError: %s' % str(e))
 
 
 class CheckLicensInDoc(CheckBase):
@@ -636,14 +636,14 @@ then that file, containing the text of the license(s) for the package is include
         """
         haslicensefile = False
         licenses = []
-        for f in ['COPYING', 'LICEN', 'copying', 'licen']:
-            if self.has_files("*" + f + "*"):
+        for potentialfile in ['COPYING', 'LICEN', 'copying', 'licen']:
+            if self.has_files('*' + potentialfile + '*'):
                 haslicensefile = True
                 licenses.append(f)
 
         # Checks for license tagged by %doc or directly present in
         # %{_docdir}
-        for docmotif in ["%doc.*", "%{_docdir}.*"]:
+        for docmotif in ['%doc.*', '%{_docdir}.*']:
             br = self.spec.find_all(re.compile(docmotif))
             for match in br:
                 files = match.group(0).strip().split()
@@ -654,7 +654,7 @@ then that file, containing the text of the license(s) for the package is include
                             licenses.remove(licensefile)
 
         if not haslicensefile:
-            self.set_passed("inconclusive")
+            self.set_passed('inconclusive')
         else:
             self.set_passed(licenses == [])
 
@@ -672,7 +672,7 @@ class CheckLicenseInSubpackages(CheckBase):
 
     def is_applicable(self):
         '''Check if subpackages exists'''
-        sections = self.spec.get_section("%package")
+        sections = self.spec.get_section('%package')
         if len(sections) == 0:
             return False
         else:
@@ -814,7 +814,7 @@ class CheckFilePermissions(CheckBase):
     def run(self):
         for line in self.srpm.rpmlint_output:
             if 'non-standard-executable-perm' in line:
-                self.set_passed(False, "See rpmlint output")
+                self.set_passed(False, 'See rpmlint output')
                 return
         self.set_passed(True)
 
@@ -840,7 +840,7 @@ class CheckNoConfigInUsr(CheckBase):
 
     def run(self):
         passed = True
-        extra = ""
+        extra = ''
         sections = self.spec.get_section('%files')
         for section in sections:
             for line in sections[section]:
@@ -874,7 +874,7 @@ class CheckConfigNoReplace(CheckBase):
 
     def run(self):
         passed = True
-        extra = ""
+        extra = ''
         sections = self.spec.get_section('%files')
         for section in sections:
             for line in sections[section]:
@@ -1014,7 +1014,7 @@ class CheckReqPkgConfig(CheckBase):
         return self.has_files('*.pc')
 
     def run(self):
-        regex = re.compile("^Require:\s*.*pkgconfig.*", re.I)
+        regex = re.compile('^Require:\s*.*pkgconfig.*', re.I)
         lines = self.spec.get_section('main')
         found = False
         for line in lines:
@@ -1022,7 +1022,7 @@ class CheckReqPkgConfig(CheckBase):
             res = regex.search(line)
             if res:
                 found = True
-        self.set_passed(found, "Only applicable for EL-5")
+        self.set_passed(found, 'Only applicable for EL-5')
 
 
 class CheckFullVerReqSub(CheckBase):
@@ -1041,7 +1041,7 @@ class CheckFullVerReqSub(CheckBase):
 
     def is_applicable(self):
         '''Check if subpackages exists'''
-        sections = self.spec.get_section("%package")
+        sections = self.spec.get_section('%package')
         if len(sections) == 0:
             return False
         else:
@@ -1049,8 +1049,8 @@ class CheckFullVerReqSub(CheckBase):
 
     def run(self):
         regex = re.compile(r'Requires:\s*%{name}\s*=\s*%{version}-%{release}')
-        sections = self.spec.get_section("%package")
-        extra = ""
+        sections = self.spec.get_section('%package')
+        extra = ''
         errors = False
         for section in sections:
             passed = False
@@ -1059,7 +1059,7 @@ class CheckFullVerReqSub(CheckBase):
                     passed = True
             if not passed:
                 # Requires: %{name}%{?_isa} = %{version}-%{release}
-                extra += "Missing : Requires: %%{name}%%{?_isa} = %%{version}-%%{release} in %s" % section
+                extra += 'Missing : Requires: %%{name}%%{?_isa} = %%{version}-%%{release} in %s' % section
                 errors = False
         if errors:
             self.set_passed(False, extra)
@@ -1219,12 +1219,12 @@ class CheckSourceUrl(CheckBase):
 
     def run(self):
         passed = True
-        output = ""
+        output = ''
         for source in self.sources.get_all():
             if source.URL:  # this source should have an upstream file
                 if not source.downloaded:
                     passed = False
-                    output += "%s\n" % source.URL
+                    output += '%s\n' % source.URL
 
         if passed:
             self.set_passed(True)
@@ -1250,18 +1250,18 @@ class CheckSourcePatchPrefix(CheckBase):
         regex = re.compile(r'^(Source|Patch)\d*\s*:\s*(.*)')
         result = self.spec.find_all(regex)
         passed = True
-        extra = ""
+        extra = ''
         if result:
             for res in result:
                 value = os.path.basename(res.group(2))
                 if value.startswith('%{name}') or value.startswith('%{'):
                     continue
                 passed = False
-                extra += "%s (%s)\n" % (res.string[:-1], value)
+                extra += '%s (%s)\n' % (res.string[:-1], value)
             self.set_passed(False, extra)
         else:
             passed = False
-            extra = "No SourceX/PatchX tags found"
+            extra = 'No SourceX/PatchX tags found'
         self.set_passed(passed, extra)
 
 
@@ -1334,7 +1334,7 @@ class CheckDistTag(CheckBase):
     def run(self):
         rel_tags = self.spec.find_tag('Release')
         if len(rel_tags) > 1:
-            self.set_passed(False, "Multiple Release tags found")
+            self.set_passed(False, 'Multiple Release tags found')
             return
         rel = rel_tags[0]
         self.set_passed(rel.endswith('%{?dist}'))
@@ -1355,9 +1355,9 @@ class CheckUseGlobal(CheckBase):
         regex = re.compile('(\%define.*)')
         result = self.spec.find_all(regex)
         if result:
-            extra = ""
+            extra = ''
             for res in result:
-                extra += "%s\n" % res.group(0)
+                extra += '%s\n' % res.group(0)
             self.set_passed(False, extra)
         else:
             self.set_passed(True)
@@ -1407,12 +1407,12 @@ class CheckPkgConfigFiles(CheckBase):
     def run(self):
         files = self.get_files_by_pattern('*.pc')
         passed = True
-        extra = ""
+        extra = ''
         for rpm in files:
             for fn in files[rpm]:
                 if not '-devel' in rpm:
                     passed = False
-                    extra += "%s : %s\n" % (rpm, fn)
+                    extra += '%s : %s\n' % (rpm, fn)
         self.set_passed(passed, extra)
 
 
@@ -1458,7 +1458,7 @@ class CheckManPages(CheckBase):
         self.type = 'SHOULD'
 
     def is_applicable(self):
-        return self.has_files("[/usr]/[s]bin/*")
+        return self.has_files('[/usr]/[s]bin/*')
 
 
 class CheckParallelMake(CheckBase):
@@ -1473,7 +1473,7 @@ class CheckParallelMake(CheckBase):
         '''
         check if this test is applicable
         '''
-        regex = re.compile(r"^make")
+        regex = re.compile(r'^make')
         lines = self.spec.get_section('build')
         found = False
         for line in lines:
@@ -1484,7 +1484,7 @@ class CheckParallelMake(CheckBase):
         return found
 
     def run(self):
-        regex = re.compile(r"^make*.%{?_smp_mflags}")
+        regex = re.compile(r'^make*.%{?_smp_mflags}')
         lines = self.spec.get_section('build')
         found = False
         for line in lines:
@@ -1508,7 +1508,7 @@ class CheckPatchComments(CheckBase):
 
 class LangCheckBase(CheckBase):
     """ Base class for language specific class. """
-    header = "Language"
+    header = 'Language'
 
     def is_applicable(self):
         """ By default, language specific check are disabled. """
