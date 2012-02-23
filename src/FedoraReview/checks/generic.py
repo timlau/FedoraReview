@@ -641,9 +641,10 @@ then that file, containing the text of the license(s) for the package is include
                 licenses.append(f)
 
         br = self.spec.find_all(re.compile("%doc.*"))
-        for entry in br:
-            entries = os.path.basename(entry.group(0)).strip().split()
-            for entry in entries:
+        for match in br:
+            files = match.group(0).strip().split()
+            for entry in files:
+                entry = os.path.basename(entry)
                 for licensefile in licenses:
                     if entry.startswith(licensefile):
                         licenses.remove(licensefile)
