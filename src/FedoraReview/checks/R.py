@@ -134,8 +134,7 @@ class RCheckDoc(RCheckBase):
 class RCheckLatestVersionIsPackaged(RCheckBase):
     """ Check if the last version of the R package is the one proposed """
 
-    from FedoraReview.checks.generic import CheckLatestVersionIsPackaged
-    deprecates = [CheckLatestVersionIsPackaged.__name__]
+    deprecates = ['CheckLatestVersionIsPackaged']
 
     def __init__(self, base):
         """ Instanciate check variable """
