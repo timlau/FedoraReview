@@ -639,7 +639,7 @@ then that file, containing the text of the license(s) for the package is include
         for potentialfile in ['COPYING', 'LICEN', 'copying', 'licen']:
             if self.has_files('*' + potentialfile + '*'):
                 haslicensefile = True
-                licenses.append(f)
+                licenses.append(potentialfile)
 
         # Checks for license tagged by %doc or directly present in
         # %{_docdir}
