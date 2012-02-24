@@ -5,7 +5,7 @@
 import re
 import os
 import urllib
-from FedoraReview.checks.generic import LangCheckBase, CheckLatestVersionIsPackaged
+from FedoraReview.checks.generic import LangCheckBase
 from FedoraReview import get_logger
 
 
@@ -134,6 +134,7 @@ class RCheckDoc(RCheckBase):
 class RCheckLatestVersionIsPackaged(RCheckBase):
     """ Check if the last version of the R package is the one proposed """
 
+    from FedoraReview.checks.generic import CheckLatestVersionIsPackaged
     deprecates = [CheckLatestVersionIsPackaged.__name__]
 
     def __init__(self, base):
