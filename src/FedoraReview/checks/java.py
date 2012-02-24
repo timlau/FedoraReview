@@ -2,8 +2,7 @@
 """Java language specific checks"""
 
 import re
-from FedoraReview.checks.generic import LangCheckBase, CheckFullVerReqSub, \
-    CheckBuildCompilerFlags, CheckUsefulDebuginfo, CheckLargeDocs
+from FedoraReview.checks.generic import LangCheckBase
 
 
 class JavaCheckBase(LangCheckBase):
@@ -67,6 +66,8 @@ class JavaCheckBase(LangCheckBase):
 class CheckNotJavaApplicable(JavaCheckBase):
     """Class that disables generic tests that make no sense for java
     packages"""
+    from FedoraReview.checks.generic import CheckBuildCompilerFlags,\
+        CheckUsefulDebuginfo, CheckLargeDocs
     deprecates = [CheckBuildCompilerFlags.__name__, CheckUsefulDebuginfo.__name__,
                   CheckLargeDocs.__name__]
 
@@ -180,6 +181,7 @@ class CheckJavaFullVerReqSub(JavaCheckBase):
     """Check if subpackages have proper Requires on main package
     except javadoc subpackage that doesn't have this requirement"""
 
+    from FedoraReview.checks.generic import CheckFullVerReqSub
     deprecates = [CheckFullVerReqSub.__name__]
 
     def __init__(self, base):
