@@ -52,7 +52,6 @@ class Checks(object):
         self.cache = cache
         self.nobuild = nobuild
         self._results = {'PASSED': [], 'FAILED': [], 'NA': [], 'USER': []}
-        self.deprecated = []
         self.spec = SpecFile(spec_file)
         self.sources = Sources(cache=cache, mock_config=mock_config)
         self.log = get_logger()
@@ -91,7 +90,6 @@ class Checks(object):
     def add(self, class_name):
         cls = class_name(self)
         self.checks.append(cls)
-        self.deprecated.extend(cls.deprecates)
 
     def show_file(self, filename, output=sys.stdout):
         fd = open(filename, "r")
@@ -103,6 +101,7 @@ class Checks(object):
     def run_checks(self, output=sys.stdout, writedown=True):
         issues = []
         results = []
+        deprecated = []
         # run external checks first so we can get what they deprecate
         for ext in self.ext_checks:
             self.log.debug('Running external module : %s' % ext.plugin_path)
@@ -111,11 +110,16 @@ class Checks(object):
                 results.append(result)
                 if result.type == 'MUST' and result.result == "fail":
                     issues.append(result.get_text())
-                self.deprecated.extend(result.deprecates)
+                deprecated.extend(result.deprecates)
+
+        # we only add to deprecates is deprecating test will be run
+        for test in self.checks:
+            if test.is_applicable():
+                deprecated.extend(test.deprecates)
 
         for test in self.checks:
             if test.is_applicable() and test.__class__.__name__ \
-                        not in self.deprecated:
+                        not in deprecated:
                 if test.automatic:
                     test.run()
                 else:
