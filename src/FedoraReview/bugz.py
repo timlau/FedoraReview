@@ -84,7 +84,7 @@ class ReviewBug(Helpers):
 
                 # workaround for bugzilla/xmlrpc bug. When comment
                 # text is pure number it converts to number type (duh)
-                if type(body) != str:
+                if type(body) != str and type(body) != unicode:
                     continue
                 urls = re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|\
 [$-_@.&+~]|[!*\(\),]|(?:%[0-9a-fA-F~\.][0-9a-fA-F]))+', body)
