@@ -324,7 +324,10 @@ class CheckTestSkip(JavaCheckBase):
         self.comment_regex = re.compile(r'^\s*#.*')
         self.empty_regex = re.compile(r'^\s*$')
         if self.spec:
-            self.build_sec = self.spec.get_section('%build')['%build']
+            try:
+                self.build_sec = self.spec.get_section('%build')['%build']
+            except KeyError:
+                self.build_sec = ''
 
     def is_applicable(self):
         return self.spec.find(self.skip_regex)
@@ -363,7 +366,11 @@ class CheckLocalDepmap(JavaCheckBase):
         self.comment_regex = re.compile(r'^\s*#.*')
         self.empty_regex = re.compile(r'^\s*$')
         if self.spec:
-            self.build_sec = self.spec.get_section('%build')['%build']
+            try:
+                self.build_sec = self.spec.get_section('%build')['%build']
+            except KeyError:
+                self.build_sec = ''
+
 
     def is_applicable(self):
         return self.spec.find(self.depmap_regex)
