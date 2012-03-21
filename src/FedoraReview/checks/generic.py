@@ -1427,8 +1427,26 @@ class CheckFileRequires(CheckBase):
         CheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#FileDeps'
         self.text = 'No file requires outside of /etc, /bin, /sbin, /usr/bin, /usr/sbin.'
-        self.automatic = False
+        self.automatic = True
         self.type = 'SHOULD'
+
+    def run(self):
+        wrong_req = []
+        rpm_files = self.srpm.get_files_rpms()
+        for rpm in rpm_files:
+            cmd = 'rpm -qp --requires %s/%s' % (self.get_mock_dir(), rpm)
+            for req in self._run_cmd(cmd).split('\n'):
+                for acceptable in ['/usr/bin/', '/etc/','/bin/','/sbin/','/usr/sbin/']:
+                    if req.startswith(acceptable):
+                        break
+                else:
+                    if req.startswith('/'):
+                        wrong_req.append(req)
+
+        if len(wrong_req) == 0:
+            self.set_passed(True)
+        else:
+            self.set_passed(False, "Incorrect Requires : %s " %  (', '.join(wrong_req)))
 
 
 class CheckTimeStamps(CheckBase):
