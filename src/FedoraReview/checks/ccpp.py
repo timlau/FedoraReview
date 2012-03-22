@@ -198,8 +198,16 @@ class CheckRPATH(CCppCheckBase):
         CCppCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#Beware_of_Rpath'
         self.text = 'Rpath absent or only used for internal libs.'
-        self.automatic = False
+        self.automatic = True
         self.type = 'MUST'
+
+    def run(self):
+        for line in self.srpm.rpmlint_output:
+            if 'binary-or-shlib-defines-rpath' in line:
+                self.set_passed(False, 'See rpmlint output')
+                return
+        self.set_passed(True)
+
 
 
 class CheckNoKernelModules(CCppCheckBase):
