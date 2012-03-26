@@ -1815,6 +1815,15 @@ class CheckPatchComments(CheckBase):
     def is_applicable(self):
         return self.spec.has_patches()
 
+class CheckObsoletesForRename(CheckBase):
+    def __init__(self, base):
+        CheckBase.__init__(self, base)
+        self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines#Renaming.2FReplacing_Existing_Packages'
+        self.text = 'If the package is a rename of another package, proper Obsoletes and Provides are present.'
+        self.automatic = False
+        self.type = 'MUST'
+
+
 
 class LangCheckBase(CheckBase):
     """ Base class for language specific class. """
