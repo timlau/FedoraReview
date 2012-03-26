@@ -51,6 +51,9 @@ TEST_STATES = {'pending': '[ ]', 'pass': '[x]', 'fail': '[!]', 'na': '[-]'}
 
 LOG_ROOT = 'FedoraReview'
 
+# see ticket https://fedorahosted.org/FedoraReview/ticket/43
+requests.settings.decode_unicode=False
+
 class FedoraReviewError(Exception):
     """ General Error class for fedora-review. """
 
