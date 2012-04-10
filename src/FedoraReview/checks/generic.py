@@ -577,12 +577,10 @@ class CheckLicenseField(CheckBase):
         self.type = 'MUST'
 
     def run(self):
-        #Fix it
-        package_dir = self.spec.name + '-' + self.spec.version
-        sources_files = self.sources.get_files_sources()
-
+        #Fix it - does only work for 1 source and probably not every time
+        source = self.sources.get('Source0')
+        package_dir = source.tar_members[0].name
         try:
-            #Fix it
             source_dir = self.srpm.get_mock_dir() + \
                 '/../root/builddir/build/sources/' + \
                 package_dir

@@ -330,6 +330,7 @@ class Source(Helpers):
         self.downloaded = False
         self.URL = None
         self.extract_dir = None
+        self.tar_members = []
 
     def get_source(self, URL):
         self.URL = URL
@@ -361,6 +362,7 @@ class Source(Helpers):
                 print "Could not generate the folder %s" % self.extract_dir
         tar = tarfile.open(self.filename)
         tar.extractall(self.extract_dir)
+        self.tar_members = tar.getmembers()
         tar.close()
 
 
