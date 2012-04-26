@@ -126,7 +126,7 @@ class ReviewHelper:
         spec_filter = '%s/%s*.spec' % (file_dir, self.args.name)
         srpm_filter = '%s/%s*.src.rpm' % (file_dir, self.args.name)
         files_spec = glob.glob(spec_filter)
-        files_srpm = glob.glob(srpm_filter)
+        files_srpm = sorted(glob.glob(srpm_filter), reverse=True)
         if files_spec and files_srpm:
             self.__run_checks(files_spec[0], files_srpm[0])
         else:
