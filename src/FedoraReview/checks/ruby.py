@@ -70,3 +70,25 @@ class RubyCheckRequiresProperDevel(RubyCheckBase):
                 self.set_passed('ruby-devel' in br, 'The Gem package must have BuildRequires: ruby-devel, if the Gem contains binary extension.')
         else:
             self.set_passed('ruby-devel' in br)
+
+class GemCheckSetsGemName(GemCheckBase):
+    def __init__(self, base):
+        CheckBase.__init__(self, base)
+        self.url = gl_fmt_url({'section': 'RubyGems'})
+        self.text = 'Gem package must define %{gem_name} macro.'
+        self.automatic = True
+
+    def run(self):
+        self.set_passed(len(self.find_tag('gem_name')) > 0)
+
+
+class GemCheckProperName(GemCheckBase):
+    def __init__(self, base):
+        CheckBase.__init__(self, base)
+        self.url = self.gl_fmt_url({'section': 'Naming_Guidelines'})
+        self.text = 'Gem package is named rubygem-%{gem_name}'
+        self.automatic = True
+
+    def run(self):
+        names = self.spec.find_tag('Name')
+        self.set_passed('rubygem-%{gem_name}' in names)
