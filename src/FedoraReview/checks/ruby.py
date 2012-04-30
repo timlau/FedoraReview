@@ -20,6 +20,9 @@ class RubyCheckBase(LangCheckBase):
     def is_gem(self):
         return self.spec_name.startswith('rubygem-')
 
+    def has_extension(self): # TODO: will need altering for jruby .jar files
+        return self.has_files_re(r'.*\.c(?:pp)')
+
     @property
     def gl_uri(self):
         return self._guidelines_uri
@@ -60,7 +63,7 @@ class GemCheckRequiresProperDevel(GemCheckBase):
         """ Run the check """
         br = self.spec.find_tag('BuildRequires')
         self.set_passed('rubygems-devel' in br)
-        if self.has_files_re(r'.*\.c(?:pp)'):
+        if self.has_extension():
             self.set_passed('ruby-devel' in br, 'The Gem package must have BuildRequires: ruby-devel, if the Gem contains binary extension.')
 
 class NonGemCheckRequiresProperDevel(NonGemCheckBase):
