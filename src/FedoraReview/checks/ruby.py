@@ -83,6 +83,15 @@ class RubyPlatformSpecificFilePlacement(RubyCheckBase):
             if usr_share_re.match(file) and so_file_re.match(file):
                 set_passed(False)
 
+class RubyCheckTestsRun(RubyCheckBase):
+    def __init__(self, base):
+        CheckBase.__init__(self, base)
+        self.url = self.gl_fmt_uri({'section': 'Running_test_suites'})
+        self.text = 'Test suite of the library should be run.'
+        self.automatic = False
+        self.type = 'SHOULD'
+
+
 class NonGemCheckFilePlacement(NonGemCheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
