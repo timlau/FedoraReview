@@ -125,7 +125,7 @@ class NonGemCheckRequiresProperDevel(NonGemCheckBase):
 class GemCheckSetsGemName(GemCheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
-        self.url = gl_fmt_url({'section': 'RubyGems'})
+        self.url = gl_fmt_uri({'section': 'RubyGems'})
         self.text = 'Gem package must define %{gem_name} macro.'
         self.automatic = True
 
@@ -136,7 +136,7 @@ class GemCheckSetsGemName(GemCheckBase):
 class GemCheckProperName(GemCheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
-        self.url = self.gl_fmt_url({'section': 'Naming_Guidelines'})
+        self.url = self.gl_fmt_uri({'section': 'Naming_Guidelines'})
         self.text = 'Gem package is named rubygem-%{gem_name}'
         self.automatic = True
 
@@ -147,7 +147,7 @@ class GemCheckProperName(GemCheckBase):
 class GemCheckDoesntHaveNonGemSubpackage(GemCheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
-        self.url = self.gl_fmt_url({'section': 'Packaging_for_Gem_and_non-Gem_use'})
+        self.url = self.gl_fmt_uri({'section': 'Packaging_for_Gem_and_non-Gem_use'})
         self.text = 'Gem package must not define a non-gem subpackage'
         self.automatic = True
 
@@ -159,3 +159,19 @@ class GemCheckDoesntHaveNonGemSubpackage(GemCheckBase):
             if subpackage_re.match(line):
                 self.set_passed(False)
                 break
+
+class GemCheckExcludesGemCache(GemCheckBase):
+    def __init__(self, base):
+        CheckBase.__init__(self, base)
+        self.url = self.gl_uri
+        self.text = 'Gem package must exclude cached Gem.'
+        self.automatic = True
+
+    def run(self):
+        # it seems easier to check whether .gem is not present in rpms than to examine %files
+        gemfile_re = re.compile(r'.*\.gem$')
+        self.set_passed(True)
+
+        for file in self.srpm.get_files_rpms():
+            if gemfile_re.match(file):
+                self.set_passed(False)
