@@ -27,6 +27,16 @@ class RubyCheckBase(LangCheckBase):
     def gl_fmt_uri(self, fmt):
         return self._guidelines_section_uri % fmt
 
+class GemCheckBase(RubyCheckBase):
+    """ Base class for all Gem specific checks. """
+    def is_applicable(self):
+        return self.is_gem()
+
+class NonGemCheckBase(RubyCheckBase):
+    """ Base class for all non-Gem specific checks. """
+    def is_applicable(self):
+        return self.is_nongem()
+
 class RubyCheckRequiresRubyAbi(RubyCheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
