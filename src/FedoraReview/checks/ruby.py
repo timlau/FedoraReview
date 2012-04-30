@@ -66,6 +66,23 @@ class RubyCheckBuildArchitecture(RubyCheckBase):
         else:
             self.set_passed('noarch' in arch)
 
+class RubyPlatformSpecificFilePlacement(RubyCheckBase):
+    def __init__(self, base):
+        CheckBase.__init__(self, base)
+        self.url = self.gl_fmt_uri({'section': 'Ruby_packages_with_binary_content.2Fshared_libraries'})
+        self.text = 'Platform specific files must be located under /usr/lib[64]'
+        self.automatic = True
+
+    def run(self.base):
+        files = self.srpm.get_files_rpms()
+        usr_share_re = re.compile(r'/usr/share/')
+        so_file_re = re.compile(r'\.so$')
+        set_passed(True)
+
+        for file in files:
+            if usr_share_re.match(file) and so_file_re.match(file):
+                set_passed(False)
+
 class GemCheckRequiresProperDevel(GemCheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
