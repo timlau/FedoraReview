@@ -83,6 +83,20 @@ class RubyPlatformSpecificFilePlacement(RubyCheckBase):
             if usr_share_re.match(file) and so_file_re.match(file):
                 set_passed(False)
 
+class NonGemCheckFilePlacement(NonGemCheckBase):
+    def __init__(self, base):
+        CheckBase.__init__(self, base)
+        self.url = self.gl_fmt_uri({'section': 'Build_Architecture_and_File_Placement'})
+        self.text = 'Platform dependent files must go under %{ruby_vendorarchdir}, platform independent under %{ruby_vendorlibdir}.'
+        self.automatic = False
+
+class GemCheckFilePlacement(GemCheckBase):
+    def __init__(self, base):
+        CheckBase.__init__(self, base)
+        self.url = self.gl_fmt_uri({'section': '.25install'})
+        self.text = 'Platform dependent files must all go under %{gem_extdir}, platform independent under %{gem_dir}.'
+        self.automatic = False
+
 class GemCheckRequiresProperDevel(GemCheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
