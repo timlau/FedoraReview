@@ -52,6 +52,20 @@ class RubyCheckRequiresRubyAbi(RubyCheckBase):
         br = self.spec.find_tag('Requires')
         self.set_passed('ruby(abi)' in br)
 
+class RubyCheckBuildArchitecture(RubyCheckBase):
+    def __init__(self, base):
+        CheckBase.__init__(self, base)
+        self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines#Architecture_Support'
+        self.text = 'Pure Ruby package must be built as noarch'
+        self.automatic = True
+
+    def run(self):
+        arch = self.spec.find_tag('BuildArch')
+        if self.has_extension():
+            self.set_passed('noarch' not in arch, 'Package with binary extension can\'t be built as noarch.')
+        else:
+            self.set_passed('noarch' in arch)
+
 class GemCheckRequiresProperDevel(GemCheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
