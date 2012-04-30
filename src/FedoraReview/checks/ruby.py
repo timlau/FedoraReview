@@ -95,3 +95,19 @@ class GemCheckProperName(GemCheckBase):
     def run(self):
         names = self.spec.find_tag('Name')
         self.set_passed('rubygem-%{gem_name}' in names)
+
+class GemCheckDoesntHaveNonGemSubpackage(GemCheckBase):
+    def __init__(self, base):
+        CheckBase.__init__(self, base)
+        self.url = self.gl_fmt_url({'section': 'Packaging_for_Gem_and_non-Gem_use'})
+        self.text = 'Gem package must not define a non-gem subpackage'
+        self.automatic = True
+
+    def run(self):
+        subpackage_re = re.compile(r'^%package\s+-n\s+ruby-.*')
+        self.set_passed(True)
+
+        for line in lines:
+            if subpackage_re.match(line):
+                self.set_passed(False)
+                break
