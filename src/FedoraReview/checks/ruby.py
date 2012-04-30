@@ -49,27 +49,30 @@ class RubyCheckRequiresRubyAbi(RubyCheckBase):
         br = self.spec.find_tag('Requires')
         self.set_passed('ruby(abi)' in br)
 
-class RubyCheckRequiresProperDevel(RubyCheckBase):
+class GemCheckRequiresProperDevel(GemCheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
-        if self.is_gem():
-            self.url = self.gl_fmt_uri({'section': 'RubyGems'})
-            self.text = 'Package contains BuildRequires: rubygems-devel.'
-        else:
-            self.url = self.gl_fmt_uri({'section': 'Non-Gem_Packages'})
-            self.text = 'Package contains BuildRequires: ruby-devel.'
-
+        self.url = self.gl_fmt_uri({'section': 'RubyGems'})
+        self.text = 'Package contains BuildRequires: rubygems-devel.'
         self.automatic = True
 
     def run(self):
         """ Run the check """
         br = self.spec.find_tag('BuildRequires')
-        if self.is_gem():
-            self.set_passed('rubygems-devel' in br)
-            if self.has_files_re(r'.*\.c(?:pp)'):
-                self.set_passed('ruby-devel' in br, 'The Gem package must have BuildRequires: ruby-devel, if the Gem contains binary extension.')
-        else:
-            self.set_passed('ruby-devel' in br)
+        self.set_passed('rubygems-devel' in br)
+        if self.has_files_re(r'.*\.c(?:pp)'):
+            self.set_passed('ruby-devel' in br, 'The Gem package must have BuildRequires: ruby-devel, if the Gem contains binary extension.')
+
+class NonGemCheckRequiresProperDevel(NonGemCheckBase):
+    def __init__(self, base):
+        CheckBase.__init__(self, base)
+        self.url = self.gl_fmt_uri({'section': 'Non-Gem_Packages'})
+        self.text = 'Package contains BuildRequires: ruby-devel.'
+        self.automatic = True
+
+    def run(self):
+        """ Run the check """
+        self.set_passed('ruby-devel' in self.spec.find_tag('BuildRequires'))
 
 class GemCheckSetsGemName(GemCheckBase):
     def __init__(self, base):
