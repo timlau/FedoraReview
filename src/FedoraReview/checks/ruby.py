@@ -7,9 +7,8 @@ from generic import LangCheckBase, CheckBase, CheckLatestVersionIsPackaged
 
 class RubyCheckBase(LangCheckBase):
     """ Base class for all Ruby specific checks. """
-    def __init__(self):
-        self._guidelines_uri = 'http://fedoraproject.org/wiki/Packaging:Ruby'
-        self._guidelines_section_uri = '%(uri)#%%(section)' % {'uri': self._guidelines_uri}
+    _guidelines_uri = 'http://fedoraproject.org/wiki/Packaging:Ruby'
+    _guidelines_section_uri = '%(uri)s#%%(section)s' % {'uri': _guidelines_uri}
 
     def is_applicable(self):
         return self.is_gem() or self.is_nongem()
@@ -18,7 +17,7 @@ class RubyCheckBase(LangCheckBase):
         return self.spec.name.startswith('ruby-')
 
     def is_gem(self):
-        return self.spec_name.startswith('rubygem-')
+        return self.spec.name.startswith('rubygem-')
 
     def has_extension(self): # TODO: will need altering for jruby .jar files
         return self.has_files_re(r'.*\.c(?:pp)')
@@ -73,7 +72,7 @@ class RubyPlatformSpecificFilePlacement(RubyCheckBase):
         self.text = 'Platform specific files must be located under /usr/lib[64]'
         self.automatic = True
 
-    def run(self.base):
+    def run(self):
         files = self.srpm.get_files_rpms()
         usr_share_re = re.compile(r'/usr/share/')
         so_file_re = re.compile(r'\.so$')
@@ -134,12 +133,12 @@ class NonGemCheckRequiresProperDevel(NonGemCheckBase):
 class GemCheckSetsGemName(GemCheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
-        self.url = gl_fmt_uri({'section': 'RubyGems'})
+        self.url = self.gl_fmt_uri({'section': 'RubyGems'})
         self.text = 'Gem package must define %{gem_name} macro.'
         self.automatic = True
 
     def run(self):
-        self.set_passed(len(self.find_tag('gem_name')) > 0)
+        self.set_passed(len(self.spec.find_tag('gem_name')) > 0)
 
 
 class GemCheckProperName(GemCheckBase):
@@ -164,7 +163,7 @@ class GemCheckDoesntHaveNonGemSubpackage(GemCheckBase):
         subpackage_re = re.compile(r'^%package\s+-n\s+ruby-.*')
         self.set_passed(True)
 
-        for line in lines:
+        for line in self.spec.lines:
             if subpackage_re.match(line):
                 self.set_passed(False)
                 break
