@@ -2,8 +2,8 @@
 
 import re
 import os
-from generic import LangCheckBase, CheckBase, CheckLatestVersionIsPackaged
 
+from generic import LangCheckBase
 
 class RubyCheckBase(LangCheckBase):
     """ Base class for all Ruby specific checks. """
@@ -41,7 +41,7 @@ class NonGemCheckBase(RubyCheckBase):
 
 class RubyCheckRequiresRubyAbi(RubyCheckBase):
     def __init__(self, base):
-        CheckBase.__init__(self, base)
+        RubyCheckBase.__init__(self, base)
         self.url = self.gl_fmt_uri({'section': 'Ruby_ABI'})
         self.text = 'Package contains Requires: ruby(abi).'
         self.automatic = True
@@ -53,7 +53,7 @@ class RubyCheckRequiresRubyAbi(RubyCheckBase):
 
 class RubyCheckBuildArchitecture(RubyCheckBase):
     def __init__(self, base):
-        CheckBase.__init__(self, base)
+        RubyCheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines#Architecture_Support'
         self.text = 'Pure Ruby package must be built as noarch'
         self.automatic = True
@@ -67,7 +67,7 @@ class RubyCheckBuildArchitecture(RubyCheckBase):
 
 class RubyCheckPlatformSpecificFilePlacement(RubyCheckBase):
     def __init__(self, base):
-        CheckBase.__init__(self, base)
+        RubyCheckBase.__init__(self, base)
         self.url = self.gl_fmt_uri({'section': 'Ruby_packages_with_binary_content.2Fshared_libraries'})
         self.text = 'Platform specific files must be located under /usr/lib[64]'
         self.automatic = True
@@ -87,7 +87,7 @@ class RubyCheckPlatformSpecificFilePlacement(RubyCheckBase):
 
 class RubyCheckTestsRun(RubyCheckBase):
     def __init__(self, base):
-        CheckBase.__init__(self, base)
+        RubyCheckBase.__init__(self, base)
         self.url = self.gl_fmt_uri({'section': 'Running_test_suites'})
         self.text = 'Test suite of the library should be run.'
         self.automatic = False
@@ -96,21 +96,21 @@ class RubyCheckTestsRun(RubyCheckBase):
 
 class NonGemCheckFilePlacement(NonGemCheckBase):
     def __init__(self, base):
-        CheckBase.__init__(self, base)
+        NonGemCheckBase.__init__(self, base)
         self.url = self.gl_fmt_uri({'section': 'Build_Architecture_and_File_Placement'})
         self.text = 'Platform dependent files must go under %{ruby_vendorarchdir}, platform independent under %{ruby_vendorlibdir}.'
         self.automatic = False
 
 class GemCheckFilePlacement(GemCheckBase):
     def __init__(self, base):
-        CheckBase.__init__(self, base)
+        GemCheckBase.__init__(self, base)
         self.url = self.gl_fmt_uri({'section': '.25install'})
         self.text = 'Platform dependent files must all go under %{gem_extdir}, platform independent under %{gem_dir}.'
         self.automatic = False
 
 class GemCheckRequiresProperDevel(GemCheckBase):
     def __init__(self, base):
-        CheckBase.__init__(self, base)
+        GemCheckBase.__init__(self, base)
         self.url = self.gl_fmt_uri({'section': 'RubyGems'})
         self.text = 'Package contains BuildRequires: rubygems-devel.'
         self.automatic = True
@@ -124,7 +124,7 @@ class GemCheckRequiresProperDevel(GemCheckBase):
 
 class NonGemCheckRequiresProperDevel(NonGemCheckBase):
     def __init__(self, base):
-        CheckBase.__init__(self, base)
+        NonGemCheckBase.__init__(self, base)
         self.url = self.gl_fmt_uri({'section': 'Non-Gem_Packages'})
         self.text = 'Package contains BuildRequires: ruby-devel.'
         self.automatic = True
@@ -135,7 +135,7 @@ class NonGemCheckRequiresProperDevel(NonGemCheckBase):
 
 class GemCheckSetsGemName(GemCheckBase):
     def __init__(self, base):
-        CheckBase.__init__(self, base)
+        GemCheckBase.__init__(self, base)
         self.url = self.gl_fmt_uri({'section': 'RubyGems'})
         self.text = 'Gem package must define %{gem_name} macro.'
         self.automatic = True
@@ -146,7 +146,7 @@ class GemCheckSetsGemName(GemCheckBase):
 
 class GemCheckProperName(GemCheckBase):
     def __init__(self, base):
-        CheckBase.__init__(self, base)
+        GemCheckBase.__init__(self, base)
         self.url = self.gl_fmt_uri({'section': 'Naming_Guidelines'})
         self.text = 'Gem package is named rubygem-%{gem_name}'
         self.automatic = True
@@ -157,7 +157,7 @@ class GemCheckProperName(GemCheckBase):
 
 class GemCheckDoesntHaveNonGemSubpackage(GemCheckBase):
     def __init__(self, base):
-        CheckBase.__init__(self, base)
+        GemCheckBase.__init__(self, base)
         self.url = self.gl_fmt_uri({'section': 'Packaging_for_Gem_and_non-Gem_use'})
         self.text = 'Gem package must not define a non-gem subpackage'
         self.automatic = True
@@ -173,7 +173,7 @@ class GemCheckDoesntHaveNonGemSubpackage(GemCheckBase):
 
 class GemCheckExcludesGemCache(GemCheckBase):
     def __init__(self, base):
-        CheckBase.__init__(self, base)
+        GemCheckBase.__init__(self, base)
         self.url = self.gl_uri
         self.text = 'Gem package must exclude cached Gem.'
         self.automatic = True
