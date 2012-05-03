@@ -362,8 +362,22 @@ class Source(Helpers):
                 print "Could not generate the folder %s" % self.extract_dir
         tar = tarfile.open(self.filename)
         tar.extractall(self.extract_dir)
-        self.tar_members = tar.getmembers()
+        if self.filename.endswith('.gem'):
+            gem_extract_dir = self.extract_gem()
+            self.tar_members.append(gem_extract_dir)
+        else:
+            self.tar_members = tar.getmembers()
         tar.close()
+
+    def extract_gem(self):
+        """Every gem contains a data.tar.gz file with the actual sources"""
+        gem_extract_dir = os.path.join(self.extract_dir, os.path.basename(self.filename)[0:-4])
+        os.makedirs(gem_extract_dir)
+        gem_data = tarfile.open(os.path.join(self.extract_dir, 'data.tar.gz'))
+        gem_data.extractall(gem_extract_dir)
+        gem_data.close()
+
+        return tarfile.TarInfo(name = os.path.basename(self.filename)[0:-4])
 
 
 class SRPMFile(Helpers):
