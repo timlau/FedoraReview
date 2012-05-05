@@ -579,6 +579,10 @@ class CheckLicenseField(CheckBase):
     def run(self):
         #Fix it - does only work for 1 source and probably not every time
         source = self.sources.get('Source0')
+        if source is None:
+            self.set_passed(False, 'Could not retrieve sources. Please check the source files for licenses manually.')
+            return
+        
         package_dir = source.tar_members[0].name
         try:
             source_dir = self.srpm.get_mock_dir() + \
