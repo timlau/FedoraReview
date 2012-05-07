@@ -77,14 +77,14 @@ class RubyCheckPlatformSpecificFilePlacement(RubyCheckBase):
         return super(RubyCheckBase, self).is_applicable() and self.has_extension()
 
     def run(self):
-        files = self.srpm.get_files_rpms()
         usr_lib_re = re.compile(r'/usr/lib')
         so_file_re = re.compile(r'\.so$')
         self.set_passed(True)
 
-        for file in files:
-            if so_file_re.match(file) and not usr_lib_re.match(file):
-                self.set_passed(False)
+        for one_rpm in self.srpm.get_files_rpms().values():
+            for file in one_rpm:
+                if so_file_re.match(file) and not usr_lib_re.match(file):
+                    self.set_passed(False)
 
 class RubyCheckTestsRun(RubyCheckBase):
     def __init__(self, base):
@@ -222,9 +222,10 @@ class GemCheckExcludesGemCache(GemCheckBase):
         gemfile_re = re.compile(r'.*\.gem$')
         self.set_passed(True)
 
-        for file in self.srpm.get_files_rpms():
-            if gemfile_re.match(file):
-                self.set_passed(False)
+        for one_rpm in self.srpm.get_files_rpms().values():
+            for file in one_rpm:
+                if gemfile_re.match(file):
+                    self.set_passed(False)
 
 class GemCheckUsesMacros(GemCheckBase):
     def __init__(self, base):
