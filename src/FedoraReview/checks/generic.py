@@ -393,19 +393,12 @@ class CheckRpmLint(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#rpmlint'
-        self.text = 'Rpmlint output is silent.'
+        self.text = 'Rpmlint is run on all rpms the build produces'
         self.automatic = True
 
     def run(self):
-        failed = False
         no_errors, rc = self.srpm.rpmlint_rpms()
-        if not no_errors:
-            failed = True
-        self.output_extra = rc
-        if not failed:
-            self.set_passed(True)
-        else:
-            self.set_passed(False)
+        self.set_passed(True, rc)
 
 
 class CheckSpecLegibility(CheckBase):
