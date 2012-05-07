@@ -256,13 +256,13 @@ class GemCheckUsesMacros(GemCheckBase):
                 if macro_re.match(line):
                     re_dict[macro_re] = True
 
-        err_message = ['The specfile doesn\'t use these macros:']
+        err_message = []
         # construct the error message for all non-present macros
         for key, value in re_dict.iteritems():
             if value == False:
-                err_message.append('    %s' % key.pattern.replace('\\s+', ' '))
+                err_message.append(key.pattern.replace('\\s+', ' '))
 
-        if len(err_message) == 1:
+        if len(err_message) == 0:
             self.set_passed(True)
         else:
-            self.set_passed(False, err_message.join('\n'))
+            self.set_passed(False, 'The specfile doesn\'t use these macros: %s' % ', '.join(err_message))
