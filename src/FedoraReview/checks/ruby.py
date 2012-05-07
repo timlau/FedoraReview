@@ -2,6 +2,7 @@
 
 import re
 import os
+import itertools
 
 from generic import LangCheckBase
 
@@ -113,6 +114,25 @@ class RubyCheckTestsNotRunByRake(RubyCheckTestsRun):
             if line.find('rake') != -1:
                 self.set_passed(False)
 
+class NonGemCheckUsesMacros(NonGemCheckBase):
+    def __init__(self, base):
+        NonGemCheckBase.__init__(self, base)
+        self.url = self.gl_fmt_uri({'section': 'Macros'})
+        self.text = 'Specfile should utilize macros from ruby-devel package.'
+        self.automatic = True
+        self.type = 'SHOULD'
+
+    def run(self):
+        self.set_passed(False)
+        vendorarchdir_re = re.compile('%{vendorarchdir}', re.I)
+        vendorlibdir_re = re.compile('%{vendorlibdir}', re.I)
+
+        for line in self.spec.get_section('%files')['%files']:
+            if self.has_extension() and vendorarchdir_re.match(line):
+                self.set_passed(True)
+            if not self.has_extension() and vendorlibdir_re.match(line):
+                self.set_passed(True)
+
 class NonGemCheckFilePlacement(NonGemCheckBase):
     def __init__(self, base):
         NonGemCheckBase.__init__(self, base)
@@ -205,3 +225,44 @@ class GemCheckExcludesGemCache(GemCheckBase):
         for file in self.srpm.get_files_rpms():
             if gemfile_re.match(file):
                 self.set_passed(False)
+
+class GemCheckUsesMacros(GemCheckBase):
+    def __init__(self, base):
+        GemCheckBase.__init__(self, base)
+        self.url = self.gl_fmt_uri({'section': 'Macros'})
+        self.text = 'Specfile should utilize macros from rubygem-devel package.'
+        self.automatic = True
+        self.type = 'SHOULD'
+
+    def run(self):
+        self.set_passed(False)
+        gem_libdir_re = re.compile('%{gem_libdir}', re.I)
+        gem_extdir_re = re.compile('%{gem_extdir}', re.I)
+        doc_gem_docdir_re = re.compile('%doc\s+%{gem_docdir}', re.I)
+        exclude_gem_cache_re = re.compile(r'%exclude\s+%{gem_cache}', re.I)
+        gem_spec_re = re.compile('%{gem_spec}', re.I)
+
+        re_dict = {gem_libdir_re: False,
+                   doc_gem_docdir_re: False,
+                   exclude_gem_cache_re: False,
+                   gem_spec_re: False}
+        if self.has_extension():
+            re_dict[gem_extdir_re] = False
+
+        # mark the present macro regexps with True
+        files_sections = itertools.chain(*self.spec.get_section('%files').values())
+        for line in files_sections:
+            for macro_re in re_dict:
+                if macro_re.match(line):
+                    re_dict[macro_re] = True
+
+        err_message = ['The specfile doesn\'t use these macros:']
+        # construct the error message for all non-present macros
+        for key, value in re_dict.iteritems():
+            if value == False:
+                err_message.append('    %s' % key.pattern.replace('\\s+', ' '))
+
+        if len(err_message) == 1:
+            self.set_passed(True)
+        else:
+            self.set_passed(False, err_message.join('\n'))
