@@ -90,9 +90,28 @@ class RubyCheckTestsRun(RubyCheckBase):
         RubyCheckBase.__init__(self, base)
         self.url = self.gl_fmt_uri({'section': 'Running_test_suites'})
         self.text = 'Test suite of the library should be run.'
-        self.automatic = False
+        self.automatic = True
         self.type = 'SHOULD'
 
+    def run(self):
+        check_sections = self.spec.get_section('%check')
+        self.set_passed(True)
+
+        if len(check_sections) == 0:
+            self.set_passed(False)
+
+
+class RubyCheckTestsNotRunByRake(RubyCheckTestsRun):
+    def __init__(self, base):
+        RubyCheckTestsRun.__init__(self, base)
+        self.text = 'Test suite should not be run by rake.'
+
+    def run(self):
+        self.set_passed(True)
+
+        for line in self.spec.get_section('%check')['%check']:
+            if line.find('rake') != -1:
+                self.set_passed(False)
 
 class NonGemCheckFilePlacement(NonGemCheckBase):
     def __init__(self, base):
