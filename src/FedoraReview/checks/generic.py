@@ -27,7 +27,7 @@ import tempfile
 import fnmatch
 import shutil
 
-from FedoraReview import Helpers, get_logger, TestResult
+from FedoraReview import Helpers, get_logger, TestResult, Attachment
 
 
 class CheckBase(Helpers):
@@ -49,6 +49,7 @@ class CheckBase(Helpers):
         self.result = None
         self.output_extra = None
         self.log = get_logger()
+        self.attachments = []
 
     def run(self):
         raise NotImplementedError()
@@ -75,7 +76,7 @@ class CheckBase(Helpers):
         '''
         ret = TestResult(self.__class__.__name__, self.url, self.__class__.header,
                           self.__class__.deprecates, self.text, self.type,
-                          self.state, self.output_extra)
+                          self.state, self.output_extra, self.attachments)
         return ret
 
     def is_applicable(self):
@@ -343,23 +344,26 @@ class CheckSourceMD5(CheckBase):
         orig_dir = os.getcwd()
         tmpdirname = tempfile.mkdtemp(suffix='fedora-review')
         passed = False
-        output = ''
+        msg  = 'Check did not complete'
         try:
             os.chdir(tmpdirname)
             self.srpm.install()
-            output = ''
+            text = ''
             all_sources_passed = True
             for source in sources:
                 local = self.base.srpm.check_source_md5(source.filename)
                 upstream = source.check_source_md5()
-                output += '%s :\n' % source.filename
-                output += '  MD5SUM this package     : %s\n' % local
-                output += '  MD5SUM upstream package : %s\n' % upstream
+                text += '%s :\n' % source.filename
+                text += '  MD5SUM this package     : %s\n' % local
+                text += '  MD5SUM upstream package : %s\n' % upstream
                 if local != upstream:
                     all_sources_passed = False
             passed = all_sources_passed
         finally:
-            self.set_passed(passed, output)
+            msg = None if passed else \
+                     '     Upstream MD5sum check error (see attachment)'
+            self.set_passed(passed, msg)
+            self.attachments = [Attachment('MD5-sum check', text, 10)]
             os.chdir(orig_dir)
             shutil.rmtree(tmpdirname)
 
@@ -393,12 +397,15 @@ class CheckRpmLint(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#rpmlint'
-        self.text = 'Rpmlint is run on all rpms the build produces'
+        self.text = 'Rpmlint is run on all rpms the build produces.'
         self.automatic = True
 
     def run(self):
         no_errors, rc = self.srpm.rpmlint_rpms()
-        self.set_passed(True, rc)
+        text = 'No rpmlint messages.' if no_errors else \
+                     'There are rpmlint messages (see attachment).'
+        self.set_passed(True, text)
+        self.attachments = [ Attachment('Rpmlint', rc, 5) ]
 
 
 class CheckSpecLegibility(CheckBase):

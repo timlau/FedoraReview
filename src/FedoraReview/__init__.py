@@ -774,11 +774,42 @@ class SpecFile(object):
         return result
 
 
+class Attachment(object):
+    """ Text written after the test lines. """
+
+    def __init__(self, header, text, order_hint=10):
+        """
+        Setup an attachment. Args:
+         -  header: short header, < 40 char.
+         -  text: printed as-is.
+         -  order_hint: Sorting hint, lower hint goes first.
+                0 <= order_hint <= 10
+        """
+
+        self.header = header
+        self.text = text
+        self.order_hint = order_hint
+
+    def __str__(self):
+        s = self.header + '\n'
+        s +=  '-' * len(self.header) + '\n'
+        s +=  self.text
+        return s
+
+    def __cmp__(self, other):
+        if not hasattr(other, 'order_hint'):
+            return NotImplemented
+        if self.order_hint < other.order_hint:
+            return -1
+        if self.order_hint > other.order_hint:
+            return 1
+        return 0
+
+
 class TestResult(object):
-    nowrap = ["CheckRpmLint", "CheckSourceMD5"]
 
     def __init__(self, name, url, group, deprecates, text, check_type,
-                 result, output_extra):
+                 result, output_extra, attachments=[]):
         self.name = name
         self.url = url
         self.group = group
@@ -787,7 +818,8 @@ class TestResult(object):
         self.type = check_type
         self.result = result
         self.output_extra = output_extra
-        if self.output_extra and self.name not in TestResult.nowrap:
+        self.attachments = attachments
+        if self.output_extra:
             self.output_extra = re.sub("\s+", " ", self.output_extra)
         self.wrapper = TextWrapper(width=78, subsequent_indent=" " * 5,
                                    break_long_words=False, )
@@ -801,12 +833,9 @@ class TestResult(object):
         strbuf.write("%s" % '\n'.join(main_lines))
         if self.output_extra and self.output_extra != "":
             strbuf.write("\n")
-            if self.name in TestResult.nowrap:
-                strbuf.write(self.output_extra)
-            else:
-                extra_lines = self.wrapper.wrap("     Note: %s" %
-                                               self.output_extra)
-                strbuf.write('\n'.join(extra_lines))
+            extra_lines = self.wrapper.wrap("     Note: %s" %
+                                            self.output_extra)
+            strbuf.write('\n'.join(extra_lines))
 
         return strbuf.getvalue()
 
