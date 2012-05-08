@@ -278,7 +278,7 @@ class Sources(object):
         """
         for source in self._sources.values():
             if os.path.splitext(source.filename)[1] in \
-                ['.zip', '.tar', '.gz', '.bz2', '.gem']:
+                ['.zip', '.tar', '.gz', '.bz2', '.gem', '.xz']:
                 if not source.extract_dir:
                     source.extract()
 
@@ -360,7 +360,16 @@ class Source(Helpers):
             except IOError, err:
                 self.log.debug(err)
                 print "Could not generate the folder %s" % self.extract_dir
-        tar = tarfile.open(self.filename)
+
+        if not self.filename.endswith('.xz'):
+            tar = tarfile.open(self.filename)
+        else:
+            # LZMA will be supported in python-3.3
+            # http://bugs.python.org/issue5689
+            Popen(["xz", "--keep", "--decompress", self.filename],
+                 stdout=subprocess.PIPE).stdout.read()
+            tar = tarfile.open(self.filename[:-3])
+
         tar.extractall(self.extract_dir)
         if self.filename.endswith('.gem'):
             gem_extract_dir = self.extract_gem()
