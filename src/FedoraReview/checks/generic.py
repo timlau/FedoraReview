@@ -578,6 +578,10 @@ class CheckLicenseField(CheckBase):
 
     def run(self):
         #Fix it - does only work for 1 source and probably not every time
+
+        # Required to set up source.tar_members if it hasn't yet been set up.
+        self.sources.get_files_sources()
+
         source = self.sources.get('Source0')
         if source is None:
             self.set_passed(False, 'Could not retrieve sources. Please check the source files for licenses manually.')
