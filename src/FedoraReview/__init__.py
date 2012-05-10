@@ -661,8 +661,6 @@ class SRPMFile(Helpers):
 
         karg: filenames, list of filenames  to run rpmlint on
         """
-
-        import pdb; pdb.set_trace()
         cmd = 'rpmlint -f .rpmlint ' + ' '.join( filenames )
         out = 'Checking: '
         sep = '\n' + ' ' * len( out )
