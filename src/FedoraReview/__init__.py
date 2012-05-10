@@ -300,10 +300,7 @@ class Sources(object):
         on their extension.
         """
         for source in self._sources.values():
-            if os.path.splitext(source.filename)[1] in \
-                ['.zip', '.tar', '.gz', '.bz2', '.gem', '.xz']:
-                if not source.extract_dir:
-                    source.extract()
+            source.extract()
 
     def extract(self, source_url=None, source_filename=None):
         """ Extract the source specified by its url or filename.
