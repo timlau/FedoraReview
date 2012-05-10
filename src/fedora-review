@@ -29,7 +29,7 @@ import subprocess
 import errno
 
 from FedoraReview import get_logger, do_logger_setup, \
-    Settings, FedoraReviewError
+    Settings, FedoraReviewError, mock_run
 from FedoraReview.bugz import ReviewBug
 from FedoraReview.misc import Checks
 from FedoraReview import __version__
@@ -201,6 +201,9 @@ class ReviewHelper:
 
     def run(self):
         try:
+            #import pdb; pdb.set_trace()
+            (msg, rc) = mock_run("PS1='mock# '\nls\necho ORVAR\n")
+
             self.verbose = self.args.verbose
             if self.verbose:
                 do_logger_setup(loglvl=logging.DEBUG)
