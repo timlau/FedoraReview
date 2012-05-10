@@ -411,23 +411,30 @@ class SRPMFile(Helpers):
         self.filename = filename
         self.spec = spec
         self.log = get_logger()
-        self.is_installed = False
         self.is_build = False
         self.build_failed = False
         self._rpm_files = None
         self.prebuilt = prebuilt
 
-    def install(self, wipe=False):
-        """ Install the source rpm into the local filesystem.
+    def unpack(self):
+        """ Local unpack using rpm2cpio. """
+        if hasattr(self, 'unpacked_src'):
+            return;
 
-        :arg wipe, boolean which clean the source directory.
-        """
-        if wipe:
-            sourcedir = self.get_source_dir()
-            if sourcedir != "" and sourcedir != "/":  # just to be safe
-                call('rm -f %s/*  &>/dev/null' % sourcedir, shell=True)
-        call('rpm -ivh %s &>/dev/null' % self.filename, shell=True)
-        self.is_installed = True
+        wdir = Settings.work_dir + '/srpm-unpack'
+        if os.path.exists(wdir):
+             shutil.rmtree(wdir)
+
+        os.mkdir(wdir)
+        oldpwd = os.getcwd()
+        os.chdir(wdir)
+        cmd = 'rpm2cpio ' + self.filename + ' | cpio -i --quiet'
+        rc = call(cmd, shell=True)
+        if rc != 0:
+            print "Cannot unpack %s into %s" % (self.filename, wdir)
+        else:
+            self.unpacked_src = wdir
+        os.chdir(oldpwd)
 
     def build(self, force=False, silence=False):
         """ Returns the build status, -1 is the build failed, -2
@@ -486,37 +493,23 @@ class SRPMFile(Helpers):
                 return bdir_root + entry
         return None
 
-    def get_source_dir(self):
-        """ Retrieve the source directory from rpm.
-        """
-        sourcedir = Popen(["rpm", "-E", '%_sourcedir'],
-                stdout=subprocess.PIPE).stdout.read()[:-1]
-        # replace %{name} by the specname
-        package_name = Popen(["rpm", "-qp", self.filename,
-                '--qf', '%{name}'], stdout=subprocess.PIPE).stdout.read()
-        sourcedir = sourcedir.replace("%{name}", package_name)
-        sourcedir = sourcedir.replace("%name", package_name)
-        return sourcedir
-
-    def check_source_md5(self, filename):
-        if self.is_installed:
-            sourcedir = self.get_source_dir()
-            src_files = glob.glob(sourcedir + '/*')
-            # src_files = glob.glob(os.path.expanduser('~/rpmbuild/SOURCES/*'))
-            if src_files:
-                for name in src_files:
-                    if filename and \
-                    os.path.basename(filename) != os.path.basename(name):
-                        continue
-                    self.log.debug("Checking md5 for %s" % name)
-                    sum, file = self._md5sum(name)
-                    return sum
-            else:
-                print('no sources found in install SRPM')
-                return "ERROR"
-        else:
-            print "SRPM is not installed"
+    def check_source_md5(self, path):
+        self.unpack()
+        filename = os.path.basename(path)
+        if not hasattr(self, 'unpacked_src'):
+            print "check_source_md5: Cannot unpack (?)"
             return "ERROR"
+        src_files = glob.glob(self.unpacked_src + '/*')
+        if not src_files:
+            print 'No unpacked sources found (!)'
+            return "ERROR"
+        if not filename in [os.path.basename(f) for f in src_files]:
+            print 'Cannot find source: ' + filename
+            return "ERROR"
+        path = os.path.join(self.unpacked_src, filename)
+        self.log.debug("Checking md5 for %s" % path)
+        sum, file = self._md5sum(path)
+        return sum
 
     def _check_errors(self, out):
         problems = re.compile('(\d+)\serrors\,\s(\d+)\swarnings')

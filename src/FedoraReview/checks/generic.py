@@ -347,7 +347,6 @@ class CheckSourceMD5(CheckBase):
         msg  = 'Check did not complete'
         try:
             os.chdir(tmpdirname)
-            self.srpm.install()
             text = ''
             all_sources_passed = True
             for source in sources:
