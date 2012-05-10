@@ -72,6 +72,49 @@ def rpmdev_extract(working_dir, archive):
     return rc
 
 
+def _check_rpmlint_errors(out, log):
+    """ Check the rpmlint output, return(ok, errmsg)
+    If ok, output is OK and there is 0 warnings/errors
+    If not ok, and errmsg!= None there is system errors,
+    reflected in errmsg. If not ok and sg == None parsing
+    is ok but there are warnings/errors"""
+
+    problems = re.compile('(\d+)\serrors\,\s(\d+)\swarnings')
+    lines = out.split('\n')[:-1]
+    err_lines = filter( lambda l: l.lower().find('error') != -1, lines)
+    if len(err_lines) == 0:
+        log.debug('Cannot parse rpmlint output: ' + out )
+        return False, 'Cannot parse rpmlint output:'
+
+    res = problems.search(err_lines[-1])
+    if res and len(res.groups()) == 2:
+        errors, warnings = res.groups()
+        if errors == '0' and warnings == '0':
+            return True, None
+        else:
+            return False, None
+    else:
+        log.debug('Cannot parse rpmlint output: ' + out )
+        return False, 'Cannot parse rpmlint output:'
+
+
+def get_logger():
+    return logging.getLogger(LOG_ROOT)
+
+
+def do_logger_setup(logroot=LOG_ROOT, logfmt='%(message)s',
+    loglvl=logging.INFO):
+    ''' Setup Python logging using a TextViewLogHandler '''
+    logger = logging.getLogger(logroot)
+    logger.setLevel(loglvl)
+    formatter = logging.Formatter(logfmt, "%H:%M:%S")
+    handler = logging.StreamHandler()
+    handler.setFormatter(formatter)
+    handler.propagate = False
+    logger.addHandler(handler)
+    return handler
+
+
 class FedoraReviewError(Exception):
     """ General Error class for fedora-review. """
 
@@ -83,20 +126,80 @@ class FedoraReviewError(Exception):
         """ Represent the error. """
         return repr(self.value)
 
-def mock_install(rpm_files):
-    """
-    Run  'mock install' on a list of files, return None of
-    OK, else the stdout+stderr
-    """
-    cmd = ["mock", "install"]
-    cmd.extend(rpm_files)
-    try:
-        p = Popen(cmd, stdout=PIPE, stderr=STDOUT)
-        output, error = p.communicate()
-    except OSError as e:
-        return output[0]
-    return None
 
+_RPMLINT_SCRIPT="""
+mock --shell << 'EOF'
+echo 'rpmlint:'
+rpmlint @rpm_names@
+echo 'rpmlint-done:'
+EOF
+"""
+class _Mock(object):
+    """ Some basic operations on the mock chroot env, a singleton. """
+
+    def __init__(self):
+        self.log = get_logger()
+
+    def install(self, rpm_files):
+        """
+        Run  'mock install' on a list of files, return None if
+        OK, else the stdout+stderr
+        """
+        cmd = ["mock", "install"]
+        cmd.extend(rpm_files)
+        try:
+            p = Popen(cmd, stdout=PIPE, stderr=STDOUT)
+            output, error = p.communicate()
+        except OSError as e:
+            return output[0]
+        return None
+
+    def _run(self, script):
+        """ Run a script,  return (ok, output). """
+        try:
+            p = Popen(script, stdout=PIPE, stderr=STDOUT, shell=True)
+            output, error = p.communicate()
+        except OSError as e:
+            return False, e.strerror
+        return True, output
+
+    def rpmlint_rpms(self, rpms):
+        """ Install and run rpmlint on  packages,
+        return (True,  text) or (False, error_string)"""
+
+        rpms.insert(0, 'rpmlint')
+        error =  self.install(rpms)
+        if error:
+            return False, error
+        rpms.pop(0)
+
+        script = _RPMLINT_SCRIPT
+        basenames = [ os.path.basename(r) for r in rpms]
+        names = [r.rsplit('-', 2)[0] for r in basenames]
+        rpm_names = ' '.join(list(set(names)))
+        script = script.replace('@rpm_names@', rpm_names)
+        ok, output = self._run(script)
+        if not ok:
+            return False, output + '\n'
+
+        ok, err_msg = _check_rpmlint_errors(output, self.log)
+        if err_msg:
+            return False, err_msg
+
+        lines = output.split('\n')
+        l = ''
+        while not l.startswith('rpmlint:') and len(lines) > 0:
+            l = lines.pop(0)
+        text = ''
+        for l in lines:
+            if l.startswith('<mock-'):
+                l=l[l.find('#'):]
+            if l.startswith('rpmlint-done:'):
+                break
+            text += l + '\n'
+        return ok, text
+
+Mock=_Mock()
 
 class _Settings(object):
     """
@@ -553,23 +656,13 @@ class SRPMFile(Helpers):
         sum, file = self._md5sum(path)
         return sum
 
-    def _check_errors(self, out):
-        problems = re.compile('(\d+)\serrors\,\s(\d+)\swarnings')
-        lines = out.split('\n')[:-1]
-        last = lines[-1]
-        res = problems.search(last)
-        if res and len(res.groups()) == 2:
-            errors, warnings = res.groups()
-            if errors == '0' and warnings == '0':
-                return True
-        return False
-
     def run_rpmlint(self, filenames):
         """ Runs rpmlint against the provided files.
 
         karg: filenames, list of filenames  to run rpmlint on
         """
 
+        import pdb; pdb.set_trace()
         cmd = 'rpmlint -f .rpmlint ' + ' '.join( filenames )
         out = 'Checking: '
         sep = '\n' + ' ' * len( out )
@@ -580,8 +673,8 @@ class SRPMFile(Helpers):
         for line in out.split('\n'):
             if line and len(line) > 0:
                 self.rpmlint_output.append(line)
-        no_errors = self._check_errors(out)
-        return no_errors, out
+        no_errors, msg  = _check_rpmlint_errors(out, self.log)
+        return no_errors, msg if msg else out
 
     def rpmlint(self):
         """ Runs rpmlint against the file.
@@ -596,7 +689,7 @@ class SRPMFile(Helpers):
         else:
             rpms = glob.glob(self.get_mock_dir() + '/*.rpm')
         no_errors, result = self.run_rpmlint(rpms)
-        return no_errors, result
+        return no_errors, result + '\n'
 
     def get_used_rpms(self, exclude_pattern=None):
         """ Return list of mock built or prebuilt rpms. """
@@ -906,18 +999,4 @@ class TestResult(object):
         return strbuf.getvalue()
 
 
-def get_logger():
-    return logging.getLogger(LOG_ROOT)
-
-
-def do_logger_setup(logroot=LOG_ROOT, logfmt='%(message)s',
-    loglvl=logging.INFO):
-    ''' Setup Python logging using a TextViewLogHandler '''
-    logger = logging.getLogger(logroot)
-    logger.setLevel(loglvl)
-    formatter = logging.Formatter(logfmt, "%H:%M:%S")
-    handler = logging.StreamHandler()
-    handler.setFormatter(formatter)
-    handler.propagate = False
-    logger.addHandler(handler)
-    return handler
+# vim: set expandtab: ts=4:sw=4:
