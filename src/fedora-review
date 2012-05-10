@@ -29,7 +29,7 @@ import subprocess
 import errno
 
 from FedoraReview import get_logger, do_logger_setup, \
-    Settings, FedoraReviewError, mock_run
+    Settings, FedoraReviewError
 from FedoraReview.bugz import ReviewBug
 from FedoraReview.misc import Checks
 from FedoraReview import __version__
@@ -225,7 +225,7 @@ class ReviewHelper:
             elif self.args.name:
                 self.__do_report_local(self.args.workdir)
         except FedoraReviewError, err:
-            print err
+            self.log.error("Exception down the road...", exc_info=True)
             return 1
         return 0
 

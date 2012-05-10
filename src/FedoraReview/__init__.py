@@ -60,7 +60,7 @@ MY_PLUGIN_DIR  = ".config/fedora-review/plugins"
 # see ticket https://fedorahosted.org/FedoraReview/ticket/43
 requests.decode_unicode=False
 
-def rpmdev_extract(working_dir, archive):
+def rpmdev_extract(working_dir, archive, log):
     """
     Unpack archive in working_dir. Returns return value
     from subprocess.call()
@@ -68,8 +68,51 @@ def rpmdev_extract(working_dir, archive):
     cmd = 'rpmdev-extract -qC ' + working_dir + ' ' + archive
     rc = call(cmd, shell=True)
     if rc != 0:
-        print "Cannot unpack "  + archive
+        log.warn("Cannot unpack "  + archive)
     return rc
+
+
+def _check_rpmlint_errors(out, log):
+    """ Check the rpmlint output, return(ok, errmsg)
+    If ok, output is OK and there is 0 warnings/errors
+    If not ok, and errmsg!= None there is system errors,
+    reflected in errmsg. If not ok and sg == None parsing
+    is ok but there are warnings/errors"""
+
+    problems = re.compile('(\d+)\serrors\,\s(\d+)\swarnings')
+    lines = out.split('\n')[:-1]
+    err_lines = filter( lambda l: l.lower().find('error') != -1, lines)
+    if len(err_lines) == 0:
+        log.debug('Cannot parse rpmlint output: ' + out )
+        return False, 'Cannot parse rpmlint output:'
+
+    res = problems.search(err_lines[-1])
+    if res and len(res.groups()) == 2:
+        errors, warnings = res.groups()
+        if errors == '0' and warnings == '0':
+            return True, None
+        else:
+            return False, None
+    else:
+        log.debug('Cannot parse rpmlint output: ' + out )
+        return False, 'Cannot parse rpmlint output:'
+
+
+def get_logger():
+    return logging.getLogger(LOG_ROOT)
+
+
+def do_logger_setup(logroot=LOG_ROOT, logfmt='%(message)s',
+    loglvl=logging.INFO):
+    ''' Setup Python logging using a TextViewLogHandler '''
+    logger = logging.getLogger(logroot)
+    logger.setLevel(loglvl)
+    formatter = logging.Formatter(logfmt, "%H:%M:%S")
+    handler = logging.StreamHandler()
+    handler.setFormatter(formatter)
+    handler.propagate = False
+    logger.addHandler(handler)
+    return handler
 
 
 class FedoraReviewError(Exception):
@@ -83,19 +126,122 @@ class FedoraReviewError(Exception):
         """ Represent the error. """
         return repr(self.value)
 
-def mock_install(rpm_files):
-    """
-    Run  'mock install' on a list of files, return None of
-    OK, else the stdout+stderr
-    """
-    cmd = ["mock", "install"]
-    cmd.extend(rpm_files)
-    try:
-        p = Popen(cmd, stdout=PIPE, stderr=STDOUT)
-        output, error = p.communicate()
-    except OSError as e:
-        return output[0]
-    return None
+
+
+_RPMLINT_SCRIPT="""
+mock --shell << 'EOF'
+echo 'rpmlint:'
+rpmlint @rpm_names@
+echo 'rpmlint-done:'
+EOF
+"""
+class _Mock(object):
+    """ Some basic operations on the mock chroot env, a singleton. """
+
+    def __init__(self):
+
+    def _get_dir(self, subdir=None):
+        p = os.path.join( '/var/lib/mock', Settings.mock_config )
+        return os.path.join(p, subdir) if subdir else p
+
+    def get_resultdir(self):
+        return self._get_dir('result')
+
+    def get_builddir(self, subdir=None):
+        """ Return the directory which corresponds to %_topdir inside
+        mock. Optional subdir argument is added to returned path.
+        """
+        p = self._get_dir('root/builddir/build')
+        return os.path.join(p, subdir) if subdir else p
+
+    """  The directory where mock leaves built rpms and logs """
+    resultdir=property(get_resultdir)
+
+    """ Mock's %_topdir seen from the outside. """
+    topdir = property(lambda self: get_builddir(self))
+
+       self.log = get_logger()
+
+    def _get_dir(self, subdir=None):
+        p = os.path.join( '/var/lib/mock', Settings.mock_config )
+        return os.path.join(p, subdir) if subdir else p
+
+    def get_resultdir(self):
+        return self._get_dir('result')
+
+    def get_builddir(self, subdir=None):
+        """ Return the directory which corresponds to %_topdir inside
+        mock. Optional subdir argument is added to returned path.
+        """
+        p = self._get_dir('/root/builddir/build')
+        return os.path.join(p, subdir) if subdir else p
+
+    """  The directory where mock leaves built rpms and logs """
+    resultdir=property(get_resultdir)
+
+    """ Mock's %_topdir seen from the outside. """
+    topdir = property(lambda self: get_builddir(self))
+
+    def install(self, rpm_files):
+        """
+        Run  'mock install' on a list of files, return None if
+        OK, else the stdout+stderr
+        """
+        cmd = ["mock", "install"]
+        cmd.extend(rpm_files)
+        try:
+            p = Popen(cmd, stdout=PIPE, stderr=STDOUT)
+            output, error = p.communicate()
+        except OSError as e:
+            return output[0]
+        return None
+
+    def _run(self, script):
+        """ Run a script,  return (ok, output). """
+        try:
+            p = Popen(script, stdout=PIPE, stderr=STDOUT, shell=True)
+            output, error = p.communicate()
+        except OSError as e:
+            return False, e.strerror
+        return True, output
+
+    def rpmlint_rpms(self, rpms):
+        """ Install and run rpmlint on  packages,
+        return (True,  text) or (False, error_string)"""
+
+        rpms.insert(0, 'rpmlint')
+        error =  self.install(rpms)
+        if error:
+            return False, error
+        rpms.pop(0)
+
+        script = _RPMLINT_SCRIPT
+        basenames = [ os.path.basename(r) for r in rpms]
+        names = [r.rsplit('-', 2)[0] for r in basenames]
+        rpm_names = ' '.join(list(set(names)))
+        script = script.replace('@rpm_names@', rpm_names)
+        ok, output = self._run(script)
+        if not ok:
+            return False, output + '\n'
+
+        ok, err_msg = _check_rpmlint_errors(output, self.log)
+        if err_msg:
+            return False, err_msg
+
+        lines = output.split('\n')
+        l = ''
+        while not l.startswith('rpmlint:') and len(lines) > 0:
+            l = lines.pop(0)
+        text = ''
+        for l in lines:
+            if l.startswith('<mock-'):
+                l=l[l.find('#'):]
+            if l.startswith('rpmlint-done:'):
+                break
+            text += l + '\n'
+        return ok, text
+
+Mock = _Mock()
 
 
 class _Settings(object):
@@ -391,8 +537,7 @@ class Source(Helpers):
                 shutil.rmtree(self.extract_dir)
                 os.mkdir(self.extract_dir)
         else:
-            self.extract_dir = self.get_mock_dir() + \
-                "/../root/builddir/build/sources/"
+            self.extract_dir = Mock.get_builddir('sources')
         self.log.debug("Extracting %s in %s " % (self.filename,
                        self.extract_dir))
         if not os.path.exists(self.extract_dir):
@@ -401,7 +546,7 @@ class Source(Helpers):
             except IOError, err:
                 self.log.debug(err)
                 print "Could not generate the folder %s" % self.extract_dir
-        rpmdev_extract(self.extract_dir, self.filename)
+        rpmdev_extract(self.extract_dir, self.filename, self.log)
 
     def get_source_topdir(self):
         """
@@ -452,7 +597,8 @@ class SRPMFile(Helpers):
         cmd = 'rpm2cpio ' + self.filename + ' | cpio -i --quiet'
         rc = call(cmd, shell=True)
         if rc != 0:
-            print "Cannot unpack %s into %s" % (self.filename, wdir)
+            self.log.warn(
+                  "Cannot unpack %s into %s" % (self.filename, wdir))
         else:
             self.unpacked_src = wdir
         os.chdir(oldpwd)
@@ -463,7 +609,8 @@ class SRPMFile(Helpers):
         self.unpack()
         files = glob.glob( self.unpacked_src  + '/*' )
         if not filename in [os.path.basename(f) for f in files]:
-            print 'Trying to unpack non-existing source: ' + filename
+            self.log.error(
+               'Trying to unpack non-existing source: ' + filename)
             return None
         extract_dir = self.unpacked_src + '/' +  filename  + '-extract'
         if os.path.exists(extract_dir):
@@ -471,9 +618,10 @@ class SRPMFile(Helpers):
         else:
             os.mkdir(extract_dir)
         rc = rpmdev_extract(extract_dir,
-                            os.path.join(self.unpacked_src, filename))
+                            os.path.join(self.unpacked_src, filename),
+                            self.log)
         if rc != 0:
-            print "Cannot unpack " + filename
+            self.log.error( "Cannot unpack " + filename)
             return None
         return extract_dir
 
@@ -527,8 +675,7 @@ class SRPMFile(Helpers):
     def get_build_dir(self):
         """ Return the BUILD directory from the mock environment.
         """
-        mock_dir = self.get_mock_dir()
-        bdir_root = '%s/../root/builddir/build/BUILD/' % mock_dir
+        bdir_root = Mock.get_builddir('BUILD')
         for entry in os.listdir(bdir_root):
             if os.path.isdir(bdir_root + entry):
                 return bdir_root + entry
@@ -538,37 +685,25 @@ class SRPMFile(Helpers):
         self.unpack()
         filename = os.path.basename(path)
         if not hasattr(self, 'unpacked_src'):
-            print "check_source_md5: Cannot unpack (?)"
+            self.log.warn("check_source_md5: Cannot unpack (?)")
             return "ERROR"
         src_files = glob.glob(self.unpacked_src + '/*')
         if not src_files:
-            print 'No unpacked sources found (!)'
+            self.log.warn('No unpacked sources found (!)')
             return "ERROR"
         if not filename in [os.path.basename(f) for f in src_files]:
-            print 'Cannot find source: ' + filename
+            self.log.warn('Cannot find source: ' + filename)
             return "ERROR"
         path = os.path.join(self.unpacked_src, filename)
         self.log.debug("Checking md5 for %s" % path)
         sum, file = self._md5sum(path)
         return sum
 
-    def _check_errors(self, out):
-        problems = re.compile('(\d+)\serrors\,\s(\d+)\swarnings')
-        lines = out.split('\n')[:-1]
-        last = lines[-1]
-        res = problems.search(last)
-        if res and len(res.groups()) == 2:
-            errors, warnings = res.groups()
-            if errors == '0' and warnings == '0':
-                return True
-        return False
-
     def run_rpmlint(self, filenames):
         """ Runs rpmlint against the provided files.
 
         karg: filenames, list of filenames  to run rpmlint on
         """
-
         cmd = 'rpmlint -f .rpmlint ' + ' '.join( filenames )
         out = 'Checking: '
         sep = '\n' + ' ' * len( out )
@@ -579,8 +714,8 @@ class SRPMFile(Helpers):
         for line in out.split('\n'):
             if line and len(line) > 0:
                 self.rpmlint_output.append(line)
-        no_errors = self._check_errors(out)
-        return no_errors, out
+        no_errors, msg  = _check_rpmlint_errors(out, self.log)
+        return no_errors, msg if msg else out
 
     def rpmlint(self):
         """ Runs rpmlint against the file.
@@ -593,9 +728,9 @@ class SRPMFile(Helpers):
         if Settings.prebuilt:
             rpms = glob.glob('*.rpm')
         else:
-            rpms = glob.glob(self.get_mock_dir() + '/*.rpm')
+            rpms = glob.glob(Mock.resultdir + '/*.rpm')
         no_errors, result = self.run_rpmlint(rpms)
-        return no_errors, result
+        return no_errors, result + '\n'
 
     def get_used_rpms(self, exclude_pattern=None):
         """ Return list of mock built or prebuilt rpms. """
@@ -603,10 +738,11 @@ class SRPMFile(Helpers):
             rpms = set( glob.glob('*.rpm'))
         else:
             rpms = set(glob.glob(self.get_mock_dir() + '/*.rpm'))
+        if not exclude_pattern:
+            return list(rpms)
         matched = filter( lambda s: s.find(exclude_pattern) > 0, rpms)
         rpms = rpms - set(matched)
         return list(rpms)
-
 
     def get_files_rpms(self):
         """ Generate the list files contained in RPMs generated by the
@@ -621,7 +757,7 @@ class SRPMFile(Helpers):
             print hdr + sep.join(rpms)
         else:
             self.build()
-            rpms = glob.glob(self.get_mock_dir() + '/*.rpm')
+            rpms = glob.glob(Mock.resultdir + '/*.rpm')
         rpm_files = {}
         for rpm in rpms:
             if rpm.endswith('.src.rpm'):
@@ -905,18 +1041,4 @@ class TestResult(object):
         return strbuf.getvalue()
 
 
-def get_logger():
-    return logging.getLogger(LOG_ROOT)
-
-
-def do_logger_setup(logroot=LOG_ROOT, logfmt='%(message)s',
-    loglvl=logging.INFO):
-    ''' Setup Python logging using a TextViewLogHandler '''
-    logger = logging.getLogger(logroot)
-    logger.setLevel(loglvl)
-    formatter = logging.Formatter(logfmt, "%H:%M:%S")
-    handler = logging.StreamHandler()
-    handler.setFormatter(formatter)
-    handler.propagate = False
-    logger.addHandler(handler)
-    return handler
+# vim: set expandtab: ts=4:sw=4:
