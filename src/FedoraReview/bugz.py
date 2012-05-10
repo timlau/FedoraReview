@@ -26,34 +26,29 @@ from bugzilla import Bugzilla
 
 BZ_URL = 'https://bugzilla.redhat.com/xmlrpc.cgi'
 
-from FedoraReview import Helpers, get_logger
+from FedoraReview import Helpers, get_logger, Settings
 
 
 class ReviewBug(Helpers):
     """ This class handles interaction with bugzilla.
     """
 
-    def __init__(self, bug, user=None, password=None, cache=False,
-                nobuild=False, other_BZ=None):
+    def __init__(self, bug, user=None, password=None):
         """ Constructor.
         :arg bug, the bug number on bugzilla
         :kwarg user, the username with which to log in in bugzilla.
         :kwarg password, the password associated with this account.
-        :kwarg cache, boolean specifying whether the spec and srpm should
         be re-downloaded or not.
-        :kwarg nobuild, boolean specifying whether to build or not the
-        package.
-        :kwarg other_BZ, url of an eventual other bugzilla system.
         """
-        Helpers.__init__(self, cache, nobuild)
+        Helpers.__init__(self)
         self.bug_num = bug
         self.spec_url = None
         self.srpm_url = None
         self.spec_file = None
         self.srpm_file = None
         self.log = get_logger()
-        if other_BZ:
-            self.bugzilla = Bugzilla(url=other_BZ + '/xmlrpc.cgi')
+        if Settings.other_bz:
+            self.bugzilla = Bugzilla(url=Settings.other_bz + '/xmlrpc.cgi')
         else:
             self.bugzilla = Bugzilla(url=BZ_URL)
 
@@ -150,7 +145,7 @@ class ReviewBug(Helpers):
         """ Download the spec file and srpm extracted from the bug
         report.
         """
-        if not self.cache:
+        if not Settings.cache:
             self.log.info('Downloading .spec and .srpm files')
         found = True
         if not self.spec_url or not self.srpm_url:

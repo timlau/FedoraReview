@@ -52,6 +52,12 @@ TEST_STATES = {'pending': '[ ]', 'pass': '[x]', 'fail': '[!]', 'na': '[-]'}
 
 LOG_ROOT = 'FedoraReview'
 
+PARSER_SECTION = 'review'
+CONFIG_FILE    = '.config/fedora-review/settings'
+SYS_PLUGIN_DIR = "/usr/share/fedora-review/plugins:%s"
+MY_PLUGIN_DIR  = ".config/fedora-review/plugins"
+
+
 # see ticket https://fedorahosted.org/FedoraReview/ticket/43
 requests.decode_unicode=False
 
@@ -79,70 +85,72 @@ class FedoraReviewError(Exception):
         return repr(self.value)
 
 
-class Settings(object):
-    """ FedoraReview Config Setting"""
-    # Editor to use to show review report & spec (default use EDITOR env)
-    editor = ''
-    # Work dir
-    work_dir = '.'
-    # Default bugzilla userid
-    bz_user = ''
-    mock_config = 'fedora-rawhide-i386'
-    mock_options = None
-    ext_dirs = "/usr/share/fedora-review/plugins:%s" % os.environ['HOME'] \
-        + "/.config/fedora-review/plugins"
+class _Settings(object):
+    """
+    FedoraReview singleton Config Setting, based on config file and
+    command line options. All config values are accessed as attributes.
+    """
+    path = MY_PLUGIN_DIR + ":" + os.environ['HOME'] + ":" + SYS_PLUGIN_DIR
+    defaults = {
+        # review, report & spec editor(default EDITOR env)
+        'editor':       '',
+        'work_dir':     '.',
+        'bz_user':      '',
+        'mock_config':  'fedora-rawhide-i386',
+        'mock_options': '',
+        'ext_dirs':     path
+    }
 
     def __init__(self):
         '''Constructor of the Settings object.
         This instanciate the Settings object and load into the _dict
         attributes the default configuration which each available option.
         '''
-        self._dict = {'editor' : self.editor,
-                    'work_dir' : self.work_dir,
-                    'bz_user' : self.bz_user,
-                    'mock_config' : self.mock_config,
-                    'ext_dirs' : self.ext_dirs}
-        self.load_config('.config/fedora-review/settings', 'review')
+        for key,value in self.defaults.iteritems():
+            setattr(self, key, value)
+        self._dict = self.defaults
+        self._load_config(CONFIG_FILE, PARSER_SECTION)
 
-    def load_config(self, configfile, sec):
+    def _load_config(self, configfile, sec):
         '''Load the configuration in memory.
 
         :arg configfile, name of the configuration file loaded.
         :arg sec, section of the configuration retrieved.
         '''
         parser = ConfigParser.ConfigParser()
+        self.parser = parser
         configfile = os.environ['HOME'] + "/" + configfile
-        isNew = self.create_conf(configfile)
+        isNew = self._create_conf()
         parser.read(configfile)
         if not parser.has_section(sec):
             parser.add_section(sec)
-        self.populate(parser, sec)
+        self._populate()
         if isNew:
-            self.save_config(configfile, parser)
+            self.save_config()
 
-    def create_conf(self, configfile):
+    def _create_conf(self):
         '''Check if the provided configuration file exists, generate the
         folder if it does not and return True or False according to the
         initial check.
 
         :arg configfile, name of the configuration file looked for.
         '''
-        if not os.path.exists(configfile):
-            dn = os.path.dirname(configfile)
+        if not os.path.exists(CONFIG_FILE):
+            dn = os.path.dirname(CONFIG_FILE)
             if not os.path.exists(dn):
                 os.makedirs(dn)
             return True
         return False
 
-    def save_config(self, configfile, parser):
+    def save_config(self ):
         '''Save the configuration into the specified file.
 
         :arg configfile, name of the file in which to write the configuration
         :arg parser, ConfigParser object containing the configuration to
         write down.
         '''
-        with open(configfile, 'w') as conf:
-                parser.write(conf)
+        with open(CONFIG_FILE, 'w') as conf:
+                self.parser.write(conf)
 
     def __getitem__(self, key):
         hash = self._get_hash(key)
@@ -150,37 +158,42 @@ class Settings(object):
             raise KeyError(key)
         return self._dict.get(hash)
 
-    def populate(self, parser, section):
+    def _populate(self):
         '''Set option values from a INI file section.
 
         :arg parser: ConfigParser instance (or subclass)
         :arg section: INI file section to read use.
         '''
-        if parser.has_section(section):
-            opts = set(parser.options(section))
+        if self.parser.has_section(PARSER_SECTION):
+            opts = set(self.parser.options(PARSER_SECTION))
         else:
             opts = set()
 
         for name in self._dict.iterkeys():
             value = None
             if name in opts:
-                value = parser.get(section, name)
+                value = self.parser.get(PARSER_SECTION, name)
                 setattr(self, name, value)
-                parser.set(section, name, value)
+                self.parser.set(PARSER_SECTION, name, value)
             else:
-                parser.set(section, name, self._dict[name])
+                self.parser.set(PARSER_SECTION, name, self._dict[name])
+
+    def add_args(self, args):
+        """ Load all command line options in args. """
+        dict = vars(args)
+        for key, value in dict.iteritems():
+            setattr(self, key, value)
+            self.parser.set( PARSER_SECTION, key, value)
+
+
+Settings = _Settings()
 
 class Helpers(object):
 
-    def __init__(self, cache=False, nobuild=False,
-            mock_config=Settings.mock_config,
-            mock_options=Settings.mock_options):
+    def __init__(self):
         self.work_dir = 'work/'
         self.log = get_logger()
-        self.cache = cache
-        self.nobuild = nobuild
-        self.mock_config = mock_config
-        self.mock_options = mock_options
+        self.mock_options = Settings.mock_options
         self.rpmlint_output = []
 
     def set_work_dir(self, work_dir):
@@ -192,7 +205,7 @@ class Helpers(object):
         self.work_dir = work_dir
 
     def get_mock_dir(self):
-        mock_dir = '/var/lib/mock/%s/result' % self.mock_config
+        mock_dir = '/var/lib/mock/%s/result' % Settings.mock_config
         return mock_dir
 
     def _run_cmd(self, cmd):
@@ -227,7 +240,7 @@ class Helpers(object):
             raise FedoraReviewError('Getting error "%s" while trying to download: %s'
                 % (request.status_code, link))
         fname = os.path.basename(url.path)
-        if os.path.exists(self.work_dir + fname) and self.cache:
+        if os.path.exists(self.work_dir + fname) and Settings.cache:
             return  self.work_dir + fname
         try:
             stream = open(self.work_dir + fname, 'w')
@@ -244,14 +257,11 @@ class Helpers(object):
 
 class Sources(object):
     """ Store Source object for each source in Spec file"""
-    def __init__(self, cache, mock_config=Settings.mock_config, prebuilt=False):
+    def __init__(self):
         self._sources = {}
-        self.cache = cache
-        self.mock_config = mock_config
         self.work_dir = None
         self.log = get_logger()
         self._sources_files = None
-        self.prebuilt = prebuilt
 
     def set_work_dir(self, work_dir):
         self.work_dir = work_dir
@@ -260,9 +270,9 @@ class Sources(object):
         """Add a new Source Object based on spec tag and URL to source"""
         if urlparse(source_url)[0] != '':  # This is a URL, Download it
             self.log.info("Downloading (%s): %s" % (tag, source_url))
-            source = Source(self, mock_config=self.mock_config)
+            source = Source(self)
             source.set_work_dir(self.work_dir)
-            source.get_source(source_url, self.prebuilt)
+            source.get_source(source_url )
         else:  # this is a local file in the SRPM
             self.log.info("No upstream for (%s): %s" % (tag, source_url))
             source = Source(self, filename=source_url)
@@ -293,7 +303,7 @@ class Sources(object):
             if os.path.splitext(source.filename)[1] in \
                 ['.zip', '.tar', '.gz', '.bz2', '.gem']:
                 if not source.extract_dir:
-                    source.extract(self.prebuilt)
+                    source.extract()
 
     def extract(self, source_url=None, source_filename=None):
         """ Extract the source specified by its url or filename.
@@ -305,9 +315,9 @@ class Sources(object):
             print 'No source set to extract'
         for source in self._sources:
             if source_url and source.URL == source_url:
-                source.extract(self.prebuilt)
+                source.extract()
             elif source_filename and source.filename == source_filename:
-                source.extract(self.prebuilt)
+                source.extract()
 
     def get_files_sources(self):
         """ Return the list of all files found in the sources. """
@@ -336,20 +346,19 @@ as sources' % source.filename)
 
 
 class Source(Helpers):
-    def __init__(self, sources, filename=None,
-                 mock_config=Settings.mock_config):
-        Helpers.__init__(self, sources.cache, mock_config=mock_config)
+    def __init__(self, sources, filename=None):
+        Helpers.__init__(self)
         self.filename = filename
         self.sources = sources
         self.downloaded = False
         self.URL = None
 
-    def get_source(self, URL, prebuilt):
+    def get_source(self, URL):
         self.URL = URL
         self.filename = self._get_file(URL)
         if self.filename and os.path.exists(self.filename):
             self.downloaded = True
-            self.extract( prebuilt )
+            self.extract()
 
     def check_source_md5(self):
         if self.downloaded:
@@ -359,18 +368,18 @@ class Source(Helpers):
             sum = "upstream source not found"
         return sum
 
-    def extract(self, prebuilt=False):
+    def extract(self ):
         """ Extract the sources in the mock chroot so that it can be
         destroy easily by mock. Prebuilt sources are extracted to
         temporary directory in current dir.
         """
-        if prebuilt:
+        if Settings.prebuilt:
             self.extract_dir = 'review-tmp-src'
             if os.path.exists(self.extract_dir):
                 self.log.debug("Clearing temporary source dir " +
                                 self.extract_dir)
                 shutil.rmtree(self.extract_dir)
-                os-mkdir(self.extract_dir)
+                os.mkdir(self.extract_dir)
         else:
             self.extract_dir = self.get_mock_dir() + \
                 "/../root/builddir/build/sources/"
@@ -408,19 +417,15 @@ class Source(Helpers):
 
 
 class SRPMFile(Helpers):
-    def __init__(self, filename, cache=False, nobuild=False,
-            mock_config=Settings.mock_config,
-            mock_options=Settings.mock_options,
-            spec=None,
-            prebuilt=False):
-        Helpers.__init__(self, cache, nobuild, mock_config, mock_options)
+
+    def __init__(self, filename, spec=None):
+        Helpers.__init__(self)
         self.filename = filename
         self.spec = spec
         self.log = get_logger()
         self.is_build = False
         self.build_failed = False
         self._rpm_files = None
-        self.prebuilt = prebuilt
 
     def unpack(self):
         """ Local unpack using rpm2cpio. """
@@ -472,7 +477,7 @@ class SRPMFile(Helpers):
         :kwarg silence, boolean to set/remove the output from the mock
             build.
         """
-        if self.prebuilt:
+        if Settings.prebuilt:
             return -2
         if self.build_failed:
             return -1
@@ -486,17 +491,17 @@ class SRPMFile(Helpers):
         :kwarg silence, boolean to set/remove the output from the mock
             build.
         """
-        if not force and (self.is_build or self.nobuild):
+        if not force and (self.is_build or Settings.nobuild):
             return 0
         #print "MOCKBUILD: ", self.is_build, self.nobuild
         self.log.info("Building %s using mock %s" % (
-            self.filename, self.mock_config))
+            self.filename, Settings.mock_config))
         cmd = 'mock -r %s  --rebuild %s ' % (
-                self.mock_config, self.filename)
+                Settings.mock_config, self.filename)
         if self.log.level == logging.DEBUG:
             cmd = cmd + ' -v '
-        if self.mock_options:
-            cmd = cmd + ' ' + self.mock_options
+        if Settings.mock_options:
+            cmd = cmd + ' ' + Settings.mock_options
         if silence:
             cmd = cmd + ' 2>&1 | grep "Results and/or logs" '
         self.log.debug('Mock command: %s' % cmd)
@@ -576,7 +581,7 @@ class SRPMFile(Helpers):
     def rpmlint_rpms(self):
         """ Runs rpmlint against the used rpms - prebuilt or built in mock.
         """
-        if self.prebuilt:
+        if Settings.prebuilt:
             rpms = glob.glob('*.rpm')
         else:
             rpms = glob.glob(self.get_mock_dir() + '/*.rpm')
@@ -589,7 +594,7 @@ class SRPMFile(Helpers):
         """
         if self._rpm_files:
             return self._rpm_files
-        if self.prebuilt:
+        if Settings.prebuilt:
             rpms = glob.glob('*.rpm')
             hdr = "Using local rpms: "
             sep = '\n' + ' ' * len(hdr)
