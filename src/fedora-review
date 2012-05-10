@@ -29,7 +29,7 @@ import subprocess
 import errno
 
 from FedoraReview import get_logger, do_logger_setup, \
-    Settings, FedoraReviewError, mock_run
+    Settings, FedoraReviewError
 from FedoraReview.bugz import ReviewBug
 from FedoraReview.misc import Checks
 from FedoraReview import __version__
