@@ -382,10 +382,13 @@ class CheckBuild(CheckBase):
 
     def run(self):
         rc = self.srpm.build()
+
         if rc == 0:
             self.set_passed(True)
-        else:
-            self.set_passed(False)
+        elif rc == -2:
+             self.set_passed('inconclusive', 'Using prebuilt rpms')
+        else :
+             self.set_passed(False)
 
 
 class CheckRpmLint(CheckBase):
@@ -399,13 +402,17 @@ class CheckRpmLint(CheckBase):
         self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#rpmlint'
         self.text = 'Rpmlint is run on all rpms the build produces.'
         self.automatic = True
+        self.type = 'MUST'
 
     def run(self):
-        no_errors, rc = self.srpm.rpmlint_rpms()
-        text = 'No rpmlint messages.' if no_errors else \
-                     'There are rpmlint messages (see attachment).'
-        self.set_passed(True, text)
-        self.attachments = [ Attachment('Rpmlint', rc, 5) ]
+        if self.srpm.build() != -1:
+            no_errors, rc = self.srpm.rpmlint_rpms()
+            text = 'No rpmlint messages.' if no_errors else \
+                'There are rpmlint messages (see attachment).'
+            self.set_passed(True, text)
+            self.attachments = [ Attachment('Rpmlint', rc, 5) ]
+        else:
+            self.set_passed(Fail, 'Mock build failed')
 
 
 class CheckSpecLegibility(CheckBase):
@@ -487,7 +494,10 @@ listed in the exceptions section of Packaging Guidelines.'
         self.type = 'MUST'
 
     def run(self):
-        if self.srpm.is_build and not self.srpm.build_failed:
+
+        if  self.srpm.build() == -2:
+           self.set_passed('inconclusive', 'Using prebuilt rpms.')
+        elif self.srpm.is_build and not self.srpm.build_failed:
             brequires = self.spec.find_tag('BuildRequires')
             pkg_by_default = ['bash', 'bzip2', 'coreutils', 'cpio', 'diffutils',
                 'fedora-release', 'findutils', 'gawk', 'gcc', 'gcc-c++',
@@ -586,7 +596,7 @@ class CheckLicenseField(CheckBase):
         if source is None:
             self.set_passed(False, 'Could not retrieve sources. Please check the source files for licenses manually.')
             return
-        
+
         package_dir = source.tar_members[0].name
         try:
             source_dir = self.srpm.get_mock_dir() + \
