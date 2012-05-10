@@ -44,25 +44,25 @@ from FedoraReview import get_logger, Settings
 
 
 class Checks(object):
-    def __init__(self, args, spec_file, srpm_file, cache=False,
-            nobuild=False, mock_config='fedora-rawhide-i386',
-            mock_options=''):
+    def __init__(self, args, spec_file, srpm_file):
         self.checks = []
         self.ext_checks = []
         self.args = args  # Command line arguments & options
-        self.cache = cache
-        self.nobuild = nobuild
+        self.cache = args.cache
+        self.nobuild = args.nobuild
         self._results = {'PASSED': [], 'FAILED': [], 'NA': [], 'USER': []}
         if spec_file:
             self.spec = SpecFile(spec_file)
         else:
             self.spec = None
-        self.sources = Sources(cache=cache, mock_config=mock_config)
+        self.sources = Sources(cache=args.cache,
+                               mock_config=args.mock_config)
         self.log = get_logger()
         if srpm_file:
-            self.srpm = SRPMFile(srpm_file, cache=cache, nobuild=nobuild,
-                mock_config=mock_config, spec=self.spec,
-                mock_options=mock_options)
+            mock_config = args.mock_config if args.mock_config else ''
+            self.srpm = SRPMFile(srpm_file, cache=self.cache, nobuild=self.nobuild,
+                 mock_config=args.mock_config, spec=self.spec,
+                 mock_options=args.mock_options, prebuilt=args.prebuilt)
         else:
             self.srpm = None
         self.plugins = load('FedoraReview.checks')
