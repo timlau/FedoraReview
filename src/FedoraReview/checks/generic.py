@@ -27,7 +27,8 @@ import tempfile
 import fnmatch
 import shutil
 
-from FedoraReview import Helpers, get_logger, TestResult, Attachment
+from FedoraReview import Helpers, get_logger, TestResult, Attachment,\
+    Settings
 
 
 class CheckBase(Helpers):
@@ -395,6 +396,7 @@ class CheckSourceMD5(CheckBase):
                 msg = None
             self.set_passed(passed, msg)
             self.attachments = [Attachment('MD5-sum check', text, 10)]
+
 
 
 class CheckBuild(CheckBase):
@@ -1473,7 +1475,7 @@ class CheckFileRequires(CheckBase):
 
     def run(self):
         wrong_req = []
-        rpm_files = self.srpm.get_files_rpms()
+        rpm_files = self.srpm.get_used_rpms('.srpm')
         for rpm in rpm_files:
             cmd = 'rpm -qp --requires %s/%s' % (self.get_mock_dir(), rpm)
             for req in self._run_cmd(cmd).split('\n'):

@@ -55,14 +55,10 @@ class Checks(object):
             self.spec = SpecFile(spec_file)
         else:
             self.spec = None
-        self.sources = Sources(cache=args.cache,
-                               mock_config=args.mock_config)
+        self.sources = Sources()
         self.log = get_logger()
         if srpm_file:
-            mock_config = args.mock_config if args.mock_config else ''
-            self.srpm = SRPMFile(srpm_file, cache=self.cache, nobuild=self.nobuild,
-                 mock_config=args.mock_config, spec=self.spec,
-                 mock_options=args.mock_options, prebuilt=args.prebuilt)
+            self.srpm = SRPMFile(srpm_file)
         else:
             self.srpm = None
         self.plugins = load('FedoraReview.checks')
