@@ -335,7 +335,7 @@ class CheckSourceMD5(CheckBase):
         self.text = 'Sources used to build the package match the upstream source, as provided in the spec URL.'
         self.automatic = True
 
-   def make_diff(self, sources):
+    def make_diff(self, sources):
         """
         For all sources, run a diff -r between upstream and what's in the
         srpm. Return (passed, text) where passed is True/False
@@ -1166,8 +1166,25 @@ class CheckPackageInstalls(CheckBase):
         CheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
         self.text = 'Package installs properly.'
-        self.automatic = False
+        self.automatic = True
         self.type = 'MUST'
+
+    def run(self):
+        if Settings.prebuilt:
+            self.set_passed('inconclusive', 'Using prebuilt rpms')
+            return
+        rpms = self.srpm.get_used_rpms('.srpm')
+        from FedoraReview import mock_install
+        output = mock_install(rpms)
+        if output == None:
+            self.set_passed(True, None)
+        else:
+            self.set_passed(False,
+                           "Installation errors (see attachment)")
+            self.attachments = \
+                [Attachment('Installation errors', output, 3)]
+
+
 
 
 class CheckObeysFHS(CheckBase):
