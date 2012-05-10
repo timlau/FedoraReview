@@ -20,6 +20,7 @@
 This module contains automatic test for Fedora Packaging guidelines
 '''
 
+import glob
 import os
 import os.path
 import re
@@ -618,20 +619,20 @@ class CheckLicenseField(CheckBase):
         self.type = 'MUST'
 
     def run(self):
-        #Fix it - does only work for 1 source and probably not every time
-
-        # Required to set up source.tar_members if it hasn't yet been set up.
-        self.sources.get_files_sources()
-
         source = self.sources.get('Source0')
-        package_dir = source.get_source_topdir()
         try:
-            source_dir = self.srpm.get_mock_dir() + \
-                '/../root/builddir/build/sources/' + \
-                package_dir
+            if self.srpm.build() != 0:
+                source.extract()
+                source_dir = source.extract_dir
+                msg = 'Checking original sources for licenses'
+            else:
+                s = self.srpm.get_mock_dir() + \
+                      '/../root/builddir/build/BUILD/*'
+                source_dir = glob.glob(s)[0]
+                msg = 'Checking patched sources after %prep for licenses.'
+            self.log.debug( "Scanning sources in " + source_dir)
 
             licenses = []
-
             if os.path.exists(source_dir):
                 cmd = 'licensecheck -r %s' % source_dir
                 out = self._run_cmd(cmd)
@@ -642,19 +643,24 @@ class CheckLicenseField(CheckBase):
                     stream.close()
                 regex = re.compile(':\s(.*)$', re.MULTILINE)
                 # remove dupes
-                licenses = list(set(regex.findall(out)))
+                licenses = map(lambda l: l.strip(),
+                               list(set(regex.findall(out))))
             else:
                 self.log.error('Source directory %s does not exist!' % source_dir)
 
             if not licenses:
-                self.set_passed(False, 'No licenses found! Please check the source files for licenses manually.')
+                msg +=  ' No licenses found.'
+                msg +=  ' Please check the source files for licenses manually.'
+                self.set_passed(False, msg)
             else:
-                output = 'Licenses found: "%s" For detailed output of \
-                licensecheck see file: %s' % ('", "'.join(licenses),
-                    filename)
-                self.set_passed('inconclusive', output)
+                msg += ' Licenses found: "'+ '", "'.join(licenses) + '"'
+                msg += ' For detailed output of licensecheck'
+                msg += ' see file: ' +  filename
+                self.set_passed('inconclusive', msg)
         except OSError, e:
             self.log.error('OSError: %s' % str(e))
+            msg += ' Programmer error: ' + e.strerror
+            self.set_passed('inconclusive', msg)
 
 
 class CheckLicensInDoc(CheckBase):
