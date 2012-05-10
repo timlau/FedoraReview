@@ -477,8 +477,6 @@ class CheckRpmLintInstalled(CheckBase):
             self.set_passed(Fail, 'Mock build failed')
 
 
-
-
 class CheckSpecLegibility(CheckBase):
     '''
     MUST: The spec file must be written in American English
