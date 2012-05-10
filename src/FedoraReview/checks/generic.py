@@ -29,7 +29,7 @@ import fnmatch
 import shutil
 
 from FedoraReview import Helpers, get_logger, TestResult, Attachment,\
-    Settings
+    Settings, Mock
 
 
 class CheckBase(Helpers):
@@ -443,6 +443,33 @@ class CheckRpmLint(CheckBase):
                 'There are rpmlint messages (see attachment).'
             self.set_passed(True, text)
             self.attachments = [ Attachment('Rpmlint', rc, 5) ]
+        else:
+            self.set_passed(Fail, 'Mock build failed')
+
+
+class CheckRpmLintInstalled(CheckBase):
+    '''
+    SHOULD: Not in guidelines, but running rpmlint on the installed
+    package occasionally reveals things otherwise not found.
+    The category here should rather be EXTRA rather than SHOULD
+    http://fedoraproject.org/wiki/Packaging/Guidelines#rpmlint
+    '''
+    def __init__(self, base):
+        CheckBase.__init__(self, base)
+        self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#rpmlint'
+        self.text = 'Rpmlint is run on all installed packages.'
+        self.automatic = True
+        self.type = 'SHOULD'
+
+    def run(self):
+        if self.srpm.build() != -1:
+            rpms = self.srpm.get_used_rpms('.src.rpm')
+            no_errors, rc = Mock.rpmlint_rpms(rpms)
+            text = 'No rpmlint messages.' if no_errors else \
+                'There are rpmlint messages (see attachment).'
+            self.set_passed(True, text)
+            self.attachments = \
+                [Attachment('Rpmlint (installed packages)', rc+'\n', 5)]
         else:
             self.set_passed(Fail, 'Mock build failed')
 
@@ -1180,8 +1207,7 @@ class CheckPackageInstalls(CheckBase):
             self.set_passed('inconclusive', 'Using prebuilt rpms')
             return
         rpms = self.srpm.get_used_rpms('.srpm')
-        from FedoraReview import mock_install
-        output = mock_install(rpms)
+        output = Mock.install(rpms)
         if output == None:
             self.set_passed(True, None)
         else:
@@ -1507,28 +1533,27 @@ class CheckFileRequires(CheckBase):
         def get_requires(rpm, requires):
             requires = filter(lambda s: s.find('rpmlib') == -1, requires)
             requires.insert(0, rpm + ':')
-            return '\n    '.join(requires) + '\n'
+            return '\n    '.join(requires)
 
         def get_provides(rpm, provides):
             provides.insert(0, rpm + ':')
-            return '\n    '.join(provides) + '\n'
+            return '\n    '.join(provides)
 
         wrong_req = []
-        rpm_files = self.srpm.get_used_rpms('.srpm')
+        rpm_files = self.srpm.get_used_rpms('.src.rpm')
         req_txt = ''
         prov_txt = ''
         for rpm in rpm_files:
-            dir = '.' if Settings.prebuilt else self.get_mock_dir()
-            cmd = 'rpm -qp --requires %s/%s' % (dir, rpm)
+            cmd = 'rpm -qp --requires ' + rpm
             requires = self._run_cmd(cmd).split('\n')
             for req in requires:
                 if not is_acceptable(req):
                     wrong_req.append(req)
             if rpm.find('src.rpm') == -1:
-                req_txt += get_requires(rpm, requires)
-                cmd = 'rpm -qp --provides %s/%s' % (dir, rpm)
+                req_txt += get_requires(rpm, requires) + '\n'
+                cmd = 'rpm -qp --provides ' + rpm
                 provides = self._run_cmd(cmd).split('\n')
-                prov_txt += get_provides(rpm, provides)
+                prov_txt += get_provides(rpm, provides) + '\n'
         self.attachments = [ Attachment( 'Requires', req_txt, 10),
                              Attachment( 'Provides', prov_txt, 10)]
         if len(wrong_req) == 0:
