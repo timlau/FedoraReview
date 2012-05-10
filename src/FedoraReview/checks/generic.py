@@ -20,8 +20,8 @@
 This module contains automatic test for Fedora Packaging guidelines
 '''
 
-import fnmatch
 import glob
+import os
 import os.path
 import re
 
