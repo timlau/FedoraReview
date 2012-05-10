@@ -301,7 +301,7 @@ class Sources(object):
         """
         for source in self._sources.values():
             if os.path.splitext(source.filename)[1] in \
-                ['.zip', '.tar', '.gz', '.bz2', '.gem']:
+                ['.zip', '.tar', '.gz', '.bz2', '.gem', '.xz']:
                 if not source.extract_dir:
                     source.extract()
 

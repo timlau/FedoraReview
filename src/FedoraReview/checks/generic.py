@@ -335,7 +335,7 @@ class CheckSourceMD5(CheckBase):
         self.text = 'Sources used to build the package match the upstream source, as provided in the spec URL.'
         self.automatic = True
 
-    def make_diff(self, sources):
+   def make_diff(self, sources):
         """
         For all sources, run a diff -r between upstream and what's in the
         srpm. Return (passed, text) where passed is True/False
