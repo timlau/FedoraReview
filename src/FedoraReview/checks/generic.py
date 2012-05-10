@@ -1497,18 +1497,40 @@ class CheckFileRequires(CheckBase):
         self.type = 'SHOULD'
 
     def run(self):
+
+        def is_acceptable(req):
+            for acceptable in ['/usr/bin/', '/etc/','/bin/','/sbin/','/usr/sbin/']:
+                if req.startswith(acceptable):
+                    return True
+            return not req.startswith('/')
+
+        def get_requires(rpm, requires):
+            requires = filter(lambda s: s.find('rpmlib') == -1, requires)
+            requires.insert(0, rpm + ':')
+            return '\n    '.join(requires) + '\n'
+
+        def get_provides(rpm, provides):
+            provides.insert(0, rpm + ':')
+            return '\n    '.join(provides) + '\n'
+
         wrong_req = []
         rpm_files = self.srpm.get_used_rpms('.srpm')
+        req_txt = ''
+        prov_txt = ''
         for rpm in rpm_files:
-            cmd = 'rpm -qp --requires %s/%s' % (self.get_mock_dir(), rpm)
-            for req in self._run_cmd(cmd).split('\n'):
-                for acceptable in ['/usr/bin/', '/etc/','/bin/','/sbin/','/usr/sbin/']:
-                    if req.startswith(acceptable):
-                        break
-                else:
-                    if req.startswith('/'):
-                        wrong_req.append(req)
-
+            dir = '.' if Settings.prebuilt else self.get_mock_dir()
+            cmd = 'rpm -qp --requires %s/%s' % (dir, rpm)
+            requires = self._run_cmd(cmd).split('\n')
+            for req in requires:
+                if not is_acceptable(req):
+                    wrong_req.append(req)
+            if rpm.find('src.rpm') == -1:
+                req_txt += get_requires(rpm, requires)
+                cmd = 'rpm -qp --provides %s/%s' % (dir, rpm)
+                provides = self._run_cmd(cmd).split('\n')
+                prov_txt += get_provides(rpm, provides)
+        self.attachments = [ Attachment( 'Requires', req_txt, 10),
+                             Attachment( 'Provides', prov_txt, 10)]
         if len(wrong_req) == 0:
             self.set_passed(True)
         else:
