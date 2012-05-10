@@ -201,9 +201,6 @@ class ReviewHelper:
 
     def run(self):
         try:
-            #import pdb; pdb.set_trace()
-            (msg, rc) = mock_run("PS1='mock# '\nls\necho ORVAR\n")
-
             self.verbose = self.args.verbose
             if self.verbose:
                 do_logger_setup(loglvl=logging.DEBUG)
