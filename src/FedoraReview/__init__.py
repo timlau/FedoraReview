@@ -22,7 +22,7 @@ Tools for helping Fedora package reviewers
 
 import subprocess
 import logging
-from subprocess import call, Popen
+from subprocess import call, Popen, PIPE
 import os.path
 import re
 import glob
@@ -199,7 +199,7 @@ class Helpers(object):
         self.log.debug('Run command: %s' % cmd)
         cmd = cmd.split(' ')
         try:
-            proc = Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
             output, error = proc.communicate()
         except OSError, e:
             print "OSError : %s" % str(e)
@@ -265,8 +265,7 @@ class Sources(object):
             source.get_source(source_url, self.prebuilt)
         else:  # this is a local file in the SRPM
             self.log.info("No upstream for (%s): %s" % (tag, source_url))
-            source = Source(self, filename=source_url,
-                            mock_config=self.mock_config)
+            source = Source(self, filename=source_url)
             source.set_work_dir(self.work_dir)
             ## When sources are not remote we need to extract them from
             ## the srpm.
@@ -427,7 +426,8 @@ class SRPMFile(Helpers):
         if hasattr(self, 'unpacked_src'):
             return;
 
-        wdir = Settings.work_dir + '/srpm-unpack'
+        wdir = os.path.realpath(os.path.join(Settings.work_dir,
+                                             'srpm-unpack'))
         if os.path.exists(wdir):
              shutil.rmtree(wdir)
 
@@ -441,6 +441,26 @@ class SRPMFile(Helpers):
         else:
             self.unpacked_src = wdir
         os.chdir(oldpwd)
+
+    def extract(self, path):
+        """ Extract a named source and return containing directory. """
+        filename=os.path.basename(path)
+        self.unpack()
+        files = glob.glob( self.unpacked_src  + '/*' )
+        if not filename in [os.path.basename(f) for f in files]:
+            print 'Trying to unpack non-existing source: ' + filename
+            return None
+        extract_dir = self.unpacked_src + '/' +  filename  + '-extract'
+        if os.path.exists(extract_dir):
+            return extract_dir
+        else:
+            os.mkdir(extract_dir)
+        rc = rpmdev_extract(extract_dir,
+                            os.path.join(self.unpacked_src, filename))
+        if rc != 0:
+            print "Cannot unpack " + filename
+            return None
+        return extract_dir
 
     def build(self, force=False, silence=False):
         """ Returns the build status, -1 is the build failed, -2
