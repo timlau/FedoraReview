@@ -49,6 +49,9 @@ don't have to login every time.
 .B -n / --name
     Runs the checks against the named spec and source rpm located in the current working directory.
 .sp
+.B -p / --prebuilt
+    When using -n <name>, use prebuilt rpms in current directory instead of building new ones in mock
+.sp
 .B -w / --workdir
     Specify in which working directory to work.
 .sp
@@ -62,7 +65,7 @@ don't have to login every time.
     Do not redownload the files from bugzilla, use the local one.
 .sp
 .B --nobuild
-    Do not rebuild the source rpm, use the currently built one.
+    Do not rebuild the source rpm, use the one currently built in mock.
 .sp
 .B -l / --login
     Login into Fedora Bugzilla before starting.

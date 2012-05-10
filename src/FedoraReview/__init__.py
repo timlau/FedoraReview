@@ -29,6 +29,7 @@ import glob
 import requests
 import sys
 import shlex
+import shutil
 import tarfile
 import rpm
 import platform
@@ -231,13 +232,14 @@ class Helpers(object):
 
 class Sources(object):
     """ Store Source object for each source in Spec file"""
-    def __init__(self, cache, mock_config=Settings.mock_config):
+    def __init__(self, cache, mock_config=Settings.mock_config, prebuilt=False):
         self._sources = {}
         self.cache = cache
         self.mock_config = mock_config
         self.work_dir = None
         self.log = get_logger()
         self._sources_files = None
+        self.prebuilt = prebuilt
 
     def set_work_dir(self, work_dir):
         self.work_dir = work_dir
@@ -248,7 +250,7 @@ class Sources(object):
             self.log.info("Downloading (%s): %s" % (tag, source_url))
             source = Source(cache=self.cache, mock_config=self.mock_config)
             source.set_work_dir(self.work_dir)
-            source.get_source(source_url)
+            source.get_source(source_url, self.prebuilt)
         else:  # this is a local file in the SRPM
             self.log.info("No upstream for (%s): %s" % (tag, source_url))
             source = Source(filename=source_url, cache=self.cache,
@@ -280,7 +282,7 @@ class Sources(object):
             if os.path.splitext(source.filename)[1] in \
                 ['.zip', '.tar', '.gz', '.bz2', '.gem', '.xz']:
                 if not source.extract_dir:
-                    source.extract()
+                    source.extract(self.prebuilt)
 
     def extract(self, source_url=None, source_filename=None):
         """ Extract the source specified by its url or filename.
@@ -292,9 +294,9 @@ class Sources(object):
             print 'No source set to extract'
         for source in self._sources:
             if source_url and source.URL == source_url:
-                source.extract()
+                source.extract(self.prebuilt)
             elif source_filename and source.filename == source_filename:
-                source.extract()
+                source.extract(self.prebuilt)
 
     def get_files_sources(self):
         """ Return the list of all files found in the sources. """
@@ -332,11 +334,12 @@ class Source(Helpers):
         self.extract_dir = None
         self.tar_members = []
 
-    def get_source(self, URL):
+    def get_source(self, URL, prebuilt):
         self.URL = URL
         self.filename = self._get_file(URL)
         if self.filename and os.path.exists(self.filename):
             self.downloaded = True
+            self.extract( prebuilt )
 
     def check_source_md5(self):
         if self.downloaded:
@@ -346,11 +349,20 @@ class Source(Helpers):
             sum = "upstream source not found"
         return sum
 
-    def extract(self):
+    def extract(self, prebuilt=False):
         """ Extract the sources in the mock chroot so that it can be
-        destroy easily by mock.
+        destroy easily by mock. Prebuilt sources are extracted to
+        temporary directory in current dir.
         """
-        self.extract_dir = self.get_mock_dir() + \
+        if prebuilt:
+            self.extract_dir = 'review-tmp-src'
+            if os.path.exists(self.extract_dir):
+                self.log.debug("Clearing temporary source dir " +
+                                self.extract_dir)
+                shutil.rmtree(self.extract_dir)
+                os-mkdir(self.extract_dir)
+        else:
+            self.extract_dir = self.get_mock_dir() + \
                 "/../root/builddir/build/sources/"
         self.log.debug("Extracting %s in %s " % (self.filename,
                 self.extract_dir))
@@ -393,7 +405,8 @@ class SRPMFile(Helpers):
     def __init__(self, filename, cache=False, nobuild=False,
             mock_config=Settings.mock_config,
             mock_options=Settings.mock_options,
-            spec=None):
+            spec=None,
+            prebuilt=False):
         Helpers.__init__(self, cache, nobuild, mock_config, mock_options)
         self.filename = filename
         self.spec = spec
@@ -402,6 +415,7 @@ class SRPMFile(Helpers):
         self.is_build = False
         self.build_failed = False
         self._rpm_files = None
+        self.prebuilt = prebuilt
 
     def install(self, wipe=False):
         """ Install the source rpm into the local filesystem.
@@ -416,14 +430,16 @@ class SRPMFile(Helpers):
         self.is_installed = True
 
     def build(self, force=False, silence=False):
-        """ Returns the build status, -1 is the build failed, the
-        output code from mock otherwise.
+        """ Returns the build status, -1 is the build failed, -2
+         reflects prebuilt rpms output code from mock otherwise.
 
         :kwarg force, boolean to force the mock build even if the
             package was already built.
         :kwarg silence, boolean to set/remove the output from the mock
             build.
         """
+        if self.prebuilt:
+            return -2
         if self.build_failed:
             return -1
         return self.mockbuild(force, silence=silence)
@@ -538,20 +554,29 @@ class SRPMFile(Helpers):
         return self.run_rpmlint([self.filename])
 
     def rpmlint_rpms(self):
-        """ Runs rpmlint against the rpms generated by the mock build.
+        """ Runs rpmlint against the used rpms - prebuilt or built in mock.
         """
-        rpms = glob.glob(self.get_mock_dir() + '/*.rpm')
+        if self.prebuilt:
+            rpms = glob.glob('*.rpm')
+        else:
+            rpms = glob.glob(self.get_mock_dir() + '/*.rpm')
         no_errors, result = self.run_rpmlint(rpms)
         return no_errors, result
 
     def get_files_rpms(self):
         """ Generate the list files contained in RPMs generated by the
-        mock build
+        mock build or present using --prebuilt
         """
         if self._rpm_files:
             return self._rpm_files
-        self.build()
-        rpms = glob.glob(self.get_mock_dir() + '/*.rpm')
+        if self.prebuilt:
+            rpms = glob.glob('*.rpm')
+            hdr = "Using local rpms: "
+            sep = '\n' + ' ' * len(hdr)
+            print hdr + sep.join(rpms)
+        else:
+            self.build()
+            rpms = glob.glob(self.get_mock_dir() + '/*.rpm')
         rpm_files = {}
         for rpm in rpms:
             if rpm.endswith('.src.rpm'):
