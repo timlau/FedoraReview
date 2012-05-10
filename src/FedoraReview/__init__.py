@@ -30,7 +30,7 @@ import requests
 import sys
 import shlex
 import shutil
-import tarfile
+import tempfile
 import rpm
 import platform
 import StringIO
@@ -54,6 +54,18 @@ LOG_ROOT = 'FedoraReview'
 
 # see ticket https://fedorahosted.org/FedoraReview/ticket/43
 requests.decode_unicode=False
+
+def rpmdev_extract(working_dir, archive):
+    """
+    Unpack archive in working_dir. Returns return value
+    from subprocess.call()
+    """
+    cmd = 'rpmdev-extract -qC ' + working_dir + ' ' + archive
+    rc = call(cmd, shell=True)
+    if rc != 0:
+        print "Cannot unpack "  + archive
+    return rc
+
 
 class FedoraReviewError(Exception):
     """ General Error class for fedora-review. """
@@ -248,13 +260,13 @@ class Sources(object):
         """Add a new Source Object based on spec tag and URL to source"""
         if urlparse(source_url)[0] != '':  # This is a URL, Download it
             self.log.info("Downloading (%s): %s" % (tag, source_url))
-            source = Source(cache=self.cache, mock_config=self.mock_config)
+            source = Source(self, mock_config=self.mock_config)
             source.set_work_dir(self.work_dir)
             source.get_source(source_url, self.prebuilt)
         else:  # this is a local file in the SRPM
             self.log.info("No upstream for (%s): %s" % (tag, source_url))
-            source = Source(filename=source_url, cache=self.cache,
-            mock_config=self.mock_config)
+            source = Source(self, filename=source_url,
+                            mock_config=self.mock_config)
             source.set_work_dir(self.work_dir)
             ## When sources are not remote we need to extract them from
             ## the srpm.
@@ -304,7 +316,7 @@ class Sources(object):
             return self._sources_files
         try:
             self.extract_all()
-        except tarfile.ReadError, error:
+        except  OSError as error:
             print "Source", error
             self._source_files = []
             return []
@@ -325,14 +337,13 @@ as sources' % source.filename)
 
 
 class Source(Helpers):
-    def __init__(self, filename=None, cache=False,
-        mock_config=Settings.mock_config):
-        Helpers.__init__(self, cache, mock_config=mock_config)
+    def __init__(self, sources, filename=None,
+                 mock_config=Settings.mock_config):
+        Helpers.__init__(self, sources.cache, mock_config=mock_config)
         self.filename = filename
+        self.sources = sources
         self.downloaded = False
         self.URL = None
-        self.extract_dir = None
-        self.tar_members = []
 
     def get_source(self, URL, prebuilt):
         self.URL = URL
@@ -365,30 +376,25 @@ class Source(Helpers):
             self.extract_dir = self.get_mock_dir() + \
                 "/../root/builddir/build/sources/"
         self.log.debug("Extracting %s in %s " % (self.filename,
-                self.extract_dir))
+                       self.extract_dir))
         if not os.path.exists(self.extract_dir):
             try:
                 os.makedirs(self.extract_dir)
             except IOError, err:
                 self.log.debug(err)
                 print "Could not generate the folder %s" % self.extract_dir
+        rpmdev_extract(self.extract_dir, self.filename)
 
-        if not self.filename.endswith('.xz'):
-            tar = tarfile.open(self.filename)
-        else:
-            # LZMA will be supported in python-3.3
-            # http://bugs.python.org/issue5689
-            Popen(["xz", "--keep", "--decompress", self.filename],
-                 stdout=subprocess.PIPE).stdout.read()
-            tar = tarfile.open(self.filename[:-3])
-
-        tar.extractall(self.extract_dir)
-        if self.filename.endswith('.gem'):
-            gem_extract_dir = self.extract_gem()
-            self.tar_members.append(gem_extract_dir)
-        else:
-            self.tar_members = tar.getmembers()
-        tar.close()
+    def get_source_topdir(self):
+        """
+        Return the top directory of the unpacked source. Fails for
+        archives not including the top directory. FIXME
+        """
+        if not hasattr(self, 'extract_dir'):
+            self.extract()
+        topdir = glob.glob(self.extract_dir + '/*')
+        if len(topdir) > 1:
+              print "Returning illegal topdir. Bad things ahead"
 
     def extract_gem(self):
         """Every gem contains a data.tar.gz file with the actual sources"""
