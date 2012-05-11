@@ -22,14 +22,15 @@ Tools for helping Fedora package reviewers
 
 import subprocess
 import logging
-from subprocess import call, Popen
+from subprocess import call, Popen, PIPE, STDOUT
 import os.path
 import re
 import glob
 import requests
 import sys
 import shlex
-import tarfile
+import shutil
+import tempfile
 import rpm
 import platform
 import StringIO
@@ -51,8 +52,68 @@ TEST_STATES = {'pending': '[ ]', 'pass': '[x]', 'fail': '[!]', 'na': '[-]'}
 
 LOG_ROOT = 'FedoraReview'
 
+PARSER_SECTION = 'review'
+CONFIG_FILE    = '.config/fedora-review/settings'
+SYS_PLUGIN_DIR = "/usr/share/fedora-review/plugins:%s"
+MY_PLUGIN_DIR  = ".config/fedora-review/plugins"
+
 # see ticket https://fedorahosted.org/FedoraReview/ticket/43
 requests.decode_unicode=False
+
+def rpmdev_extract(working_dir, archive):
+    """
+    Unpack archive in working_dir. Returns return value
+    from subprocess.call()
+    """
+    cmd = 'rpmdev-extract -qC ' + working_dir + ' ' + archive
+    rc = call(cmd, shell=True)
+    if rc != 0:
+        print "Cannot unpack "  + archive
+    return rc
+
+
+def _check_rpmlint_errors(out, log):
+    """ Check the rpmlint output, return(ok, errmsg)
+    If ok, output is OK and there is 0 warnings/errors
+    If not ok, and errmsg!= None there is system errors,
+    reflected in errmsg. If not ok and sg == None parsing
+    is ok but there are warnings/errors"""
+
+    problems = re.compile('(\d+)\serrors\,\s(\d+)\swarnings')
+    lines = out.split('\n')[:-1]
+    err_lines = filter( lambda l: l.lower().find('error') != -1, lines)
+    if len(err_lines) == 0:
+        log.debug('Cannot parse rpmlint output: ' + out )
+        return False, 'Cannot parse rpmlint output:'
+
+    res = problems.search(err_lines[-1])
+    if res and len(res.groups()) == 2:
+        errors, warnings = res.groups()
+        if errors == '0' and warnings == '0':
+            return True, None
+        else:
+            return False, None
+    else:
+        log.debug('Cannot parse rpmlint output: ' + out )
+        return False, 'Cannot parse rpmlint output:'
+
+
+def get_logger():
+    return logging.getLogger(LOG_ROOT)
+
+
+def do_logger_setup(logroot=LOG_ROOT, logfmt='%(message)s',
+    loglvl=logging.INFO):
+    ''' Setup Python logging using a TextViewLogHandler '''
+    logger = logging.getLogger(logroot)
+    logger.setLevel(loglvl)
+    formatter = logging.Formatter(logfmt, "%H:%M:%S")
+    handler = logging.StreamHandler()
+    handler.setFormatter(formatter)
+    handler.propagate = False
+    logger.addHandler(handler)
+    return handler
+
 
 class FedoraReviewError(Exception):
     """ General Error class for fedora-review. """
@@ -66,70 +127,146 @@ class FedoraReviewError(Exception):
         return repr(self.value)
 
 
-class Settings(object):
-    """ FedoraReview Config Setting"""
-    # Editor to use to show review report & spec (default use EDITOR env)
-    editor = ''
-    # Work dir
-    work_dir = '.'
-    # Default bugzilla userid
-    bz_user = ''
-    mock_config = 'fedora-rawhide-i386'
-    mock_options = None
-    ext_dirs = "/usr/share/fedora-review/plugins:%s" % os.environ['HOME'] \
-        + "/.config/fedora-review/plugins"
+_RPMLINT_SCRIPT="""
+mock --shell << 'EOF'
+echo 'rpmlint:'
+rpmlint @rpm_names@
+echo 'rpmlint-done:'
+EOF
+"""
+class _Mock(object):
+    """ Some basic operations on the mock chroot env, a singleton. """
+
+    def __init__(self):
+        self.log = get_logger()
+
+    def install(self, rpm_files):
+        """
+        Run  'mock install' on a list of files, return None if
+        OK, else the stdout+stderr
+        """
+        cmd = ["mock", "install"]
+        cmd.extend(rpm_files)
+        try:
+            p = Popen(cmd, stdout=PIPE, stderr=STDOUT)
+            output, error = p.communicate()
+        except OSError as e:
+            return output[0]
+        return None
+
+    def _run(self, script):
+        """ Run a script,  return (ok, output). """
+        try:
+            p = Popen(script, stdout=PIPE, stderr=STDOUT, shell=True)
+            output, error = p.communicate()
+        except OSError as e:
+            return False, e.strerror
+        return True, output
+
+    def rpmlint_rpms(self, rpms):
+        """ Install and run rpmlint on  packages,
+        return (True,  text) or (False, error_string)"""
+
+        rpms.insert(0, 'rpmlint')
+        error =  self.install(rpms)
+        if error:
+            return False, error
+        rpms.pop(0)
+
+        script = _RPMLINT_SCRIPT
+        basenames = [ os.path.basename(r) for r in rpms]
+        names = [r.rsplit('-', 2)[0] for r in basenames]
+        rpm_names = ' '.join(list(set(names)))
+        script = script.replace('@rpm_names@', rpm_names)
+        ok, output = self._run(script)
+        if not ok:
+            return False, output + '\n'
+
+        ok, err_msg = _check_rpmlint_errors(output, self.log)
+        if err_msg:
+            return False, err_msg
+
+        lines = output.split('\n')
+        l = ''
+        while not l.startswith('rpmlint:') and len(lines) > 0:
+            l = lines.pop(0)
+        text = ''
+        for l in lines:
+            if l.startswith('<mock-'):
+                l=l[l.find('#'):]
+            if l.startswith('rpmlint-done:'):
+                break
+            text += l + '\n'
+        return ok, text
+
+Mock=_Mock()
+
+class _Settings(object):
+    """
+    FedoraReview singleton Config Setting, based on config file and
+    command line options. All config values are accessed as attributes.
+    """
+    path = MY_PLUGIN_DIR + ":" + os.environ['HOME'] + ":" + SYS_PLUGIN_DIR
+    defaults = {
+        # review, report & spec editor(default EDITOR env)
+        'editor':       '',
+        'work_dir':     '.',
+        'bz_user':      '',
+        'mock_config':  'fedora-rawhide-i386',
+        'mock_options': '--no-cleanup-after',
+        'ext_dirs':     path
+    }
 
     def __init__(self):
         '''Constructor of the Settings object.
         This instanciate the Settings object and load into the _dict
         attributes the default configuration which each available option.
         '''
-        self._dict = {'editor' : self.editor,
-                    'work_dir' : self.work_dir,
-                    'bz_user' : self.bz_user,
-                    'mock_config' : self.mock_config,
-                    'ext_dirs' : self.ext_dirs}
-        self.load_config('.config/fedora-review/settings', 'review')
+        for key,value in self.defaults.iteritems():
+            setattr(self, key, value)
+        self._dict = self.defaults
+        self._load_config(CONFIG_FILE, PARSER_SECTION)
 
-    def load_config(self, configfile, sec):
+    def _load_config(self, configfile, sec):
         '''Load the configuration in memory.
 
         :arg configfile, name of the configuration file loaded.
         :arg sec, section of the configuration retrieved.
         '''
         parser = ConfigParser.ConfigParser()
+        self.parser = parser
         configfile = os.environ['HOME'] + "/" + configfile
-        isNew = self.create_conf(configfile)
+        isNew = self._create_conf()
         parser.read(configfile)
         if not parser.has_section(sec):
             parser.add_section(sec)
-        self.populate(parser, sec)
+        self._populate()
         if isNew:
-            self.save_config(configfile, parser)
+            self.save_config()
 
-    def create_conf(self, configfile):
+    def _create_conf(self):
         '''Check if the provided configuration file exists, generate the
         folder if it does not and return True or False according to the
         initial check.
 
         :arg configfile, name of the configuration file looked for.
         '''
-        if not os.path.exists(configfile):
-            dn = os.path.dirname(configfile)
+        if not os.path.exists(CONFIG_FILE):
+            dn = os.path.dirname(CONFIG_FILE)
             if not os.path.exists(dn):
                 os.makedirs(dn)
             return True
         return False
 
-    def save_config(self, configfile, parser):
+    def save_config(self ):
         '''Save the configuration into the specified file.
 
         :arg configfile, name of the file in which to write the configuration
         :arg parser, ConfigParser object containing the configuration to
         write down.
         '''
-        with open(configfile, 'w') as conf:
-                parser.write(conf)
+        with open(CONFIG_FILE, 'w') as conf:
+                self.parser.write(conf)
 
     def __getitem__(self, key):
         hash = self._get_hash(key)
@@ -137,37 +274,42 @@ class Settings(object):
             raise KeyError(key)
         return self._dict.get(hash)
 
-    def populate(self, parser, section):
+    def _populate(self):
         '''Set option values from a INI file section.
 
         :arg parser: ConfigParser instance (or subclass)
         :arg section: INI file section to read use.
         '''
-        if parser.has_section(section):
-            opts = set(parser.options(section))
+        if self.parser.has_section(PARSER_SECTION):
+            opts = set(self.parser.options(PARSER_SECTION))
         else:
             opts = set()
 
         for name in self._dict.iterkeys():
             value = None
             if name in opts:
-                value = parser.get(section, name)
+                value = self.parser.get(PARSER_SECTION, name)
                 setattr(self, name, value)
-                parser.set(section, name, value)
+                self.parser.set(PARSER_SECTION, name, value)
             else:
-                parser.set(section, name, self._dict[name])
+                self.parser.set(PARSER_SECTION, name, self._dict[name])
+
+    def add_args(self, args):
+        """ Load all command line options in args. """
+        dict = vars(args)
+        for key, value in dict.iteritems():
+            setattr(self, key, value)
+            self.parser.set( PARSER_SECTION, key, value)
+
+
+Settings = _Settings()
 
 class Helpers(object):
 
-    def __init__(self, cache=False, nobuild=False,
-            mock_config=Settings.mock_config,
-            mock_options=Settings.mock_options):
+    def __init__(self):
         self.work_dir = 'work/'
         self.log = get_logger()
-        self.cache = cache
-        self.nobuild = nobuild
-        self.mock_config = mock_config
-        self.mock_options = mock_options
+        self.mock_options = Settings.mock_options
         self.rpmlint_output = []
 
     def set_work_dir(self, work_dir):
@@ -179,14 +321,14 @@ class Helpers(object):
         self.work_dir = work_dir
 
     def get_mock_dir(self):
-        mock_dir = '/var/lib/mock/%s/result' % self.mock_config
+        mock_dir = '/var/lib/mock/%s/result' % Settings.mock_config
         return mock_dir
 
     def _run_cmd(self, cmd):
         self.log.debug('Run command: %s' % cmd)
         cmd = cmd.split(' ')
         try:
-            proc = Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
             output, error = proc.communicate()
         except OSError, e:
             print "OSError : %s" % str(e)
@@ -214,7 +356,7 @@ class Helpers(object):
             raise FedoraReviewError('Getting error "%s" while trying to download: %s'
                 % (request.status_code, link))
         fname = os.path.basename(url.path)
-        if os.path.exists(self.work_dir + fname) and self.cache:
+        if os.path.exists(self.work_dir + fname) and Settings.cache:
             return  self.work_dir + fname
         try:
             stream = open(self.work_dir + fname, 'w')
@@ -231,10 +373,8 @@ class Helpers(object):
 
 class Sources(object):
     """ Store Source object for each source in Spec file"""
-    def __init__(self, cache, mock_config=Settings.mock_config):
+    def __init__(self):
         self._sources = {}
-        self.cache = cache
-        self.mock_config = mock_config
         self.work_dir = None
         self.log = get_logger()
         self._sources_files = None
@@ -246,13 +386,12 @@ class Sources(object):
         """Add a new Source Object based on spec tag and URL to source"""
         if urlparse(source_url)[0] != '':  # This is a URL, Download it
             self.log.info("Downloading (%s): %s" % (tag, source_url))
-            source = Source(cache=self.cache, mock_config=self.mock_config)
+            source = Source(self)
             source.set_work_dir(self.work_dir)
-            source.get_source(source_url)
+            source.get_source(source_url )
         else:  # this is a local file in the SRPM
             self.log.info("No upstream for (%s): %s" % (tag, source_url))
-            source = Source(filename=source_url, cache=self.cache,
-            mock_config=self.mock_config)
+            source = Source(self, filename=source_url)
             source.set_work_dir(self.work_dir)
             ## When sources are not remote we need to extract them from
             ## the srpm.
@@ -277,10 +416,7 @@ class Sources(object):
         on their extension.
         """
         for source in self._sources.values():
-            if os.path.splitext(source.filename)[1] in \
-                ['.zip', '.tar', '.gz', '.bz2', '.gem', '.xz']:
-                if not source.extract_dir:
-                    source.extract()
+            source.extract()
 
     def extract(self, source_url=None, source_filename=None):
         """ Extract the source specified by its url or filename.
@@ -302,7 +438,7 @@ class Sources(object):
             return self._sources_files
         try:
             self.extract_all()
-        except tarfile.ReadError, error:
+        except  OSError as error:
             print "Source", error
             self._source_files = []
             return []
@@ -323,20 +459,19 @@ as sources' % source.filename)
 
 
 class Source(Helpers):
-    def __init__(self, filename=None, cache=False,
-        mock_config=Settings.mock_config):
-        Helpers.__init__(self, cache, mock_config=mock_config)
+    def __init__(self, sources, filename=None):
+        Helpers.__init__(self)
         self.filename = filename
+        self.sources = sources
         self.downloaded = False
         self.URL = None
-        self.extract_dir = None
-        self.tar_members = []
 
     def get_source(self, URL):
         self.URL = URL
         self.filename = self._get_file(URL)
         if self.filename and os.path.exists(self.filename):
             self.downloaded = True
+            self.extract()
 
     def check_source_md5(self):
         if self.downloaded:
@@ -346,37 +481,42 @@ class Source(Helpers):
             sum = "upstream source not found"
         return sum
 
-    def extract(self):
+    def extract(self ):
         """ Extract the sources in the mock chroot so that it can be
-        destroy easily by mock.
+        destroy easily by mock. Prebuilt sources are extracted to
+        temporary directory in current dir.
         """
-        self.extract_dir = self.get_mock_dir() + \
+        if Settings.prebuilt:
+            self.extract_dir = 'review-tmp-src'
+            if os.path.exists(self.extract_dir):
+                self.log.debug("Clearing temporary source dir " +
+                                self.extract_dir)
+                shutil.rmtree(self.extract_dir)
+                os.mkdir(self.extract_dir)
+        else:
+            self.extract_dir = self.get_mock_dir() + \
                 "/../root/builddir/build/sources/"
         self.log.debug("Extracting %s in %s " % (self.filename,
-                self.extract_dir))
+                       self.extract_dir))
         if not os.path.exists(self.extract_dir):
             try:
                 os.makedirs(self.extract_dir)
             except IOError, err:
                 self.log.debug(err)
                 print "Could not generate the folder %s" % self.extract_dir
+        rpmdev_extract(self.extract_dir, self.filename)
 
-        if not self.filename.endswith('.xz'):
-            tar = tarfile.open(self.filename)
-        else:
-            # LZMA will be supported in python-3.3
-            # http://bugs.python.org/issue5689
-            Popen(["xz", "--keep", "--decompress", self.filename],
-                 stdout=subprocess.PIPE).stdout.read()
-            tar = tarfile.open(self.filename[:-3])
-
-        tar.extractall(self.extract_dir)
-        if self.filename.endswith('.gem'):
-            gem_extract_dir = self.extract_gem()
-            self.tar_members.append(gem_extract_dir)
-        else:
-            self.tar_members = tar.getmembers()
-        tar.close()
+    def get_source_topdir(self):
+        """
+        Return the top directory of the unpacked source. Fails for
+        archives not including the top directory. FIXME
+        """
+        if not hasattr(self, 'extract_dir'):
+            self.extract()
+        topdir = glob.glob(self.extract_dir + '/*')
+        if len(topdir) > 1:
+              print "Returning illegal topdir. Bad things ahead"
+        return os.path.basename(topdir[0])
 
     def extract_gem(self):
         """Every gem contains a data.tar.gz file with the actual sources"""
@@ -390,40 +530,68 @@ class Source(Helpers):
 
 
 class SRPMFile(Helpers):
-    def __init__(self, filename, cache=False, nobuild=False,
-            mock_config=Settings.mock_config,
-            mock_options=Settings.mock_options,
-            spec=None):
-        Helpers.__init__(self, cache, nobuild, mock_config, mock_options)
+
+    def __init__(self, filename, spec=None):
+        Helpers.__init__(self)
         self.filename = filename
         self.spec = spec
         self.log = get_logger()
-        self.is_installed = False
         self.is_build = False
         self.build_failed = False
         self._rpm_files = None
 
-    def install(self, wipe=False):
-        """ Install the source rpm into the local filesystem.
+    def unpack(self):
+        """ Local unpack using rpm2cpio. """
+        if hasattr(self, 'unpacked_src'):
+            return;
 
-        :arg wipe, boolean which clean the source directory.
-        """
-        if wipe:
-            sourcedir = self.get_source_dir()
-            if sourcedir != "" and sourcedir != "/":  # just to be safe
-                call('rm -f %s/*  &>/dev/null' % sourcedir, shell=True)
-        call('rpm -ivh %s &>/dev/null' % self.filename, shell=True)
-        self.is_installed = True
+        wdir = os.path.realpath(os.path.join(Settings.work_dir,
+                                             'srpm-unpack'))
+        if os.path.exists(wdir):
+             shutil.rmtree(wdir)
+
+        os.mkdir(wdir)
+        oldpwd = os.getcwd()
+        os.chdir(wdir)
+        cmd = 'rpm2cpio ' + self.filename + ' | cpio -i --quiet'
+        rc = call(cmd, shell=True)
+        if rc != 0:
+            print "Cannot unpack %s into %s" % (self.filename, wdir)
+        else:
+            self.unpacked_src = wdir
+        os.chdir(oldpwd)
+
+    def extract(self, path):
+        """ Extract a named source and return containing directory. """
+        filename=os.path.basename(path)
+        self.unpack()
+        files = glob.glob( self.unpacked_src  + '/*' )
+        if not filename in [os.path.basename(f) for f in files]:
+            print 'Trying to unpack non-existing source: ' + filename
+            return None
+        extract_dir = self.unpacked_src + '/' +  filename  + '-extract'
+        if os.path.exists(extract_dir):
+            return extract_dir
+        else:
+            os.mkdir(extract_dir)
+        rc = rpmdev_extract(extract_dir,
+                            os.path.join(self.unpacked_src, filename))
+        if rc != 0:
+            print "Cannot unpack " + filename
+            return None
+        return extract_dir
 
     def build(self, force=False, silence=False):
-        """ Returns the build status, -1 is the build failed, the
-        output code from mock otherwise.
+        """ Returns the build status, -1 is the build failed, -2
+         reflects prebuilt rpms output code from mock otherwise.
 
         :kwarg force, boolean to force the mock build even if the
             package was already built.
         :kwarg silence, boolean to set/remove the output from the mock
             build.
         """
+        if Settings.prebuilt:
+            return -2
         if self.build_failed:
             return -1
         return self.mockbuild(force, silence=silence)
@@ -436,17 +604,17 @@ class SRPMFile(Helpers):
         :kwarg silence, boolean to set/remove the output from the mock
             build.
         """
-        if not force and (self.is_build or self.nobuild):
+        if not force and (self.is_build or Settings.nobuild):
             return 0
         #print "MOCKBUILD: ", self.is_build, self.nobuild
         self.log.info("Building %s using mock %s" % (
-            self.filename, self.mock_config))
+            self.filename, Settings.mock_config))
         cmd = 'mock -r %s  --rebuild %s ' % (
-                self.mock_config, self.filename)
+                Settings.mock_config, self.filename)
         if self.log.level == logging.DEBUG:
             cmd = cmd + ' -v '
-        if self.mock_options:
-            cmd = cmd + ' ' + self.mock_options
+        if Settings.mock_options:
+            cmd = cmd + ' ' + Settings.mock_options
         if silence:
             cmd = cmd + ' 2>&1 | grep "Results and/or logs" '
         self.log.debug('Mock command: %s' % cmd)
@@ -470,93 +638,82 @@ class SRPMFile(Helpers):
                 return bdir_root + entry
         return None
 
-    def get_source_dir(self):
-        """ Retrieve the source directory from rpm.
-        """
-        sourcedir = Popen(["rpm", "-E", '%_sourcedir'],
-                stdout=subprocess.PIPE).stdout.read()[:-1]
-        # replace %{name} by the specname
-        package_name = Popen(["rpm", "-qp", self.filename,
-                '--qf', '%{name}'], stdout=subprocess.PIPE).stdout.read()
-        sourcedir = sourcedir.replace("%{name}", package_name)
-        sourcedir = sourcedir.replace("%name", package_name)
-        return sourcedir
-
-    def check_source_md5(self, filename):
-        if self.is_installed:
-            sourcedir = self.get_source_dir()
-            src_files = glob.glob(sourcedir + '/*')
-            # src_files = glob.glob(os.path.expanduser('~/rpmbuild/SOURCES/*'))
-            if src_files:
-                for name in src_files:
-                    if filename and \
-                    os.path.basename(filename) != os.path.basename(name):
-                        continue
-                    self.log.debug("Checking md5 for %s" % name)
-                    sum, file = self._md5sum(name)
-                    return sum
-            else:
-                print('no sources found in install SRPM')
-                return "ERROR"
-        else:
-            print "SRPM is not installed"
+    def check_source_md5(self, path):
+        self.unpack()
+        filename = os.path.basename(path)
+        if not hasattr(self, 'unpacked_src'):
+            print "check_source_md5: Cannot unpack (?)"
             return "ERROR"
+        src_files = glob.glob(self.unpacked_src + '/*')
+        if not src_files:
+            print 'No unpacked sources found (!)'
+            return "ERROR"
+        if not filename in [os.path.basename(f) for f in src_files]:
+            print 'Cannot find source: ' + filename
+            return "ERROR"
+        path = os.path.join(self.unpacked_src, filename)
+        self.log.debug("Checking md5 for %s" % path)
+        sum, file = self._md5sum(path)
+        return sum
 
-    def _check_errors(self, out):
-        problems = re.compile('(\d+)\serrors\,\s(\d+)\swarnings')
-        lines = out.split('\n')[:-1]
-        last = lines[-1]
-        res = problems.search(last)
-        if res and len(res.groups()) == 2:
-            errors, warnings = res.groups()
-            if errors == '0' and warnings == '0':
-                return True
-        return False
+    def run_rpmlint(self, filenames):
+        """ Runs rpmlint against the provided files.
 
-    def run_rpmlint(self, filename):
-        """ Runs rpmlint against the provided file.
-
-        karg: filename, the name of the file to run rpmlint on
+        karg: filenames, list of filenames  to run rpmlint on
         """
-        cmd = 'rpmlint -f .rpmlint %s' % filename
-        sep = "\n"
-        result = "\nrpmlint %s\n" % os.path.basename(filename)
-        result += sep
-        out = self._run_cmd(cmd)
+        cmd = 'rpmlint -f .rpmlint ' + ' '.join( filenames )
+        out = 'Checking: '
+        sep = '\n' + ' ' * len( out )
+        out += sep.join([os.path.basename(f) for f in filenames])
+        out += '\n'
+        out += self._run_cmd(cmd)
+        out += '\n'
         for line in out.split('\n'):
-            if line and not 'specfiles checked' in line:
+            if line and len(line) > 0:
                 self.rpmlint_output.append(line)
-        no_errors = self._check_errors(out)
-        result += out
-        result += sep
-        return no_errors, result
+        no_errors, msg  = _check_rpmlint_errors(out, self.log)
+        return no_errors, msg if msg else out
 
     def rpmlint(self):
         """ Runs rpmlint against the file.
         """
-        return self.run_rpmlint(self.filename)
+        return self.run_rpmlint([self.filename])
 
     def rpmlint_rpms(self):
-        """ Runs rpmlint against the rpm generated by the mock build.
+        """ Runs rpmlint against the used rpms - prebuilt or built in mock.
         """
-        results = ''
-        success = True
-        rpms = glob.glob(self.get_mock_dir() + '/*.rpm')
-        for rpm in rpms:
-            no_errors, result = self.run_rpmlint(rpm)
-            if not no_errors:
-                success = False
-            results += result
-        return success, results
+        if Settings.prebuilt:
+            rpms = glob.glob('*.rpm')
+        else:
+            rpms = glob.glob(self.get_mock_dir() + '/*.rpm')
+        no_errors, result = self.run_rpmlint(rpms)
+        return no_errors, result + '\n'
+
+    def get_used_rpms(self, exclude_pattern=None):
+        """ Return list of mock built or prebuilt rpms. """
+        if Settings.prebuilt:
+            rpms = set( glob.glob('*.rpm'))
+        else:
+            rpms = set(glob.glob(self.get_mock_dir() + '/*.rpm'))
+        matched = filter( lambda s: s.find(exclude_pattern) > 0, rpms)
+        rpms = rpms - set(matched)
+        return list(rpms)
+
 
     def get_files_rpms(self):
         """ Generate the list files contained in RPMs generated by the
-        mock build
+        mock build or present using --prebuilt
         """
         if self._rpm_files:
             return self._rpm_files
-        self.build()
-        rpms = glob.glob(self.get_mock_dir() + '/*.rpm')
+        if Settings.prebuilt:
+            rpms = glob.glob('*.rpm')
+            hdr = "Using local rpms: "
+            sep = '\n' + ' ' * len(hdr)
+            print hdr + sep.join(rpms)
+        else:
+            self.build()
+            rpms = glob.glob(self.get_mock_dir() + '/*.rpm')
         rpm_files = {}
         for rpm in rpms:
             if rpm.endswith('.src.rpm'):
@@ -774,11 +931,42 @@ class SpecFile(object):
         return result
 
 
+class Attachment(object):
+    """ Text written after the test lines. """
+
+    def __init__(self, header, text, order_hint=10):
+        """
+        Setup an attachment. Args:
+         -  header: short header, < 40 char.
+         -  text: printed as-is.
+         -  order_hint: Sorting hint, lower hint goes first.
+                0 <= order_hint <= 10
+        """
+
+        self.header = header
+        self.text = text
+        self.order_hint = order_hint
+
+    def __str__(self):
+        s = self.header + '\n'
+        s +=  '-' * len(self.header) + '\n'
+        s +=  self.text
+        return s
+
+    def __cmp__(self, other):
+        if not hasattr(other, 'order_hint'):
+            return NotImplemented
+        if self.order_hint < other.order_hint:
+            return -1
+        if self.order_hint > other.order_hint:
+            return 1
+        return 0
+
+
 class TestResult(object):
-    nowrap = ["CheckRpmLint", "CheckSourceMD5"]
 
     def __init__(self, name, url, group, deprecates, text, check_type,
-                 result, output_extra):
+                 result, output_extra, attachments=[]):
         self.name = name
         self.url = url
         self.group = group
@@ -787,7 +975,8 @@ class TestResult(object):
         self.type = check_type
         self.result = result
         self.output_extra = output_extra
-        if self.output_extra and self.name not in TestResult.nowrap:
+        self.attachments = attachments
+        if self.output_extra:
             self.output_extra = re.sub("\s+", " ", self.output_extra)
         self.wrapper = TextWrapper(width=78, subsequent_indent=" " * 5,
                                    break_long_words=False, )
@@ -801,28 +990,11 @@ class TestResult(object):
         strbuf.write("%s" % '\n'.join(main_lines))
         if self.output_extra and self.output_extra != "":
             strbuf.write("\n")
-            if self.name in TestResult.nowrap:
-                strbuf.write(self.output_extra)
-            else:
-                extra_lines = self.wrapper.wrap("     Note: %s" %
-                                               self.output_extra)
-                strbuf.write('\n'.join(extra_lines))
+            extra_lines = self.wrapper.wrap("     Note: %s" %
+                                            self.output_extra)
+            strbuf.write('\n'.join(extra_lines))
 
         return strbuf.getvalue()
 
 
-def get_logger():
-    return logging.getLogger(LOG_ROOT)
-
-
-def do_logger_setup(logroot=LOG_ROOT, logfmt='%(message)s',
-    loglvl=logging.INFO):
-    ''' Setup Python logging using a TextViewLogHandler '''
-    logger = logging.getLogger(logroot)
-    logger.setLevel(loglvl)
-    formatter = logging.Formatter(logfmt, "%H:%M:%S")
-    handler = logging.StreamHandler()
-    handler.setFormatter(formatter)
-    handler.propagate = False
-    logger.addHandler(handler)
-    return handler
+# vim: set expandtab: ts=4:sw=4:
