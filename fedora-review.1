@@ -4,10 +4,10 @@ fedora-review \- Automatically review RPM packages for Fedora.
 
 .SH SYNOPSIS
 .B fedora-review
--b <bug number>
+[other options] -b <bug number> [-p]
 .br
 .B fedora-review
--n <package name>
+[other options] -n <package name>
 
 .SH DESCRIPTION
 
@@ -29,7 +29,8 @@ not automated can be reviewed manually.
 fedora-review -n <package name>
 
 This alternative usage expects <package name>.spec and source rpm in current
-directory.
+directory. By adding the -p switch, fedora-review uses already built rpms
+in current directory instead of building using mock.
 
 .PP
 You will need to have mock installed and be member of the mock group
@@ -43,44 +44,77 @@ into bugzilla (--login). This will create a bugzilla cookie so you
 don't have to login every time.
 
 .SH OPTIONS
+.TP 4
 .B -b / --bug
-    Identifier of the ticket on the bugzilla where is the package to review.
+Identifier of the ticket on the bugzilla where is the package to review.
 .sp
+.TP 4
 .B -n / --name
-    Runs the checks against the named spec and source rpm located in the current working directory.
+Runs the checks against the named spec and source rpm located in the current working directory.
 .sp
-.B -p / --prebuilt
-    When using -n <name>, use prebuilt rpms in current directory instead of building new ones in mock
+.TP 4
+.B -a / --assign
+Assign the Fedora bugzilla ticket to yourself.
 .sp
-.B -w / --workdir
-    Specify in which working directory to work.
+.TP 4
+.B -c | --cache
+Do not redownload the files from bugzilla, use the local one.
 .sp
-.B --other-bz
-    URL for another bugzilla.
+.TP 4
+.B  -d / --display-checks
+List all the checks available
 .sp
-.B --assign
-    Assign the bugzilla ticket to yourself.
+.TP 4
+.B -l / --login "Fedora bugzilla user id"
+Login into Fedora Bugzilla before starting.
 .sp
-.B --cache
-    Do not redownload the files from bugzilla, use the local one.
+.TP 4
+.B -m | --mock-config configuration
+Specify which mock config to use, one of the files in /etc/mock,
+with the .cfg suffix stripped
 .sp
-.B --nobuild
-    Do not rebuild the source rpm, use the one currently built in mock.
+.TP 4
+.B -o /--mock-options "options..."
+Passes options onto mock for the build. Defaults to
+--no-cleanup-after, you might want this along with other options
+you provide.
 .sp
-.B -l / --login
-    Login into Fedora Bugzilla before starting.
-.sp
-.B  -v / --verbose
-   Provides a more detailed output of what's going on.
-.sp
+.TP 4
 .B --no-report
-   Do not generate the review report.
+Do not generate the review report.
 .sp
-.B --mock-config
-   Specify which mock config to use.
+.TP 4
+.B --nobuild
+Do not rebuild the source rpm, use the one currently built in mock.
 .sp
-.B --mock-options
-   Passes options onto mock for the build.
+.TP 4
+.B --other-bz
+URL for another bugzilla.
+.sp
+.TP 4
+.B -p / --prebuilt
+When using -n <name>, use prebuilt rpms in current directory instead of building new ones in mock
+.sp
+.TP 4
+.B -s test / --single test
+Run a single test, as listed by --list
+.sp
+.TP 4
+.B -u userid, --user userid
+The Fedora Bugzilla userid
+.sp
+.TP 4
+.B  -v / --verbose
+Provides a more detailed output of what's going on.
+.sp
+.TP 4
+.B -w / --workdir
+Specify in which working directory to work.
+.sp
+.TP 4
+.B -x  "test1, test2, ..." / --exclude "test1, test2, ..."
+Comma-separated list of test(s) to exclude, as listed by --list
+.sp
 
 .SH FILES
 .I $HOME/.config/fedora-review/settings
@@ -101,20 +135,19 @@ User supplied external plugins directory
 .SH ENVIRONMENT
 .TP
 .B  REVIEW_EXT_DIRS
-    If REVIEW_EXT_DIRS is set, it specifies additional directories that will be searched for external plugins
+If REVIEW_EXT_DIRS is set, it specifies additional directories that will be searched for external plugins
 
 .SH AUTHORS
-  Original author: Tim Lauridsen <tim.lauridsen@gmail.com>
+Original author: Tim Lauridsen <tim.lauridsen@gmail.com>
 
-  Developers:
-      Stanislav Ochotnicky <sochotnicky@redhat.com>
-      Pierre-Yves Chibon <pingou@pingoured.fr>
+Developers:
+    Stanislav Ochotnicky <sochotnicky@redhat.com>
+    Pierre-Yves Chibon <pingou@pingoured.fr>
 
-  For a list of all contributors see AUTHORS file
+For a list of all contributors see AUTHORS file
 
 .SH SEE ALSO
   https://fedorahosted.org/FedoraReview/  - source, issue tracker, etc.
 
-.sp
 .sp
 No known bugs at this time
