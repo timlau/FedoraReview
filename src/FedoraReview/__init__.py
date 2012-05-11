@@ -126,26 +126,7 @@ class FedoraReviewError(Exception):
         """ Represent the error. """
         return repr(self.value)
 
-<<<<<<< current
-def mock_install(rpm_files):
-    """
-    Run  'mock install' on a list of files, return None of
-    OK, else the stdout+stderr
-    """
-    cmd = ["mock", "install"]
-    cmd.extend(rpm_files)
-    try:
-        p = Popen(cmd, stdout=PIPE, stderr=STDOUT)
-        output, error = p.communicate()
-    except OSError as e:
-        return output[0]
-    return None
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-
->>>>>>> Run rpmlint on installed package.
 _RPMLINT_SCRIPT="""
 mock --shell << 'EOF'
 echo 'rpmlint:'
@@ -157,7 +138,28 @@ class _Mock(object):
     """ Some basic operations on the mock chroot env, a singleton. """
 
     def __init__(self):
-        self.log = get_logger()
+
+    def _get_dir(self, subdir=None):
+        p = os.path.join( '/var/lib/mock', Settings.mock_config )
+        return os.path.join(p, subdir) if subdir else p
+
+    def get_resultdir(self):
+        return self._get_dir('result')
+
+    def get_builddir(self, subdir=None):
+        """ Return the directory which corresponds to %_topdir inside
+        mock. Optional subdir argument is added to returned path.
+        """
+        p = self._get_dir('root/builddir/build')
+        return os.path.join(p, subdir) if subdir else p
+
+    """  The directory where mock leaves built rpms and logs """
+    resultdir=property(get_resultdir)
+
+    """ Mock's %_topdir seen from the outside. """
+    topdir = property(lambda self: get_builddir(self))
+
+       self.log = get_logger()
 
     def _get_dir(self, subdir=None):
         p = os.path.join( '/var/lib/mock', Settings.mock_config )
@@ -192,8 +194,6 @@ class _Mock(object):
         except OSError as e:
             return output[0]
         return None
-<<<<<<< HEAD
-=======
 
     def _run(self, script):
         """ Run a script,  return (ok, output). """
@@ -240,55 +240,8 @@ class _Mock(object):
             text += l + '\n'
         return ok, text
 
-Mock=_Mock()
->>>>>>> Run rpmlint on installed package.
+Mock = _Mock()
 
-    def _run(self, script):
-        """ Run a script,  return (ok, output). """
-        try:
-            p = Popen(script, stdout=PIPE, stderr=STDOUT, shell=True)
-            output, error = p.communicate()
-        except OSError as e:
-            return False, e.strerror
-        return True, output
-
-    def rpmlint_rpms(self, rpms):
-        """ Install and run rpmlint on  packages,
-        return (True,  text) or (False, error_string)"""
-
-        rpms.insert(0, 'rpmlint')
-        error =  self.install(rpms)
-        if error:
-            return False, error
-        rpms.pop(0)
-
-        script = _RPMLINT_SCRIPT
-        basenames = [ os.path.basename(r) for r in rpms]
-        names = [r.rsplit('-', 2)[0] for r in basenames]
-        rpm_names = ' '.join(list(set(names)))
-        script = script.replace('@rpm_names@', rpm_names)
-        ok, output = self._run(script)
-        if not ok:
-            return False, output + '\n'
-
-        ok, err_msg = _check_rpmlint_errors(output, self.log)
-        if err_msg:
-            return False, err_msg
-
-        lines = output.split('\n')
-        l = ''
-        while not l.startswith('rpmlint:') and len(lines) > 0:
-            l = lines.pop(0)
-        text = ''
-        for l in lines:
-            if l.startswith('<mock-'):
-                l=l[l.find('#'):]
-            if l.startswith('rpmlint-done:'):
-                break
-            text += l + '\n'
-        return ok, text
-
-Mock=_Mock()
 
 class _Settings(object):
     """

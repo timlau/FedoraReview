@@ -1550,11 +1550,10 @@ class CheckFileRequires(CheckBase):
             for req in requires:
                 if not is_acceptable(req):
                     wrong_req.append(req)
-            if rpm.find('src.rpm') == -1:
-                req_txt += get_requires(rpm, requires) + '\n'
-                cmd = 'rpm -qp --provides ' + rpm
-                provides = self._run_cmd(cmd).split('\n')
-                prov_txt += get_provides(rpm, provides) + '\n'
+            req_txt += get_requires(rpm, requires) + '\n'
+            cmd = 'rpm -qp --provides ' + rpm
+            provides = self._run_cmd(cmd).split('\n')
+            prov_txt += get_provides(rpm, provides) + '\n'
         self.attachments = [ Attachment( 'Requires', req_txt, 10),
                              Attachment( 'Provides', prov_txt, 10)]
         if len(wrong_req) == 0:
