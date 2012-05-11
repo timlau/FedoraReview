@@ -653,12 +653,10 @@ class CheckLicenseField(CheckBase):
                 source_dir = source.extract_dir
                 msg = 'Checking original sources for licenses'
             else:
-                s = self.srpm.get_mock_dir() + \
-                      '/../root/builddir/build/BUILD/*'
+                s = Mock.get_builddir('BUILD') + '/*'
                 source_dir = glob.glob(s)[0]
                 msg = 'Checking patched sources after %prep for licenses.'
             self.log.debug( "Scanning sources in " + source_dir)
-
             licenses = []
             if os.path.exists(source_dir):
                 cmd = 'licensecheck -r %s' % source_dir
@@ -859,7 +857,7 @@ class CheckFilesDuplicates(CheckBase):
 
     def run(self):
         from subprocess import Popen, PIPE
-        filename = '%s/build.log' % self.srpm.get_mock_dir()
+        filename = os.path.join(Mock.resultdir, 'build.log')
         try:
             stream = open(filename)
             content = stream.read()

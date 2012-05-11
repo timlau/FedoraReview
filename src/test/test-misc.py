@@ -51,7 +51,7 @@ class MiscTests(unittest.TestCase):
 
     def test_spec_file(self):
         ''' Test the SpecFile class'''
-        spec = SpecFile(self.spec_file) 
+        spec = SpecFile(self.spec_file)
         # Test misc rpm values (Macro resolved)
         self.assertEqual(spec.name,'python-test')
         self.assertEqual(spec.version,'1.0')
@@ -83,9 +83,9 @@ class MiscTests(unittest.TestCase):
             self.assertEqual(res.groups(), ('1%{?dist}',))
         else:
             self.assertTrue(False)
-            
-        
-        
+
+
+
     def test_source_file(self):
         """ Test the SourceFile class """
         source = Source()
@@ -97,7 +97,7 @@ class MiscTests(unittest.TestCase):
         self.assertEqual(source.filename, self.source_file)
         self.assertTrue(os.path.exists(self.source_file))
         self.assertEqual(source.check_source_md5(), "289cb714af3a85fe36a51fa3612b57ad")
-        
+
     def test_srpm_file(self):
         """ Test the SRPMFile class """
         srpm = SRPMFile(self.srpm_file)
@@ -116,7 +116,7 @@ class MiscTests(unittest.TestCase):
         self.assertTrue(srpm.is_build)
         # Retrieve the list of files in the mock folder and below
         rpm_files = []
-        for root, dirs, files in os.walk(srpm.get_mock_dir()):
+        for root, dirs, files in os.walk(Mock.resultdir):
             rpm_files.extend(files)
         dist = self.helper._run_cmd('rpm --eval %dist')[:-1]
         expected = os.path.expanduser('python-test-1.0-1%(dist)s.noarch.rpm') % {'dist': dist}
