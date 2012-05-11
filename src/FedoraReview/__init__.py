@@ -559,17 +559,6 @@ class Source(Helpers):
         if len(topdir) > 1:
               print "Returning illegal topdir. Bad things ahead"
 
-    def extract_gem(self):
-        """Every gem contains a data.tar.gz file with the actual sources"""
-        gem_extract_dir = os.path.join(self.extract_dir, os.path.basename(self.filename)[0:-4])
-        os.makedirs(gem_extract_dir)
-        gem_data = tarfile.open(os.path.join(self.extract_dir, 'data.tar.gz'))
-        gem_data.extractall(gem_extract_dir)
-        gem_data.close()
-
-        return tarfile.TarInfo(name = os.path.basename(self.filename)[0:-4])
-
-
 class SRPMFile(Helpers):
 
     def __init__(self, filename, spec=None):
