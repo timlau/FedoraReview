@@ -346,7 +346,8 @@ class CheckSourceMD5(CheckBase):
             upstream = s.extract_dir
             local = self.base.srpm.extract(s.filename)
             if not local:
-                 print "Cannot extract local source: " + s.filename
+                 self.log.warn(
+                     "Cannot extract local source: " + s.filename)
                  return(False, None)
             cmd = '/usr/bin/diff -U2 -r %s %s'  % (upstream, local)
             try:
@@ -354,7 +355,7 @@ class CheckSourceMD5(CheckBase):
                 p = Popen(cmd.split(), stdout=PIPE, stderr=PIPE)
                 output, error = p.communicate()
             except OSError as e:
-                print "OSError : %s" % str(e)
+                self.log.error("Cannot run diff", exc_info=True)
                 return (False, None)
             if output and len(output > 0):
                 return (False, output)

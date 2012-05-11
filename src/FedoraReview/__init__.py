@@ -60,7 +60,7 @@ MY_PLUGIN_DIR  = ".config/fedora-review/plugins"
 # see ticket https://fedorahosted.org/FedoraReview/ticket/43
 requests.decode_unicode=False
 
-def rpmdev_extract(working_dir, archive):
+def rpmdev_extract(working_dir, archive, log):
     """
     Unpack archive in working_dir. Returns return value
     from subprocess.call()
@@ -68,7 +68,7 @@ def rpmdev_extract(working_dir, archive):
     cmd = 'rpmdev-extract -qC ' + working_dir + ' ' + archive
     rc = call(cmd, shell=True)
     if rc != 0:
-        print "Cannot unpack "  + archive
+        log.warn("Cannot unpack "  + archive)
     return rc
 
 
@@ -545,7 +545,7 @@ class Source(Helpers):
             except IOError, err:
                 self.log.debug(err)
                 print "Could not generate the folder %s" % self.extract_dir
-        rpmdev_extract(self.extract_dir, self.filename)
+        rpmdev_extract(self.extract_dir, self.filename, self.log)
 
     def get_source_topdir(self):
         """
@@ -597,7 +597,8 @@ class SRPMFile(Helpers):
         cmd = 'rpm2cpio ' + self.filename + ' | cpio -i --quiet'
         rc = call(cmd, shell=True)
         if rc != 0:
-            print "Cannot unpack %s into %s" % (self.filename, wdir)
+            self.log.warn(
+                  "Cannot unpack %s into %s" % (self.filename, wdir))
         else:
             self.unpacked_src = wdir
         os.chdir(oldpwd)
@@ -608,7 +609,8 @@ class SRPMFile(Helpers):
         self.unpack()
         files = glob.glob( self.unpacked_src  + '/*' )
         if not filename in [os.path.basename(f) for f in files]:
-            print 'Trying to unpack non-existing source: ' + filename
+            self.log.error(
+               'Trying to unpack non-existing source: ' + filename)
             return None
         extract_dir = self.unpacked_src + '/' +  filename  + '-extract'
         if os.path.exists(extract_dir):
@@ -616,9 +618,10 @@ class SRPMFile(Helpers):
         else:
             os.mkdir(extract_dir)
         rc = rpmdev_extract(extract_dir,
-                            os.path.join(self.unpacked_src, filename))
+                            os.path.join(self.unpacked_src, filename),
+                            self.log)
         if rc != 0:
-            print "Cannot unpack " + filename
+            self.log.error( "Cannot unpack " + filename)
             return None
         return extract_dir
 
@@ -682,14 +685,14 @@ class SRPMFile(Helpers):
         self.unpack()
         filename = os.path.basename(path)
         if not hasattr(self, 'unpacked_src'):
-            print "check_source_md5: Cannot unpack (?)"
+            self.log.warn("check_source_md5: Cannot unpack (?)")
             return "ERROR"
         src_files = glob.glob(self.unpacked_src + '/*')
         if not src_files:
-            print 'No unpacked sources found (!)'
+            self.log.warn('No unpacked sources found (!)')
             return "ERROR"
         if not filename in [os.path.basename(f) for f in src_files]:
-            print 'Cannot find source: ' + filename
+            self.log.warn('Cannot find source: ' + filename)
             return "ERROR"
         path = os.path.join(self.unpacked_src, filename)
         self.log.debug("Checking md5 for %s" % path)
