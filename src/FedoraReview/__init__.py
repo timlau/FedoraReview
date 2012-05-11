@@ -127,6 +127,7 @@ class FedoraReviewError(Exception):
         return repr(self.value)
 
 
+<<<<<<< HEAD
 _RPMLINT_SCRIPT="""
 mock --shell << 'EOF'
 echo 'rpmlint:'
@@ -139,6 +140,26 @@ class _Mock(object):
 
     def __init__(self):
         self.log = get_logger()
+
+    def _get_dir(self, subdir=None):
+        p = os.path.join( '/var/lib/mock', Settings.mock_config )
+        return os.path.join(p, subdir) if subdir else p
+
+    def get_resultdir(self):
+        return self._get_dir('result')
+
+    def get_builddir(self, subdir=None):
+        """ Return the directory which corresponds to %_topdir inside
+        mock. Optional subdir argument is added to returned path.
+        """
+        p = self._get_dir('/root/builddir/build')
+        return os.path.join(p, subdir) if subdir else p
+
+    """  The directory where mock leaves built rpms and logs """
+    resultdir=property(get_resultdir)
+
+    """ Mock's %_topdir seen from the outside. """
+    topdir = property(lambda self: get_builddir(self))
 
     def install(self, rpm_files):
         """
@@ -494,8 +515,7 @@ class Source(Helpers):
                 shutil.rmtree(self.extract_dir)
                 os.mkdir(self.extract_dir)
         else:
-            self.extract_dir = self.get_mock_dir() + \
-                "/../root/builddir/build/sources/"
+            self.extract_dir = Mock.get_builddir('sources')
         self.log.debug("Extracting %s in %s " % (self.filename,
                        self.extract_dir))
         if not os.path.exists(self.extract_dir):
@@ -631,8 +651,7 @@ class SRPMFile(Helpers):
     def get_build_dir(self):
         """ Return the BUILD directory from the mock environment.
         """
-        mock_dir = self.get_mock_dir()
-        bdir_root = '%s/../root/builddir/build/BUILD/' % mock_dir
+        bdir_root = Mock.get_builddir('BUILD')
         for entry in os.listdir(bdir_root):
             if os.path.isdir(bdir_root + entry):
                 return bdir_root + entry
@@ -685,7 +704,7 @@ class SRPMFile(Helpers):
         if Settings.prebuilt:
             rpms = glob.glob('*.rpm')
         else:
-            rpms = glob.glob(self.get_mock_dir() + '/*.rpm')
+            rpms = glob.glob(Mock.resultdir + '/*.rpm')
         no_errors, result = self.run_rpmlint(rpms)
         return no_errors, result + '\n'
 
@@ -713,7 +732,7 @@ class SRPMFile(Helpers):
             print hdr + sep.join(rpms)
         else:
             self.build()
-            rpms = glob.glob(self.get_mock_dir() + '/*.rpm')
+            rpms = glob.glob(Mock.resultdir + '/*.rpm')
         rpm_files = {}
         for rpm in rpms:
             if rpm.endswith('.src.rpm'):
