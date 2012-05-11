@@ -40,19 +40,19 @@ class ReviewHelper:
     def __init__(self):
         self.bug = None
         self.checks = None
-        self.settings = Settings()
         self.args = self.__get_args()
         self.args.workdir = os.path.expanduser(self.args.workdir)
         self.verbose = False
         self.log = get_logger()
         self.outfile = None
+        self.prebuilt = False
 
     def __get_args(self):
         parser = argparse.ArgumentParser(description='Review a Fedora Package')
         parser.add_argument('-b', '--bug', metavar='[bug]',
                     help='the bug number contain the package review')
         parser.add_argument('-w', '--workdir',
-                    default=self.settings.work_dir, metavar='[dir]',
+                    default=Settings.work_dir, metavar='[dir]',
                     help='Work directory (default = ~/tmp/reviewhelper/')
         parser.add_argument('--other-bz', default=None, metavar='[bugzilla url]', dest='other_bz',
                     help='Alternative bugzilla URL')
@@ -64,7 +64,7 @@ class ReviewHelper:
                     help = 'Do not rebuild the srpm, use currently build ones')
         parser.add_argument('-e', '--edit', action='store_true', dest='edit',
                     help = 'Run editor on spec file and generated template')
-        parser.add_argument('-u', '--user', metavar='[userid]', default = self.settings.bz_user,
+        parser.add_argument('-u', '--user', metavar='[userid]', default = Settings.bz_user,
                     help='The Fedora Bugzilla userid')
         parser.add_argument('-l', '--login', action='store_true', default=False,
                     help='Login into Fedora Bugzilla before starting')
@@ -74,11 +74,13 @@ class ReviewHelper:
                     help='Do not make a review report')
         parser.add_argument('-n', '--name', metavar='<name prefix>',
                     help='Run on local <name prefix>.spec & <name prefix>*.src.rpm located in work dir')
+        parser.add_argument('-p', '--prebuilt',  action='store_true', dest='prebuilt',
+                    help='When using -n <name>, use prebuilt rpms in current directory')
         parser.add_argument('--mock-config', metavar='<mock configuration>',
-                    default = self.settings.mock_config, dest='mock_config',
+                    default = Settings.mock_config, dest='mock_config',
                     help='Configuration to use for the mock build (Defaults to fedora-rawhide-i686)')
         parser.add_argument('--mock-options', metavar='<mock options>',
-                    default = self.settings.mock_options, dest='mock_options',
+                    default = Settings.mock_options, dest='mock_options',
                     help='Options to specify to mock for the build (Defaults to None)')
         parser.add_argument('--list-checks', default = False,
                     action='store_true',
@@ -88,6 +90,7 @@ class ReviewHelper:
                     help='Display version information and exit.')
         args = parser.parse_args()
         args.workdir = os.path.abspath(os.path.expanduser(args.workdir))
+        Settings.add_args(args)
         return args
 
     def __download_sources(self):
@@ -148,7 +151,7 @@ class ReviewHelper:
 
     def __show_results(self):
         if self.outfile and self.checks.spec.filename:
-            editor = self.settings.editor
+            editor = Settings.editor
             if editor == '':
                 if 'EDITOR' in os.environ:
                     editor = os.environ['EDITOR']
@@ -169,10 +172,7 @@ class ReviewHelper:
     def __run_checks(self, spec, srpm):
         self.log.debug("  --> Spec file : %s" % spec)
         self.log.debug("  --> SRPM file : %s" % srpm)
-        self.checks = Checks(self.args, spec, srpm,
-            cache=self.args.cache, nobuild = self.args.nobuild,
-            mock_config=self.args.mock_config,
-            mock_options=self.args.mock_options)
+        self.checks = Checks(self.args, spec, srpm )
         self.outfile = "%s/%s-review.txt" % (
             self.args.workdir, self.checks.spec.name)
         with open(self.outfile,"w") as output:
@@ -213,7 +213,7 @@ class ReviewHelper:
             elif self.args.bug:
                 # get the bug
                 self.log.info("Processing review bug : %s" % self.args.bug )
-                self.bug = ReviewBug(self.args.bug, user=self.args.user, cache=self.args.cache, other_BZ=self.args.other_bz)
+                self.bug = ReviewBug(self.args.bug, user=self.args.user)
                 if self.args.login:
                     self.bug.login(self.args.user)
                 self.bug.set_work_dir('%s/%s' % (self.args.workdir, self.args.bug))
