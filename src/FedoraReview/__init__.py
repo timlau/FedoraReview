@@ -126,6 +126,19 @@ class FedoraReviewError(Exception):
         """ Represent the error. """
         return repr(self.value)
 
+def mock_install(rpm_files):
+    """
+    Run  'mock install' on a list of files, return None of
+    OK, else the stdout+stderr
+    """
+    cmd = ["mock", "install"]
+    cmd.extend(rpm_files)
+    try:
+        p = Popen(cmd, stdout=PIPE, stderr=STDOUT)
+        output, error = p.communicate()
+    except OSError as e:
+        return output[0]
+    return None
 
 <<<<<<< HEAD
 _RPMLINT_SCRIPT="""
@@ -707,6 +720,17 @@ class SRPMFile(Helpers):
             rpms = glob.glob(Mock.resultdir + '/*.rpm')
         no_errors, result = self.run_rpmlint(rpms)
         return no_errors, result + '\n'
+
+    def get_used_rpms(self, exclude_pattern=None):
+        """ Return list of mock built or prebuilt rpms. """
+        if Settings.prebuilt:
+            rpms = set( glob.glob('*.rpm'))
+        else:
+            rpms = set(glob.glob(self.get_mock_dir() + '/*.rpm'))
+        matched = filter( lambda s: s.find(exclude_pattern) > 0, rpms)
+        rpms = rpms - set(matched)
+        return list(rpms)
+
 
     def get_used_rpms(self, exclude_pattern=None):
         """ Return list of mock built or prebuilt rpms. """
