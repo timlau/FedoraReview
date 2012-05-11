@@ -1531,14 +1531,14 @@ class CheckFileRequires(CheckBase):
         def get_requires(rpm, requires):
             requires = filter(lambda s: s.find('rpmlib') == -1, requires)
             requires.insert(0, rpm + ':')
-            return '\n    '.join(requires)
+            return '\n    '.join(requires) + '\n'
 
         def get_provides(rpm, provides):
             provides.insert(0, rpm + ':')
-            return '\n    '.join(provides)
+            return '\n    '.join(provides) + '\n'
 
         wrong_req = []
-        rpm_files = self.srpm.get_used_rpms('.src.rpm')
+        rpm_files = self.srpm.get_used_rpms('.srpm')
         req_txt = ''
         prov_txt = ''
         for rpm in rpm_files:
@@ -1548,10 +1548,10 @@ class CheckFileRequires(CheckBase):
                 if not is_acceptable(req):
                     wrong_req.append(req)
             if rpm.find('src.rpm') == -1:
-                req_txt += get_requires(rpm, requires) + '\n'
+                req_txt += get_requires(rpm, requires)
                 cmd = 'rpm -qp --provides ' + rpm
                 provides = self._run_cmd(cmd).split('\n')
-                prov_txt += get_provides(rpm, provides) + '\n'
+                prov_txt += get_provides(rpm, provides)
         self.attachments = [ Attachment( 'Requires', req_txt, 10),
                              Attachment( 'Provides', prov_txt, 10)]
         if len(wrong_req) == 0:
