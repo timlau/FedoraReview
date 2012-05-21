@@ -72,6 +72,8 @@ class CheckBase(Helpers):
         if output_extra:
             self.output_extra = output_extra
 
+    name = property(lambda self: self.__class__.__name__)
+
     def get_result(self):
         '''
         Get the test report result for this test
@@ -126,21 +128,36 @@ class CheckBase(Helpers):
                     result[rpm].append(fn)
         return result
 
-
-class CheckName(CheckBase):
+class CheckNaming(CheckBase):
     '''
     MUST: The package must be named according to the Package Naming
     Guidelines.
     http://fedoraproject.org/wiki/Packaging/NamingGuidelines
     '''
     def __init__(self, base):
+        self.url = 'http://fedoraproject.org/wiki/Packaging/NamingGuidelines'
+        self.text = 'Package is named according to the Package Naming' \
+                    ' Guidelines.'
+        CheckBase.__init__(self, base)
+        self.automatic = False
+        self.type = 'MUST'
+        self.set_passed('inconclusive')
+
+
+class CheckNameCharset(CheckBase):
+    '''
+    MUST:all Fedora packages must be named using only the following
+         ASCII characters...
+    '''
+    def __init__(self, base):
         CheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/NamingGuidelines'
-        self.text = 'Package is named according to the Package Naming Guidelines.'
+        self.text = 'Package is named using only allowed ascii characters.'
         self.automatic = True
 
     def run(self):
-        allowed_chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._+'
+        allowed_chars = 'abcdefghijklmnopqrstuvwxyz' \
+            'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._+'
         output = ''
         passed = True
         for char in self.spec.name:
@@ -1534,11 +1551,11 @@ class CheckFileRequires(CheckBase):
 
         def get_requires(rpm, requires):
             requires = filter(lambda s: s.find('rpmlib') == -1, requires)
-            requires.insert(0, rpm + ':')
+            requires.insert(0, os.path.basename(rpm) + ':')
             return '\n    '.join(requires)
 
         def get_provides(rpm, provides):
-            provides.insert(0, rpm + ':')
+            provides.insert(0, os.path.basename(rpm) + ':')
             return '\n    '.join(provides)
 
         wrong_req = []
