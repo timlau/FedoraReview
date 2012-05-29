@@ -127,13 +127,12 @@ class _Settings(object):
     FedoraReview singleton Config Setting based on command line options.
     All config values are accessed as attributes.
     """
-    path = ':'.join([os.path.expanduser(MY_PLUGIN_DIR), SYS_PLUGIN_DIR])
 
     defaults = {
-        # review, report & spec editor(default EDITOR env)
         'ext_dirs':     ':'.join([os.path.expanduser(MY_PLUGIN_DIR),
                                                      SYS_PLUGIN_DIR]),
         'bz_url':       'https://bugzilla.redhat.com',
+        'user':         None,
         'workdir':      '.'
     }
 
