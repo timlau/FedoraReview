@@ -36,6 +36,7 @@ class NameBug(AbstractBug):
         :arg  name, basename used to search for rpm
         """
         AbstractBug.__init__(self)
+        self.check_options()
         self.name = name
 
     def get_location(self):
@@ -58,11 +59,10 @@ class NameBug(AbstractBug):
         self.srpm_url = 'file://' + srpms[0]
         self.srpm_file = srpms[0]
 
-    def check_settings(self):
-        if Settings.other_bz:
-           raise SettingsError('--other-bz and -n')
-        if Settings.user:
-           raise SettingsError('--user and -b')
+    def check_options(self):
+        AbstractBug.do_check_options(
+            self, '--name', AbstractBug.BZ_OPTIONS)
+
 
     def download_files(self):
         return True

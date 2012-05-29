@@ -20,13 +20,11 @@ We have at the moment checks for C/C++, R, Java and Perl packages.
 
 .SH USAGE
 This program runs a number of checks for packages in Fedora.
-.HP
-.TP 0
-fedora-review -b <bug number>
-.br
-fedora-review -u <url>
-.br
 .IP "" 4
+$ fedora-review -b <bug number>
+.br
+$ fedora-review -u <url>
+.PP
 Will download the SPEC & SRPM files from the Bugzilla report,
 build them in mock, run a number of tests and generate a report.
 
@@ -40,13 +38,11 @@ fedora-review -n <package name>
 This alternative usage expects <package name>.spec and source rpm in current
 directory. By adding the -p switch, fedora-review uses already built rpms
 in current directory instead of building using mock.
-
 .PP
 You will need to have mock installed and be member of the mock group
 for the build to work. Run as root:
-.HP
- usermod -a -G mock [your user name] && newgrp mock
-
+.IP "" 4
+ # usermod -a -G mock [your user name] && newgrp mock
 .PP
 To assign bugs in bugzilla automatically you will first have to login
 into bugzilla (--login). This will create a bugzilla cookie so you
@@ -66,8 +62,13 @@ current working directory. The files are expected to hane the names
 Fetch data from given url, typically another bugzilla instance without
 xmlrpc support such as rpmfusion. For more modern sites with xmlrpc
 support, first try --bug <bug nr> --other-bz <url>.
+The option tries to retrieve the URL:s by scanning the page.
+In a first attempt links ending in '.spec' and 'src.rpm' are
+looked for. Such links will be found. In second round, --url
+looks for links prefixed with labels like srpm: and Spec URL:.  Obviously
+this might fail as well as work. It might even pick up wrong links.
 .TP 4
-.B  -d, -display-checks
+.B  -d, --display-checks
 List all available checks, usable as arguments to --exclude and
 --single
 .TP 4
@@ -77,6 +78,9 @@ Show version info
 .TP 4
 .B -c, --cache
 Do not redownload the files from bugzilla, use the local one.
+.TP 4
+.B  -g, --grab
+Display the URL:s found for spec file and source rpm, then exit.
 .TP 4
 .B -m, --mock-config <configurationi>
 Specify which mock config to use, one of the files in /etc/mock,
@@ -103,20 +107,16 @@ Run a single test, as listed by --list
 .B  -v, --verbose
 Provides a more detailed output of what's going on.
 .TP 4
-.B -w, --workdir
-Specify in which working directory to work.
-.TP 4
 .B -x  "test1, test2, ...", --exclude "test1, test2, ..."
 Comma-separated list of test(s) to exclude, as listed by --list
 .SH BUGZILLA OPTIONS
 .TP 4
 .B -a, --assign
-Assign the Fedora bugzilla ticket to yourself.
-Only known to work with bugzilla.redhat.com
+Assign the Fedora bugzilla ticket to yourself. Only known to work with bugzilla.redhat.com
 .TP 4
 .B -l, --login "Fedora FAS user id"
-.TP 4
 Login into Fedora Bugzilla before starting.
+.TP 4
 .B -o url,--other-bz url
 URL for another bugzilla.
 .TP 4
@@ -128,6 +128,40 @@ In a first attempt links ending in '.spec' and 'src.rpm' are
 looked for. Such links will be found. In second round, --url
 looks links prefixed with labels like srpm: and Spec URL:. Obviously
 this might fail as well as work. It might even pick up wrong links.
+.SH EXAMPLES
+Make a report template for Fedora bug 817271:
+.IP "" 4
+$ fedora-review -n 817271
+.PP
+fetches spec and srpm file from bugzilla.redhat.com and makes a report.
+To instead handle a bug at rpmfusion use something like
+.IP "" 4
+$ fedora-review --url \\
+.br
+https://bugzilla.rpmfusion.org/show_bug.cgi?id=2150 \\
+.br
+--mock-config fedora-16-i386-rpmfusion_free
+.PP
+Occasionally, fedora-review isn't able to pick up the links e. g.,
+when the links does not end in .spec and/or .src.rpm. In these case
+you need to download the files manually to use them:
+.nf
+.IP "" 4
+$ wget http://somewhere.com/badspeclink -O my-package.spec
+$ wget http://somewhere.com/bad-srpmlink -O my-package.src.rpm
+$ fedora-review -n my-package
+.fi
+.PP
+This works if (and only if) the local files has name with correct prefix
+as given to -n (my-package in this example). The filenames must also end
+with \.spec and \.src.rpm
+.PP
+Finally, you can assign the bug from the commandline:
+.nf
+.IP "" 4
+$ fedora-review -b 811221 --assign --user my-bugzilla-id --login
+password:
+
 .SH FILES
 .I $HOME/.config/fedora-review/settings
 .RS
@@ -141,7 +175,6 @@ Persistent credentials setup when using --login.
 .RS
 System-wide external plugins directory
 .RE
-
 .I $HOME/.config/fedora-review/plugins/
 .RS
 User supplied external plugins directory

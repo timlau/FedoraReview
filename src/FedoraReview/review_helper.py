@@ -30,22 +30,21 @@ import errno
 
 import FedoraReview
 
-from FedoraReview import Settings, FedoraReviewError, __version__, Mock
+from FedoraReview import Settings, FedoraReviewError, Mock
 from FedoraReview.bugz import ReviewBug
 from FedoraReview.url_bug import UrlBug
 from FedoraReview.name_bug import NameBug
-from FedoraReview.abstract_bug import SettingsError
+from FedoraReview.abstract_bug import SettingsError,BugException
 from FedoraReview.checks_class import Checks
+
 
 class ConfigError(FedoraReviewError):
-    def __init__(self, why):
-        FedoraReviewError.__init__(self, 'Configuration error: ' + why)
-from FedoraReview import get_logger, do_logger_setup, \
-    Settings, FedoraReviewError
-from FedoraReview.bugz import ReviewBug
-from FedoraReview.checks_class import Checks
-from FedoraReview import __version__
+    def __init__(self, what):
+        FedoraReviewError.__init__(self, 'Configuration error: ' + what)
 
+class HandledError(FedoraReviewError):
+    def __init__(self, msg='Errors encountered, goodbye'):
+        FedoraReviewError.__init__(self, msg)
 
 class ReviewHelper:
 
@@ -56,16 +55,10 @@ class ReviewHelper:
         Settings.workdir = os.path.expanduser(Settings.workdir)
         self.log = FedoraReview.get_logger()
         self.verbose = False
-        self.log = get_logger()
         self.outfile = None
         self.prebuilt = False
 
     def _init_settings(self):
-        def _check_some_args(args):
-            if not args.bug:
-               if args.user or args.assign or  args.other_bz:
-                    print( '--user, --assign and --other_bz'
-                           ' only works with -b')
 
         def _check_mock_grp():
              try:
@@ -102,6 +95,9 @@ class ReviewHelper:
         optional.add_argument('-c','--cache', action='store_true', dest='cache',
                     help = 'Do not redownload files from bugzilla,'
                            ' use the ones in the cache.')
+        optional.add_argument('-g','--grab', default = False,
+                    action='store_true',dest='grab',
+                    help='Display urls and exit')
         optional.add_argument('-h','--help', action='help',
                     help = 'Display this help message')
         optional.add_argument('-m','--mock-config', metavar='<config>',
@@ -128,9 +124,6 @@ class ReviewHelper:
                     help='Single test to run, as named by --display-checks.')
         optional.add_argument('-v', '--verbose',  action='store_true',
                     help='Show more output.')
-        optional.add_argument('-C', '--workdir',
-                    default=Settings.workdir, dest='workdir', metavar='<dir>',
-                    help='Work directory, default current dir')
         optional.add_argument('-x', '--exclude',
                     default='', dest='exclude',
                     metavar='"test,..."',
@@ -147,10 +140,9 @@ class ReviewHelper:
                     metavar="<user id>",
                     help = 'The bugzilla user Id')
         args = parser.parse_args()
-        args.workdir = os.path.abspath(os.path.expanduser(args.workdir))
-        Settings.add_args(args)
-        _check_some_args(args)
         _check_mock_grp()
+        args.workdir = os.getcwd()
+        Settings.add_args(args)
 
     def __download_sources(self):
         self.checks.sources.set_work_dir(Settings.workdir)
@@ -170,14 +162,18 @@ class ReviewHelper:
         if Settings.bug:
             Settings.workdir = os.path.join(Settings.workdir,
                                             Settings.bug)
-        self.log.debug("  --> Working dir: " + Settings.workdir)
+        Settings.dump()
         if not self.bug.find_urls():
             self.log.error( 'Cannot find .spec or .srpm URL(s)')
-            sys.exit(1)
+            raise HandledError()
+        if Settings.grab:
+            print "Srpm URL:" + self.bug.srpm_url
+            print "Spec URL:" + self.bug.spec_url
+            return
 
         if not self.bug.download_files():
             self.log.error('Cannot download .spec and .srpm')
-            sys.exit(1)
+            raise HandledError()
 
         Settings.name = self.bug.get_name()
         self.__run_checks(self.bug.spec_file, self.bug.srpm_file)
@@ -189,7 +185,7 @@ class ReviewHelper:
         self.checks.list_checks()
 
     def __print_version(self):
-        print('fedora-review version ' + __version__)
+        print('fedora-review version ' + FedoraReview.__version__)
 
     def __run_checks(self, spec, srpm):
         self.checks = Checks(spec, srpm )
@@ -209,27 +205,11 @@ class ReviewHelper:
         print "Review in: %s/%s-review.txt" % (Settings.workdir,
             self.checks.spec.name)
 
-    def __do_assign(self):
-        ''' assign bug'''
-        if not Settings.user or Settings.user == "":
-            self.log.error("Error: username not set in cofiguration and not"
-                           " provided as argument (-u/--user).")
-            return
-
-        self.log.info("Assigning bug to user")
-        self.bug.assign_bug()
-
-    def do_run(self):
-        self.bug.check_settings()
-        if not Settings.noreport:
-            self.__do_report()
-
     def run(self):
         try:
-            if Settings.verbose:
-                FedoraReview.do_logger_setup(loglvl=logging.DEBUG)
-            else:
-                FedoraReview.do_logger_setup()
+            lvl = logging.DEBUG if Settings.verbose else logging.INFO
+            FedoraReview.do_logger_setup(loglvl=lvl)
+
             if Settings.list_checks:
                 self.__list_checks()
                 return 0
@@ -240,25 +220,27 @@ class ReviewHelper:
             if Settings.url:
                 self.log.info("Processing bug on url: " + Settings.url )
                 self.bug = UrlBug(Settings.url)
-                self.do_run()
             elif Settings.bug:
                 self.log.info("Processing bugzilla bug: " + Settings.bug )
                 self.bug = ReviewBug(Settings.bug, user=Settings.user)
-                self.bug.check_settings()
-                if Settings.login:
-                    self.bug.login(Settings.user)
-                if Settings.assign:
-                    self.__do_assign()
-                self.do_run()
             elif Settings.name:
-                self.log.info("Processing local bug: " + Settings.name )
+                self.log.info("Processing local files: " + Settings.name )
                 self.bug = NameBug(Settings.name)
-                self.do_run()
+            if not Settings.noreport:
+                self.__do_report()
+
+        except BugException as err:
+            print str(err)
+            return 2
+        except HandledError as err:
+            print str(err)
+            return 2
         except SettingsError as err:
             self.log.error("Incompatible settings: " + str(err))
             return 2
         except:
-            self.log.error("Exception down the road...", exc_info=True)
+            self.log.debug("Exception down the road...", exc_info=True)
+            self.log.error("Exception down the road...")
             return 1
         return 0
 
