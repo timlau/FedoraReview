@@ -25,9 +25,12 @@ import os
 from operator import attrgetter
 from straight.plugin import load
 
-from FedoraReview import get_logger, Settings
-from FedoraReview import Sources, SRPMFile, SpecFile, __version__
-from FedoraReview.jsonapi import JSONPlugin
+from settings import  Settings
+from srpm_file import  SRPMFile
+from spec_file import  SpecFile
+from sources import  Sources
+from version import  __version__
+from jsonapi import JSONPlugin
 
 
 HEADER = """
@@ -57,7 +60,7 @@ class Checks(object):
             self.spec = SpecFile(spec_file)
             self.sources = Sources(self.spec)
             self.srpm = SRPMFile(srpm_file, self.spec)
-        self.log = get_logger()
+        self.log = Settings.get_logger()
         self.plugins = load('FedoraReview.checks')
         self.add_check_classes()
 
@@ -135,6 +138,13 @@ class Checks(object):
         return c
 
     def run_checks(self, output=sys.stdout, writedown=True):
+
+        def mv_check_to_front(name):
+            for check in self.checks:
+                if check.name == name:
+                     self.checks.remove(check)
+                     self.checks.insert(0,check)
+
         issues = []
         results = []
         deprecated = []
@@ -143,6 +153,11 @@ class Checks(object):
              self.exclude_checks(Settings.exclude)
         if Settings.single:
              self.set_single_check(Settings.single)
+
+        # First, run state-changing build and install:
+        mv_check_to_front('CheckPackageInstalls')
+        mv_check_to_front('CheckBuild')
+
         # run external checks first so we can get what they deprecate
         for ext in self.ext_checks:
             self.log.debug('Running external module : %s' % ext.plugin_path)
@@ -212,7 +227,8 @@ class Checks(object):
 class ChecksLister(Checks):
     """ A Checks instance only capable of listing checks. """
     def __init__(self):
-        Check.__init__(self,None, None)
+        self.sources = None
+        Checks.__init__(self,None, None)
 
     def list(self):
         """ List all the checks available. """

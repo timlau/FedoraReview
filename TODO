@@ -3,4 +3,7 @@
   contain functions related only to them (i.e. SRPMFile.get_files_rpms)
 - automate some checks that can be automated (mostly generic ones)
 - Review, fix and document the configuration file use.
+- run build and install tests first
+- fix build check (always fails)
+- fix license test (always use upstream source).
 -

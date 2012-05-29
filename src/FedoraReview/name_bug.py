@@ -20,7 +20,8 @@ Handles -n, srpm and spec file already downloaded
 import os.path
 import glob
 
-from FedoraReview import Settings, Mock
+from mock import Mock
+from settings import Settings
 from abstract_bug import AbstractBug, SettingsError
 
 

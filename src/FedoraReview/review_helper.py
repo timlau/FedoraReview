@@ -19,23 +19,14 @@
 '''
 Tools for helping Fedora package reviewers
 '''
-import argparse
-import glob
-import grp
+
 import logging
 import sys
-import os
-import subprocess
-import errno
+import os.path
 
-import FedoraReview
-
-from FedoraReview import Settings, FedoraReviewError, Mock
-from FedoraReview.bugz import ReviewBug
-from FedoraReview.url_bug import UrlBug
-from FedoraReview.name_bug import NameBug
-from FedoraReview.abstract_bug import SettingsError,BugException
-from FedoraReview.checks_class import Checks, ChecksLister
+from FedoraReview import BugException, BugzillaBug, Checks, \
+          ChecksLister, FedoraReviewError, NameBug, Settings, \
+          SettingsError, UrlBug
 
 
 class ConfigError(FedoraReviewError):
@@ -48,13 +39,13 @@ class HandledError(FedoraReviewError):
         FedoraReviewError.__init__(self, msg)
 
 
-class ReviewHelper:
+class ReviewHelper(object):
 
     def __init__(self):
         self.bug = None
         self.checks = None
         Settings.workdir = os.path.expanduser(Settings.workdir)
-        self.log = FedoraReview.get_logger()
+        self.log = Settings.get_logger()
         self.verbose = False
         self.outfile = None
         self.prebuilt = False
@@ -115,9 +106,10 @@ class ReviewHelper:
 
     def run(self):
         try:
+            #import pdb; pdb.set_trace()
+            Settings.do_logger_setup(logging.DEBUG)
+            #Settings.do_logger_setup(loglvl=lvl)
             Settings.init()
-            lvl = logging.DEBUG if Settings.verbose else None
-            FedoraReview.do_logger_setup(loglvl=lvl)
 
             if Settings.list_checks:
                 self.__list_checks()
@@ -131,7 +123,7 @@ class ReviewHelper:
                 self.bug = UrlBug(Settings.url)
             elif Settings.bug:
                 self.log.info("Processing bugzilla bug: " + Settings.bug )
-                self.bug = ReviewBug(Settings.bug, user=Settings.user)
+                self.bug = BugzillaBug(Settings.bug, user=Settings.user)
             elif Settings.name:
                 self.log.info("Processing local files: " + Settings.name )
                 self.bug = NameBug(Settings.name)

@@ -25,15 +25,13 @@ import sys
 import os.path
 sys.path.insert(0,os.path.abspath('../'))
 
-import logging
 import os
 import os.path
 import unittest
-import FedoraReview
-from FedoraReview.bugz import ReviewBug
+
+from FedoraReview.bugzilla_bug import BugzillaBug
+from FedoraReview.settings import Settings
 from FedoraReview.abstract_bug import SettingsError
-from FedoraReview.ReviewHelper import ReviewHelper
-from bugzilla import Bugzilla
 from base import *
 
 class BugzillaTests(unittest.TestCase):
@@ -41,9 +39,7 @@ class BugzillaTests(unittest.TestCase):
     def setUp(self):
         sys.argv = ['test-bugzilla','-b','1234']
         Settings.init()
-        FedoraReview.do_logger_setup()
-        self.reviewHelper = ReviewHelper()
-        self.bug = ReviewBug(TEST_BUG)
+        self.bug = BugzillaBug(TEST_BUG)
         self.bug.find_urls()
         if not os.path.exists(TEST_WORK_DIR):
             os.makedirs(TEST_WORK_DIR)
