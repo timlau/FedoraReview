@@ -31,5 +31,9 @@ class FedoraReviewError(Exception):
         """ Represent the error. """
         return repr(self.value)
 
+class CleanExitError(FedoraReviewError):
+    ''' Request a clean exit, no printouts. '''
+    pass
+
 
 # vim: set expandtab: ts=4:sw=4:

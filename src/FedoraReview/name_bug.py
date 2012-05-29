@@ -17,6 +17,7 @@
 Handles -n, srpm and spec file already downloaded
 '''
 
+import os
 import os.path
 import glob
 
@@ -41,21 +42,19 @@ class NameBug(AbstractBug):
         self.name = name
 
     def get_location(self):
-        return 'Local files in ' + ReviewDirs.root()
+        return 'Local files in ' +  os.getcwd()
 
     def do_find_urls(self):
         """ Retrieve the page and parse for srpm and spec url. """
 
-        pattern = os.path.join(ReviewDirs.root(),
-                               self.name + '*.spec')
+        pattern = os.path.join(os.getcwd(), self.name + '*.spec')
         specs = glob.glob(pattern)
         if len(specs) != 1:
             raise NameBugException( "Cannot find spec: " + pattern)
         self.spec_url = 'file://' + specs[0]
         self.spec_file = specs[0]
 
-        pattern = os.path.join(ReviewDirs.root(),
-                               self.name + '*.src.rpm')
+        pattern = os.path.join(os.getcwd(), self.name + '*.src.rpm')
         srpms = glob.glob(pattern)
         if len(srpms) != 1:
             raise NameBugException( "Cannot find srpm: " + pattern)

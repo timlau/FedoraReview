@@ -25,7 +25,7 @@ from bugzilla_bug import BugzillaBug
 from checks_class import Checks, ChecksLister
 from mock         import Mock
 from name_bug     import NameBug
-from review_error import FedoraReviewError
+from review_error import FedoraReviewError, CleanExitError
 from review_dirs  import ReviewDirs
 from settings     import Settings
 from source       import Source
@@ -33,5 +33,6 @@ from sources      import Sources
 from spec_file    import SpecFile
 from srpm_file    import SRPMFile
 from url_bug      import UrlBug
+from version      import __version__
 
 # vim: set expandtab: ts=4:sw=4:

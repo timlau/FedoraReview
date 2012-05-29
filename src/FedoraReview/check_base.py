@@ -26,8 +26,6 @@ import StringIO
 
 from textwrap import TextWrapper
 
-from FedoraReview.review_dirs import ReviewDirs
-
 from helpers import Helpers
 from settings import Settings
 from mock import Mock

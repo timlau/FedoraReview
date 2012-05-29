@@ -313,7 +313,7 @@ class CheckSourceMD5(CheckBase):
                    text += 'However, diff -r shows no differences\n'
                    msg = 'MD5sum differs but diff -r is OK'
                 else:
-                   p = os.path.join(ReviewDirs.root(), 'diff.txt')
+                   p = os.path.join(ReviewDirs.root, 'diff.txt')
                    with open(p, 'w') as f:
                        f.write(diff)
                    text += 'diff -r also reports differences\n'
@@ -591,7 +591,7 @@ class CheckLicenseField(CheckBase):
                 cmd = 'licensecheck -r %s' % source_dir
                 out = self._run_cmd(cmd)
                 if out:
-                    filename = os.path.join(ReviewDirs.root(),
+                    filename = os.path.join(ReviewDirs.root,
                                             'licensecheck.txt')
                     stream = open(filename, 'w')
                     stream.write(out)

@@ -54,11 +54,11 @@ class SRPMFile(Helpers):
         if hasattr(self, 'unpacked_src'):
             return;
 
-        wdir = ReviewDirs.get_dir(ReviewDirs.SRPM_UNPACKED)
+        wdir = ReviewDirs.srpm_unpacked
         oldpwd = os.getcwd()
         os.chdir(wdir)
         src = src if src else self.filename
-        cmd = 'rpm2cpio ' + src + ' | cpio -i --quiet'
+        cmd = 'rpm2cpio ' + src + ' | cpio -u -i --quiet'
         rc = call(cmd, shell=True)
         if rc != 0:
             self.log.warn(
