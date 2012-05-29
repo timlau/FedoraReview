@@ -105,7 +105,7 @@ class ReviewHelper:
         optional.add_argument('-h','--help', action='help',
                     help = 'Display this help message')
         optional.add_argument('-m','--mock-config', metavar='<config>',
-                    default = Settings.mock_config, dest='mock_config',
+                    default = 'fedora-rawhide-i386', dest='mock_config',
                     help='Configuration to use for the mock build,'
                              ' defaults to fedora-rawhide-i686.')
         optional.add_argument('--no-report',  action='store_true',
@@ -116,14 +116,14 @@ class ReviewHelper:
                     help = 'Do not rebuild the srpm, use currently'
                            ' built in mock.')
         optional.add_argument('-o','--mock-options', metavar='<mock options>',
-                    default = Settings.mock_options, dest='mock_options',
+                    default = '--no-cleanup-after', dest='mock_options',
                     help='Options to specify to mock for the build,'
                          ' defaults to --no-cleanup-after')
         optional.add_argument('-p', '--prebuilt',  action='store_true',
                     dest='prebuilt', help='When using -n <name>, use'
                     ' prebuilt rpms in current directory.')
         optional.add_argument('-s', '--single',
-                    default=Settings.single, dest='single',
+                    default='', dest='single',
                     metavar='<test>',
                     help='Single test to run, as named by --display-checks.')
         optional.add_argument('-v', '--verbose',  action='store_true',
@@ -132,7 +132,7 @@ class ReviewHelper:
                     default=Settings.workdir, dest='workdir', metavar='<dir>',
                     help='Work directory, default current dir')
         optional.add_argument('-x', '--exclude',
-                    default=Settings.exclude, dest='exclude',
+                    default='', dest='exclude',
                     metavar='"test,..."',
                     help='Comma-separated list of tests to exclude.')
         bz_only.add_argument('-a','--assign', action='store_true',
@@ -140,7 +140,7 @@ class ReviewHelper:
         bz_only.add_argument('-l', '--login', action='store_true',
                     default=False,
                     help='Login into Fedora Bugzilla before starting')
-        bz_only.add_argument('--other-bz', default=Settings.other_bz,
+        bz_only.add_argument('--other-bz', default=None,
                     metavar='<bugzilla url>', dest='other_bz',
                     help='Alternative bugzilla URL')
         bz_only.add_argument('-i','--user', dest='user',
