@@ -240,4 +240,4 @@ class CheckRelocatable(CCppCheckBase):
         self.automatic = False
         self.type = 'MUST'
 
-
+# vim: set expandtab: ts=4:sw=4:

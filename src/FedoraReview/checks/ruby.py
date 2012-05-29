@@ -267,3 +267,5 @@ class GemCheckUsesMacros(GemCheckBase):
             self.set_passed(True)
         else:
             self.set_passed(False, 'The specfile doesn\'t use these macros: %s' % ', '.join(err_message))
+
+# vim: set expandtab: ts=4:sw=4:

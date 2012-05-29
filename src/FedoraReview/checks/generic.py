@@ -1662,3 +1662,5 @@ class LangCheckBase(CheckBase):
     def is_applicable(self):
         """ By default, language specific check are disabled. """
         return False
+
+# vim: set expandtab: ts=4:sw=4:
