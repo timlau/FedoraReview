@@ -53,7 +53,6 @@ TEST_STATES = {'pending': '[ ]', 'pass': '[x]', 'fail': '[!]', 'na': '[-]'}
 LOG_ROOT = 'FedoraReview'
 
 PARSER_SECTION = 'review'
-CONFIG_FILE    = '.config/fedora-review/settings'
 SYS_PLUGIN_DIR = "/usr/share/fedora-review/plugins:%s"
 MY_PLUGIN_DIR  = "~/.config/fedora-review/plugins"
 
@@ -125,26 +124,16 @@ class FedoraReviewError(Exception):
 
 class _Settings(object):
     """
-    FedoraReview singleton Config Setting, based on config file and
-    command line options. All config values are accessed as attributes.
+    FedoraReview singleton Config Setting based on command line options.
+    All config values are accessed as attributes.
     """
     path = ':'.join([os.path.expanduser(MY_PLUGIN_DIR), SYS_PLUGIN_DIR])
 
     defaults = {
         # review, report & spec editor(default EDITOR env)
-        'bz_user':      '',
-        'cache':        False,
-        'edit':         False,
-        'editor':       '',
-        'exclude':      '',
-        'ext_dirs':     path,
-        'mock_config':  'fedora-rawhide-i386',
-        'mock_options': '--no-cleanup-after',
-        'single':       '',
-        'other_bz':     None,
+        'ext_dirs':     ':'.join([os.path.expanduser(MY_PLUGIN_DIR),
+                                                     SYS_PLUGIN_DIR]),
         'bz_url':       'https://bugzilla.redhat.com',
-        'url':          '',
-        'user':         None,
         'workdir':      '.'
     }
 
@@ -156,7 +145,6 @@ class _Settings(object):
         for key,value in self.defaults.iteritems():
             setattr(self, key, value)
         self._dict = self.defaults
-        self._load_config(CONFIG_FILE, PARSER_SECTION)
         self._get_mock_options()
 
     def _get_mock_options(self):
@@ -168,46 +156,6 @@ class _Settings(object):
         self.mock_config_options = config_opts
         self.mock_root = config_opts['root']
 
-    def _load_config(self, configfile, sec):
-        '''Load the configuration in memory.
-
-        :arg configfile, name of the configuration file loaded.
-        :arg sec, section of the configuration retrieved.
-        '''
-        parser = ConfigParser.ConfigParser()
-        self.parser = parser
-        configfile = os.environ['HOME'] + "/" + configfile
-        isNew = self._create_conf()
-        parser.read(configfile)
-        if not parser.has_section(sec):
-            parser.add_section(sec)
-        self._populate()
-        if isNew:
-            self.save_config()
-
-    def _create_conf(self):
-        '''Check if the provided configuration file exists, generate the
-        folder if it does not and return True or False according to the
-        initial check.
-
-        :arg configfile, name of the configuration file looked for.
-        '''
-        if not os.path.exists(CONFIG_FILE):
-            dn = os.path.dirname(CONFIG_FILE)
-            if not os.path.exists(dn):
-                os.makedirs(dn)
-            return True
-        return False
-
-    def save_config(self ):
-        '''Save the configuration into the specified file.
-
-        :arg configfile, name of the file in which to write the configuration
-        :arg parser, ConfigParser object containing the configuration to
-        write down.
-        '''
-        with open(CONFIG_FILE, 'w') as conf:
-                self.parser.write(conf)
 
     def __getitem__(self, key):
         hash = self._get_hash(key)
@@ -240,7 +188,6 @@ class _Settings(object):
         dict = vars(args)
         for key, value in dict.iteritems():
             setattr(self, key, value)
-            self.parser.set( PARSER_SECTION, key, value)
 
     @property
     def current_bz_url(self):
