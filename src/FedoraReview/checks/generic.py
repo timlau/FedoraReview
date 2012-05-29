@@ -1551,6 +1551,7 @@ class CheckFileRequires(CheckBase):
 
         def get_requires(rpm, requires):
             requires = filter(lambda s: s.find('rpmlib') == -1, requires)
+            requires = filter(lambda s: s.find('GLIBC') == -1, requires)
             requires.insert(0, os.path.basename(rpm) + ':')
             return '\n    '.join(requires)
 

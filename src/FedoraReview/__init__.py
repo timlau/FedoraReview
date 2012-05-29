@@ -26,7 +26,6 @@ from subprocess import call, Popen, PIPE, STDOUT
 import os.path
 import re
 import glob
-import requests
 import sys
 import shlex
 import shutil
@@ -56,9 +55,6 @@ PARSER_SECTION = 'review'
 CONFIG_FILE    = '.config/fedora-review/settings'
 SYS_PLUGIN_DIR = "/usr/share/fedora-review/plugins:%s"
 MY_PLUGIN_DIR  = ".config/fedora-review/plugins"
-
-# see ticket https://fedorahosted.org/FedoraReview/ticket/43
-requests.decode_unicode=False
 
 def rpmdev_extract(working_dir, archive, log):
     """
@@ -139,7 +135,6 @@ class _Mock(object):
     """ Some basic operations on the mock chroot env, a singleton. """
 
     def __init__(self):
-       self.log = get_logger()
 
     def _get_dir(self, subdir=None):
         p = os.path.join( '/var/lib/mock', Settings.mock_config )
@@ -153,6 +148,28 @@ class _Mock(object):
         mock. Optional subdir argument is added to returned path.
         """
         p = self._get_dir('root/builddir/build')
+        return os.path.join(p, subdir) if subdir else p
+
+    """  The directory where mock leaves built rpms and logs """
+    resultdir=property(get_resultdir)
+
+    """ Mock's %_topdir seen from the outside. """
+    topdir = property(lambda self: get_builddir(self))
+
+       self.log = get_logger()
+
+    def _get_dir(self, subdir=None):
+        p = os.path.join( '/var/lib/mock', Settings.mock_config )
+        return os.path.join(p, subdir) if subdir else p
+
+    def get_resultdir(self):
+        return self._get_dir('result')
+
+    def get_builddir(self, subdir=None):
+        """ Return the directory which corresponds to %_topdir inside
+        mock. Optional subdir argument is added to returned path.
+        """
+        p = self._get_dir('/root/builddir/build')
         return os.path.join(p, subdir) if subdir else p
 
     """  The directory where mock leaves built rpms and logs """
@@ -234,9 +251,6 @@ class _Settings(object):
         'editor':       '',
         'work_dir':     '.',
         'bz_user':      '',
-        'exclude':      '',
-        'edit':         False,
-        'single':       '',
         'mock_config':  'fedora-rawhide-i386',
         'mock_options': '--no-cleanup-after',
         'ext_dirs':     path
@@ -528,7 +542,7 @@ class Source(Helpers):
             except IOError, err:
                 self.log.debug(err)
                 print "Could not generate the folder %s" % self.extract_dir
-        rpmdev_extract(self.extract_dir, self.filename, self.log)
+        rpmdev_extract(self.extract_dir, self.filename)
 
     def get_source_topdir(self):
         """
@@ -540,6 +554,17 @@ class Source(Helpers):
         topdir = glob.glob(self.extract_dir + '/*')
         if len(topdir) > 1:
               print "Returning illegal topdir. Bad things ahead"
+
+    def extract_gem(self):
+        """Every gem contains a data.tar.gz file with the actual sources"""
+        gem_extract_dir = os.path.join(self.extract_dir, os.path.basename(self.filename)[0:-4])
+        os.makedirs(gem_extract_dir)
+        gem_data = tarfile.open(os.path.join(self.extract_dir, 'data.tar.gz'))
+        gem_data.extractall(gem_extract_dir)
+        gem_data.close()
+
+        return tarfile.TarInfo(name = os.path.basename(self.filename)[0:-4])
+
 
 class SRPMFile(Helpers):
 

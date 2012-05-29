@@ -56,7 +56,7 @@ class Checks(object):
         self.sources = Sources()
         self.log = get_logger()
         if srpm_file:
-            self.srpm = SRPMFile(srpm_file)
+            self.srpm = SRPMFile(srpm_file, self.spec)
         else:
             self.srpm = None
         self.plugins = load('FedoraReview.checks')
