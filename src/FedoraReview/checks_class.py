@@ -122,13 +122,15 @@ class Checks(object):
             self.log.warn("I can't remove check: " + c)
 
     def set_single_check(self, check):
-        found = filter(lambda c: c.name == check,  self.checks)
+        found = filter(lambda c: c.name == check, self.checks)
         if len(found) > 0:
               self.checks = found
+              self.ext_checks = []
               return
-        found = filter[lambda c: c.name == check,  self.ext_checks]
+        found = filter(lambda c: c.name == check, self.ext_checks)
         if len(found) > 0:
               self.ext_checks = found
+              self.checks = []
               return
         self.log.warn("I can't find check: " + check)
 

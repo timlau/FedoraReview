@@ -72,6 +72,8 @@ class CheckBase(Helpers):
         if output_extra:
             self.output_extra = output_extra
 
+    name = property(lambda self: self.__class__.__name__)
+
     def get_result(self):
         '''
         Get the test report result for this test
