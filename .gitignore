@@ -4,3 +4,5 @@
 test-work/
 *.log
 build/
+patches-*
+.stgit*

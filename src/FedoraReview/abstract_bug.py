@@ -28,17 +28,19 @@ from BeautifulSoup import BeautifulSoup
 import FedoraReview
 from FedoraReview import Settings
 
-class SettingsError(FedoraReview.FedoraReviewError):
-    pass
 
 class BugException(FedoraReview.FedoraReviewError):
     pass
 
+
+class SettingsError(BugException):
+    pass
+
+
 class AbstractBug(FedoraReview.Helpers):
     """ This class has an interesting name.
     Anyway, defines an object which can determine URLs for spec
-    and srpm given a key like a name, bug nr etc. Exposes four
-    attributes:
+    and srpm given a key like a name, bug nr etc. Attributes:
      - srpm_url: valid after find_urls, possibly None
      - spec_url: valid after find_urls, possibly None
      - srpm_file valid after download_files.
@@ -48,6 +50,8 @@ class AbstractBug(FedoraReview.Helpers):
     set the urls, this base class handles the rest.
     """
 
+    BZ_OPTIONS = [ 'assign', 'login', 'other_bz', 'user' ]
+
     def __init__(self):
         FedoraReview.Helpers.__init__(self)
         self.spec_url = None
@@ -56,7 +60,6 @@ class AbstractBug(FedoraReview.Helpers):
         self.srpm_file = None
         self.dir = os.path.join(Settings.workdir, 'review-srpm-src')
         self.log = FedoraReview.get_logger()
-
 
     def do_download_files(self):
         """ Download the spec file and srpm extracted from the page.
@@ -99,7 +102,6 @@ class AbstractBug(FedoraReview.Helpers):
         except:
             return False
 
-
     def download_files(self):
         """ Download the spec file and srpm extracted from the bug
         report.
@@ -125,8 +127,8 @@ class AbstractBug(FedoraReview.Helpers):
         """ Retrieve the page and parse for srpm and spec url. """
         try:
             self.do_find_urls()
-            self.log.debug("  --> Spec url: " + self.spec_url)
-            self.log.debug("  --> SRPM url: " + self.srpm_url)
+            self.log.info("  --> Spec url: " + self.spec_url)
+            self.log.info("  --> SRPM url: " + self.srpm_url)
         except:
             self.log.debug('url_bug link parse error', exc_info=True)
             self.log.error('Cannot find usable urls here')
@@ -145,9 +147,10 @@ class AbstractBug(FedoraReview.Helpers):
         """
         self.log.error( "Calling abstract method" + __method__)
 
-    def check_settings(self):
-        ''' Raise exception on bad settings. '''
-        pass
-
+    def do_check_options(self, mode, bad_opts):
+       for opt in bad_opts:
+           if hasattr(Settings, opt) and getattr(Settings, opt):
+                raise SettingsError(
+                    '--' + opt + ' can not be used with ' +  mode)
 
 # vim: set expandtab: ts=4:sw=4:
