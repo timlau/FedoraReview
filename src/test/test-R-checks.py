@@ -21,28 +21,28 @@ Unit checks for automatic test of fedora R review guidelines
 
 
 
+import logging
 import sys
-import os.path
-sys.path.insert(0,os.path.abspath('../'))
-
 import os
 import os.path
+sys.path.insert(0,os.path.abspath('../'))
 import unittest
+import FedoraReview
 from FedoraReview import Helpers
-from FedoraReview.misc import Checks
+from FedoraReview.checks_class import Checks
+from FedoraReview.ReviewHelper import ReviewHelper
 from FedoraReview.checks import R
 from bugzilla import Bugzilla
 from base import *
 
 class RCheckCaseChecks(unittest.TestCase):
-    def __init__(self, methodName='runCheck'):
-        unittest.TestCase.__init__(self, methodName)
+
+    def setUp(self):
         self.checks = None
         self.srpm = TEST_WORK_DIR + os.path.basename(R_TEST_SRPM)
         self.spec = TEST_WORK_DIR + os.path.basename(R_TEST_SPEC)
         self.source = TEST_WORK_DIR + os.path.basename(R_TEST_SRC)
-        
-    def setUp(self):
+        self.reviewHelper = ReviewHelper()
         if not os.path.exists(TEST_WORK_DIR):
             os.makedirs(TEST_WORK_DIR)
         helper = Helpers()
@@ -55,7 +55,7 @@ class RCheckCaseChecks(unittest.TestCase):
     def test_all_checks(self):
         ''' Run all automated review checks'''
         print('Setup Checks')
-        self.checks = Checks(None, spec_file=self.spec, srpm_file=self.srpm)
+        self.checks = Checks(self.spec, self.srpm)
         print('Running R Checks')
         self.checks.run_checks(writedown=False)
         for check in self.checks.checks:
@@ -65,4 +65,6 @@ class RCheckCaseChecks(unittest.TestCase):
                 self.assertNotEqual(result[1:2], '!')
 
 suite = unittest.TestLoader().loadTestsFromTestCase(RCheckCaseChecks)
+sys.argv.extend(['-b','1234'])
+FedoraReview.do_logger_setup(loglvl=logging.DEBUG)
 unittest.TextTestRunner(verbosity=2).run(suite)

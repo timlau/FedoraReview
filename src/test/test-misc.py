@@ -21,6 +21,7 @@ Unit tests for bugzilla bug handling
 '''
 
 
+import logging
 import sys
 import os.path
 import re
@@ -29,28 +30,32 @@ sys.path.insert(0,os.path.abspath('../'))
 import os
 import unittest
 import glob
-from FedoraReview import Helpers, Source, SRPMFile, SpecFile
+from FedoraReview import Helpers, Source, Sources, SRPMFile, SpecFile, Mock
+from FedoraReview.ReviewHelper import ReviewHelper
+import FedoraReview
 from base import *
 
 class MiscTests(unittest.TestCase):
-    def __init__(self, methodName='runTest'):
-        unittest.TestCase.__init__(self, methodName)
-        self.srpm_file = TEST_WORK_DIR + os.path.basename(TEST_SRPM)
-        self.spec_file = TEST_WORK_DIR + os.path.basename(TEST_SPEC)
-        self.source_file = TEST_WORK_DIR + os.path.basename(TEST_SRC)
-        self.helper = Helpers()
 
     def setUp(self):
+        self.reviewHelper = ReviewHelper()
+        self.helper = Helpers()
+        self.srpm_file = os.path.join(os.path.abspath('.'),
+                                      os.path.basename(TEST_SRPM))
+        self.spec_file = os.path.join(Mock.get_builddir('SOURCES'),
+                                        os.path.basename(TEST_SPEC))
+        self.source_file = os.path.join(Mock.get_builddir('SOURCES'),
+                                        os.path.basename(TEST_SRC))
         if not os.path.exists(TEST_WORK_DIR):
             os.makedirs(TEST_WORK_DIR)
         self.helper.set_work_dir(TEST_WORK_DIR)
         self.helper._get_file(TEST_SRPM)
         #self.helper._get_file(TEST_SRC)
-        self.helper._get_file(TEST_SPEC)
-
 
     def test_spec_file(self):
         ''' Test the SpecFile class'''
+        self.helper.set_work_dir(Mock.get_builddir('SOURCES'))
+        self.helper._get_file(TEST_SPEC)
         spec = SpecFile(self.spec_file)
         # Test misc rpm values (Macro resolved)
         self.assertEqual(spec.name,'python-test')
@@ -88,10 +93,10 @@ class MiscTests(unittest.TestCase):
 
     def test_source_file(self):
         """ Test the SourceFile class """
-        source = Source()
-        # set the work dir
-        source.set_work_dir(TEST_WORK_DIR)
+        sources = Sources()
+        source = Source(sources)
         # download the upstream source file
+        source.set_work_dir(Mock.get_builddir('SOURCES'))
         source.get_source(TEST_SRC)
         # check that source exists and source.filename point to the right location
         self.assertEqual(source.filename, self.source_file)
@@ -100,27 +105,26 @@ class MiscTests(unittest.TestCase):
 
     def test_srpm_file(self):
         """ Test the SRPMFile class """
+        self.helper.set_work_dir(os.path.abspath('.'))
+        self.helper._get_file(TEST_SRPM)
         srpm = SRPMFile(self.srpm_file)
         # install the srpm
-        srpm.install()
-        self.assertTrue(srpm.is_installed)
-        src_files = glob.glob(os.path.expanduser('~/rpmbuild/SOURCES/*'))
-        expected = os.path.expanduser('~/rpmbuild/SOURCES/python-test-1.0.tar.gz')
+        srpm.unpack()
+        self.assertTrue(hasattr(srpm, 'unpacked_src'))
+        src_dir = srpm.unpacked_src
+        src_files = glob.glob(os.path.expanduser(src_dir) + '/*')
+        src_files = [os.path.basename(f) for f in  src_files]
+        expected = 'python-test-1.0.tar.gz'
         self.assertTrue(expected in src_files)
-        # Generate the config file for the current OS run
-        release = self.helper._run_cmd('rpm --eval %{fedora}')[:-1]
-        arch = self.helper._run_cmd('arch')[:-1]
-        srpm.mock_config = 'fedora-%s-%s' % (release, arch)
-        # Do the mock build
+        print "Starting mock build (patience...)"
         srpm.build(silence=True)
         self.assertTrue(srpm.is_build)
         # Retrieve the list of files in the mock folder and below
-        rpm_files = []
-        for root, dirs, files in os.walk(Mock.resultdir):
-            rpm_files.extend(files)
-        dist = self.helper._run_cmd('rpm --eval %dist')[:-1]
-        expected = os.path.expanduser('python-test-1.0-1%(dist)s.noarch.rpm') % {'dist': dist}
-        self.assertTrue(expected in rpm_files)
+        rpms = glob.glob(os.path.join(Mock.resultdir,
+                                      'python-test-1.0-1*noarch.rpm'))
+        self.assertTrue(len(rpms)==1)
 
 suite = unittest.TestLoader().loadTestsFromTestCase(MiscTests)
+sys.argv.extend(['-b','1234'])
+FedoraReview.do_logger_setup(loglvl=logging.DEBUG)
 unittest.TextTestRunner(verbosity=2).run(suite)
