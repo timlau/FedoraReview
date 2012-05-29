@@ -139,27 +139,6 @@ class _Mock(object):
     """ Some basic operations on the mock chroot env, a singleton. """
 
     def __init__(self):
-
-    def _get_dir(self, subdir=None):
-        p = os.path.join( '/var/lib/mock', Settings.mock_config )
-        return os.path.join(p, subdir) if subdir else p
-
-    def get_resultdir(self):
-        return self._get_dir('result')
-
-    def get_builddir(self, subdir=None):
-        """ Return the directory which corresponds to %_topdir inside
-        mock. Optional subdir argument is added to returned path.
-        """
-        p = self._get_dir('root/builddir/build')
-        return os.path.join(p, subdir) if subdir else p
-
-    """  The directory where mock leaves built rpms and logs """
-    resultdir=property(get_resultdir)
-
-    """ Mock's %_topdir seen from the outside. """
-    topdir = property(lambda self: get_builddir(self))
-
        self.log = get_logger()
 
     def _get_dir(self, subdir=None):
@@ -173,7 +152,7 @@ class _Mock(object):
         """ Return the directory which corresponds to %_topdir inside
         mock. Optional subdir argument is added to returned path.
         """
-        p = self._get_dir('/root/builddir/build')
+        p = self._get_dir('root/builddir/build')
         return os.path.join(p, subdir) if subdir else p
 
     """  The directory where mock leaves built rpms and logs """
