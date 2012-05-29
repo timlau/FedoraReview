@@ -22,6 +22,7 @@ Unit checks for automatic test of fedora review guidelines
 
 
 
+import logging
 import sys
 import os.path
 sys.path.insert(0,os.path.abspath('../'))
@@ -29,33 +30,36 @@ sys.path.insert(0,os.path.abspath('../'))
 import os
 import os.path
 import unittest
+import FedoraReview
 from FedoraReview import Helpers
-from FedoraReview.misc import Checks
+from FedoraReview.checks_class import Checks
+from FedoraReview.ReviewHelper import ReviewHelper
 from bugzilla import Bugzilla
 from base import *
 
 class CheckCaseChecks(unittest.TestCase):
-    def __init__(self, methodName='runCheck'):
-        unittest.TestCase.__init__(self, methodName)
+
+
+    def setUp(self):
+        self.reviewHelper = ReviewHelper()
+        if not os.path.exists(TEST_WORK_DIR):
+            os.makedirs(TEST_WORK_DIR)
         self.checks = None
         self.srpm = TEST_WORK_DIR + os.path.basename(TEST_SRPM)
         self.spec = TEST_WORK_DIR + os.path.basename(TEST_SPEC)
         self.source = TEST_WORK_DIR + os.path.basename(TEST_SRC)
-        
-    def setUp(self):
-        if not os.path.exists(TEST_WORK_DIR):
-            os.makedirs(TEST_WORK_DIR)
         helper = Helpers()
         helper.set_work_dir(TEST_WORK_DIR)
         helper._get_file(TEST_SRPM)
         helper._get_file(TEST_SRC)
         helper._get_file(TEST_SPEC)
-        del helper 
+        del helper
 
     def test_all_checks(self):
         ''' Run all automated review checks'''
         print('Setup Checks')
-        self.checks = Checks(None, spec_file=self.spec, srpm_file=self.srpm)
+        self.checks = Checks(self.spec, self.srpm)
+        self.checks.sources.set_work_dir('.')
         print('Running All Checks')
         self.checks.run_checks(writedown=False)
         # Automatic Checks
@@ -65,4 +69,6 @@ class CheckCaseChecks(unittest.TestCase):
             self.assertNotEqual(result, None)
 
 suite = unittest.TestLoader().loadTestsFromTestCase(CheckCaseChecks)
+FedoraReview.do_logger_setup(loglvl=logging.INFO)
+sys.argv.extend(['-b','1234'])
 unittest.TextTestRunner(verbosity=2).run(suite)
