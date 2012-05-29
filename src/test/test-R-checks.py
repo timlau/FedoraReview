@@ -30,19 +30,20 @@ import unittest
 import FedoraReview
 from FedoraReview import Helpers, Settings
 from FedoraReview.checks_class import Checks
-from FedoraReview.ReviewHelper import ReviewHelper
 from FedoraReview.checks import R
 from bugzilla import Bugzilla
 from base import *
 
-class RCheckCaseChecks(unittest.TestCase):
+class TestRChecks(unittest.TestCase):
 
     def setUp(self):
+        sys.argv = ['test-R-checks','-b','1234']
+        Settings.init()
+        FedoraReview.do_logger_setup(loglvl=logging.DEBUG)
         self.checks = None
         self.srpm = TEST_WORK_DIR + os.path.basename(R_TEST_SRPM)
         self.spec = TEST_WORK_DIR + os.path.basename(R_TEST_SPEC)
         self.source = TEST_WORK_DIR + os.path.basename(R_TEST_SRC)
-        self.reviewHelper = ReviewHelper()
         if not os.path.exists(TEST_WORK_DIR):
             os.makedirs(TEST_WORK_DIR)
         helper = Helpers()
@@ -63,7 +64,7 @@ class RCheckCaseChecks(unittest.TestCase):
                 result = check.get_result()
                 self.assertNotEqual(result[1:2], '!')
 
-suite = unittest.TestLoader().loadTestsFromTestCase(RCheckCaseChecks)
-sys.argv.extend(['-b','1234'])
-FedoraReview.do_logger_setup(loglvl=logging.DEBUG)
-unittest.TextTestRunner(verbosity=2).run(suite)
+
+if __name__ == '__main__':
+    suite = unittest.TestLoader().loadTestsFromTestCase(TestRChecks)
+    unittest.TextTestRunner(verbosity=2).run(suite)

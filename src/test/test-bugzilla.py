@@ -39,12 +39,14 @@ from base import *
 class BugzillaTests(unittest.TestCase):
 
     def setUp(self):
+        sys.argv = ['test-bugzilla','-b','1234']
+        Settings.init()
+        FedoraReview.do_logger_setup(loglvl=logging.INFO)
         self.reviewHelper = ReviewHelper()
         self.bug = ReviewBug(TEST_BUG)
         self.bug.find_urls()
         if not os.path.exists(TEST_WORK_DIR):
             os.makedirs(TEST_WORK_DIR)
-        self.bug.set_work_dir(TEST_WORK_DIR)
 
     def test_find_urls(self):
         ''' Test that we can get the urls from a bugzilla report'''
@@ -86,7 +88,6 @@ class BugzillaTests(unittest.TestCase):
             rc = self.bug.login(user=user, password=password)
             self.assertEqual(rc, True)
 
-suite = unittest.TestLoader().loadTestsFromTestCase(BugzillaTests)
-sys.argv.extend(['-b','1234'])
-FedoraReview.do_logger_setup(loglvl=logging.INFO)
-unittest.TextTestRunner(verbosity=2).run(suite)
+if __name__ == '__main__':
+    suite = unittest.TestLoader().loadTestsFromTestCase(BugzillaTests)
+    unittest.TextTestRunner(verbosity=2).run(suite)
