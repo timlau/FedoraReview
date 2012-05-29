@@ -181,8 +181,6 @@ class ReviewHelper:
 
         Settings.name = self.bug.get_name()
         self.__run_checks(self.bug.spec_file, self.bug.srpm_file)
-        if Settings.edit:
-            self.__show_results()
 
     def __list_checks(self):
         """ List all the checks available.
@@ -192,26 +190,6 @@ class ReviewHelper:
 
     def __print_version(self):
         print('fedora-review version ' + __version__)
-
-    def __show_results(self):
-        if self.outfile and self.checks.spec.filename:
-            editor = Settings.editor
-            if editor == '':
-                if 'EDITOR' in os.environ:
-                    editor = os.environ['EDITOR']
-                else:
-                    self.log.error("EDITOR variable not set and no"
-                                   " editor set in configuration")
-                    return
-
-            try:
-                subprocess.call([editor, self.outfile, self.checks.spec.filename])
-            except OSError, e:
-                if e.errno == errno.ENOENT:
-                    self.log.error("EDITOR not set correctly or editor"
-                                    " configuration is incorrect")
-                    return
-                raise e
 
     def __run_checks(self, spec, srpm):
         self.checks = Checks(spec, srpm )
