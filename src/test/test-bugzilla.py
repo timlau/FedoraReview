@@ -25,22 +25,28 @@ import sys
 import os.path
 sys.path.insert(0,os.path.abspath('../'))
 
+import logging
 import os
 import os.path
 import unittest
+import FedoraReview
 from FedoraReview.bugz import ReviewBug
+from FedoraReview.abstract_bug import SettingsError
+from FedoraReview.ReviewHelper import ReviewHelper
 from bugzilla import Bugzilla
 from base import *
 
 class BugzillaTests(unittest.TestCase):
-    def __init__(self, methodName='runTest'):
-        unittest.TestCase.__init__(self, methodName)
-        self.bug = ReviewBug(TEST_BUG)
-        
+
     def setUp(self):
+        sys.argv = ['test-bugzilla','-b','1234']
+        Settings.init()
+        FedoraReview.do_logger_setup(loglvl=logging.INFO)
+        self.reviewHelper = ReviewHelper()
+        self.bug = ReviewBug(TEST_BUG)
+        self.bug.find_urls()
         if not os.path.exists(TEST_WORK_DIR):
             os.makedirs(TEST_WORK_DIR)
-        self.bug.set_work_dir(TEST_WORK_DIR)
 
     def test_find_urls(self):
         ''' Test that we can get the urls from a bugzilla report'''
@@ -60,26 +66,28 @@ class BugzillaTests(unittest.TestCase):
         print("SRPM : %s " % self.bug.srpm_file)
         print("SPEC : %s " % self.bug.spec_file)
         # check the downloaded files locations
-        srpm = TEST_WORK_DIR + 'python-test-1.0-1.fc14.src.rpm'
-        spec = TEST_WORK_DIR + 'python-test.spec'
+        cd = os.path.abspath('./review-srpm-src')
+        srpm = os.path.join(cd, 'python-test-1.0-1.fc14.src.rpm')
+        spec = os.path.join(cd, 'python-test.spec')
         self.assertEqual(self.bug.srpm_file, srpm)
         self.assertEqual(self.bug.spec_file, spec)
         # check that the downloaded files exists
         self.assertTrue(os.path.exists(srpm))
         self.assertTrue(os.path.exists(spec))
-        
+
     def test_login(self):
-        ''' test login to bugzilla 
+        ''' test login to bugzilla
         You need to use BZ_USER=<user> BZ_PASS=<password> make test to active the login test
         '''
         # Test failed login
-        rc = self.bug.login(user='dummmy', password='dummy')
-        self.assertEqual(rc,False)
+        with self.assertRaises(SettingsError):
+            rc = self.bug.login('dummmy', 'dummy')
         if 'BZ_USER' in os.environ and 'BZ_PASS' in os.environ:
             user = os.environ['BZ_USER']
             password = os.environ['BZ_PASS']
             rc = self.bug.login(user=user, password=password)
             self.assertEqual(rc, True)
 
-suite = unittest.TestLoader().loadTestsFromTestCase(BugzillaTests)
-unittest.TextTestRunner(verbosity=2).run(suite)
+if __name__ == '__main__':
+    suite = unittest.TestLoader().loadTestsFromTestCase(BugzillaTests)
+    unittest.TextTestRunner(verbosity=2).run(suite)

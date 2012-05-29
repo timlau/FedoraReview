@@ -21,41 +21,41 @@ Unit checks for automatic test of fedora R review guidelines
 
 
 
+import logging
 import sys
-import os.path
-sys.path.insert(0,os.path.abspath('../'))
-
 import os
 import os.path
+sys.path.insert(0,os.path.abspath('../'))
 import unittest
-from FedoraReview import Helpers
-from FedoraReview.misc import Checks
+import FedoraReview
+from FedoraReview import Helpers, Settings
+from FedoraReview.checks_class import Checks
 from FedoraReview.checks import R
 from bugzilla import Bugzilla
 from base import *
 
-class RCheckCaseChecks(unittest.TestCase):
-    def __init__(self, methodName='runCheck'):
-        unittest.TestCase.__init__(self, methodName)
+class TestRChecks(unittest.TestCase):
+
+    def setUp(self):
+        sys.argv = ['test-R-checks','-b','1234']
+        Settings.init()
+        FedoraReview.do_logger_setup(loglvl=logging.DEBUG)
         self.checks = None
         self.srpm = TEST_WORK_DIR + os.path.basename(R_TEST_SRPM)
         self.spec = TEST_WORK_DIR + os.path.basename(R_TEST_SPEC)
         self.source = TEST_WORK_DIR + os.path.basename(R_TEST_SRC)
-        
-    def setUp(self):
         if not os.path.exists(TEST_WORK_DIR):
             os.makedirs(TEST_WORK_DIR)
         helper = Helpers()
-        helper.set_work_dir(TEST_WORK_DIR)
-        helper._get_file(R_TEST_SRPM)
-        helper._get_file(R_TEST_SPEC)
-        helper._get_file(R_TEST_SRC)
+        helper._get_file(R_TEST_SRPM, TEST_WORK_DIR)
+        helper._get_file(R_TEST_SPEC, TEST_WORK_DIR)
+        helper._get_file(R_TEST_SRC, TEST_WORK_DIR)
         del helper
 
     def test_all_checks(self):
         ''' Run all automated review checks'''
         print('Setup Checks')
-        self.checks = Checks(None, spec_file=self.spec, srpm_file=self.srpm)
+        self.checks = Checks(self.spec, self.srpm)
         print('Running R Checks')
         self.checks.run_checks(writedown=False)
         for check in self.checks.checks:
@@ -64,5 +64,7 @@ class RCheckCaseChecks(unittest.TestCase):
                 result = check.get_result()
                 self.assertNotEqual(result[1:2], '!')
 
-suite = unittest.TestLoader().loadTestsFromTestCase(RCheckCaseChecks)
-unittest.TextTestRunner(verbosity=2).run(suite)
+
+if __name__ == '__main__':
+    suite = unittest.TestLoader().loadTestsFromTestCase(TestRChecks)
+    unittest.TextTestRunner(verbosity=2).run(suite)
