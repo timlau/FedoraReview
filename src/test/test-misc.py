@@ -20,7 +20,6 @@
 Unit tests for bugzilla bug handling
 '''
 
-
 import logging
 import sys
 import os.path
@@ -30,15 +29,19 @@ sys.path.insert(0,os.path.abspath('../'))
 import os
 import unittest
 import glob
-from FedoraReview import Helpers, Source, Sources, SRPMFile, SpecFile, Mock
-from FedoraReview.ReviewHelper import ReviewHelper
+from FedoraReview import Helpers, Source, Sources, SRPMFile, SpecFile, Mock, Settings
+from FedoraReview.checks_class import Checks
+from FedoraReview.name_bug import NameBug
 import FedoraReview
 from base import *
 
-class MiscTests(unittest.TestCase):
+class TestMisc(unittest.TestCase):
 
     def setUp(self):
-        self.reviewHelper = ReviewHelper()
+        sys.argv = ['fedora-review','-n','python-test','--prebuilt']
+        Settings.init()
+        FedoraReview.do_logger_setup(loglvl=logging.DEBUG)
+        self.log = FedoraReview.get_logger()
         self.helper = Helpers()
         self.srpm_file = os.path.join(os.path.abspath('.'),
                                       os.path.basename(TEST_SRPM))
@@ -48,14 +51,44 @@ class MiscTests(unittest.TestCase):
                                         os.path.basename(TEST_SRC))
         if not os.path.exists(TEST_WORK_DIR):
             os.makedirs(TEST_WORK_DIR)
-        self.helper.set_work_dir(TEST_WORK_DIR)
-        self.helper._get_file(TEST_SRPM)
+        self.helper._get_file(TEST_SRPM, TEST_WORK_DIR)
         #self.helper._get_file(TEST_SRC)
+
+    def test_source_file(self):
+        """ Test the SourceFile class """
+        bug = NameBug('python-test')
+        bug.find_urls()
+        bug.download_files()
+        spec = SpecFile(bug.spec_file)
+        sources = Sources(spec)
+        source = Source(sources, 'Source0', TEST_SRC)
+        # check that source exists and source.filename point to the right location
+        expected = os.path.abspath(
+                       './review/upstream/python-test-1.0.tar.gz')
+        self.assertEqual(source.filename, expected)
+        self.assertTrue(os.path.exists(self.source_file))
+        self.assertEqual(source.check_source_md5(),
+                         "289cb714af3a85fe36a51fa3612b57ad")
+
+    def test_sources(self):
+        bug = NameBug('python-test')
+        bug.find_urls()
+        bug.download_files()
+        checks = Checks(bug.spec_file, bug.srpm_file)
+        checks.add_check_classes()
+        checks.set_single_check('CheckSourceMD5')
+        self.assertEqual(len(checks.checks), 1)
+        check = checks.checks[0]
+        check.run()
+        result = check.get_result()
+        self.log.debug('result : ' + result.result)
+        if result.output_extra:
+           self.log.debug("Result extra text: " + result.output_extra)
+        self.assertEqual( result.result, 'pass')
 
     def test_spec_file(self):
         ''' Test the SpecFile class'''
-        self.helper.set_work_dir(Mock.get_builddir('SOURCES'))
-        self.helper._get_file(TEST_SPEC)
+        self.helper._get_file(TEST_SPEC, Mock.get_builddir('SOURCES'))
         spec = SpecFile(self.spec_file)
         # Test misc rpm values (Macro resolved)
         self.assertEqual(spec.name,'python-test')
@@ -89,24 +122,9 @@ class MiscTests(unittest.TestCase):
         else:
             self.assertTrue(False)
 
-
-
-    def test_source_file(self):
-        """ Test the SourceFile class """
-        sources = Sources()
-        source = Source(sources)
-        # download the upstream source file
-        source.set_work_dir(Mock.get_builddir('SOURCES'))
-        source.get_source(TEST_SRC)
-        # check that source exists and source.filename point to the right location
-        self.assertEqual(source.filename, self.source_file)
-        self.assertTrue(os.path.exists(self.source_file))
-        self.assertEqual(source.check_source_md5(), "289cb714af3a85fe36a51fa3612b57ad")
-
-    def test_srpm_file(self):
+    def test_srpm_mockbuild(self):
         """ Test the SRPMFile class """
-        self.helper.set_work_dir(os.path.abspath('.'))
-        self.helper._get_file(TEST_SRPM)
+        self.helper._get_file(TEST_SRPM, os.path.abspath('.'))
         srpm = SRPMFile(self.srpm_file)
         # install the srpm
         srpm.unpack()
@@ -114,17 +132,14 @@ class MiscTests(unittest.TestCase):
         src_dir = srpm.unpacked_src
         src_files = glob.glob(os.path.expanduser(src_dir) + '/*')
         src_files = [os.path.basename(f) for f in  src_files]
-        expected = 'python-test-1.0.tar.gz'
-        self.assertTrue(expected in src_files)
+        self.assertTrue('python-test-1.0.tar.gz' in src_files)
         print "Starting mock build (patience...)"
-        srpm.build(silence=True)
+        srpm.mockbuild(silence=True)
         self.assertTrue(srpm.is_build)
-        # Retrieve the list of files in the mock folder and below
         rpms = glob.glob(os.path.join(Mock.resultdir,
                                       'python-test-1.0-1*noarch.rpm'))
         self.assertTrue(len(rpms)==1)
 
-suite = unittest.TestLoader().loadTestsFromTestCase(MiscTests)
-sys.argv.extend(['-b','1234'])
-FedoraReview.do_logger_setup(loglvl=logging.DEBUG)
-unittest.TextTestRunner(verbosity=2).run(suite)
+if __name__ == '__main__':
+    suite = unittest.TestLoader().loadTestsFromTestCase(TestMisc)
+    unittest.TextTestRunner(verbosity=2).run(suite)
