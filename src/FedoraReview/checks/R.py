@@ -5,7 +5,7 @@
 import re
 import os
 import urllib
-from FedoraReview.check_base import LangCheckBase
+from FedoraReview import LangCheckBase
 
 
 class RCheckBase(LangCheckBase):
