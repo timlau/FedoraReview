@@ -227,3 +227,6 @@ class ReviewJSONEncoder(JSONEncoder):
                 ret.pop(rem)
 
         return ret
+
+# vim: set expandtab: ts=4:sw=4:
+

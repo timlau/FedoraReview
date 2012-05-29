@@ -448,3 +448,5 @@ class CheckNoArch(JavaCheckBase):
         self.url = 'https://fedoraproject.org/wiki/Packaging:Java'
         self.automatic = False
         self.type = 'SHOULD'
+
+# vim: set expandtab: ts=4:sw=4:

@@ -156,3 +156,5 @@ class ReviewBug(Helpers):
             if self.spec_file and self.srpm_file:
                 return True
         return False
+
+# vim: set expandtab: ts=4:sw=4:
