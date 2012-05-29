@@ -37,7 +37,7 @@ from base import *
 class TestChecks(unittest.TestCase):
 
     def setUp(self):
-        FedoraReview.do_logger_setup(loglvl=logging.INFO)
+        FedoraReview.do_logger_setup()
         sys.argv = ['test-checks','-b','1234']
         Settings.init()
         if not os.path.exists(TEST_WORK_DIR):
