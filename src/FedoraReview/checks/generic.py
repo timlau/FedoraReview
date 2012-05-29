@@ -29,7 +29,7 @@ import fnmatch
 import shutil
 
 from FedoraReview import Helpers, get_logger, TestResult, Attachment,\
-    Settings, Mock
+    Settings, Mock, ReviewDirs
 
 
 class CheckBase(Helpers):
@@ -53,8 +53,18 @@ class CheckBase(Helpers):
         self.log = get_logger()
         self.attachments = []
 
+    def __eq__(self, other):
+       return self.__class__.__name__.__eq__(other)
+
+    def __ne__(self, other):
+       return self.__class__.__name__.__ne__(other)
+
+    def __hash__(self):
+        return self.__class__.__name__.__hash__()
+
     def run(self):
-        raise NotImplementedError()
+        ''' By default, a manual test returning 'pending'.'''
+        self.set_passed('pending')
 
     def set_passed(self, result, output_extra=None):
         '''
@@ -391,9 +401,9 @@ class CheckSourceMD5(CheckBase):
             text = ''
             all_sources_passed = True
             for source in sources:
-                local = self.base.srpm.check_source_md5(source.filename)
+                local = self.srpm.check_source_md5(source.filename)
                 upstream = source.check_source_md5()
-                text += '%s :\n' % source.filename
+                text += source.filename + ' :\n'
                 text += '  MD5SUM this package     : %s\n' % local
                 text += '  MD5SUM upstream package : %s\n' % upstream
                 if local != upstream:
@@ -405,7 +415,7 @@ class CheckSourceMD5(CheckBase):
                    text += 'However, diff -r shows no differences\n'
                    msg = 'MD5sum differs but diff -r is OK'
                 else:
-                   p = os.path.join(self.sources.work_dir, 'diff.txt')
+                   p = os.path.join(ReviewDirs.root(), 'diff.txt')
                    with open(p, 'w') as f:
                        f.write(diff)
                    text += 'diff -r also reports differences\n'
@@ -683,7 +693,8 @@ class CheckLicenseField(CheckBase):
                 cmd = 'licensecheck -r %s' % source_dir
                 out = self._run_cmd(cmd)
                 if out:
-                    filename = '%s/licensecheck.txt' % self.sources.work_dir
+                    filename = os.path.join(ReviewDirs.root(),
+                                            'licensecheck.txt')
                     stream = open(filename, 'w')
                     stream.write(out)
                     stream.close()
@@ -1332,7 +1343,7 @@ class CheckSourceUrl(CheckBase):
         passed = True
         output = ''
         for source in self.sources.get_all():
-            if source.URL:  # this source should have an upstream file
+            if not source.url.startswith('file:'):
                 if not source.downloaded:
                     passed = False
                     output += '%s\n' % source.URL

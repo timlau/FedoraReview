@@ -28,7 +28,7 @@ import os.path
 sys.path.insert(0,os.path.abspath('../'))
 import unittest
 import FedoraReview
-from FedoraReview import Helpers
+from FedoraReview import Helpers, Settings
 from FedoraReview.checks_class import Checks
 from FedoraReview.ReviewHelper import ReviewHelper
 from FedoraReview.checks import R
@@ -46,10 +46,9 @@ class RCheckCaseChecks(unittest.TestCase):
         if not os.path.exists(TEST_WORK_DIR):
             os.makedirs(TEST_WORK_DIR)
         helper = Helpers()
-        helper.set_work_dir(TEST_WORK_DIR)
-        helper._get_file(R_TEST_SRPM)
-        helper._get_file(R_TEST_SPEC)
-        helper._get_file(R_TEST_SRC)
+        helper._get_file(R_TEST_SRPM, TEST_WORK_DIR)
+        helper._get_file(R_TEST_SPEC, TEST_WORK_DIR)
+        helper._get_file(R_TEST_SRC, TEST_WORK_DIR)
         del helper
 
     def test_all_checks(self):

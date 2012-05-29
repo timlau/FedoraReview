@@ -42,23 +42,22 @@ x = Pass
 
 """
 
-
-
 class Checks(object):
-    def __init__(self, spec_file, srpm_file, tests=None):
+    ''' Interface class to load, select and run checks. '''
+    def __init__(self, spec_file, srpm_file):
+        ''' Create a Checks set. srpm_file and spec_file are required,
+        unless invoked from ChecksLister.
+        '''
         self.checks = []
         self.ext_checks = []
         self._results = {'PASSED': [], 'FAILED': [], 'NA': [], 'USER': []}
+        self.srpm = None
+        self.spec=None
         if spec_file:
             self.spec = SpecFile(spec_file)
-        else:
-            self.spec = None
-        self.sources = Sources()
-        self.log = get_logger()
-        if srpm_file:
+            self.sources = Sources(self.spec)
             self.srpm = SRPMFile(srpm_file, self.spec)
-        else:
-            self.srpm = None
+        self.log = get_logger()
         self.plugins = load('FedoraReview.checks')
         self.add_check_classes()
 
@@ -70,10 +69,15 @@ class Checks(object):
         for module in self.plugins:
             objs = module.__dict__
             for mbr in sorted(objs):
-                if 'Check' in mbr and not mbr.endswith('Base'):
-                    obj = objs[mbr]
-                    self.log.debug('Add module: %s' % mbr)
-                    self.add(obj)
+                if not 'Check' in mbr:
+                    continue
+                if  mbr.endswith('Base'):
+                    continue
+                if mbr in self.checks:
+                    continue
+                obj = objs[mbr]
+                self.log.debug('Add module: %s' % mbr)
+                self.add(obj)
 
         ext_dirs = []
         if "REVIEW_EXT_DIRS" in os.environ:
@@ -99,15 +103,6 @@ class Checks(object):
         fd.close()
         for line in lines:
             output.write(line)
-
-    def list_checks(self):
-        """ List all the checks available. """
-        for ext in self.ext_checks:
-            print ext
-        for test in self.checks:
-            print test.__class__.__name__, ' -- ', test.text
-        for c in self.get_checks():
-            print c
 
     def exclude_checks(self, exclude_arg):
         for c in [l.strip() for l in exclude_arg.split(',')]:
@@ -136,7 +131,7 @@ class Checks(object):
 
     def get_checks(self):
         c = self.ext_checks
-        c.extend([t.__class__.__name__ for t in self.checks])
+        c.extend([t.name for t in self.checks])
         return c
 
     def run_checks(self, output=sys.stdout, writedown=True):
@@ -165,27 +160,23 @@ class Checks(object):
                 deprecated.extend(test.deprecates)
 
         for test in self.checks:
-            if test.is_applicable() and test.__class__.__name__ \
-                        not in deprecated:
-                if test.automatic:
-                    test.run()
-                else:
-                    test.state = 'pending'
-
+            if test.is_applicable() and test.name not in deprecated:
+                test.run()
                 result = test.get_result()
                 results.append(result)
                 attachments.extend(result.attachments)
                 self.log.debug('Running check : %s %s [%s] ' % (
-                    test.__class__.__name__,
-                    " " * (30 - len(test.__class__.__name__)),
+                    test.name,
+                    " " * (30 - len(test.name)),
                     test.state))
                 if result:
                     if result.type == 'MUST' and result.result == "fail":
                         issues.append(result)
 
         if writedown:
+            key_getter = attrgetter('group', 'type', 'name')
             self.__show_output(output,
-                               sorted(results, key=attrgetter('group', 'type', 'name')),
+                               sorted(results, key=key_getter),
                                issues,
                                attachments)
 
@@ -216,5 +207,18 @@ class Checks(object):
         for plugin in self.ext_checks:
             output.write("%s version: %s\n" % (plugin.plugin_path,
                                                plugin.version))
+
+
+class ChecksLister(Checks):
+    """ A Checks instance only capable of listing checks. """
+    def __init__(self):
+        Check.__init__(self,None, None)
+
+    def list(self):
+        """ List all the checks available. """
+        for ext in self.ext_checks:
+            print ext
+        for test in self.checks:
+            print test.name, ' -- ', test.text
 
 # vim: set expandtab: ts=4:sw=4:

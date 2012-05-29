@@ -20,6 +20,8 @@
 Tools for helping Fedora package reviewers
 '''
 
+import argparse
+import grp
 import subprocess
 import logging
 from subprocess import call, Popen, PIPE, STDOUT
@@ -112,6 +114,25 @@ def do_logger_setup(logroot=LOG_ROOT, logfmt='%(message)s',
     logger.addHandler(handler)
     return handler
 
+class ReviewDirs(object):
+    SRPM_SRC          = 'review/srpm'
+    SRPM_UNPACKED     = 'review/srpm-unpacked'
+    UPSTREAM          = 'review/upstream'
+    UPSTREAM_UNPACKED = 'review/upstream-unpacked'
+
+    @staticmethod
+    def get_dir(dir, keep_old=False):
+        dir = os.path.abspath(dir)
+        if os.path.exists(dir) and not keep_old:
+            get_logger().debug("Clearing temporary dir " + dir)
+            shutil.rmtree(dir)
+        os.makedirs(dir)
+        return dir
+
+    @staticmethod
+    def root():
+        return os.path.abspath('.')
+
 
 class FedoraReviewError(Exception):
     """ General Error class for fedora-review. """
@@ -123,6 +144,12 @@ class FedoraReviewError(Exception):
     def __str__(self):
         """ Represent the error. """
         return repr(self.value)
+
+
+class ConfigError(FedoraReviewError):
+    def __init__(self, what):
+        FedoraReviewError.__init__(self, 'Configuration error: ' + what)
+
 
 class _Settings(object):
     """
@@ -147,17 +174,6 @@ class _Settings(object):
             setattr(self, key, value)
         self._dict = self.defaults
         self.log=get_logger()
-        self._get_mock_options()
-
-    def _get_mock_options(self):
-        ''' read mock configuration, needed for root. '''
-        with open('/etc/mock/default.cfg') as f:
-            config = f.read()
-        config_opts= {}
-        exec config
-        self.mock_config_options = config_opts
-        self.mock_root = config_opts['root']
-
 
     def __getitem__(self, key):
         hash = self._get_hash(key)
@@ -184,6 +200,96 @@ class _Settings(object):
                 self.parser.set(PARSER_SECTION, name, value)
             else:
                 self.parser.set(PARSER_SECTION, name, self._dict[name])
+
+    def init(self):
+        ''' Delayed setup, to be called when sys.argv is ok...'''
+
+        def _check_mock_grp():
+            try:
+                mock_gid = grp.getgrnam('mock')[2]
+                if not mock_gid in os.getgroups():
+                    raise ConfigError( 'Not in mock group, see manpage')
+            except:
+                raise ConfigError('No mock group - mock not installed?')
+
+        if hasattr(self, 'init_done'):
+             return
+
+        parser = argparse.ArgumentParser(
+                    description='Review a package using Fedora Guidelines',
+                    add_help=False)
+        mode =  parser.add_argument_group('Operation mode - one is required')
+        modes =  mode.add_mutually_exclusive_group(required=True)
+        optional =  parser.add_argument_group('General options')
+        bz_only = parser.add_argument_group(
+                     'Only to be used with bugzilla.redhat.com i. e., --bug')
+        modes.add_argument('-b', '--bug', metavar='<bug>',
+                    help='Operate on fedora bugzilla using its bug number.')
+        modes.add_argument('-n', '--name', metavar='<name>',
+                    help='Operate on local files <name>.spec &'
+                         ' <name>*.src.rpm located in work dir.')
+        modes.add_argument('-u', '--url', default = None, dest='url',
+                    metavar='<url>',
+                     help='Operate on another bugzilla, using complete'
+                          ' url to bug page.')
+        modes.add_argument('-d','--display-checks', default = False,
+                    action='store_true',dest='list_checks',
+                    help='List all available checks.')
+        modes.add_argument('-V', '--version', default = False,
+                    action='store_true',
+                    help='Display version information and exit.')
+        optional.add_argument('-c','--cache', action='store_true', dest='cache',
+                    help = 'Do not redownload files from bugzilla,'
+                           ' use the ones in the cache.')
+        optional.add_argument('-g','--grab', default = False,
+                    action='store_true',dest='grab',
+                    help='Display urls and exit')
+        optional.add_argument('-h','--help', action='help',
+                    help = 'Display this help message')
+        optional.add_argument('-m','--mock-config', metavar='<config>',
+                    default = 'fedora-rawhide-i386', dest='mock_config',
+                    help='Configuration to use for the mock build,'
+                             ' defaults to fedora-rawhide-i686.')
+        optional.add_argument('--no-report',  action='store_true',
+                    dest='noreport',
+                    help='Do not make a review report.')
+        optional.add_argument('--no-build', action='store_true',
+                    dest='nobuild',
+                    help = 'Do not rebuild the srpm, use currently'
+                           ' built in mock.')
+        optional.add_argument('-o','--mock-options', metavar='<mock options>',
+                    default = '--no-cleanup-after', dest='mock_options',
+                    help='Options to specify to mock for the build,'
+                         ' defaults to --no-cleanup-after')
+        optional.add_argument('-p', '--prebuilt',  action='store_true',
+                    dest='prebuilt', help='When using -n <name>, use'
+                    ' prebuilt rpms in current directory.')
+        optional.add_argument('-s', '--single',
+                    default='', dest='single',
+                    metavar='<test>',
+                    help='Single test to run, as named by --display-checks.')
+        optional.add_argument('-v', '--verbose',  action='store_true',
+                    help='Show more output.')
+        optional.add_argument('-x', '--exclude',
+                    default='', dest='exclude',
+                    metavar='"test,..."',
+                    help='Comma-separated list of tests to exclude.')
+        bz_only.add_argument('-a','--assign', action='store_true',
+                    help = 'Assign the bug and set review flags')
+        bz_only.add_argument('-l', '--login', action='store_true',
+                    default=False,
+                    help='Login into Fedora Bugzilla before starting')
+        bz_only.add_argument('--other-bz', default=None,
+                    metavar='<bugzilla url>', dest='other_bz',
+                    help='Alternative bugzilla URL')
+        bz_only.add_argument('-i','--user', dest='user',
+                    metavar="<user id>",
+                    help = 'The bugzilla user Id')
+        args = parser.parse_args()
+        _check_mock_grp()
+        args.workdir = os.getcwd()
+        self.add_args(args)
+        self.init_done = True
 
     def add_args(self, args):
         """ Load all command line options in args. """
@@ -219,10 +325,17 @@ class _Mock(object):
     """ Some basic operations on the mock chroot env, a singleton. """
 
     def __init__(self):
-       self.log = get_logger()
+        self.log = get_logger()
+
+        ''' Read mock configuration to get mock root. '''
+        config_opts= {}
+        with open('/etc/mock/default.cfg') as f:
+            config = f.read()
+        exec config
+        self.mock_root = config_opts['root']
 
     def _get_dir(self, subdir=None):
-        p = os.path.join( '/var/lib/mock', Settings.mock_root )
+        p = os.path.join( '/var/lib/mock', self.mock_root )
         return os.path.join(p, subdir) if subdir else p
 
     def get_resultdir(self):
@@ -332,22 +445,8 @@ Mock = _Mock()
 class Helpers(object):
 
     def __init__(self):
-        self.work_dir = 'work/'
         self.log = get_logger()
-        self.mock_options = Settings.mock_options
         self.rpmlint_output = []
-
-    def set_work_dir(self, work_dir):
-        work_dir = os.path.abspath(os.path.expanduser(work_dir))
-        if not os.path.exists(work_dir):
-            os.makedirs(work_dir)
-        if not work_dir[-1] == "/":
-            work_dir += '/'
-        self.work_dir = work_dir
-
-    def get_mock_dir(self):
-        mock_dir = '/var/lib/mock/%s/result' % Settings.mock_config
-        return mock_dir
 
     def _run_cmd(self, cmd):
         self.log.debug('Run command: %s' % cmd)
@@ -373,53 +472,44 @@ class Helpers(object):
         else:
             raise FedoraReviewError("Bad md5sum output: " + out)
 
-    def _get_file(self, link):
+    def _get_file(self, link, directory):
         url = urlparse(link)
         fname = os.path.basename(url.path)
-        if os.path.exists(os.path.join(self.work_dir, fname)) \
+        path = os.path.join(directory, fname)
+        if os.path.exists(path) \
             and Settings.cache:
                  logging.debug('Using cached source: ' + fname)
-                 return  os.path.join(self.work_dir, fname)
+                 return  path
 
-        self.log.debug("  --> %s : %s" % (self.work_dir, link))
-
-        path = os.path.join( self.work_dir, fname)
+        self.log.debug("  --> %s : %s" % (directory, link))
         try:
             file, headers = urllib.urlretrieve(link, path)
         except IOError, err:
-            raise FedoraReviewError('Getting error "%s" while trying to write file: %s'
-                % (err, path))
+            raise FedoraReviewError('Getting error "%s" while trying'
+                                    ' to write file: %s' % (err, path))
         return path if os.path.exists(path) else None
 
 
 class Sources(object):
-    """ Store Source object for each source in Spec file"""
-    def __init__(self):
-        self._sources = {}
-        self.work_dir = None
+    """ Container for Source objects, reflecting SourceX: lines
+    int the spec file.
+    """
+
+    def __init__(self, spec):
         self.log = get_logger()
         self._sources_files = None
+        self._sources = {}
+        for tag, url in spec.get_sources('Source').iteritems():
+            self.add(tag, url)
 
-    def set_work_dir(self, work_dir):
-        self.work_dir = work_dir
 
-    def add(self, tag, source_url):
+    def add(self, tag, url):
         """Add a new Source Object based on spec tag and URL to source"""
-        if urlparse(source_url)[0] != '':  # This is a URL, Download it
-            self.log.info("Downloading (%s): %s" % (tag, source_url))
-            source = Source(self)
-            source.set_work_dir(self.work_dir)
-            source.get_source(source_url )
-        else:  # this is a local file in the SRPM
-            self.log.info("No upstream for (%s): %s" % (tag, source_url))
-            source = Source(self, filename=source_url)
-            source.set_work_dir(self.work_dir)
-            ## When sources are not remote we need to extract them from
-            ## the srpm.
+        source = Source(self, tag, url)
+        self._sources[tag] = source
+        if source.local:
             print 'The source %s in the srpm can not be retrieved. '\
             'This is a corner case not supported yet.' % source_url
-            return
-        self._sources[tag] = source
 
     def get(self, tag):
         """ Get a single Source object"""
@@ -480,19 +570,37 @@ as sources' % source.filename)
 
 
 class Source(Helpers):
-    def __init__(self, sources, filename=None):
+    ''' A source defined in the specfile.
+    Attributes:
+         - url complete url, possibly file://
+         - filename: local filename
+         - tag: as defined in spefile e. g., 'Source0'
+         - sources: container holding this source.
+         - local: True if the source is just a file, false
+           if it's a downloaded url
+    '''
+    def __init__(self, sources, tag, url):
         Helpers.__init__(self)
-        self.filename = filename
         self.sources = sources
-        self.downloaded = False
-        self.URL = None
-
-    def get_source(self, URL):
-        self.URL = URL
-        self.filename = self._get_file(URL)
-        if self.filename and os.path.exists(self.filename):
-            self.downloaded = True
-            self.extract()
+        self.tag = tag
+        self.downloaded = True
+        if urlparse(url)[0] != '':  # This is a URL, Download it
+            self.url = url
+            self.local = False
+            self.log.info("Downloading (%s): %s" % (tag, url))
+            try:
+                dir = ReviewDirs.get_dir(ReviewDirs.UPSTREAM)
+                self.filename = self._get_file(self.url, dir)
+            except:
+                self.log.debug('Download error on ' + url,
+                                exc_info=True)
+                self.log.warning('Cannot download url: ' + url)
+                self.downloaded = False
+        else:  # this is a local file in the SRPM
+            self.log.info("No upstream for (%s): %s" % (tag, url))
+            self.filename = url
+            self.url = 'file://' + os.path.abspath(url)
+            self.local = True
 
     def check_source_md5(self):
         self.log.info("Checking source md5 : %s" % self.filename)
@@ -500,43 +608,25 @@ class Source(Helpers):
             sum = self._md5sum(self.filename)
             return sum
         else:
-            raise FedoraReviewError("upstream source not found")
+            raise FedoraReviewError(self.tag +
+                                    ": upstream source not found")
 
     def extract(self ):
         """ Extract the sources in the mock chroot so that it can be
         destroy easily by mock. Prebuilt sources are extracted to
         temporary directory in current dir.
         """
-        if Settings.prebuilt:
-            self.extract_dir = 'review-tmp-src'
-            if os.path.exists(self.extract_dir):
-                self.log.debug("Clearing temporary source dir " +
-                                self.extract_dir)
-                shutil.rmtree(self.extract_dir)
-                os.mkdir(self.extract_dir)
-        else:
-            self.extract_dir = Mock.get_builddir('SOURCES')
-        self.log.debug("Extracting %s in %s " % (self.filename,
-                       self.extract_dir))
-        if not os.path.exists(self.extract_dir):
-            try:
-                os.makedirs(self.extract_dir)
-            except IOError, err:
-                self.log.debug(err)
-                print "Could not generate the folder %s" % self.extract_dir
+        self.extract_dir = \
+            ReviewDirs.get_dir(ReviewDirs.UPSTREAM_UNPACKED)
         rpmdev_extract(self.extract_dir, self.filename, self.log)
 
     def get_source_topdir(self):
         """
-        Return the top directory of the unpacked source. Fails for
-        archives not including the top directory. FIXME
+        Return the top directory of the unpacked source.
         """
         if not hasattr(self, 'extract_dir'):
             self.extract()
-        topdir = glob.glob(self.extract_dir + '/*')
-        if len(topdir) > 1:
-              print "Returning illegal topdir. Bad things ahead"
-        return os.path.basename(topdir[0])
+        return self.extract_dir
 
 class SRPMFile(Helpers):
 
@@ -559,12 +649,7 @@ class SRPMFile(Helpers):
         if hasattr(self, 'unpacked_src'):
             return;
 
-        wdir = os.path.realpath(os.path.join(Settings.workdir,
-                                             'review-srpm-unpack'))
-        if os.path.exists(wdir):
-             shutil.rmtree(wdir)
-
-        os.mkdir(wdir)
+        wdir = ReviewDirs.get_dir(ReviewDirs.SRPM_UNPACKED)
         oldpwd = os.getcwd()
         os.chdir(wdir)
         src = src if src else self.filename
@@ -622,10 +707,11 @@ class SRPMFile(Helpers):
         :kwarg silence, boolean to set/remove the output from the mock
             build.
         """
+        #raise FedoraReviewError("Why build?")
         if not force and (self.is_build or Settings.nobuild):
             if Mock.have_cache_for(self.spec.name):
                 self.log.info('Using already built rpms.')
-                return SRPMFile.BUILD_OK
+                return SRPMFile.BUILD_OK == 0 or SRPMFile.BUILD_OK == -2
             else:
                 self.log.info(
                      'No valid cache, building despite --nobuild.')
@@ -663,7 +749,7 @@ class SRPMFile(Helpers):
 
     def check_source_md5(self, path):
         filename = os.path.basename(path)
-        self.unpack()
+        self.unpack(self.filename)
         if not hasattr(self, 'unpacked_src'):
             self.log.warn("check_source_md5: Cannot unpack (?)")
             return "ERROR"
