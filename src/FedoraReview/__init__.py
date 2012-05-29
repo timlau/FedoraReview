@@ -26,7 +26,6 @@ from subprocess import call, Popen, PIPE, STDOUT
 import os.path
 import re
 import glob
-import requests
 import sys
 import shlex
 import shutil
@@ -57,9 +56,6 @@ PARSER_SECTION = 'review'
 CONFIG_FILE    = '.config/fedora-review/settings'
 SYS_PLUGIN_DIR = "/usr/share/fedora-review/plugins:%s"
 MY_PLUGIN_DIR  = "~/.config/fedora-review/plugins"
-
-# see ticket https://fedorahosted.org/FedoraReview/ticket/43
-requests.decode_unicode=False
 
 def rpmdev_extract(working_dir, archive, log):
     """
