@@ -2,4 +2,8 @@
 - refactor SRPMFile, Source and related classes so that they really
   contain functions related only to them (i.e. SRPMFile.get_files_rpms)
 - automate some checks that can be automated (mostly generic ones)
-- 
+- Add examples to manpage.
+- Remove -W/--workdir switch, obsoleted
+- Revert NamingGuidelines test, rename to 'name proper chars', add
+  manual for NamingGuidelines
+-

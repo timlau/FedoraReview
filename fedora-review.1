@@ -4,10 +4,13 @@ fedora-review \- Automatically review RPM packages for Fedora.
 
 .SH SYNOPSIS
 .B fedora-review
-[other options] -b <bug number> [-p]
+[options] [bugzilla options] -b <bug>
 .br
 .B fedora-review
-[other options] -n <package name>
+[options] [--prebuilt] -n <package name>
+.br
+.B fedora-review
+[options] -u <url>
 
 .SH DESCRIPTION
 
@@ -18,12 +21,20 @@ We have at the moment checks for C/C++, R, Java and Perl packages.
 .SH USAGE
 This program runs a number of checks for packages in Fedora.
 .HP
+.TP 0
 fedora-review -b <bug number>
+.br
+fedora-review -u <url>
+.br
+.IP "" 4
+Will download the SPEC & SRPM files from the Bugzilla report,
+build them in mock, run a number of tests and generate a report.
+The  report will be opened in editor along with the spec file, so
+the things not automated can be reviewed manually.
 
-It will download the SPEC & SRPM files from the Bugzilla report and
-build them in mock and run a number of test and generate a report
-there will be opened in editor along with the spec file, so the things
-not automated can be reviewed manually.
+Not all bugzillas support -b option. The -u option only allows for
+downloads and is not as reliable as -b, but works in many cases.
+See  --url usage notes below.
 
 .HP
 fedora-review -n <package name>
@@ -42,86 +53,92 @@ for the build to work. Run as root:
 To assign bugs in bugzilla automatically you will first have to login
 into bugzilla (--login). This will create a bugzilla cookie so you
 don't have to login every time.
-
-.SH OPTIONS
+.SH MODE OPTIONS - one is required
 .TP 4
-.B -b / --bug
-Identifier of the ticket on the bugzilla where is the package to review.
-.sp
+.B -b, --bug <bug nr>
+Run against Fedora bugzilla at bugzilla.redhat.com, using the bugzilla
+bug number
 .TP 4
-.B -n / --name
-Runs the checks against the named spec and source rpm located in the current working directory.
-.sp
+.B -n, --name <name>
+Runs the checks against the named spec and source rpm located in the
+current working directory. The files are expected to hane the names
+<name>.spec and <name>*.src.rpm.
 .TP 4
-.B -a / --assign
-Assign the Fedora bugzilla ticket to yourself.
-.sp
+.B -u url, --url <url>
+Fetch data from given url, typically another bugzilla instance without
+xmlrpc support such as rpmfusion. For more modern sites with xmlrpc
+support, first try --bug <bug nr> --other-bz <url>.
 .TP 4
-.B -c | --cache
+.B  -d, -display-checks
+List all available checks, usable as arguments to --exclude and
+--single
+.TP 4
+.B  -V, --version
+Show version info
+.SH GENERAL OPTIONS
+.TP 4
+.B -c, --cache
 Do not redownload the files from bugzilla, use the local one.
-.sp
 .TP 4
-.B  -d / --display-checks
-List all the checks available
-.sp
-.TP 4
-.B -l / --login "Fedora bugzilla user id"
-Login into Fedora Bugzilla before starting.
-.sp
-.TP 4
-.B -m | --mock-config configuration
+.B -m, --mock-config <configurationi>
 Specify which mock config to use, one of the files in /etc/mock,
 with the .cfg suffix stripped
-.sp
 .TP 4
-.B -o /--mock-options "options..."
-Passes options onto mock for the build. Defaults to
---no-cleanup-after, you might want this along with other options
+.B -o, --mock-options "options..."
+Mock options the build. Defaults to --no-cleanup-after, you might
+want this along with other options
 you provide.
-.sp
 .TP 4
 .B --no-report
 Do not generate the review report.
-.sp
 .TP 4
-.B --nobuild
+.B --no-build
 Do not rebuild the source rpm, use the one currently built in mock.
-.sp
 .TP 4
-.B --other-bz
-URL for another bugzilla.
-.sp
+.B -p, --prebuilt
+When using -n <name>, use prebuilt rpms in current directory instead
+of building new ones in mock
 .TP 4
-.B -p / --prebuilt
-When using -n <name>, use prebuilt rpms in current directory instead of building new ones in mock
-.sp
-.TP 4
-.B -s test / --single test
+.B -s test, --single test
 Run a single test, as listed by --list
-.sp
 .TP 4
-.B -u userid, --user userid
-The Fedora Bugzilla userid
-.sp
-.TP 4
-.B  -v / --verbose
+.B  -v, --verbose
 Provides a more detailed output of what's going on.
-.sp
 .TP 4
-.B -w / --workdir
+.B -w, --workdir
 Specify in which working directory to work.
-.sp
 .TP 4
-.B -x  "test1, test2, ..." / --exclude "test1, test2, ..."
+.B -x  "test1, test2, ...", --exclude "test1, test2, ..."
 Comma-separated list of test(s) to exclude, as listed by --list
-.sp
-
+.SH BUGZILLA OPTIONS
+.TP 4
+.B -a, --assign
+Assign the Fedora bugzilla ticket to yourself.
+Only known to work with bugzilla.redhat.com
+.TP 4
+.B -l, --login "Fedora FAS user id"
+.TP 4
+Login into Fedora Bugzilla before starting.
+.B -o url,--other-bz url
+URL for another bugzilla.
+.TP 4
+.B -i id, --user userid
+The bugzilla user id.
+.SH --url usage notes.
+The --url option tries to retrieve the URL:s by scanning the page.
+In a first attempt links ending in '.spec' and 'src.rpm' are
+looked for. Such links will be found. In second round, --url
+looks links prefixed with labels like srpm: and Spec URL:. Obviously
+this might fail as well as work. It might even pick up wrong links.
 .SH FILES
 .I $HOME/.config/fedora-review/settings
 .RS
 User configuration files for fedora-review
 .RE
-
+.I $HOME/.bugzillacookies
+.RS
+Persistent credentials setup when using --login.
+.RE
 .I /usr/share/fedora-review/plugins
 .RS
 System-wide external plugins directory

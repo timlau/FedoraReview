@@ -18,19 +18,22 @@
 '''
 Tools for helping Fedora package reviewers
 '''
-import re
 import getpass
-
+import logging
+import os.path
+import re
 import xmlrpclib
+
 from bugzilla import Bugzilla
 
-BZ_URL = 'https://bugzilla.redhat.com/xmlrpc.cgi'
+import FedoraReview
+from FedoraReview import Settings
+from abstract_bug import AbstractBug, SettingsError
 
-from FedoraReview import Helpers, get_logger, Settings
 
-
-class ReviewBug(Helpers):
-    """ This class handles interaction with bugzilla.
+class ReviewBug(AbstractBug):
+    """ This class handles interaction with bugzilla using
+    xmlrpc.
     """
 
     def __init__(self, bug, user=None, password=None):
@@ -40,39 +43,38 @@ class ReviewBug(Helpers):
         :kwarg password, the password associated with this account.
         be re-downloaded or not.
         """
-        Helpers.__init__(self)
+        AbstractBug.__init__(self)
         self.bug_num = bug
-        self.spec_url = None
-        self.srpm_url = None
-        self.spec_file = None
-        self.srpm_file = None
-        self.log = get_logger()
-        if Settings.other_bz:
-            self.bugzilla = Bugzilla(url=Settings.other_bz + '/xmlrpc.cgi')
-        else:
-            self.bugzilla = Bugzilla(url=BZ_URL)
+        bz_url = os.path.join(Settings.current_bz_url, 'xmlrpc.cgi')
+        self.bugzilla = Bugzilla(url=bz_url)
 
         self.log.info("Trying bugzilla cookies for authentication")
         self.user = user
         self.bug = self.bugzilla.getbug(self.bug_num)
 
-    def login(self, user):
+    def login(self, user, password=None):
         """ Handles the login of the user into bugzilla. Will ask for
-        password on the commandline
+        password on the commandline unless it's provided as argument.
         :arg user, the bugzilla username.
+        :arg password, bugzilla password.
         """
-        ret = self.bugzilla.login(user=user, password=getpass.getpass())
-        if ret > 0:
+        if not user:
+            raise SettingsError('--user required for --login')
+        if not password:
+            password=getpass.getpass()
+        ret = self.bugzilla.login(user=user, password=password)
+        if ret:
             self.log.info("You are logged in to bugzilla. "
                           "Credential cookies cached for future.")
+        else:
+            raise SettingsError("Can't login (bad password?)")
         self.user = user
         return True
 
-    def find_urls(self):
+    def do_find_urls(self):
         """ Reads the page on bugzilla, search for all urls and extract
         the last urls for the spec and the srpm.
         """
-        found = True
         if self.bug.longdescs:
             for cat in self.bug.longdescs:
                 body = cat['body']
@@ -90,12 +92,19 @@ class ReviewBug(Helpers):
                         elif ".src.rpm" in url:
                             self.srpm_url = url
         if not self.spec_url:
-            self.log.info('no spec file URL found in bug #%s' % self.bug_num)
-            found = False
+            raise BugError (
+                 'no spec file URL found in bug #%s' % self.bug_num)
         if not self.srpm_url:
-            self.log.info('no SRPM file URL found in bug #%s' % self.bug_num)
-            found = False
-        return found
+            raise BugError(
+                 'no SRPM file URL found in bug #%s' % self.bug_num)
+        return True
+
+    def get_location(self):
+        return Settings.bug
+
+    def check_settings(self):
+        if Settings.prebuilt:
+             raise SettingsError('--prebuilt and -b')
 
     def assign_bug(self):
         """ Assign the bug to the reviewer.
@@ -141,20 +150,5 @@ class ReviewBug(Helpers):
         stream.close
         self.add_comment("".join(lines))
 
-    def download_files(self):
-        """ Download the spec file and srpm extracted from the bug
-        report.
-        """
-        if not Settings.cache:
-            self.log.info('Downloading .spec and .srpm files')
-        found = True
-        if not self.spec_url or not self.srpm_url:
-            found = self.find_urls()
-        if found and self.spec_url and self.srpm_url:
-            self.spec_file = self._get_file(self.spec_url)
-            self.srpm_file = self._get_file(self.srpm_url)
-            if self.spec_file and self.srpm_file:
-                return True
-        return False
 
 # vim: set expandtab: ts=4:sw=4:

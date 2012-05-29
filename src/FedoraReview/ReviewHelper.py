@@ -1,6 +1,5 @@
 #!/usr/bin/python -tt
 #-*- coding: utf-8 -*-
-# vim: set expandtab: ts=4:sw=4:
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -17,10 +16,13 @@
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 # (C) 2011 - Tim Lauridsen <timlau@fedoraproject.org>
+'''
+Tools for helping Fedora package reviewers
+'''
 import argparse
 import glob
+import grp
 import logging
-import os.path
 import sys
 import os
 import subprocess
@@ -28,7 +30,18 @@ import errno
 
 import FedoraReview
 
-from FedoraReview import  Settings, FedoraReviewError
+from FedoraReview import Settings, FedoraReviewError, __version__, Mock
+from FedoraReview.bugz import ReviewBug
+from FedoraReview.url_bug import UrlBug
+from FedoraReview.name_bug import NameBug
+from FedoraReview.abstract_bug import SettingsError
+from FedoraReview.checks_class import Checks
+
+class ConfigError(FedoraReviewError):
+    def __init__(self, why):
+        FedoraReviewError.__init__(self, 'Configuration error: ' + why)
+from FedoraReview import get_logger, do_logger_setup, \
+    Settings, FedoraReviewError
 from FedoraReview.bugz import ReviewBug
 from FedoraReview.checks_class import Checks
 from FedoraReview import __version__
@@ -41,104 +54,133 @@ class ReviewHelper:
         self.checks = None
         self._init_settings()
         Settings.workdir = os.path.expanduser(Settings.workdir)
-        self.verbose = False
         self.log = FedoraReview.get_logger()
+        self.verbose = False
+        self.log = get_logger()
         self.outfile = None
         self.prebuilt = False
 
     def _init_settings(self):
-        parser = argparse.ArgumentParser(description='Review a Fedora Package')
-        parser.add_argument('-b', '--bug', metavar='[bug]',
-                    help='the bug number contain the package review')
-        parser.add_argument('-n', '--name', metavar='<name prefix>',
-                    help='Run on local <name prefix>.spec & <name prefix>*.src.rpm located in work dir')
-        parser.add_argument('-a','--assign', action='store_true',
-                    help = 'Assign the bug and set review flags')
-        parser.add_argument('-c','--cache', action='store_true', dest='cache',
-                    help = 'Do not redownload files from bugzilla, use the ones in the cache')
-        parser.add_argument('-d-','--display-checks', default = False,
+        def _check_some_args(args):
+            if not args.bug:
+               if args.user or args.assign or  args.other_bz:
+                    print( '--user, --assign and --other_bz'
+                           ' only works with -b')
+
+        def _check_mock_grp():
+             try:
+                 mock_gid = grp.getgrnam('mock')[2]
+                 if not mock_gid in os.getgroups():
+                     raise ConfigError('Not in mock group, see manpage')
+             except:
+                 raise ConfigError('No mock group - mock not installed?')
+
+
+        parser = argparse.ArgumentParser(
+                    description='Review a package using Fedora Guidelines',
+                    add_help=False)
+        mode =  parser.add_argument_group('Operation mode - one is required')
+        modes =  mode.add_mutually_exclusive_group(required=True)
+        optional =  parser.add_argument_group('General options')
+        bz_only = parser.add_argument_group(
+                     'Only to be used with bugzilla.redhat.com i. e., --bug')
+        modes.add_argument('-b', '--bug', metavar='<bug>',
+                    help='Operate on fedora bugzilla using its bug number.')
+        modes.add_argument('-n', '--name', metavar='<name>',
+                    help='Operate on local files <name>.spec &'
+                         ' <name>*.src.rpm located in work dir.')
+        modes.add_argument('-u', '--url', default = None, dest='url',
+                    metavar='<url>',
+                     help='Operate on another bugzilla, using complete'
+                          ' url to bug page.')
+        modes.add_argument('-d','--display-checks', default = False,
                     action='store_true',dest='list_checks',
-                    help='List all the checks available')
-        parser.add_argument('-l', '--login', action='store_true', default=False,
-                    help='Login into Fedora Bugzilla before starting')
-        parser.add_argument('-m','--mock-config', metavar='<config>',
-                    default = Settings.mock_config, dest='mock_config',
-                    help='Configuration to use for the mock build (Defaults to fedora-rawhide-i686)')
-        parser.add_argument('--no-report',  action='store_true', dest='noreport',
-                    help='Do not make a review report')
-        parser.add_argument('--nobuild', action='store_true', dest='nobuild',
-                    help = 'Do not rebuild the srpm, use currently build ones')
-        parser.add_argument('-o','--mock-options', metavar='<mock options>',
-                    default = Settings.mock_options, dest='mock_options',
-                    help='Options to specify to mock for the build (Defaults to None)')
-        parser.add_argument('--other-bz', default=None, metavar='[bugzilla url]', dest='other_bz',
-                    help='Alternative bugzilla URL')
-        parser.add_argument('-p', '--prebuilt',  action='store_true', dest='prebuilt',
-                    help='When using -n <name>, use prebuilt rpms in current directory')
-        parser.add_argument('-u', '--user', metavar='[userid]', default = Settings.bz_user,
-                    help='The Fedora Bugzilla userid')
-        parser.add_argument('-v', '--verbose',  action='store_true',
-                    help='Show more output')
-        parser.add_argument('-w', '--workdir',
-                    default=Settings.work_dir, metavar='[dir]',
-                    help='Work directory (default = ~/tmp/reviewhelper/')
-        parser.add_argument('-x', '--exclude',
-                    default=Settings.exclude, dest='exclude', metavar='[excluded tests]',
-                    help='Comma-separated list of tests to exclude')
-        parser.add_argument('-s', '--single',
-                    default=Settings.single, dest='single', metavar='[single test]',
-                    help='Single test to run, as named by --list-checks')
-        parser.add_argument('-V', '--version', default = False,
+                    help='List all available checks.')
+        modes.add_argument('-V', '--version', default = False,
                     action='store_true',
                     help='Display version information and exit.')
+        optional.add_argument('-c','--cache', action='store_true', dest='cache',
+                    help = 'Do not redownload files from bugzilla,'
+                           ' use the ones in the cache.')
+        optional.add_argument('-h','--help', action='help',
+                    help = 'Display this help message')
+        optional.add_argument('-m','--mock-config', metavar='<config>',
+                    default = Settings.mock_config, dest='mock_config',
+                    help='Configuration to use for the mock build,'
+                             ' defaults to fedora-rawhide-i686.')
+        optional.add_argument('--no-report',  action='store_true',
+                    dest='noreport',
+                    help='Do not make a review report.')
+        optional.add_argument('--no-build', action='store_true',
+                    dest='nobuild',
+                    help = 'Do not rebuild the srpm, use currently'
+                           ' built in mock.')
+        optional.add_argument('-o','--mock-options', metavar='<mock options>',
+                    default = Settings.mock_options, dest='mock_options',
+                    help='Options to specify to mock for the build,'
+                         ' defaults to --no-cleanup-after')
+        optional.add_argument('-p', '--prebuilt',  action='store_true',
+                    dest='prebuilt', help='When using -n <name>, use'
+                    ' prebuilt rpms in current directory.')
+        optional.add_argument('-s', '--single',
+                    default=Settings.single, dest='single',
+                    metavar='<test>',
+                    help='Single test to run, as named by --display-checks.')
+        optional.add_argument('-v', '--verbose',  action='store_true',
+                    help='Show more output.')
+        optional.add_argument('-C', '--workdir',
+                    default=Settings.workdir, dest='workdir', metavar='<dir>',
+                    help='Work directory, default current dir')
+        optional.add_argument('-x', '--exclude',
+                    default=Settings.exclude, dest='exclude',
+                    metavar='"test,..."',
+                    help='Comma-separated list of tests to exclude.')
+        bz_only.add_argument('-a','--assign', action='store_true',
+                    help = 'Assign the bug and set review flags')
+        bz_only.add_argument('-l', '--login', action='store_true',
+                    default=False,
+                    help='Login into Fedora Bugzilla before starting')
+        bz_only.add_argument('--other-bz', default=Settings.other_bz,
+                    metavar='<bugzilla url>', dest='other_bz',
+                    help='Alternative bugzilla URL')
+        bz_only.add_argument('-i','--user', dest='user',
+                    metavar="<user id>",
+                    help = 'The bugzilla user Id')
         args = parser.parse_args()
         args.workdir = os.path.abspath(os.path.expanduser(args.workdir))
         Settings.add_args(args)
+        _check_some_args(args)
+        _check_mock_grp()
 
     def __download_sources(self):
         self.checks.sources.set_work_dir(Settings.workdir)
-        sources = self.checks.spec.get_sources()
-        found = False
-        if sources:
-            found = True
-            for tag in sources:
-                if tag.startswith('Source'):
-                   self.checks.sources.add(tag, sources[tag])
-                   found = True
-        return found
+        sources = self.checks.spec.get_sources('Source')
+        for tag,src in sources.iteritems():
+             try:
+                 self.checks.sources.add(tag, sources[tag])
+             except:
+                 return False
+        return True
 
     def __do_report(self):
         ''' Create a review report'''
-        self.log.info('Getting .spec and .srpm Urls from bug report : %s' % Settings.bug)
-        # get urls
-        rc = self.bug.find_urls()
-        if not rc:
-            self.log.info('Cannot find any .spec and .srpm URLs in bugreport')
-            sys.exit(1)
-        self.log.debug("  --> Spec url : %s" % self.bug.spec_url)
-        self.log.debug("  --> SRPM url : %s" % self.bug.srpm_url)
-        # get the spec and SRPM file
-        rc = self.bug.download_files()
-        if not rc:
-            self.log.info('Cannot download .spec and .srpm')
-            sys.exit(1)
-        Settings.name = os.path.basename(self.bug.spec_file).rsplit('.',1)[0]
-        Settings.workdir = "%s/%s" % (Settings.workdir, Settings.bug)
-        self.__do_report_local(Settings.workdir)
 
-    def __do_report_local(self, file_dir):
-        ''' Create a review report on already downloaded .spec & .src.rpm'''
-        spec_filter = '%s/%s*.spec' % (file_dir, Settings.name)
-        srpm_filter = '%s/%s*.src.rpm' % (file_dir, Settings.name)
-        files_spec = glob.glob(spec_filter)
-        files_srpm = sorted(glob.glob(srpm_filter), reverse=True)
-        if files_spec and files_srpm:
-            self.__run_checks(files_spec[0], files_srpm[0])
-        else:
-            if not files_spec:
-                self.log.error('Cannot find : %s ' % spec_filter)
-            if not files_srpm:
-                self.log.error('Cannot find : %s ' % srpm_filter)
+        self.log.info('Getting .spec and .srpm Urls from : '
+                       + self.bug.get_location())
+        if Settings.bug:
+            Settings.workdir = os.path.join(Settings.workdir,
+                                            Settings.bug)
+        self.log.debug("  --> Working dir: " + Settings.workdir)
+        if not self.bug.find_urls():
+            self.log.error( 'Cannot find .spec or .srpm URL(s)')
+            sys.exit(1)
+
+        if not self.bug.download_files():
+            self.log.error('Cannot download .spec and .srpm')
+            sys.exit(1)
+
+        Settings.name = self.bug.get_name()
+        self.__run_checks(self.bug.spec_file, self.bug.srpm_file)
         if Settings.edit:
             self.__show_results()
 
@@ -172,8 +214,6 @@ class ReviewHelper:
                 raise e
 
     def __run_checks(self, spec, srpm):
-        self.log.debug("  --> Spec file : %s" % spec)
-        self.log.debug("  --> SRPM file : %s" % srpm)
         self.checks = Checks(spec, srpm )
         self.outfile = "%s/%s-review.txt" % (
             Settings.workdir, self.checks.spec.name)
@@ -201,32 +241,45 @@ class ReviewHelper:
         self.log.info("Assigning bug to user")
         self.bug.assign_bug()
 
+    def do_run(self):
+        self.bug.check_settings()
+        if not Settings.noreport:
+            self.__do_report()
+
     def run(self):
         try:
-            self.verbose = Settings.verbose
-            if self.verbose:
+            if Settings.verbose:
                 FedoraReview.do_logger_setup(loglvl=logging.DEBUG)
             else:
                 FedoraReview.do_logger_setup()
             if Settings.list_checks:
                 self.__list_checks()
+                return 0
             elif Settings.version:
                 self.__print_version()
+                return 0
+
+            if Settings.url:
+                self.log.info("Processing bug on url: " + Settings.url )
+                self.bug = UrlBug(Settings.url)
+                self.do_run()
             elif Settings.bug:
-                # get the bug
-                self.log.info("Processing review bug : %s" % Settings.bug )
+                self.log.info("Processing bugzilla bug: " + Settings.bug )
                 self.bug = ReviewBug(Settings.bug, user=Settings.user)
+                self.bug.check_settings()
                 if Settings.login:
                     self.bug.login(Settings.user)
-                self.bug.set_work_dir('%s/%s' % (Settings.workdir, Settings.bug))
-                self.log.debug("  --> Working dir : %s" % self.bug.work_dir)
-                if Settings.assign and not Settings.other_bz: # can't use assign with alternate bugzilla url
+                if Settings.assign:
                     self.__do_assign()
-                if not Settings.noreport:
-                    self.__do_report()
+                self.do_run()
             elif Settings.name:
-                self.__do_report_local(Settings.workdir)
-        except FedoraReviewError, err:
+                self.log.info("Processing local bug: " + Settings.name )
+                self.bug = NameBug(Settings.name)
+                self.do_run()
+        except SettingsError as err:
+            self.log.error("Incompatible settings: " + str(err))
+            return 2
+        except:
             self.log.error("Exception down the road...", exc_info=True)
             return 1
         return 0
