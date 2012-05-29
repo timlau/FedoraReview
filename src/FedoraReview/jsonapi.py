@@ -22,7 +22,8 @@ JSON API for FedoraReview plugins
 import subprocess
 from json import JSONEncoder, JSONDecoder
 
-from FedoraReview import Helpers, TestResult
+from helpers import Helpers
+from check_base import TestResult
 
 class ERR_CODE(object):
     ERR_NO_COMMAND = 1

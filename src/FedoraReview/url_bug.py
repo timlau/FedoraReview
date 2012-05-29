@@ -26,8 +26,8 @@ import urllib
 
 from BeautifulSoup import BeautifulSoup
 
-import FedoraReview
-from FedoraReview import Helpers, Settings
+from helpers import Helpers
+from settings import Settings
 from abstract_bug import AbstractBug, SettingsError
 
 

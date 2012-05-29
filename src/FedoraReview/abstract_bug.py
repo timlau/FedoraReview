@@ -25,11 +25,12 @@ import urllib
 
 from BeautifulSoup import BeautifulSoup
 
-import FedoraReview
-from FedoraReview import Settings
+from helpers import Helpers
+from review_error import FedoraReviewError
+from settings import Settings
 
 
-class BugException(FedoraReview.FedoraReviewError):
+class BugException(FedoraReviewError):
     pass
 
 
@@ -37,7 +38,7 @@ class SettingsError(BugException):
     pass
 
 
-class AbstractBug(FedoraReview.Helpers):
+class AbstractBug(Helpers):
     """ This class has an interesting name.
     Anyway, defines an object which can determine URLs for spec
     and srpm given a key like a name, bug nr etc. Attributes:
@@ -53,13 +54,12 @@ class AbstractBug(FedoraReview.Helpers):
     BZ_OPTIONS = [ 'assign', 'login', 'other_bz', 'user' ]
 
     def __init__(self):
-        FedoraReview.Helpers.__init__(self)
+        Helpers.__init__(self)
         self.spec_url = None
         self.srpm_url = None
         self.spec_file = None
         self.srpm_file = None
         self.dir = os.path.join(Settings.workdir, 'review-srpm-src')
-        self.log = FedoraReview.get_logger()
 
     def do_download_files(self):
         """ Download the spec file and srpm extracted from the page.

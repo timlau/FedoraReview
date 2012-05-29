@@ -1,5 +1,3 @@
-#-*- coding: utf-8 -*-
-
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
 #    the Free Software Foundation; either version 2 of the License, or
@@ -26,13 +24,11 @@ import xmlrpclib
 
 from bugzilla import Bugzilla
 
-import FedoraReview
-from FedoraReview import Settings
+from settings import Settings
 from abstract_bug import AbstractBug, SettingsError, BugException
 
 
-
-class ReviewBug(AbstractBug):
+class BugzillaBug(AbstractBug):
     """ This class handles interaction with bugzilla using
     xmlrpc.
     """
