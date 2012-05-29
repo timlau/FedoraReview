@@ -41,7 +41,7 @@ class BugzillaTests(unittest.TestCase):
     def setUp(self):
         sys.argv = ['test-bugzilla','-b','1234']
         Settings.init()
-        FedoraReview.do_logger_setup(loglvl=logging.INFO)
+        FedoraReview.do_logger_setup()
         self.reviewHelper = ReviewHelper()
         self.bug = ReviewBug(TEST_BUG)
         self.bug.find_urls()

@@ -116,7 +116,7 @@ class ReviewHelper:
     def run(self):
         try:
             Settings.init()
-            lvl = logging.DEBUG if Settings.verbose else logging.INFO
+            lvl = logging.DEBUG if Settings.verbose else None
             FedoraReview.do_logger_setup(loglvl=lvl)
 
             if Settings.list_checks:
