@@ -20,6 +20,8 @@
 Tools for helping Fedora package reviewers
 '''
 
+import logging
+import os
 import os.path
 import shutil
 import logging
@@ -31,9 +33,6 @@ UPSTREAM_UNPACKED = 'upstream-unpacked'
 
 class _ReviewDirs(object):
 
-    def root(self):
-        return os.path.abspath('.')
-
     def report_path(self, name):
         return os.path.abspath('./%s-review.txt' % name)
 
@@ -41,12 +40,14 @@ class _ReviewDirs(object):
         wd = os.path.abspath(wd)
         if hasattr(self, 'wd'):
             if self.wd != wd:
-               logging.warning('Attempt to create new working dir' +
-                               wd + ' in existing dir' + self.wd )
+               logging.debug('Attempt to create new working dir ' +
+                              wd + ' in existing dir ' + self.wd)
             return
         if os.path.exists(wd) and not keep_data:
             logging.info("Clearing old review directory: " + wd)
             shutil.rmtree(wd)
+            os.mkdir(wd)
+        if not os.path.exists(wd):
             os.mkdir(wd)
         os.chdir(wd)
         logging.info("Using review directory: " + wd)
@@ -66,9 +67,5 @@ class _ReviewDirs(object):
     root = property(lambda self: self.wd)
 
 ReviewDirs = _ReviewDirs()
-
-
-
-
 
 # vim: set expandtab: ts=4:sw=4:
