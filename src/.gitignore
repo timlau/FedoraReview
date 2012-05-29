@@ -1,0 +1,12 @@
+*.bz2
+*.gz
+*.patch
+*.rpm
+*.spec
+*review.txt
+licensecheck.txt
+.config
+review-*
+[0-9]*
+*.html
+patches-*

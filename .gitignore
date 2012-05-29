@@ -1,8 +1,13 @@
 *.pyc
 .project
 .pydev*
-test-work/
+.stgit*
 *.log
+diff.txt
+test-work/
 build/
 patches-*
-.stgit*
+upstream
+upstream-unpacked
+srpm
+srpm-unpacked
