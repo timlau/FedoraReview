@@ -381,15 +381,15 @@ class Helpers(object):
         ''' get the md5sum for a file
 
         :arg file: the file to get the the md5sum for
-        :return: (md5sum, file) tuple
+        :return: md5sum
         '''
         cmd = "md5sum %s" % file
         out = self._run_cmd(cmd)
-        lines = out.split(' ', 1)
-        if len(lines) == 2:
-            return lines[0], lines[1][1:-1]
+        words = out.split(' ', 1)
+        if len(words) == 2:
+            return words[0]
         else:
-            return None, out
+            raise FedoraReviewError("Bad md5sum output: " + out)
 
     def _get_file(self, link):
         self.log.debug("  --> %s : %s" % (self.work_dir, link))
@@ -517,12 +517,12 @@ class Source(Helpers):
             self.extract()
 
     def check_source_md5(self):
+        self.log.info("Checking source md5 : %s" % self.filename)
         if self.downloaded:
-            self.log.info("Checking source md5 : %s" % self.filename)
-            sum, file = self._md5sum(self.filename)
+            sum = self._md5sum(self.filename)
+            return sum
         else:
-            sum = "upstream source not found"
-        return sum
+            raise FedoraReviewError("upstream source not found")
 
     def extract(self ):
         """ Extract the sources in the mock chroot so that it can be
@@ -695,8 +695,8 @@ class SRPMFile(Helpers):
             self.log.warn('Cannot find source: ' + filename)
             return "ERROR"
         path = os.path.join(self.unpacked_src, filename)
-        self.log.debug("Checking md5 for %s" % path)
-        sum, file = self._md5sum(path)
+        self.log.debug("Checking md5 for " + path)
+        sum = self._md5sum(path)
         return sum
 
     def run_rpmlint(self, filenames):
