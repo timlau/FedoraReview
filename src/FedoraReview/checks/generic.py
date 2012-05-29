@@ -1548,11 +1548,11 @@ class CheckFileRequires(CheckBase):
 
         def get_requires(rpm, requires):
             requires = filter(lambda s: s.find('rpmlib') == -1, requires)
-            requires.insert(0, rpm + ':')
+            requires.insert(0, os.path.basename(rpm) + ':')
             return '\n    '.join(requires)
 
         def get_provides(rpm, provides):
-            provides.insert(0, rpm + ':')
+            provides.insert(0, os.path.basename(rpm) + ':')
             return '\n    '.join(provides)
 
         wrong_req = []
