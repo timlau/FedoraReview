@@ -56,7 +56,7 @@ class Checks(object):
         self.sources = Sources()
         self.log = get_logger()
         if srpm_file:
-            self.srpm = SRPMFile(srpm_file)
+            self.srpm = SRPMFile(srpm_file, self.spec)
         else:
             self.srpm = None
         self.plugins = load('FedoraReview.checks')
@@ -151,7 +151,7 @@ class Checks(object):
         # run external checks first so we can get what they deprecate
         for ext in self.ext_checks:
             self.log.debug('Running external module : %s' % ext.plugin_path)
-            ext.un()
+            ext.run()
             for result in ext.get_results():
                 results.append(result)
                 if result.type == 'MUST' and result.result == "fail":

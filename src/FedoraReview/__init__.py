@@ -31,6 +31,7 @@ import sys
 import shlex
 import shutil
 import tempfile
+import urllib
 import rpm
 import platform
 import StringIO
@@ -55,7 +56,7 @@ LOG_ROOT = 'FedoraReview'
 PARSER_SECTION = 'review'
 CONFIG_FILE    = '.config/fedora-review/settings'
 SYS_PLUGIN_DIR = "/usr/share/fedora-review/plugins:%s"
-MY_PLUGIN_DIR  = ".config/fedora-review/plugins"
+MY_PLUGIN_DIR  = "~/.config/fedora-review/plugins"
 
 # see ticket https://fedorahosted.org/FedoraReview/ticket/43
 requests.decode_unicode=False
@@ -126,119 +127,29 @@ class FedoraReviewError(Exception):
         """ Represent the error. """
         return repr(self.value)
 
-
-_RPMLINT_SCRIPT="""
-mock --shell << 'EOF'
-echo 'rpmlint:'
-rpmlint @rpm_names@
-echo 'rpmlint-done:'
-EOF
-"""
-class _Mock(object):
-    """ Some basic operations on the mock chroot env, a singleton. """
-
-    def __init__(self):
-       self.log = get_logger()
-
-    def _get_dir(self, subdir=None):
-        p = os.path.join( '/var/lib/mock', Settings.mock_config )
-        return os.path.join(p, subdir) if subdir else p
-
-    def get_resultdir(self):
-        return self._get_dir('result')
-
-    def get_builddir(self, subdir=None):
-        """ Return the directory which corresponds to %_topdir inside
-        mock. Optional subdir argument is added to returned path.
-        """
-        p = self._get_dir('root/builddir/build')
-        return os.path.join(p, subdir) if subdir else p
-
-    """  The directory where mock leaves built rpms and logs """
-    resultdir=property(get_resultdir)
-
-    """ Mock's %_topdir seen from the outside. """
-    topdir = property(lambda self: get_builddir(self))
-
-    def install(self, rpm_files):
-        """
-        Run  'mock install' on a list of files, return None if
-        OK, else the stdout+stderr
-        """
-        cmd = ["mock", "install"]
-        cmd.extend(rpm_files)
-        try:
-            p = Popen(cmd, stdout=PIPE, stderr=STDOUT)
-            output, error = p.communicate()
-        except OSError as e:
-            return output[0]
-        return None
-
-    def _run(self, script):
-        """ Run a script,  return (ok, output). """
-        try:
-            p = Popen(script, stdout=PIPE, stderr=STDOUT, shell=True)
-            output, error = p.communicate()
-        except OSError as e:
-            return False, e.strerror
-        return True, output
-
-    def rpmlint_rpms(self, rpms):
-        """ Install and run rpmlint on  packages,
-        return (True,  text) or (False, error_string)"""
-
-        rpms.insert(0, 'rpmlint')
-        error =  self.install(rpms)
-        if error:
-            return False, error
-        rpms.pop(0)
-
-        script = _RPMLINT_SCRIPT
-        basenames = [ os.path.basename(r) for r in rpms]
-        names = [r.rsplit('-', 2)[0] for r in basenames]
-        rpm_names = ' '.join(list(set(names)))
-        script = script.replace('@rpm_names@', rpm_names)
-        ok, output = self._run(script)
-        if not ok:
-            return False, output + '\n'
-
-        ok, err_msg = _check_rpmlint_errors(output, self.log)
-        if err_msg:
-            return False, err_msg
-
-        lines = output.split('\n')
-        l = ''
-        while not l.startswith('rpmlint:') and len(lines) > 0:
-            l = lines.pop(0)
-        text = ''
-        for l in lines:
-            if l.startswith('<mock-'):
-                l=l[l.find('#'):]
-            if l.startswith('rpmlint-done:'):
-                break
-            text += l + '\n'
-        return ok, text
-
-Mock = _Mock()
-
-
 class _Settings(object):
     """
     FedoraReview singleton Config Setting, based on config file and
     command line options. All config values are accessed as attributes.
     """
-    path = MY_PLUGIN_DIR + ":" + os.environ['HOME'] + ":" + SYS_PLUGIN_DIR
+    path = ':'.join([os.path.expanduser(MY_PLUGIN_DIR), SYS_PLUGIN_DIR])
+
     defaults = {
         # review, report & spec editor(default EDITOR env)
-        'editor':       '',
-        'work_dir':     '.',
         'bz_user':      '',
-        'exclude':      '',
+        'cache':        False,
         'edit':         False,
-        'single':       '',
+        'editor':       '',
+        'exclude':      '',
+        'ext_dirs':     path,
         'mock_config':  'fedora-rawhide-i386',
         'mock_options': '--no-cleanup-after',
-        'ext_dirs':     path
+        'single':       '',
+        'other_bz':     None,
+        'bz_url':       'https://bugzilla.redhat.com',
+        'url':          '',
+        'user':         None,
+        'workdir':      '.'
     }
 
     def __init__(self):
@@ -250,6 +161,16 @@ class _Settings(object):
             setattr(self, key, value)
         self._dict = self.defaults
         self._load_config(CONFIG_FILE, PARSER_SECTION)
+        self._get_mock_options()
+
+    def _get_mock_options(self):
+        ''' read mock configuration, needed for root. '''
+        with open('/etc/mock/default.cfg') as f:
+            config = f.read()
+        config_opts= {}
+        exec config
+        self.mock_config_options = config_opts
+        self.mock_root = config_opts['root']
 
     def _load_config(self, configfile, sec):
         '''Load the configuration in memory.
@@ -325,8 +246,134 @@ class _Settings(object):
             setattr(self, key, value)
             self.parser.set( PARSER_SECTION, key, value)
 
+    @property
+    def current_bz_url(self):
+        return  self.other_bz if self.other_bz else self.bz_url
+
 
 Settings = _Settings()
+
+
+_RPMLINT_SCRIPT="""
+mock -r  @config@ --shell << 'EOF'
+echo 'rpmlint:'
+rpmlint @rpm_names@
+echo 'rpmlint-done:'
+EOF
+"""
+class _Mock(object):
+    """ Some basic operations on the mock chroot env, a singleton. """
+
+    def __init__(self):
+       self.log = get_logger()
+
+    def _get_dir(self, subdir=None):
+        p = os.path.join( '/var/lib/mock', Settings.mock_root )
+        return os.path.join(p, subdir) if subdir else p
+
+    def get_resultdir(self):
+        return self._get_dir('result')
+
+    def get_builddir(self, subdir=None):
+        """ Return the directory which corresponds to %_topdir inside
+        mock. Optional subdir argument is added to returned path.
+        """
+        p = self._get_dir('root/builddir/build')
+        return os.path.join(p, subdir) if subdir else p
+
+    """  The directory where mock leaves built rpms and logs """
+    resultdir=property(get_resultdir)
+
+    """ Mock's %_topdir seen from the outside. """
+    topdir = property(lambda self: get_builddir(self))
+
+    def install(self, rpm_files):
+        """
+        Run  'mock install' on a list of files, return None if
+        OK, else the stdout+stderr
+        """
+        cmd = ["mock", "install"]
+        if Settings.mock_config:
+             cmd.extend(['-r', Settings.mock_config])
+        cmd.extend(rpm_files)
+        self.log.debug('Command: ' + ' '.join(cmd))
+        try:
+            p = Popen(cmd, stdout=PIPE, stderr=STDOUT)
+            output, error = p.communicate()
+            if Settings.verbose:
+                txt = "Install output: "
+                txt += output if output else ''
+                txt += error if error else ''
+                print txt
+        except OSError as e:
+            if Settings.verbose:
+                txt = "Install output: "
+                txt += output if output else ''
+                txt += error if error else ''
+                print txt
+            return output[0]
+        return None
+
+    def _run(self, script):
+        """ Run a script,  return (ok, output). """
+        try:
+            p = Popen(script, stdout=PIPE, stderr=STDOUT, shell=True)
+            output, error = p.communicate()
+        except OSError as e:
+            return False, e.strerror
+        return True, output
+
+    def rpmlint_rpms(self, rpms):
+        """ Install and run rpmlint on  packages,
+        return (True,  text) or (False, error_string)"""
+
+        rpms.insert(0, 'rpmlint')
+        error =  self.install(rpms)
+        if error:
+            return False, error
+        rpms.pop(0)
+
+        script = _RPMLINT_SCRIPT
+        basenames = [ os.path.basename(r) for r in rpms]
+        names = [r.rsplit('-', 2)[0] for r in basenames]
+        rpm_names = ' '.join(list(set(names)))
+        config = Settings.mock_config if Settings.mock_config else ''
+        script = script.replace('@config@', config)
+        script = script.replace('@rpm_names@', rpm_names)
+        ok, output = self._run(script)
+        if Settings.verbose:
+             print "Script output: " + output
+        if not ok:
+            return False, output + '\n'
+
+        ok, err_msg = _check_rpmlint_errors(output, self.log)
+        if err_msg:
+            return False, err_msg
+
+        lines = output.split('\n')
+        l = ''
+        while not l.startswith('rpmlint:') and len(lines) > 0:
+            l = lines.pop(0)
+        text = ''
+        for l in lines:
+            if l.startswith('<mock-'):
+                l=l[l.find('#'):]
+            if l.startswith('rpmlint-done:'):
+                break
+            text += l + '\n'
+        return ok, text
+
+    def have_cache_for(self, name):
+        ''' return true if there is at least one srpm and one rpm in
+        resultdir, prefixed with the given name
+        '''
+        path = self.get_resultdir()
+        if len(glob.glob(os.path.join(path, name + '*.src.rpm'))) == 0:
+             return False
+        return len(glob.glob(os.path.join(path, name +'*.rpm'))) >= 2
+
+Mock = _Mock()
+
 
 class Helpers(object):
 
@@ -373,26 +420,22 @@ class Helpers(object):
             return None, out
 
     def _get_file(self, link):
-        self.log.debug("  --> %s : %s" % (self.work_dir, link))
         url = urlparse(link)
-        request = requests.get(link)
-        if str(request.status_code).startswith('4'):
-            raise FedoraReviewError('Getting error "%s" while trying to download: %s'
-                % (request.status_code, link))
         fname = os.path.basename(url.path)
-        if os.path.exists(self.work_dir + fname) and Settings.cache:
-            return  self.work_dir + fname
+        if os.path.exists(os.path.join(self.work_dir, fname)) \
+            and Settings.cache:
+                 logging.debug('Using cached source: ' + fname)
+                 return  os.path.join(self.work_dir, fname)
+
+        self.log.debug("  --> %s : %s" % (self.work_dir, link))
+
+        path = os.path.join( self.work_dir, fname)
         try:
-            stream = open(self.work_dir + fname, 'w')
-            stream.write(to_bytes(request.content))
-            stream.close()
+            file, headers = urllib.urlretrieve(link, path)
         except IOError, err:
             raise FedoraReviewError('Getting error "%s" while trying to write file: %s'
-                % (err, self.work_dir + fname))
-        if os.path.exists(self.work_dir + fname):
-            return  self.work_dir + fname
-        else:
-            return None
+                % (err, path))
+        return path if os.path.exists(path) else None
 
 
 class Sources(object):
@@ -518,7 +561,7 @@ class Source(Helpers):
                 shutil.rmtree(self.extract_dir)
                 os.mkdir(self.extract_dir)
         else:
-            self.extract_dir = Mock.get_builddir('sources')
+            self.extract_dir = Mock.get_builddir('SOURCES')
         self.log.debug("Extracting %s in %s " % (self.filename,
                        self.extract_dir))
         if not os.path.exists(self.extract_dir):
@@ -543,6 +586,11 @@ class Source(Helpers):
 
 class SRPMFile(Helpers):
 
+    # Codes > 0 as returned by mock(1)
+    BUILD_OK       = 0
+    BUILD_FAIL     = -1
+    BUILD_PREBUILT = -2
+
     def __init__(self, filename, spec=None):
         Helpers.__init__(self)
         self.filename = filename
@@ -552,20 +600,21 @@ class SRPMFile(Helpers):
         self.build_failed = False
         self._rpm_files = None
 
-    def unpack(self):
+    def unpack(self, src=None):
         """ Local unpack using rpm2cpio. """
         if hasattr(self, 'unpacked_src'):
             return;
 
-        wdir = os.path.realpath(os.path.join(Settings.work_dir,
-                                             'srpm-unpack'))
+        wdir = os.path.realpath(os.path.join(Settings.workdir,
+                                             'review-srpm-unpack'))
         if os.path.exists(wdir):
              shutil.rmtree(wdir)
 
         os.mkdir(wdir)
         oldpwd = os.getcwd()
         os.chdir(wdir)
-        cmd = 'rpm2cpio ' + self.filename + ' | cpio -i --quiet'
+        src = src if src else self.filename
+        cmd = 'rpm2cpio ' + src + ' | cpio -i --quiet'
         rc = call(cmd, shell=True)
         if rc != 0:
             self.log.warn(
@@ -576,8 +625,8 @@ class SRPMFile(Helpers):
 
     def extract(self, path):
         """ Extract a named source and return containing directory. """
-        filename=os.path.basename(path)
-        self.unpack()
+        self.filename=os.path.basename(path)
+        self.unpack(path)
         files = glob.glob( self.unpacked_src  + '/*' )
         if not filename in [os.path.basename(f) for f in files]:
             self.log.error(
@@ -606,9 +655,9 @@ class SRPMFile(Helpers):
             build.
         """
         if Settings.prebuilt:
-            return -2
+            return SRPMFile.BUILD_PREBUILT
         if self.build_failed:
-            return -1
+            return SRPMFile.BUILD_FAIL
         return self.mockbuild(force, silence=silence)
 
     def mockbuild(self, force=False, silence=False):
@@ -620,14 +669,20 @@ class SRPMFile(Helpers):
             build.
         """
         if not force and (self.is_build or Settings.nobuild):
-            return 0
-        #print "MOCKBUILD: ", self.is_build, self.nobuild
+            if Mock.have_cache_for(self.spec.name):
+                self.log.info('Using already built rpms.')
+                return SRPMFile.BUILD_OK
+            else:
+                self.log.info(
+                     'No valid cache, building despite --nobuild.')
         self.log.info("Building %s using mock %s" % (
             self.filename, Settings.mock_config))
         cmd = 'mock -r %s  --rebuild %s ' % (
                 Settings.mock_config, self.filename)
         if self.log.level == logging.DEBUG:
             cmd = cmd + ' -v '
+        if Settings.mock_config:
+            cmd = cmd + '--root ' + Settings.mock_config
         if Settings.mock_options:
             cmd = cmd + ' ' + Settings.mock_options
         if silence:
@@ -653,8 +708,8 @@ class SRPMFile(Helpers):
         return None
 
     def check_source_md5(self, path):
-        self.unpack()
         filename = os.path.basename(path)
+        self.unpack()
         if not hasattr(self, 'unpacked_src'):
             self.log.warn("check_source_md5: Cannot unpack (?)")
             return "ERROR"
@@ -708,7 +763,7 @@ class SRPMFile(Helpers):
         if Settings.prebuilt:
             rpms = set( glob.glob('*.rpm'))
         else:
-            rpms = set(glob.glob(self.get_mock_dir() + '/*.rpm'))
+            rpms = set(glob.glob(Mock.resultdir + '/*.rpm'))
         if not exclude_pattern:
             return list(rpms)
         matched = filter( lambda s: s.find(exclude_pattern) > 0, rpms)
@@ -764,27 +819,21 @@ class SpecFile(object):
         self.release = self.get_from_spec('release')
         self.process_sections()
 
-    def get_sources(self):
+    def get_sources(self, type='Source'):
         ''' Get SourceX/PatchX lines with macros resolved '''
         result = {}
-        sources = self.spec_obj.sources
-        for src in sources:
-            (url, num, flags) = src
-            if flags & 1:  # rpmspec.h, rpm.org ticket #123
-                srctype = "Source"
-            else:
-                srctype = "Patch"
-            tag = '%s%s' % (srctype, num)
+        for (url, num, flags) in self.spec_obj.sources:
+            # rpmspec.h, rpm.org ticket #123
+            srctype = "Source" if flags & 1 else "Patch"
+            if type != srctype:
+                continue
+            tag = srctype + str(num)
             result[tag] = url
         return result
 
     def has_patches(self):
         '''Returns true if source rpm contains patch files'''
-        sources = self.get_sources()
-        for source in sources.keys():
-            if 'Patch' in source:
-                return True
-        return False
+        return len(self.get_sources('Patch')) > 0
 
     def get_macros(self):
         for lin in self.lines:
@@ -986,7 +1035,7 @@ class TestResult(object):
         self.url = url
         self.group = group
         self.deprecates = deprecates
-        self.text = re.sub("\s+", " ", text)
+        self.text = re.sub("\s+", " ", text) if text else ''
         self.type = check_type
         self.result = result
         self.output_extra = output_extra
