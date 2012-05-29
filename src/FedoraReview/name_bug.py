@@ -23,7 +23,7 @@ import glob
 from mock import Mock
 from settings import Settings
 from abstract_bug import AbstractBug, SettingsError
-
+from review_dirs import ReviewDirs
 
 class NameBugException(Exception):
     pass
@@ -41,19 +41,21 @@ class NameBug(AbstractBug):
         self.name = name
 
     def get_location(self):
-        return 'Local files in ' + Settings.workdir
+        return 'Local files in ' + ReviewDirs.root()
 
     def do_find_urls(self):
         """ Retrieve the page and parse for srpm and spec url. """
 
-        pattern = os.path.join(Settings.workdir, self.name + '*.spec')
+        pattern = os.path.join(ReviewDirs.root(),
+                               self.name + '*.spec')
         specs = glob.glob(pattern)
         if len(specs) != 1:
             raise NameBugException( "Cannot find spec: " + pattern)
         self.spec_url = 'file://' + specs[0]
         self.spec_file = specs[0]
 
-        pattern = os.path.join(Settings.workdir, self.name +  '*.src.rpm')
+        pattern = os.path.join(ReviewDirs.root(),
+                               self.name + '*.src.rpm')
         srpms = glob.glob(pattern)
         if len(srpms) != 1:
             raise NameBugException( "Cannot find srpm: " + pattern)

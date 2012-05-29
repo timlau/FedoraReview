@@ -33,6 +33,7 @@ MY_PLUGIN_DIR  = "~/.config/fedora-review/plugins"
 PARSER_SECTION = 'review'
 
 LOG_ROOT = 'FedoraReview'
+SESSION_LOG = os.path.expanduser('~/.cache/fedora-review.log')
 
 
 class ConfigError(FedoraReviewError):
@@ -51,7 +52,6 @@ class _Settings(object):
                                                      SYS_PLUGIN_DIR]),
         'bz_url':       'https://bugzilla.redhat.com',
         'user':         None,
-        'workdir':      '.',
         'verbose':      False
     }
 
@@ -141,7 +141,8 @@ class _Settings(object):
         optional.add_argument('-m','--mock-config', metavar='<config>',
                     default = 'fedora-rawhide-i386', dest='mock_config',
                     help='Configuration to use for the mock build,'
-                             ' defaults to fedora-rawhide-i686.')
+                             " defaults to 'root' defined in"
+                             ' /etc/mock/default.cfg')
         optional.add_argument('--no-report',  action='store_true',
                     dest='noreport',
                     help='Do not make a review report.')
@@ -180,7 +181,6 @@ class _Settings(object):
         args = parser.parse_args()
         self.do_logger_setup(logging.DEBUG if args.verbose else None)
         _check_mock_grp()
-        args.workdir = os.getcwd()
         self.add_args(args)
         self.init_done = True
 
@@ -220,19 +220,29 @@ class _Settings(object):
                     lvl = logging.INFO
             else:
                 lvl = logging.INFO
-        logger = logging.getLogger(LOG_ROOT)
-        logger.setLevel(lvl)
+
+        if not hasattr(self, '_log_config_done'):
+            logging.basicConfig(level=logging.DEBUG,
+                                format='%(asctime)s %(name)-12s'
+                                       ' %(levelname)-8s %(message)s',
+                                datefmt='%m-%d %H:%M',
+                                filename= SESSION_LOG,
+                                filemode='w')
+        self._log_config_done = True
+        # define a Handler which writes INFO messages or higher to the sys.stderr
+        console = logging.StreamHandler()
+        console.setLevel(lvl)
         formatter = logging.Formatter('%(message)s', "%H:%M:%S")
-        handler = logging.StreamHandler()
-        handler.setFormatter(formatter)
-        handler.propagate = False
-        if hasattr(self, '_log_handler'):
-            logger.removeHandler(self._log_handler)
-        self._log_handler = handler
-        logger.addHandler(handler)
+        console.setFormatter(formatter)
+        if hasattr(self, '_con_handler'):
+            logging.getLogger('').removeHandler(self._con_handler)
+        self._con_handler = console
+        logging.getLogger('').addHandler(console)
+
+        self.log = logging.getLogger('')
         if msg:
             self.log.warning(msg)
-        return handler
+        return True
 
     def get_logger(self):
         return logging.getLogger(LOG_ROOT)

@@ -45,5 +45,10 @@ class ReviewDirs(object):
     def root():
         return os.path.abspath('.')
 
+    @staticmethod
+    def report_path(name):
+        return os.path.abspath('./%s-review.txt' % name)
+
+
 
 # vim: set expandtab: ts=4:sw=4:
