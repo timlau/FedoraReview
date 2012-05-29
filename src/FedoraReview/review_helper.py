@@ -21,12 +21,13 @@ Tools for helping Fedora package reviewers
 '''
 
 import logging
+import shutil
 import sys
 import os.path
 
 from FedoraReview import BugException, BugzillaBug, Checks, \
-          ChecksLister, FedoraReviewError, NameBug, Settings, \
-          SettingsError, UrlBug
+          ChecksLister, FedoraReviewError, NameBug, ReviewDirs, \
+          Settings, SettingsError, UrlBug
 
 
 class ConfigError(FedoraReviewError):
@@ -44,7 +45,6 @@ class ReviewHelper(object):
     def __init__(self):
         self.bug = None
         self.checks = None
-        Settings.workdir = os.path.expanduser(Settings.workdir)
         self.log = Settings.get_logger()
         self.verbose = False
         self.outfile = None
@@ -59,9 +59,7 @@ class ReviewHelper(object):
 
         self.log.info('Getting .spec and .srpm Urls from : '
                        + self.bug.get_location())
-        if Settings.bug:
-            Settings.workdir = os.path.join(Settings.workdir,
-                                            Settings.bug)
+
         Settings.dump()
         if not self.bug.find_urls():
             self.log.error( 'Cannot find .spec or .srpm URL(s)')
@@ -70,6 +68,15 @@ class ReviewHelper(object):
             print "Srpm URL:" + self.bug.srpm_url
             print "Spec URL:" + self.bug.spec_url
             return
+
+        if Settings.bug:
+            wd = Settings.bug + '-' + self.bug.get_name()
+            wd = os.path.join(os.getcwd(), wd)
+            if os.path.exists(wd):
+                 self.log.info("Clearing old review directory: " + wd)
+                 shutil.rmtree(wd)
+            os.mkdir(wd)
+            os.chdir(wd)
 
         if not self.bug.download_files():
             self.log.error('Cannot download .spec and .srpm')
@@ -88,8 +95,7 @@ class ReviewHelper(object):
 
     def __run_checks(self, spec, srpm):
         self.checks = Checks(spec, srpm )
-        self.outfile = "%s/%s-review.txt" % (
-            Settings.workdir, self.checks.spec.name)
+        self.outfile = ReviewDirs.report_path(self.checks.spec.name)
         with open(self.outfile,"w") as output:
             # get upstream sources
             rc = self.__download_sources()
@@ -101,8 +107,7 @@ class ReviewHelper(object):
             self.log.info('Running checks and generate report\n')
             self.checks.run_checks(output=output)
             output.close()
-        print "Review in: %s/%s-review.txt" % (Settings.workdir,
-            self.checks.spec.name)
+        print "Review in: " + self.outfile
 
     def run(self):
         try:
