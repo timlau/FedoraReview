@@ -43,12 +43,10 @@ class UrlBug(AbstractBug):
         :arg url, complete url to bug
         """
         AbstractBug.__init__(self)
+        self.check_options()
         self.bug_url = url
         if not url.startswith('http'):
             self.bug_url = os.path.normpath(self.bug_url)
-
-    def get_location(self):
-        return self.bug_url
 
     def _find_urls_by_label(self):
         """ locate urls based on labels like 'spec url:' or
@@ -92,9 +90,10 @@ class UrlBug(AbstractBug):
         links=soup.findAll('a')
         links = filter(lambda l: l.has_key('href'), links)
         hrefs = map(lambda l: l['href'],  links)
-        hrefs = map(lambda l: l.encode('ascii', 'ignore'), hrefs)
-        hrefs.reverse()
-        for href in hrefs:
+        for href in reversed(hrefs):
+            href = href.encode('ascii', 'ignore')
+            if '?' in href:
+                href = href[0: href.find('?')]
             if not self.srpm_url and href.endswith('.src.rpm'):
                 self.srpm_url = href
             elif not  self.spec_url and href.endswith('.spec'):
@@ -105,22 +104,6 @@ class UrlBug(AbstractBug):
         if not self.srpm_url:
            raise UrlBugException('Cannot find source rpm URL')
 
-    def do_download_files(self):
-        """ Download the spec file and srpm extracted from the page.
-        """
-        dir = os.path.join(Settings.workdir, 'review-srpm-src')
-        if os.path.exists(dir):
-             shutil.rmtree(dir)
-        os.mkdir(dir)
-        spec_name = os.path.basename(self.spec_url)
-        file, headers = urllib.urlretrieve(self.spec_url,
-                                           os.path.join(dir, spec_name))
-        self.spec_file =  file
-        srpm_name = os.path.basename(self.srpm_url)
-        file, headers = urllib.urlretrieve(self.srpm_url,
-                                           os.path.join(dir, srpm_name))
-        self.srpm_file = file
-
     def do_find_urls(self):
         """ Retrieve the page and parse for srpm and spec url. """
         try:
@@ -129,10 +112,13 @@ class UrlBug(AbstractBug):
             self._find_urls_by_label()
         return True
 
-    def check_settings(self):
-        if Settings.other_bz:
-             raise SettingsError('--other-bz and -u')
-        if Settings.prebuilt:
-             raise SettingsError('--prebuilt and -u')
+    def get_location(self):
+        return self.bug_url
+
+    def check_options(self):
+        bad_opts = AbstractBug.BZ_OPTIONS
+        bad_opts.extend( ['prebuilt'])
+        AbstractBug.do_check_options(self, '--url', bad_opts)
+
 
 # vim: set expandtab: ts=4:sw=4:

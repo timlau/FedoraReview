@@ -28,7 +28,8 @@ from bugzilla import Bugzilla
 
 import FedoraReview
 from FedoraReview import Settings
-from abstract_bug import AbstractBug, SettingsError
+from abstract_bug import AbstractBug, SettingsError, BugException
+
 
 
 class ReviewBug(AbstractBug):
@@ -44,6 +45,7 @@ class ReviewBug(AbstractBug):
         be re-downloaded or not.
         """
         AbstractBug.__init__(self)
+        self.check_options()
         self.bug_num = bug
         bz_url = os.path.join(Settings.current_bz_url, 'xmlrpc.cgi')
         self.bugzilla = Bugzilla(url=bz_url)
@@ -51,6 +53,10 @@ class ReviewBug(AbstractBug):
         self.log.info("Trying bugzilla cookies for authentication")
         self.user = user
         self.bug = self.bugzilla.getbug(self.bug_num)
+        if Settings.login:
+             self.login(Settings.user)
+        if Settings.assign:
+            self.assign_bug()
 
     def login(self, user, password=None):
         """ Handles the login of the user into bugzilla. Will ask for
@@ -92,19 +98,18 @@ class ReviewBug(AbstractBug):
                         elif ".src.rpm" in url:
                             self.srpm_url = url
         if not self.spec_url:
-            raise BugError (
+            raise BugException (
                  'no spec file URL found in bug #%s' % self.bug_num)
         if not self.srpm_url:
-            raise BugError(
+            raise BugException(
                  'no SRPM file URL found in bug #%s' % self.bug_num)
         return True
 
     def get_location(self):
         return Settings.bug
 
-    def check_settings(self):
-        if Settings.prebuilt:
-             raise SettingsError('--prebuilt and -b')
+    def check_options(self):
+        AbstractBug.do_check_options(self, '--bug', ['prebuilt'])
 
     def assign_bug(self):
         """ Assign the bug to the reviewer.

@@ -41,6 +41,7 @@ from urlparse import urlparse
 from kitchen.text.converters import to_bytes
 
 from .version import __version__
+import FedoraReview
 
 SECTIONS = ['build', 'changelog', 'check', 'clean', 'description', 'files',
                'install', 'package', 'prep', 'pre', 'post', 'preun', 'postun',
@@ -54,6 +55,7 @@ LOG_ROOT = 'FedoraReview'
 
 PARSER_SECTION = 'review'
 SYS_PLUGIN_DIR = "/usr/share/fedora-review/plugins:%s"
+CONFIG_FILE    = '~/.config/fedora-review/settings'
 MY_PLUGIN_DIR  = "~/.config/fedora-review/plugins"
 
 def rpmdev_extract(working_dir, archive, log):
@@ -144,6 +146,7 @@ class _Settings(object):
         for key,value in self.defaults.iteritems():
             setattr(self, key, value)
         self._dict = self.defaults
+        self.log=get_logger()
         self._get_mock_options()
 
     def _get_mock_options(self):
@@ -192,6 +195,15 @@ class _Settings(object):
     def current_bz_url(self):
         return  self.other_bz if self.other_bz else self.bz_url
 
+    def dump(self):
+        self.log.debug("Active settings after processing options")
+        for k,v in vars(self).iteritems():
+             if k in [ '_dict', 'mock_config_options','log' ]:
+                 continue
+             try:
+                 self.log.debug("    " + k + ": " + v.__str__())
+             except:
+                 pass
 
 Settings = _Settings()
 
