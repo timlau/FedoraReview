@@ -1,0 +1,4 @@
+*.gz
+*.rpm
+review-*
+test-work
