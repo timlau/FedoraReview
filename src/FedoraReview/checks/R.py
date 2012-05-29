@@ -235,3 +235,5 @@ class RCheckBuildSection(RCheckBase):
             if b_install is False:
                 cmt += "Package doesn't have the standard R CMD INSTALL function\n"
             self.set_passed(False, cmt)
+
+# vim: set expandtab: ts=4:sw=4:
