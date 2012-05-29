@@ -1,4 +1,4 @@
 *.gz
 *.rpm
-review-*
+review
 test-work
