@@ -2,7 +2,7 @@
 """Java language specific checks"""
 
 import re
-from FedoraReview.check_base import LangCheckBase
+from FedoraReview import LangCheckBase
 
 
 class JavaCheckBase(LangCheckBase):
