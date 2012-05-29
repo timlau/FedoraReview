@@ -26,8 +26,9 @@ import sys
 import os.path
 
 from FedoraReview import BugException, BugzillaBug, Checks, \
-          ChecksLister, FedoraReviewError, NameBug, ReviewDirs, \
-          Settings, SettingsError, UrlBug
+          ChecksLister, CleanExitError, FedoraReviewError, \
+          NameBug, ReviewDirs, Settings, SettingsError, \
+          UrlBug, __version__
 
 
 class ConfigError(FedoraReviewError):
@@ -69,14 +70,8 @@ class ReviewHelper(object):
             print "Spec URL:" + self.bug.spec_url
             return
 
-        if Settings.bug:
-            wd = Settings.bug + '-' + self.bug.get_name()
-            wd = os.path.join(os.getcwd(), wd)
-            if os.path.exists(wd):
-                 self.log.info("Clearing old review directory: " + wd)
-                 shutil.rmtree(wd)
-            os.mkdir(wd)
-            os.chdir(wd)
+        wd = self.bug.get_dirname()
+        ReviewDirs.workdir_setup(wd)
 
         if not self.bug.download_files():
             self.log.error('Cannot download .spec and .srpm')
@@ -91,7 +86,7 @@ class ReviewHelper(object):
         ChecksLister().list()
 
     def __print_version(self):
-        print('fedora-review version ' + FedoraReview.__version__)
+        print('fedora-review version ' + __version__)
 
     def __run_checks(self, spec, srpm):
         self.checks = Checks(spec, srpm )
@@ -111,19 +106,15 @@ class ReviewHelper(object):
 
     def run(self):
         try:
-            #import pdb; pdb.set_trace()
-            Settings.do_logger_setup(logging.DEBUG)
-            #Settings.do_logger_setup(loglvl=lvl)
             Settings.init()
 
             if Settings.list_checks:
                 self.__list_checks()
-                return 0
+                Settings.noreport = True
             elif Settings.version:
                 self.__print_version()
-                return 0
-
-            if Settings.url:
+                Settings.noreport = True
+            elif Settings.url:
                 self.log.info("Processing bug on url: " + Settings.url )
                 self.bug = UrlBug(Settings.url)
             elif Settings.bug:
@@ -143,6 +134,9 @@ class ReviewHelper(object):
             return 2
         except SettingsError as err:
             self.log.error("Incompatible settings: " + str(err))
+            return 2
+        except CleanExitError as err:
+            self.log.debug('Processing CleanExit')
             return 2
         except:
             self.log.debug("Exception down the road...", exc_info=True)

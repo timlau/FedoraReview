@@ -22,32 +22,52 @@ Tools for helping Fedora package reviewers
 
 import os.path
 import shutil
+import logging
 
-from settings import Settings
+SRPM              = 'srpm'
+SRPM_UNPACKED     = 'srpm-unpacked'
+UPSTREAM          = 'upstream'
+UPSTREAM_UNPACKED = 'upstream-unpacked'
 
+class _ReviewDirs(object):
 
-class ReviewDirs(object):
-    SRPM_SRC          = 'review/srpm'
-    SRPM_UNPACKED     = 'review/srpm-unpacked'
-    UPSTREAM          = 'review/upstream'
-    UPSTREAM_UNPACKED = 'review/upstream-unpacked'
-
-    @staticmethod
-    def get_dir(dir, keep_old=False):
-        dir = os.path.abspath(dir)
-        if os.path.exists(dir) and not keep_old:
-            Settings.get_logger().debug("Clearing temp dir: " + dir)
-            shutil.rmtree(dir)
-        os.makedirs(dir)
-        return dir
-
-    @staticmethod
-    def root():
+    def root(self):
         return os.path.abspath('.')
 
-    @staticmethod
-    def report_path(name):
+    def report_path(self, name):
         return os.path.abspath('./%s-review.txt' % name)
+
+    def workdir_setup(self, wd, keep_data=False):
+        wd = os.path.abspath(wd)
+        if hasattr(self, 'wd'):
+            if self.wd != wd:
+               logging.warning('Attempt to create new working dir' +
+                               wd + ' in existing dir' + self.wd )
+            return
+        if os.path.exists(wd) and not keep_data:
+            logging.info("Clearing old review directory: " + wd)
+            shutil.rmtree(wd)
+            os.mkdir(wd)
+        os.chdir(wd)
+        logging.info("Using review directory: " + wd)
+        self.wd = wd
+        for d in [UPSTREAM, UPSTREAM_UNPACKED, SRPM, SRPM_UNPACKED]:
+            if not os.path.exists(d):
+                os.mkdir(d)
+
+    srpm = \
+        property(lambda self: os.path.join(self.wd, SRPM))
+    srpm_unpacked = \
+        property(lambda self: os.path.join(self.wd, SRPM_UNPACKED))
+    upstream = \
+        property(lambda self: os.path.join(self.wd, UPSTREAM))
+    upstream_unpacked = \
+        property(lambda self: os.path.join(self.wd, UPSTREAM_UNPACKED))
+    root = property(lambda self: self.wd)
+
+ReviewDirs = _ReviewDirs()
+
+
 
 
 

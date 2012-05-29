@@ -61,13 +61,14 @@ class AbstractBug(Helpers):
         self.srpm_url = None
         self.spec_file = None
         self.srpm_file = None
-        self.dir = ReviewDirs.get_dir(ReviewDirs.SRPM_SRC)
 
     def do_download_files(self):
         """ Download the spec file and srpm extracted from the page.
         """
+        if not hasattr( self, 'dir'):
+            self.dir = ReviewDirs.srpm
         if os.path.exists(self.dir):
-             shutil.rmtree(self.dir)
+            shutil.rmtree(self.dir)
         os.mkdir(self.dir)
 
         spec_name = os.path.basename(self.spec_url)
@@ -92,7 +93,7 @@ class AbstractBug(Helpers):
             specs = glob.glob(os.path.join(self.dir, '*.spec'))
             found = len(specs)
             srpms = glob.glob(os.path.join(self.dir, '*.src.rpm'))
-            found += len(specs)
+            found += len(srpms)
             if found == 2:
                 self.spec_file = specs[0]
                 self.srpm_file = srpms[0]
@@ -144,6 +145,13 @@ class AbstractBug(Helpers):
        else:
            return os.path.basename(self.spec_url).rsplit('.',1)[0]
 
+    def get_dirname(self):
+        ''' Return dirname to be used for this bug. '''
+        if self.get_name() != '?':
+            return self.get_name()
+        else:
+            return tempfile.mkdtemp( prefix='review-', dir=os.getcwd())
+
     def get_location(self):
         """ Return visible label forsource of srpm/spec
         """
@@ -154,5 +162,6 @@ class AbstractBug(Helpers):
            if hasattr(Settings, opt) and getattr(Settings, opt):
                 raise SettingsError(
                     '--' + opt + ' can not be used with ' +  mode)
+
 
 # vim: set expandtab: ts=4:sw=4:
