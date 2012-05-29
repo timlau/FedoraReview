@@ -4,7 +4,7 @@ import re
 import os
 import itertools
 
-from generic import LangCheckBase
+from FedoraReview import LangCheckBase
 
 class RubyCheckBase(LangCheckBase):
     """ Base class for all Ruby specific checks. """

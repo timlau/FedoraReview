@@ -25,11 +25,7 @@ import os
 import os.path
 import re
 
-from FedoraReview.review_dirs import ReviewDirs
-from FedoraReview.check_base import CheckBase, TestResult, Attachment
-from FedoraReview.helpers import Helpers
-from FedoraReview.mock import Mock
-from FedoraReview.settings import Settings
+from FedoraReview import CheckBase, Attachment, ReviewDirs, Mock, Settings
 
 
 class CheckNaming(CheckBase):
