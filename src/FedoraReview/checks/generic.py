@@ -375,7 +375,6 @@ class CheckRpmLintInstalled(CheckBase):
     '''
     SHOULD: Not in guidelines, but running rpmlint on the installed
     package occasionally reveals things otherwise not found.
-    The category here should rather be EXTRA rather than SHOULD
     http://fedoraproject.org/wiki/Packaging/Guidelines#rpmlint
     '''
     def __init__(self, base):
@@ -383,7 +382,7 @@ class CheckRpmLintInstalled(CheckBase):
         self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#rpmlint'
         self.text = 'Rpmlint is run on all installed packages.'
         self.automatic = True
-        self.type = 'SHOULD'
+        self.type = 'EXTRA'
 
     def run(self):
         if self.srpm.build() != -1:
