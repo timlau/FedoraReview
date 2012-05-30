@@ -66,13 +66,13 @@ class UrlBug(AbstractBug):
         return found
 
     def find_srpm_url(self):
-        urls = self.find_urls('.src.rpm')
+        urls = self._find_urls_by_ending('.src.rpm')
         if len(urls) == 0:
            raise UrlBugException('Cannot find source rpm URL')
         self.srpm_url = urls[0]
 
     def find_spec_url(self):
-        urls = self.find_urls('.spec')
+        urls = self._find_urls_by_ending('.spec')
         if len(urls) == 0:
            raise UrlBugException('Cannot find spec file URL')
         self.spec_url = urls[0]
@@ -81,7 +81,7 @@ class UrlBug(AbstractBug):
         return self.bug_url
 
     def check_options(self):
-        bad_opts = AbstractBug.BZ_OPTIONS
+        bad_opts = list(AbstractBug.BZ_OPTIONS)
         bad_opts.extend( ['prebuilt'])
         AbstractBug.do_check_options(self, '--url', bad_opts)
 

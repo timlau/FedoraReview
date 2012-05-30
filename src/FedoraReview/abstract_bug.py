@@ -20,6 +20,7 @@ srpm and spec file given some kind of key when created.
 import os.path
 import re
 import shutil
+import tempfile
 import urllib2
 import urllib
 
@@ -178,8 +179,14 @@ class AbstractBug(Helpers):
        ''' Return name of bug. '''
        if self.spec_file:
            return os.path.basename(self.spec_file).rsplit('.',1)[0]
+       elif self.spec_url:
+           basename = os.path.basename(urlparse(self.spec_url).path)
+           return basename.rsplit('.',1)[0]
        elif self.srpm_file:
            return  os.path.basename(self.srpm_file).rsplit('-',2)[0]
+       elif self.srpm_url:
+           basename = os.path.basename(urlparse(self.srpm_url).path)
+           return basename.rsplit('-',2)[0]
        else:
            return '?'
            
