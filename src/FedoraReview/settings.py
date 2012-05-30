@@ -64,7 +64,6 @@ class _Settings(object):
         for key,value in self.defaults.iteritems():
             setattr(self, key, value)
         self._dict = self.defaults
-        self.log = self.get_logger()
 
     def __getitem__(self, key):
         hash = self._get_hash(key)
@@ -188,8 +187,8 @@ class _Settings(object):
         except:
             raise CleanExitError('Exit from argparse')
 
-        self.do_logger_setup(logging.DEBUG if args.verbose else None)
         self.add_args(args)
+        self.do_logger_setup(logging.DEBUG if args.verbose else None)
         _check_mock_grp()
         self.init_done = True
 
@@ -238,23 +237,29 @@ class _Settings(object):
                                 filename= SESSION_LOG,
                                 filemode='w')
         self._log_config_done = True
+
+        self.log_level = lvl
+        if lvl == logging.DEBUG:
+            self.verbose = True
+        self.log = logging.getLogger('')
         # define a Handler which writes INFO messages or higher to the sys.stderr
         console = logging.StreamHandler()
         console.setLevel(lvl)
         formatter = logging.Formatter('%(message)s', "%H:%M:%S")
         console.setFormatter(formatter)
         if hasattr(self, '_con_handler'):
-            logging.getLogger('').removeHandler(self._con_handler)
+            self.log.removeHandler(self._con_handler)
+        self.log.addHandler(console)
         self._con_handler = console
-        logging.getLogger('').addHandler(console)
 
-        self.log = logging.getLogger('')
         if msg:
             self.log.warning(msg)
         return True
 
     def get_logger(self):
-        return logging.getLogger(LOG_ROOT)
+        if not hasattr(self, 'log'):
+            self.do_logger_setup()
+        return self.log
 
 Settings = _Settings()
 

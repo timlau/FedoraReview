@@ -76,6 +76,7 @@ class SpecFile(object):
         '''Returns true if source rpm contains patch files'''
         return len(self.get_sources('Patch')) > 0
 
+    # FIXME: dead code, not referenced?!
     def get_macros(self):
         for lin in self.lines:
             res = MACROS.search(lin)
@@ -104,6 +105,7 @@ class SpecFile(object):
         cur_sec = this_sec
         #self.dump_sections()
 
+    # FIXME: this is dead code, only referenced line above?!
     def dump_sections(self, section=None):
         if section:
             sections = self.get_section(section)
@@ -128,7 +130,8 @@ class SpecFile(object):
             output, error = proc.communicate()
             #print "output : [%s], error : [%s]" % (output, error)
         except OSError, e:
-            print "OSError : %s" % str(e)
+            self.log.error( "OSError : %s" % str(e))
+            self.log.debug( "OSError : %s" % str(e), exc_info=True)
             return False
         if output:
             rc = output.split("\n")[0]
@@ -144,9 +147,10 @@ class SpecFile(object):
             if len(value) > 0:
                 return value
             else:
-                print "error : [%s]" % (error)
+                self.log.warning("Error : [%s]" % (error))
                 return False
 
+    # FIXME: This is dead code, not referenced?!§
     def get_rpm_eval(self, filter):
         lines = "\n".join(self.get_section('main')['main'])
         #print lines
@@ -173,6 +177,7 @@ class SpecFile(object):
             return output
         except OSError, e:
             self.log.error("OSError: %s" % str(e))
+            self.log.debug("OSError: %s" % str(e), exc_info=True)
             return None
 
     def find_tag(self, tag, section = None, split_tag = True):

@@ -44,8 +44,8 @@ class RCheckBase(LangCheckBase):
                 content = stream.read()
                 stream.close()
             except IOError, err:
-                print 'Could not retrieve info from %s' % url
-                self.log.debug('Error: %s' % err)
+                self.log.warning('Could not retrieve info from ' + url)
+                self.log.debug('Error: %s' % err, exc_info=True)
                 continue
             res = re.search('Package: %s\nVersion:.*' % name, content)
             if res is not None:
