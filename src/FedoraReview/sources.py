@@ -27,7 +27,6 @@ import glob
 from source import Source
 from settings import Settings
 
-#FIXME: print -> log.*
 
 class Sources(object):
     """ Container for Source objects, reflecting SourceX: lines
@@ -47,8 +46,9 @@ class Sources(object):
         source = Source(self, tag, url)
         self._sources[tag] = source
         if source.local:
-            print 'The source %s in the srpm can not be retrieved. '\
-            'This is a corner case not supported yet.' % url
+            self.log.info( 'The source %s in the srpm can not be'
+               ' retrieved. This is a corner case not supported yet.' 
+               % url )
 
     def get(self, tag):
         """ Get a single Source object"""
@@ -75,7 +75,7 @@ class Sources(object):
         in the spec.
         """
         if source_url is None and source_filename is None:
-            print 'No source set to extract'
+            self.log.info( 'No source set to extract')
         for source in self._sources:
             if source_url and source.URL == source_url:
                 source.extract()
@@ -88,9 +88,9 @@ class Sources(object):
             return self._sources_files
         try:
             self.extract_all()
-        except  OSError as error:
-            #FIXME: use log, stacktrace
-            print "Source", error
+        except  OSError as e:
+            self.log.error( "OS error extracting ",  + str(e))
+            self.log.debug( "Extract error ",  + str(e), exc_info=True)
             self._source_files = []
             return []
         sources_files = []

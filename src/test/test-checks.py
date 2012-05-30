@@ -36,7 +36,7 @@ from base import *
 class TestChecks(unittest.TestCase):
 
     def setUp(self):
-        sys.argv = ['test-checks','-vb','1234']
+        sys.argv = ['test-checks','-b','1234']
         Settings.init()
         ReviewDirs.workdir_setup('.', True)
         if not os.path.exists(TEST_WORK_DIR):
@@ -53,9 +53,7 @@ class TestChecks(unittest.TestCase):
 
     def test_all_checks(self):
         ''' Run all automated review checks'''
-        print('Setup Checks')
         self.checks = Checks(self.spec, self.srpm)
-        print('Running All Checks')
         self.checks.run_checks(writedown=False)
         # Automatic Checks
         checks = self.checks.checks

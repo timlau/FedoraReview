@@ -91,7 +91,7 @@ class SRPMFile(Helpers):
             return None
         return extract_dir
 
-    def build(self, force=False, silence=False):
+    def build(self, force=False):
         """ Returns the build status, -1 is the build failed, -2
          reflects prebuilt rpms output code from mock otherwise.
 
@@ -104,9 +104,9 @@ class SRPMFile(Helpers):
             return SRPMFile.BUILD_PREBUILT
         if self.build_failed:
             return SRPMFile.BUILD_FAIL
-        return self.mockbuild(force, silence=silence)
+        return self.mockbuild(force)
 
-    def mockbuild(self, force=False, silence=False):
+    def mockbuild(self, force=False):
         """ Run a mock build against the package.
 
         :kwarg force, boolean to force the mock build even if the
@@ -121,11 +121,16 @@ class SRPMFile(Helpers):
             else:
                 self.log.info(
                      'No valid cache, building despite --nobuild.')
-        self.log.info("Building %s using mock root %s" % (
-            self.filename, Settings.mock_config))
+        info = 'Rebuilding ' + self.filename + ' using '
+        if Settings.mock_config:
+             self.log.info(info + 'mock root ' + Settings.mock_config)
+        else:
+             self.log.info(info + 'default root')
         cmd = 'mock'
         if Settings.mock_config:
             cmd += ' -r ' + Settings.mock_config
+        if Settings.log_level > logging.INFO:
+            cmd += ' -q'
         cmd += ' --rebuild'
         if Settings.mock_options:
             cmd += ' ' + Settings.mock_options
