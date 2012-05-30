@@ -21,6 +21,8 @@ Tools for helping Fedora package reviewers
 '''
 
 import os.path
+import shutil
+
 from urlparse import urlparse
 
 from helpers import Helpers
@@ -56,7 +58,7 @@ class Source(Helpers):
                 self.downloaded = False
         else:  # this is a local file in the SRPM
             self.log.info("No upstream for (%s): %s" % (tag, url))
-            srcdir = ReviewDirs.upstream_unpacked 
+            srcdir = ReviewDirs.srpm_unpacked 
             self.filename = os.path.join(srcdir, url)
             self.url = 'file://' + self.filename
             self.local = True
@@ -71,12 +73,17 @@ class Source(Helpers):
                                     ": upstream source not found")
 
     def extract(self ):
-        """ Extract the sources in the mock chroot so that it can be
-        destroy easily by mock. Prebuilt sources are extracted to
-        temporary directory in current dir.
-        """
-        self.extract_dir =  ReviewDirs.upstream_unpacked 
-        self.rpmdev_extract(self.filename, self.extract_dir)
+        ''' Extract the source into a directory under upstream-unpacked,
+            available in the extract_dir property. Sources which not 
+            be extracted e. g., plain files are copied to the 
+            extract-dir.
+        '''
+        self.extract_dir = os.path.join(ReviewDirs.upstream_unpacked,
+                                        self.tag)
+        if not os.path.exists(self.extract_dir):
+            os.mkdir(self.extract_dir)
+        if not self.rpmdev_extract(self.filename, self.extract_dir):
+            shutil.copy(self.filename, self.extract_dir)
 
     def get_source_topdir(self):
         """
