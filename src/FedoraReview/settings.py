@@ -119,11 +119,11 @@ class _Settings(object):
         modes.add_argument('-b', '--bug', metavar='<bug>',
                     help='Operate on fedora bugzilla using its bug number.')
         modes.add_argument('-n', '--name', metavar='<name>',
-                    help='Operate on local files <name>.spec &'
-                         ' <name>*.src.rpm located in work dir.')
+                    help='Use local files <name>.spec and'
+                         ' <name>*.src.rpm in current dir.')
         modes.add_argument('-u', '--url', default = None, dest='url',
                     metavar='<url>',
-                     help='Operate on another bugzilla, using complete'
+                     help='Use another bugzilla, using complete'
                           ' url to bug page.')
         modes.add_argument('-d','--display-checks', default = False,
                     action='store_true',dest='list_checks',
@@ -131,14 +131,14 @@ class _Settings(object):
         modes.add_argument('-V', '--version', default = False,
                     action='store_true',
                     help='Display version information and exit.')
+        modes.add_argument('-h','--help', action='help',
+                    help = 'Display this help message')
         optional.add_argument('-c','--cache', action='store_true', dest='cache',
                     help = 'Do not redownload files from bugzilla,'
                            ' use the ones in the cache.')
         optional.add_argument('-g','--grab', default = False,
                     action='store_true',dest='grab',
                     help='Display urls and exit')
-        optional.add_argument('-h','--help', action='help',
-                    help = 'Display this help message')
         optional.add_argument('-m','--mock-config', metavar='<config>',
                     dest='mock_config',
                     help='Configuration to use for the mock build,'
