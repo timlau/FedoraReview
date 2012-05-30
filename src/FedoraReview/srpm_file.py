@@ -133,6 +133,7 @@ class SRPMFile(Helpers):
             cmd += ' 2>&1 | egrep "Results and/or logs|ERROR" '
         self.log.debug('Mock command: %s' % cmd)
         rc = call(cmd, shell=True)
+        Mock.builddir_cleanup()
         logfile = os.path.join(Mock.resultdir,'build.log')
         rc = str(rc)
         try:
@@ -233,7 +234,7 @@ class SRPMFile(Helpers):
             self.log.info(hdr + sep.join(rpms))
         else:
             self.build()
-            rpms = glob(Mock.resultdir + '/*.rpm')
+            rpms = glob(os.path.join(Mock.resultdir, '*.rpm'))
         rpm_files = {}
         for rpm in rpms:
             if rpm.endswith('.src.rpm'):
