@@ -9,4 +9,9 @@
 - Doc: fix manpage/Bugs
 - Remove --grab
 - Remove --no-report?
--
+- Refactor: move code to define and initiate workdir to abstract_bug
+- Review output, make it silent at least with higher logging levels.
+- Sanitize the srpm.build() with symbolic status, accessors. Refactor
+  the FSM? Move to mock?!
+- See if -p can be used with -b and -u?!
+- Change FR_LOGLEVEL to REVIEW_LOGLEVEL

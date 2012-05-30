@@ -1,0 +1,26 @@
+#!/usr/bin/python -tt
+#-*- coding: utf-8 -*-
+# vim: set expandtab: ts=4:sw=4:
+#
+# Script to run a fedora-review installation from wherever it is 
+# located. Primarely intended to be able to run a test version
+# in parallell with the official one.
+#
+# Usage:
+#     $ ln -s $PWD/try-fedora-review ~/bin
+#     $ try-fedora-review <args>
+#   
+# (C) 2011 - Alec Leamas 
+
+import os.path
+import sys
+
+pkg_dir = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])),
+                       'src')
+sys.path.insert(0, pkg_dir)
+
+from FedoraReview.review_helper import ReviewHelper
+
+review = ReviewHelper()
+review.run()
+

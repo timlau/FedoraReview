@@ -31,10 +31,9 @@ build them in mock, run a number of tests and generate a report.
 Not all bugzillas support the -b option. The -u option only allows for
 downloads and is not as reliable as -b, but works in many cases.
 See  --url usage notes below.
-
-.HP
-fedora-review -n <package name>
-
+.IP "" 4
+$ fedora-review -n <package name>
+.PP
 This alternative usage expects <package name>.spec and source rpm in current
 directory. By adding the -p switch, fedora-review uses already built rpms
 in current directory instead of building using mock.
@@ -42,7 +41,7 @@ in current directory instead of building using mock.
 You will need to have mock installed and be member of the mock group
 for the build to work. Run as root:
 .IP "" 4
- # usermod -a -G mock [your user name] && newgrp mock
+# usermod -a -G mock [your user name] && newgrp mock
 .PP
 To assign bugs in bugzilla automatically you will first have to login
 into bugzilla (--login). This will create a bugzilla cookie so you
@@ -63,10 +62,8 @@ Fetch data from given url, typically another bugzilla instance without
 xmlrpc support such as rpmfusion. For more modern sites with xmlrpc
 support, first try --bug <bug nr> --other-bz <url>.
 The option tries to retrieve the URL:s by scanning the page.
-In a first attempt links ending in '.spec' and 'src.rpm' are
-looked for. Such links will be found. In second round, --url
-looks for links prefixed with labels like srpm: and Spec URL:.  Obviously
-this might fail as well as work. It might even pick up wrong links.
+As for --bug links has to end with '.src.rpm' and '.spec' to
+be found.
 .TP 4
 .B  -d, --display-checks
 List all available checks, usable as arguments to --exclude and
@@ -82,7 +79,7 @@ Do not redownload the files from bugzilla, use the local one.
 .B  -g, --grab
 Display the URL:s found for spec file and source rpm, then exit.
 .TP 4
-.B -m, --mock-config <configurationi>
+.B -m, --mock-config <configuration>
 Specify which mock config to use, one of the files in /etc/mock,
 with the .cfg suffix stripped. Defaults to the root defined in
 /etc/mock/default.cfg
@@ -106,13 +103,13 @@ of building new ones in mock
 Instead of using a spec file URL, use the spec file bundled in the srpm file.
 .TP 4
 .B -s test, --single test
-Run a single test, as listed by --list
+Run a single test, as listed by --display-checks
 .TP 4
 .B  -v, --verbose
 Provides a more detailed output of what's going on.
 .TP 4
 .B -x  "test1, test2, ...", --exclude "test1, test2, ..."
-Comma-separated list of test(s) to exclude, as listed by --list
+Comma-separated list of test(s) to exclude, as listed by --display-checks
 .SH BUGZILLA OPTIONS
 .TP 4
 .B -a, --assign
@@ -126,16 +123,10 @@ URL for another bugzilla.
 .TP 4
 .B -i id, --user userid
 The bugzilla user id.
-.SH --url usage notes.
-The --url option tries to retrieve the URL:s by scanning the page.
-In a first attempt links ending in '.spec' and 'src.rpm' are
-looked for. Such links will be found. In second round, --url
-looks links prefixed with labels like srpm: and Spec URL:. Obviously
-this might fail as well as work. It might even pick up wrong links.
 .SH EXAMPLES
 Make a report template for Fedora bug 817271:
 .IP "" 4
-$ fedora-review -n 817271
+$ fedora-review -b 817271
 .PP
 fetches spec and srpm file from bugzilla.redhat.com and makes a report.
 To instead handle a bug at rpmfusion use something like
@@ -148,12 +139,12 @@ https://bugzilla.rpmfusion.org/show_bug.cgi?id=2150 \\
 .PP
 Occasionally, fedora-review isn't able to pick up the links e. g.,
 when the links does not end in .spec and/or .src.rpm. In these case
-you need to download the files manually to use them:
+you need to download files manually. Using --rpm-spec only the srpm
+is needed:
 .nf
 .IP "" 4
-$ wget http://somewhere.com/badspeclink -O my-package.spec
-$ wget http://somewhere.com/bad-srpmlink -O my-package.src.rpm
-$ fedora-review -n my-package
+$ wget http://somewhere.com/bad-srpmlink -O my-package-1.2-1.fc16.src.rpm
+$ fedora-review --rpm-spec -n my-package
 .fi
 .PP
 This works if (and only if) the local files has name with correct prefix
