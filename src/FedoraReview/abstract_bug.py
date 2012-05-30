@@ -155,7 +155,8 @@ class AbstractBug(Helpers):
         self.do_download_srpm()
         
         SRPMFile(self.srpm_file).unpack()
-        file = glob(os.path.join(ReviewDirs.srpm_unpacked, '*.spec'))[0]
+        file = glob(os.path.join(ReviewDirs.srpm_unpacked, 
+                                 name + '*.spec'))[0]
         self.spec_file = file
         self.spec_url = 'file://' + file
 
