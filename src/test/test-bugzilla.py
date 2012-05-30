@@ -26,23 +26,19 @@ import os.path
 sys.path.insert(0,os.path.abspath('../'))
 
 import os
-import os.path
 import unittest
 
-from FedoraReview.bugzilla_bug import BugzillaBug
-from FedoraReview.settings import Settings
+from FedoraReview import BugzillaBug, Settings, ReviewDirs
 from FedoraReview.abstract_bug import SettingsError
 from base import *
 
-class BugzillaTests(unittest.TestCase):
+class TestBugzilla(unittest.TestCase):
 
     def setUp(self):
-        sys.argv = ['test-bugzilla','-b','1234']
-        Settings.init()
+        sys.argv = ['test-bugzilla','-b',TEST_BUG ]
+        Settings.init(TEST_BUG )
+        ReviewDirs.workdir_setup('.', True)
         self.bug = BugzillaBug(TEST_BUG)
-        self.bug.find_urls()
-        if not os.path.exists(TEST_WORK_DIR):
-            os.makedirs(TEST_WORK_DIR)
 
     def test_find_urls(self):
         ''' Test that we can get the urls from a bugzilla report'''
@@ -56,18 +52,21 @@ class BugzillaTests(unittest.TestCase):
 
     def test_download_files(self):
         ''' Test that we can download the spec and srpm from a bugzilla report'''
-        # download files
+        self.bug.find_urls()
         rc = self.bug.download_files()
         self.assertTrue(rc)
-        print("SRPM : %s " % self.bug.srpm_file)
-        print("SPEC : %s " % self.bug.spec_file)
-        # check the downloaded files locations
-        cd = os.path.abspath('./review-srpm-src')
-        srpm = os.path.join(cd, 'python-test-1.0-1.fc14.src.rpm')
-        spec = os.path.join(cd, 'python-test.spec')
+        self.assertEqual(self.bug.srpm_url,
+                         'http://timlau.fedorapeople.org/files/test' 
+                         '/review-test/python-test-1.0-1.fc14.src.rpm')
+        self.assertEqual(self.bug.spec_url,
+                         'http://timlau.fedorapeople.org/files/test/'
+                          'review-test/python-test.spec')
+        
+        cd = os.path.abspath('./srpm')
+        srpm = os.path.join(cd,  'python-test-1.0-1.fc14.src.rpm')
+        spec = os.path.join(cd,  'python-test.spec')
         self.assertEqual(self.bug.srpm_file, srpm)
         self.assertEqual(self.bug.spec_file, spec)
-        # check that the downloaded files exists
         self.assertTrue(os.path.exists(srpm))
         self.assertTrue(os.path.exists(spec))
 
@@ -85,5 +84,5 @@ class BugzillaTests(unittest.TestCase):
             self.assertEqual(rc, True)
 
 if __name__ == '__main__':
-    suite = unittest.TestLoader().loadTestsFromTestCase(BugzillaTests)
+    suite = unittest.TestLoader().loadTestsFromTestCase(TestBugzilla)
     unittest.TextTestRunner(verbosity=2).run(suite)
