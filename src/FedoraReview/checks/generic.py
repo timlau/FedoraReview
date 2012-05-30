@@ -388,11 +388,8 @@ class CheckRpmLintInstalled(CheckBase):
 
     def run(self):
         if self.srpm.build() != -1:
-            dir = '.' if Settings.prebuilt else self.get_mock_dir()
-            dir += '/'
             rpms = self.srpm.get_used_rpms('.src.rpm')
-            paths = [ dir + r for r in rpms ]
-            no_errors, rc = Mock.rpmlint_rpms(paths)
+            no_errors, rc = Mock.rpmlint_rpms(rpms)
             text = 'No rpmlint messages.' if no_errors else \
                 'There are rpmlint messages (see attachment).'
             self.set_passed(True, text)
