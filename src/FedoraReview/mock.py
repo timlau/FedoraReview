@@ -33,7 +33,7 @@ from helpers import Helpers
 
 
 _RPMLINT_SCRIPT="""
-mock -r  @config@ --shell << 'EOF'
+mock  @config@ --shell << 'EOF'
 echo 'rpmlint:'
 rpmlint @rpm_names@
 echo 'rpmlint-done:'
@@ -54,7 +54,10 @@ class _Mock(Helpers):
         self.mock_root = config_opts['root']
 
     def _get_dir(self, subdir=None):
-        p = os.path.join( '/var/lib/mock', self.mock_root )
+        if Settings.mock_config:
+            p = os.path.join( '/var/lib/mock', Settings.mock_config )
+        else:
+            p = os.path.join( '/var/lib/mock', self.mock_root )
         p = os.path.join(p, subdir) if subdir else p
         if not os.path.exists(p):
             os.makedirs(p)
@@ -114,24 +117,26 @@ class _Mock(Helpers):
 
     def rpmlint_rpms(self, rpms):
         """ Install and run rpmlint on  packages,
-        return (True,  text) or (False, error_string)"""
+        Requires packages already installed.
+        Return (True,  text) or (False, error_string)"""
 
-        rpms.insert(0, 'rpmlint')
-        error =  self.install(rpms)
+        error =  self.install(['rpmlint'])
         if error:
             return False, error
-        rpms.pop(0)
 
         script = _RPMLINT_SCRIPT
         basenames = [ os.path.basename(r) for r in rpms]
         names = [r.rsplit('-', 2)[0] for r in basenames]
         rpm_names = ' '.join(list(set(names)))
-        config = Settings.mock_config if Settings.mock_config else ''
+      
+        config = ''
+        if Settings.mock_config:
+            config = '-r ' + Settings.mock_config 
         script = script.replace('@config@', config)
         script = script.replace('@rpm_names@', rpm_names)
         ok, output = self._run(script)
-        if Settings.verbose:
-             print "Script output: " + output
+        self.log.debug( "Script output: " + output)
+
         if not ok:
             return False, output + '\n'
 

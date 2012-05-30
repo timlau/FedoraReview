@@ -33,6 +33,9 @@ UPSTREAM_UNPACKED = 'upstream-unpacked'
 
 class _ReviewDirs(object):
 
+    def __init__(self):
+        self.startdir = os.getcwd()
+
     def report_path(self, name):
         return os.path.abspath('./%s-review.txt' % name)
 
