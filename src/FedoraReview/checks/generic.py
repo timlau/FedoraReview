@@ -1457,14 +1457,17 @@ class CheckFileRequires(CheckBase):
             return not req.startswith('/')
 
         def get_requires(rpm, requires):
-            requires = filter(lambda s: s.find('rpmlib') == -1, requires)
-            requires = filter(lambda s: s.find('GLIBC') == -1, requires)
-            requires.insert(0, os.path.basename(rpm) + ':')
-            return '\n    '.join(requires)
+            requires = filter(lambda s: not 'rpmlib' in s, requires)
+            requires = filter(lambda s: not 'GLIBC' in s, requires)
+            requires = sorted(list(set(requires)))
+            hdr = os.path.basename(rpm) + ' (rpmlib, GLIBC filtered):'
+            requires.insert(0, hdr)
+            return '\n    '.join(requires) + '\n'
 
         def get_provides(rpm, provides):
+            provides = sorted(list(set(provides)))
             provides.insert(0, os.path.basename(rpm) + ':')
-            return '\n    '.join(provides)
+            return '\n    '.join(provides) + '\n'
 
         wrong_req = []
         rpm_files = self.srpm.get_used_rpms('src.rpm')

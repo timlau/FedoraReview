@@ -78,14 +78,15 @@ class Helpers(object):
     @staticmethod
     def rpmdev_extract(archive, extract_dir):
         """
-        Unpack archive in extract_dir. Returns return value
-        from subprocess.call()
+        Unpack archive in extract_dir. Returns true if
+        from subprocess.call() returns 0
         """
         cmd = 'rpmdev-extract -qC ' + extract_dir + ' ' + archive
+        cmd += ' &>/dev/null'
         rc = call(cmd, shell=True)
         if rc != 0:
-            Settings.get_logger().warn("Cannot unpack "  + archive)
-        return rc
+            Settings.get_logger().debug("Cannot unpack "  + archive)
+        return rc == 0
 
     @staticmethod
     def check_rpmlint_errors(out):
