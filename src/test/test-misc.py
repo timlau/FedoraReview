@@ -56,6 +56,17 @@ class TestMisc(unittest.TestCase):
         self.helpers._get_file(TEST_SRPM, TEST_WORK_DIR)
         self.startdir = os.getcwd()
 
+    def run_single_check(self, bug, the_check):
+        bug.find_urls()
+        bug.download_files()
+        checks = Checks(bug.spec_file, bug.srpm_file)
+        checks.add_check_classes()
+        checks.set_single_check(the_check)
+        self.assertEqual(len(checks.checks), 1)
+        check = checks.checks[0]
+        check.run()
+        return check
+
     def test_source_file(self):
         """ Test the SourceFile class """
         bug = NameBug('python-test')
@@ -188,14 +199,7 @@ class TestMisc(unittest.TestCase):
         sys.argv = ['fedora-review','-n','python-test','-rp']
         Settings.init(True)
         bug = NameBug('python-test')
-        bug.find_urls()
-        bug.download_files()
-        checks = Checks(bug.spec_file, bug.srpm_file)
-        checks.add_check_classes()
-        checks.set_single_check('CheckSourceMD5')
-        self.assertEqual(len(checks.checks), 1)
-        check = checks.checks[0]
-        check.run()
+        check = self.run_single_check(bug, 'CheckSourceMD5')
         self.assertEqual(check.state, 'pass')
         expected = 'diff -r shows no differences'
         self.assertTrue(expected in check.attachments[0].text)
@@ -208,20 +212,23 @@ class TestMisc(unittest.TestCase):
         sys.argv = ['fedora-review','-n','python-test','-rp']
         Settings.init(True)
         bug = NameBug('python-test')
-        bug.find_urls()
-        bug.download_files()
-        checks = Checks(bug.spec_file, bug.srpm_file)
-        checks.add_check_classes()
-        checks.set_single_check('CheckSourceMD5')
-        self.assertEqual(len(checks.checks), 1)
-        check = checks.checks[0]
-        check.run()
+        check =self. run_single_check(bug, 'CheckSourceMD5')
         self.assertEqual(check.state, 'fail')
         expected = 'diff -r also reports differences'
         self.assertTrue(expected in check.attachments[0].text)
         os.chdir(self.startdir)
- 
 
+    def test_bad_specfile(self):        
+        os.chdir('bad-spec')
+        ReviewDirs.workdir_setup('.', True, True)
+        sys.argv = ['fedora-review','-n','python-test','-p']
+        Settings.init(True)
+        bug = NameBug('python-test')
+        check = self.run_single_check(bug,'CheckSpecAsInSRPM')
+        self.assertEqual(check.state, 'fail')
+        self.assertTrue('#TestTag' in check.attachments[0].text)
+        os.chdir(self.startdir)
+ 
 
 if __name__ == '__main__':
     suite = unittest.TestLoader().loadTestsFromTestCase(TestMisc)
