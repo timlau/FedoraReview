@@ -198,7 +198,6 @@ class TestMisc(unittest.TestCase):
         check.run()
         self.assertEqual(check.state, 'pass')
         expected = 'diff -r shows no differences'
-        import pdb; pdb.set_trace()
         self.assertTrue(expected in check.attachments[0].text)
         os.chdir(self.startdir)
 
