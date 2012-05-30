@@ -129,15 +129,24 @@ class SRPMFile(Helpers):
         if Settings.mock_options:
             cmd += ' ' + Settings.mock_options
         cmd += ' ' + self.filename
-        if silence:
-            cmd += ' 2>&1 | grep "Results and/or logs" '
+        if not Settings.verbose and not ' -q' in cmd:
+            cmd += ' 2>&1 | egrep "Results and/or logs|ERROR" '
         self.log.debug('Mock command: %s' % cmd)
         rc = call(cmd, shell=True)
-        if rc == 0:
+        logfile = os.path.join(Mock.resultdir,'build.log')
+        rc = str(rc)
+        try:
+            with open(logfile) as f:
+                log  = '\n'.join(f.readlines())
+                if 'EXCEPTION' in log:
+                    rc = 'Build error(s)'
+        except:
+            rc = "Can't open logfile"
+        if rc == '0':
             self.is_build = True
-            self.log.info('Build completed ok')
+            self.log.info('Build completed')
         else:
-            self.log.info('Build failed rc = %i ' % rc)
+            self.log.info('Build failed rc = ' + rc)
             self.build_failed = True
             raise FedoraReviewError('Mock build failed.')
         return rc
