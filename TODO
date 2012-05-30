@@ -3,7 +3,11 @@
   contain functions related only to them (i.e. SRPMFile.get_files_rpms)
 - automate some checks that can be automated (mostly generic ones)
 - Review, fix and document the configuration file use.
-- run build and install tests first
-- fix build check (always fails)
-- fix license test (always use upstream source).
+- run build and install tests first, fix Rdocwhatever triggers build.
+- New check: specfile == specfile  in srpm.
+- New test: md5sum/diff -r; single test framework.
+- Doc: fix manpage/Bugs
+- Remove --grab
+- Remove --no-report?
+- EXTRA tests framework?!
 -
