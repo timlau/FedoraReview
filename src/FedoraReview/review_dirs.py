@@ -36,13 +36,13 @@ class _ReviewDirs(object):
     def report_path(self, name):
         return os.path.abspath('./%s-review.txt' % name)
 
-    def workdir_setup(self, wd, keep_data=False):
+    def workdir_setup(self, wd, keep_data=False, force=False):
         wd = os.path.abspath(wd)
         if hasattr(self, 'wd'):
-            if self.wd != wd:
+            if self.wd != wd and not force:
                logging.debug('Attempt to create new working dir ' +
                               wd + ' in existing dir ' + self.wd)
-            return
+               return
         if os.path.exists(wd) and not keep_data:
             logging.info("Clearing old review directory: " + wd)
             shutil.rmtree(wd)
@@ -56,15 +56,16 @@ class _ReviewDirs(object):
             if not os.path.exists(d):
                 os.mkdir(d)
 
-    srpm = \
-        property(lambda self: os.path.join(self.wd, SRPM))
-    srpm_unpacked = \
-        property(lambda self: os.path.join(self.wd, SRPM_UNPACKED))
-    upstream = \
-        property(lambda self: os.path.join(self.wd, UPSTREAM))
-    upstream_unpacked = \
-        property(lambda self: os.path.join(self.wd, UPSTREAM_UNPACKED))
+    is_inited = property(lambda self: hasattr(self, 'wd'))
     root = property(lambda self: self.wd)
+
+    srpm = property(lambda self: os.path.join(self.wd, SRPM))
+    srpm_unpacked = property(lambda self: os.path.join(self.wd, 
+                                                       SRPM_UNPACKED))
+    upstream = property(lambda self: os.path.join(self.wd, UPSTREAM))
+    upstream_unpacked = property(lambda self: 
+                                     os.path.join(self.wd, 
+                                                  UPSTREAM_UNPACKED))
 
 ReviewDirs = _ReviewDirs()
 

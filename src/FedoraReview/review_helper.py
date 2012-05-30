@@ -70,8 +70,9 @@ class ReviewHelper(object):
             print "Spec URL:" + self.bug.spec_url
             return
 
-        wd = self.bug.get_dirname()
-        ReviewDirs.workdir_setup(wd)
+        if not ReviewDirs.is_inited:
+            wd = self.bug.get_dirname()
+            ReviewDirs.workdir_setup(wd)
 
         if not self.bug.download_files():
             self.log.error('Cannot download .spec and .srpm')
