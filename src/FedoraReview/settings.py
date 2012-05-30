@@ -214,17 +214,17 @@ class _Settings(object):
 
     def do_logger_setup(self, lvl=None):
         ''' Setup Python logging. lvl is a logging.* thing like
-        logging.DEBUG. If None, respects FR_LOGLEVEL environment
+        logging.DEBUG. If None, respects REVIEW_LOGLEVEL environment
         variable, defaulting to logging.INFO.
         '''
         msg = None
         if not lvl:
-            if 'FR_LOGLEVEL' in os.environ:
+            if 'REVIEW_LOGLEVEL' in os.environ:
                 try:
                     lvl = eval('logging.' +
-                               os.environ['FR_LOGLEVEL'].upper())
+                               os.environ['REVIEW_LOGLEVEL'].upper())
                 except:
-                    msg = "Cannot set loglevel from FR_LOGLEVEL"
+                    msg = "Cannot set loglevel from REVIEW_LOGLEVEL"
                     lvl = logging.INFO
             else:
                 lvl = logging.INFO
