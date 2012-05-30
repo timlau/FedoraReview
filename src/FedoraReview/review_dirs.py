@@ -40,6 +40,10 @@ class _ReviewDirs(object):
         return os.path.abspath('./%s-review.txt' % name)
 
     def workdir_setup(self, wd, keep_data=False, force=False):
+        if not keep_data and not force and os.path.exists(wd):
+            d = ''.join(wd.split(os.getcwd(), 1))
+            print "The directory %s in in the way, please remove" % d
+            raise CleanExitError("Cannot create review directory")
         wd = os.path.abspath(wd)
         if hasattr(self, 'wd'):
             if self.wd != wd and not force:
