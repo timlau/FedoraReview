@@ -25,6 +25,8 @@ import os
 import os.path
 import re
 
+from subprocess import Popen, PIPE
+
 from FedoraReview import CheckBase, Attachment, ReviewDirs, Mock, Settings
 
 
@@ -398,6 +400,55 @@ class CheckRpmLintInstalled(CheckBase):
                 [Attachment('Rpmlint (installed packages)', rc+'\n', 5)]
         else:
             self.set_passed(False, 'Mock build failed')
+
+
+class CheckSpecAsInSRPM(CheckBase):
+    '''
+    SHOULD: Not in guidelines, buth the spec in the spec URL should
+    be the same as the one in the srpm.
+    '''
+
+    def __init__(self, base):
+        CheckBase.__init__(self, base)
+        self.text = 'Spec file according to URL is the same as in SRPM.'
+        self.automatic = True
+        self.type = 'EXTRA'
+
+    def run(self):
+        if self.srpm.build() == -1:
+            self.set_passed(False, 'Mock build failed')
+            return
+        self.srpm.unpack()
+        pattern = os.path.join(ReviewDirs.srpm_unpacked, '*.spec')
+        spec_files = glob.glob(pattern)
+        if len(spec_files) != 1:
+            self.set_passed(False,
+                            '0 or more than one spec file in srpm(!)')
+            return
+        srpm_spec_file = spec_files[0]
+        url_spec_file = self.spec.filename
+        cmd = ["diff", '-U2', url_spec_file, srpm_spec_file]
+        try:
+            p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+            output, error = p.communicate()
+        except OSError as e:
+            self.log.error("Cannot run diff", exc_info=True)
+            self.set_passed(False, "OS error runnning diff")
+            return
+        if output and len(output) > 0:
+            self.set_passed(False, 'Spec file as given by url is not'
+                                   ' the same as in SRPM'
+                                   ' (see attached diff).')
+            a = Attachment("Diff spec file in url and in SRPM",
+                           output,
+                           8)
+            self.attachments = [a]
+        else:
+            self.set_passed(True)
+        return
+
+    def is_applicable(self):
+        return not Settings.rpm_spec
 
 
 class CheckSpecLegibility(CheckBase):
