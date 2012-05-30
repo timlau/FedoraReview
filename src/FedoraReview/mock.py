@@ -104,7 +104,10 @@ class _Mock(Helpers):
                 txt += error if error else ''
                 print txt
             return output[0]
-        return None
+        if p.returncode != 0:
+            logging.warning("Install command returned error code %i",
+                            p.returncode)
+        return None if p.returncode == 0 else output
 
     def _run(self, script):
         """ Run a script,  return (ok, output). """
