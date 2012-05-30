@@ -48,6 +48,7 @@ class SRPMFile(Helpers):
         self.build_failed = False
         self._rpm_files = None
         self.rpmlint_output = []
+        self.unpack()
 
     def unpack(self, src=None):
         """ Local unpack using rpm2cpio. """
