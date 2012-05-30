@@ -10,4 +10,3 @@
 - Sanitize the srpm.build() with symbolic status, accessors. Refactor
   the FSM? Move to mock?!
 - See if -p can be used with -b and -u?!
-- Change FR_LOGLEVEL to REVIEW_LOGLEVEL

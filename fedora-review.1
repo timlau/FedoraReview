@@ -180,8 +180,9 @@ User supplied external plugins directory
 .B  REVIEW_EXT_DIRS
 If REVIEW_EXT_DIRS is set, it specifies additional directories that will be searched for external plugins
 .TP
-.B FR_LOGLEVEL
-loglevel used when not using -v/--verbose. A logging.* value like 'DEBUG', 'Info', or 'warning'.
+.B REVIEW_LOGLEVEL
+loglevel used when not using -v/--verbose. A logging.* value like 'DEBUG', 'Info', or 'warning'. Setting
+REVIEW_LOGLEVEL to 'debug' is the same as providing the -v/--verbose option.
 
 .SH AUTHORS
 Original author: Tim Lauridsen <tim.lauridsen@gmail.com>
@@ -193,7 +194,7 @@ Developers:
 For a list of all contributors see AUTHORS file
 
 .SH SEE ALSO
-  https://fedorahosted.org/FedoraReview/  - source, issue tracker, etc.
-
+https://fedorahosted.org/FedoraReview/  - source, issue tracker, etc.
+.SH BUGS
 .sp
 No known bugs at this time
