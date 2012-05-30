@@ -268,6 +268,7 @@ class CheckSourceMD5(CheckBase):
                      "Cannot extract local source: " + s.filename)
                  return(False, None)
             cmd = '/usr/bin/diff -U2 -r %s %s'  % (upstream, local)
+            self.log.debug(' Diff cmd: ' + cmd)
             try:
                 from subprocess import Popen, PIPE
                 p = Popen(cmd.split(), stdout=PIPE, stderr=PIPE)
