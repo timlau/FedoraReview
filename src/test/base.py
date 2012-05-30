@@ -23,7 +23,7 @@ import os
 
 BASE_URL = 'https://fedorahosted.org/releases/F/e/FedoraReview/'
 
-TEST_BUG = 672280
+TEST_BUG = '672280'
 TEST_SPEC = BASE_URL + 'python-test.spec'
 TEST_SRPM = BASE_URL + 'python-test-1.0-1.fc16.src.rpm'
 TEST_SRC = BASE_URL + 'python-test-1.0.tar.gz'
