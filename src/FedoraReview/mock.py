@@ -23,8 +23,8 @@ Tools for helping Fedora package reviewers
 import logging
 import os
 import os.path
-import glob
 
+from glob import glob
 from urlparse import urlparse
 from subprocess import call, Popen, PIPE, STDOUT
 
@@ -165,9 +165,23 @@ class _Mock(Helpers):
         resultdir, prefixed with the given name
         '''
         path = self.get_resultdir()
-        if len(glob.glob(os.path.join(path, name + '*.src.rpm'))) == 0:
+        if len(glob(os.path.join(path, name + '*.src.rpm'))) == 0:
              return False
-        return len(glob.glob(os.path.join(path, name +'*.rpm'))) >= 2
+        return len(glob(os.path.join(path, name +'*.rpm'))) >= 2
+
+    def builddir_cleanup(self):
+        ''' Remove broken symlinks left by mock command. '''
+        paths = glob(os.path.join(self.get_builddir('BUILD'), '*'))
+        for p in paths:
+           try:
+              os.stat(p)
+           except:
+              try:
+                  os.lstat(p)
+                  os.unlink(p)
+              except:
+                   pass
+
 
 Mock = _Mock()
 

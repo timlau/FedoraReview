@@ -48,6 +48,7 @@ class SRPMFile(Helpers):
         self.build_failed = False
         self._rpm_files = None
         self.rpmlint_output = []
+        self.unpack()
 
     def unpack(self, src=None):
         """ Local unpack using rpm2cpio. """
@@ -82,15 +83,15 @@ class SRPMFile(Helpers):
             return extract_dir
         else:
             os.mkdir(extract_dir)
-        rc = self.rpmdev_extract(os.path.join(self.unpacked_src,
+        rv = self.rpmdev_extract(os.path.join(self.unpacked_src,
                                               self.filename),
                                  extract_dir)
-        if rc != 0:
+        if not rv:
             self.log.error("Cannot unpack " +  self.filename)
             return None
         return extract_dir
 
-    def build(self, force=False, silence=False):
+    def build(self, force=False):
         """ Returns the build status, -1 is the build failed, -2
          reflects prebuilt rpms output code from mock otherwise.
 
@@ -103,9 +104,18 @@ class SRPMFile(Helpers):
             return SRPMFile.BUILD_PREBUILT
         if self.build_failed:
             return SRPMFile.BUILD_FAIL
-        return self.mockbuild(force, silence=silence)
+        if force:
+            return self.mockbuild(True)
+        if self.is_build or Settings.nobuild:
+            if Mock.have_cache_for(self.spec.name):
+                self.log.debug('Using already built rpms.')
+                return SRPMFile.BUILD_OK
+            else:
+                self.log.info(
+                     'No valid cache, building despite --nobuild.')
+        return self.mockbuild(force)
 
-    def mockbuild(self, force=False, silence=False):
+    def mockbuild(self, force=False):
         """ Run a mock build against the package.
 
         :kwarg force, boolean to force the mock build even if the
@@ -113,31 +123,38 @@ class SRPMFile(Helpers):
         :kwarg silence, boolean to set/remove the output from the mock
             build.
         """
-        if not force and (self.is_build or Settings.nobuild):
-            if Mock.have_cache_for(self.spec.name):
-                self.log.debug('Using already built rpms.')
-                return SRPMFile.BUILD_OK
-            else:
-                self.log.info(
-                     'No valid cache, building despite --nobuild.')
-        self.log.info("Building %s using mock root %s" % (
-            self.filename, Settings.mock_config))
+        info = 'Rebuilding ' + self.filename + ' using '
+        if Settings.mock_config:
+             self.log.info(info + 'mock root ' + Settings.mock_config)
+        else:
+             self.log.info(info + 'default root')
         cmd = 'mock'
         if Settings.mock_config:
             cmd += ' -r ' + Settings.mock_config
+        if Settings.log_level > logging.INFO:
+            cmd += ' -q'
         cmd += ' --rebuild'
         if Settings.mock_options:
             cmd += ' ' + Settings.mock_options
-        cmd += ' ' + self.filename
-        if silence:
-            cmd += ' 2>&1 | grep "Results and/or logs" '
+        cmd += ' ' + self.filename + ' 2>&1 | tee build.log'
+        if not Settings.verbose and not ' -q' in cmd:
+            cmd += ' | egrep "Results and/or logs|ERROR" '
         self.log.debug('Mock command: %s' % cmd)
         rc = call(cmd, shell=True)
-        if rc == 0:
+        Mock.builddir_cleanup()
+        rc = str(rc)
+        try:
+            with open('build.log') as f:
+                log  = '\n'.join(f.readlines())
+                if 'ERROR' in log:
+                    rc = 'Build error(s)'
+        except:
+            rc = "Can't open logfile"
+        if rc == '0':
             self.is_build = True
-            self.log.info('Build completed ok')
+            self.log.info('Build completed')
         else:
-            self.log.info('Build failed rc = %i ' % rc)
+            self.log.info('Build failed rc = ' + rc)
             self.build_failed = True
             raise FedoraReviewError('Mock build failed.')
         return rc
@@ -184,7 +201,7 @@ class SRPMFile(Helpers):
         for line in out.split('\n'):
             if line and len(line) > 0:
                 self.rpmlint_output.append(line)
-        no_errors, msg  = self.check_rpmlint_errors(out)
+        no_errors, msg  = self.check_rpmlint_errors(out, self.log)
         return no_errors, msg if msg else out
 
     def rpmlint(self):
@@ -202,14 +219,12 @@ class SRPMFile(Helpers):
     def get_used_rpms(self, exclude_pattern=None):
         """ Return list of mock built or prebuilt rpms. """
         if Settings.prebuilt:
-            rpms = set(glob(os.path.join(ReviewDirs.startdir, '*.rpm')))
+            rpms = glob(os.path.join(ReviewDirs.startdir, '*.rpm'))
         else:
-            rpms = set(glob(os.path.join(Mock.resultdir, '*.rpm')))
+            rpms = glob(os.path.join(Mock.resultdir, '*.rpm'))
         if not exclude_pattern:
-            return list(rpms)
-        matched = filter( lambda s: s.find(exclude_pattern) > 0, rpms)
-        rpms = rpms - set(matched)
-        return list(rpms)
+            return rpms
+        return filter(lambda s: not exclude_pattern in s, rpms)
 
     def get_files_rpms(self):
         """ Generate the list files contained in RPMs generated by the
@@ -224,7 +239,7 @@ class SRPMFile(Helpers):
             self.log.info(hdr + sep.join(rpms))
         else:
             self.build()
-            rpms = glob(Mock.resultdir + '/*.rpm')
+            rpms = glob(os.path.join(Mock.resultdir, '*.rpm'))
         rpm_files = {}
         for rpm in rpms:
             if rpm.endswith('.src.rpm'):
