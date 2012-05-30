@@ -36,7 +36,7 @@ from base import *
 class TestChecks(unittest.TestCase):
 
     def setUp(self):
-        sys.argv = ['test-checks','-b','1234']
+        sys.argv = ['test-checks','-vb','1234']
         Settings.init()
         ReviewDirs.workdir_setup('.', True)
         if not os.path.exists(TEST_WORK_DIR):

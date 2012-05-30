@@ -195,7 +195,7 @@ class SRPMFile(Helpers):
         for line in out.split('\n'):
             if line and len(line) > 0:
                 self.rpmlint_output.append(line)
-        no_errors, msg  = self.check_rpmlint_errors(out)
+        no_errors, msg  = self.check_rpmlint_errors(out, self.log)
         return no_errors, msg if msg else out
 
     def rpmlint(self):

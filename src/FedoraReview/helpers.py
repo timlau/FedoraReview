@@ -89,7 +89,7 @@ class Helpers(object):
         return rc == 0
 
     @staticmethod
-    def check_rpmlint_errors(out):
+    def check_rpmlint_errors(out, log):
         """ Check the rpmlint output, return(ok, errmsg)
         If ok, output is OK and there is 0 warnings/errors
         If not ok, and errmsg!= None there is system errors,
