@@ -54,15 +54,21 @@ class Checks(object):
         self.checks = []
         self.ext_checks = []
         self._results = {'PASSED': [], 'FAILED': [], 'NA': [], 'USER': []}
-        self.srpm = None
-        self.spec=None
-        if spec_file:
+        self.log = Settings.get_logger()
+        if hasattr(self, 'sources'):
+            # This is  a listing instance
+            self.srpm = None
+            self.spec=None
+        else:
             self.spec = SpecFile(spec_file)
             self.sources = Sources(self.spec)
             self.srpm = SRPMFile(srpm_file, self.spec)
-        self.log = Settings.get_logger()
         self.plugins = load('FedoraReview.checks')
         self.add_check_classes()
+        if Settings.single:
+            self.set_single_check(Settings.single)
+        elif Settings.exclude:
+            self.exclude_checks(Settings.exclude)
 
     def add_check_classes(self):
         """ get all the check classes in the FedoraReview.checks and add

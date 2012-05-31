@@ -158,8 +158,7 @@ class _Settings(object):
                     dest='prebuilt', help='When using -n <name>, use'
                     ' prebuilt rpms in current directory.')
         optional.add_argument('-s', '--single',
-                    default='', dest='single',
-                    metavar='<test>',
+                    dest='single', metavar='<test>',
                     help='Single test to run, as named by --display-checks.')
         optional.add_argument('-r', '--rpm-spec', action='store_true',
                     dest='rpm_spec', default=False, 
@@ -167,8 +166,7 @@ class _Settings(object):
         optional.add_argument('-v', '--verbose',  action='store_true',
                     help='Show more output.', default=False, dest='verbose')
         optional.add_argument('-x', '--exclude',
-                    default='', dest='exclude',
-                    metavar='"test,..."',
+                    dest='exclude', metavar='"test,..."',
                     help='Comma-separated list of tests to exclude.')
         bz_only.add_argument('-a','--assign', action='store_true',
                     help = 'Assign the bug and set review flags')
