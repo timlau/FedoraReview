@@ -35,13 +35,12 @@ class CheckNaming(CheckBase):
     http://fedoraproject.org/wiki/Packaging/NamingGuidelines
     '''
     def __init__(self, base):
+        CheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/NamingGuidelines'
         self.text = 'Package is named according to the Package Naming' \
                     ' Guidelines.'
-        CheckBase.__init__(self, base)
         self.automatic = False
         self.type = 'MUST'
-        self.set_passed('inconclusive')
 
 
 class CheckNameCharset(CheckBase):
@@ -54,6 +53,7 @@ class CheckNameCharset(CheckBase):
         self.url = 'http://fedoraproject.org/wiki/Packaging/NamingGuidelines'
         self.text = 'Package is named using only allowed ascii characters.'
         self.automatic = True
+        self.type = 'MUST'
 
     def run(self):
         allowed_chars = 'abcdefghijklmnopqrstuvwxyz' \
@@ -368,7 +368,7 @@ class CheckRpmLint(CheckBase):
             self.set_passed(True, text)
             self.attachments = [ Attachment('Rpmlint', rc, 5) ]
         else:
-            self.set_passed(Fail, 'Mock build failed')
+            self.set_passed(False, 'Mock build failed')
 
 
 class CheckRpmLintInstalled(CheckBase):
@@ -398,7 +398,7 @@ class CheckRpmLintInstalled(CheckBase):
             self.attachments = \
                 [Attachment('Rpmlint (installed packages)', rc+'\n', 5)]
         else:
-            self.set_passed(Fail, 'Mock build failed')
+            self.set_passed(False, 'Mock build failed')
 
 
 class CheckSpecLegibility(CheckBase):
@@ -1132,7 +1132,7 @@ class CheckPackageInstalls(CheckBase):
         if Settings.prebuilt:
             self.set_passed('inconclusive', 'Using prebuilt rpms')
             return
-        rpms = self.srpm.get_used_rpms('.srpm')
+        rpms = self.srpm.get_used_rpms('.src.rpm')
         output = Mock.install(rpms)
         if output == None:
             self.set_passed(True, None)

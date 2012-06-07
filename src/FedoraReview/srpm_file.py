@@ -115,23 +115,22 @@ class SRPMFile(Helpers):
         """
         if not force and (self.is_build or Settings.nobuild):
             if Mock.have_cache_for(self.spec.name):
-                self.log.info('Using already built rpms.')
+                self.log.debug('Using already built rpms.')
                 return SRPMFile.BUILD_OK
             else:
                 self.log.info(
                      'No valid cache, building despite --nobuild.')
-        self.log.info("Building %s using mock %s" % (
+        self.log.info("Building %s using mock root %s" % (
             self.filename, Settings.mock_config))
-        cmd = 'mock -r %s  --rebuild %s ' % (
-                Settings.mock_config, self.filename)
-        if self.log.level == logging.DEBUG:
-            cmd = cmd + ' -v '
+        cmd = 'mock'
         if Settings.mock_config:
-            cmd = cmd + '--root ' + Settings.mock_config
+            cmd += ' -r ' + Settings.mock_config
+        cmd += ' --rebuild'
         if Settings.mock_options:
-            cmd = cmd + ' ' + Settings.mock_options
+            cmd += ' ' + Settings.mock_options
+        cmd += ' ' + self.filename
         if silence:
-            cmd = cmd + ' 2>&1 | grep "Results and/or logs" '
+            cmd += ' 2>&1 | grep "Results and/or logs" '
         self.log.debug('Mock command: %s' % cmd)
         rc = call(cmd, shell=True)
         if rc == 0:
@@ -196,19 +195,16 @@ class SRPMFile(Helpers):
     def rpmlint_rpms(self):
         """ Runs rpmlint against the used rpms - prebuilt or built in mock.
         """
-        if Settings.prebuilt:
-            rpms = glob('*.rpm')
-        else:
-            rpms = glob(Mock.resultdir + '/*.rpm')
+        rpms = self.get_used_rpms()
         no_errors, result = self.run_rpmlint(rpms)
         return no_errors, result + '\n'
 
     def get_used_rpms(self, exclude_pattern=None):
         """ Return list of mock built or prebuilt rpms. """
         if Settings.prebuilt:
-            rpms = set( glob('*.rpm'))
+            rpms = set(glob(os.path.join(ReviewDirs.startdir, '*.rpm')))
         else:
-            rpms = set(glob(Mock.resultdir + '/*.rpm'))
+            rpms = set(glob(os.path.join(Mock.resultdir, '*.rpm')))
         if not exclude_pattern:
             return list(rpms)
         matched = filter( lambda s: s.find(exclude_pattern) > 0, rpms)
@@ -222,7 +218,7 @@ class SRPMFile(Helpers):
         if self._rpm_files:
             return self._rpm_files
         if Settings.prebuilt:
-            rpms = glob('*.rpm')
+            rpms = self.get_used_rpms()
             hdr = "Using local rpms: "
             sep = '\n' + ' ' * len(hdr)
             self.log.info(hdr + sep.join(rpms))

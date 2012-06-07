@@ -132,6 +132,8 @@ class TestMisc(unittest.TestCase):
     def test_srpm_mockbuild(self):
         """ Test the SRPMFile class """
         ReviewDirs.workdir_setup(os.getcwd(), True)
+        sys.argv = ['fedora-review','-b','817268', '-m', 'fedora-16-i386']
+        Settings.init(True)
         self.helpers._get_file(TEST_SRPM, os.path.abspath('.'))
         srpm = SRPMFile(self.srpm_file)
         # install the srpm
@@ -141,7 +143,7 @@ class TestMisc(unittest.TestCase):
         src_files = glob.glob(os.path.expanduser(src_dir) + '/*')
         src_files = [os.path.basename(f) for f in  src_files]
         self.assertTrue('python-test-1.0.tar.gz' in src_files)
-        print "Starting mock build (patience...)"
+        self.log.info("Starting mock build (patience...)")
         srpm.mockbuild(silence=True)
         self.assertTrue(srpm.is_build)
         rpms = glob.glob(os.path.join(Mock.resultdir,

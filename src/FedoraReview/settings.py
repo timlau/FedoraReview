@@ -140,10 +140,10 @@ class _Settings(object):
         optional.add_argument('-h','--help', action='help',
                     help = 'Display this help message')
         optional.add_argument('-m','--mock-config', metavar='<config>',
-                    default = 'fedora-rawhide-i386', dest='mock_config',
+                    dest='mock_config',
                     help='Configuration to use for the mock build,'
-                             " defaults to 'root' defined in"
-                             ' /etc/mock/default.cfg')
+                         " defaults to 'root' defined in" 
+                         ' /etc/mock/default.cfg')
         optional.add_argument('--no-report',  action='store_true',
                     dest='noreport',
                     help='Do not make a review report.')

@@ -27,6 +27,7 @@ import glob
 from source import Source
 from settings import Settings
 
+#FIXME: print -> log.*
 
 class Sources(object):
     """ Container for Source objects, reflecting SourceX: lines
@@ -88,6 +89,7 @@ class Sources(object):
         try:
             self.extract_all()
         except  OSError as error:
+            #FIXME: use log, stacktrace
             print "Source", error
             self._source_files = []
             return []
