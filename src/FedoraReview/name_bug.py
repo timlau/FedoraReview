@@ -19,12 +19,15 @@ Handles -n, srpm and spec file already downloaded
 
 import os
 import os.path
-import glob
 
-from mock import Mock
-from settings import Settings
+from glob import glob
+from urlparse import urlparse
+
 from abstract_bug import AbstractBug, SettingsError
+from mock import Mock
 from review_dirs import ReviewDirs
+from settings import Settings
+from srpm_file import SRPMFile
 
 class NameBugException(Exception):
     pass
@@ -44,22 +47,22 @@ class NameBug(AbstractBug):
     def get_location(self):
         return 'Local files in ' +  os.getcwd()
 
-    def do_find_urls(self):
+    def find_srpm_url(self):
         """ Retrieve the page and parse for srpm and spec url. """
 
-        pattern = os.path.join(os.getcwd(), self.name + '*.spec')
-        specs = glob.glob(pattern)
-        if len(specs) != 1:
-            raise NameBugException( "Cannot find spec: " + pattern)
-        self.spec_url = 'file://' + specs[0]
-        self.spec_file = specs[0]
-
         pattern = os.path.join(os.getcwd(), self.name + '*.src.rpm')
-        srpms = glob.glob(pattern)
+        srpms = glob(pattern)
         if len(srpms) != 1:
             raise NameBugException( "Cannot find srpm: " + pattern)
         self.srpm_url = 'file://' + srpms[0]
-        self.srpm_file = srpms[0]
+
+    def find_spec_url(self):
+        """ Retrieve the page and parse for srpm and spec url. """
+        pattern = os.path.join(os.getcwd(), self.name + '*.spec')
+        specs = glob(pattern)
+        if len(specs) != 1:
+            raise NameBugException( "Cannot find spec: " + pattern)
+        self.spec_url = 'file://' + specs[0]
 
     def check_options(self):
         AbstractBug.do_check_options(
@@ -67,6 +70,8 @@ class NameBug(AbstractBug):
 
 
     def download_files(self):
+        self.srpm_file  = urlparse(self.srpm_url).path
+        self.spec_file  = urlparse(self.spec_url).path
         return True
 
 # vim: set expandtab: ts=4:sw=4:

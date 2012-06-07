@@ -17,18 +17,21 @@
 Common bug base class. A Bug is a filter that provides usable URL:s to
 srpm and spec file given some kind of key when created.
 '''
-import glob
 import os.path
 import re
 import shutil
 import urllib2
 import urllib
 
+from glob import glob
+from urlparse import urlparse
+
 from BeautifulSoup import BeautifulSoup
 
 from helpers import Helpers
 from review_error import FedoraReviewError
 from settings import Settings
+from srpm_file import SRPMFile
 from review_dirs import ReviewDirs
 
 
@@ -62,24 +65,47 @@ class AbstractBug(Helpers):
         self.spec_file = None
         self.srpm_file = None
 
-    def do_download_files(self):
+    def find_spec_url(self):
+        """ Grab the spec url, update self.spec_url.  """
+        self.log.error( "Calling abstract method" + __method__)
+
+    def find_srpm_url(self):
+        """ Grab the srpm url, update self.srpm_url.  """
+        self.log.error( "Calling abstract method" + __method__)
+
+    def get_location(self):
+        """ Return visible label for source of srpm/spec """
+        self.log.error( "Calling abstract method" + __method__)
+
+    def do_download_spec(self):
         """ Download the spec file and srpm extracted from the page.
         """
         if not hasattr( self, 'dir'):
             self.dir = ReviewDirs.srpm
-        if os.path.exists(self.dir):
-            shutil.rmtree(self.dir)
-        os.mkdir(self.dir)
 
         spec_name = os.path.basename(self.spec_url)
         spec_path = os.path.join(self.dir, spec_name)
         file, headers = urllib.urlretrieve(self.spec_url, spec_path)
         self.spec_file =  file
 
+    def do_download_srpm(self):
+        """ Download the spec file and srpm extracted from the page.
+        """
+        if not hasattr( self, 'dir'):
+            self.dir = ReviewDirs.srpm
+
         srpm_name = os.path.basename(self.srpm_url)
         srpm_path = os.path.join(self.dir, srpm_name)
         file, headers = urllib.urlretrieve(self.srpm_url, srpm_path)
         self.srpm_file = file
+
+    def do_download_files(self):
+        """ Download the spec file and srpm extracted from the page.
+        """
+        if not self.srpm_file:
+            self.do_download_srpm()
+        if not self.spec_file:
+            self.do_download_spec()
         return True
 
     def is_downloaded(self):
@@ -90,9 +116,9 @@ class AbstractBug(Helpers):
 
     def _check_cache(self):
         try:
-            specs = glob.glob(os.path.join(self.dir, '*.spec'))
+            specs = glob(os.path.join(self.dir, '*.spec'))
             found = len(specs)
-            srpms = glob.glob(os.path.join(self.dir, '*.src.rpm'))
+            srpms = glob(os.path.join(self.dir, '*.src.rpm'))
             found += len(srpms)
             if found == 2:
                 self.spec_file = specs[0]
@@ -121,17 +147,27 @@ class AbstractBug(Helpers):
             return False
         return True
 
-    def do_find_urls(self):
-        """ Grab the urls, update srpm_url and spec_url.
-        """
-        self.log.error( "Calling abstract method" + __method__)
+    def _get_spec_from_srpm(self):
+        path = urlparse(self.srpm_url).path
+        name = os.path.basename(path).rsplit('-',2)[0]
+        ReviewDirs.workdir_setup(name)
+        self.do_download_srpm()
+        
+        SRPMFile(self.srpm_file).unpack()
+        file = glob(os.path.join(ReviewDirs.srpm_unpacked, '*.spec'))[0]
+        self.spec_file = file
+        self.spec_url = 'file://' + file
 
     def find_urls(self):
         """ Retrieve the page and parse for srpm and spec url. """
         try:
-            self.do_find_urls()
-            self.log.info("  --> Spec url: " + self.spec_url)
+            self.find_srpm_url()
             self.log.info("  --> SRPM url: " + self.srpm_url)
+            if Settings.rpm_spec:
+                self._get_spec_from_srpm()
+            else:
+                self.find_spec_url()
+            self.log.info("  --> Spec url: " + self.spec_url)
         except:
             self.log.debug('url_bug link parse error', exc_info=True)
             self.log.error('Cannot find usable urls here')
@@ -140,22 +176,20 @@ class AbstractBug(Helpers):
 
     def get_name(self):
        ''' Return name of bug. '''
-       if not self.spec_url:
-           return '?'
+       if self.spec_file:
+           return os.path.basename(self.spec_file).rsplit('.',1)[0]
+       elif self.srpm_file:
+           return  os.path.basename(self.srpm_file).rsplit('-',2)[0]
        else:
-           return os.path.basename(self.spec_url).rsplit('.',1)[0]
-
-    def get_dirname(self):
+           return '?'
+           
+    def get_dirname(self, prefix=''):
         ''' Return dirname to be used for this bug. '''
         if self.get_name() != '?':
-            return self.get_name()
+            return prefix + self.get_name()
         else:
-            return tempfile.mkdtemp( prefix='review-', dir=os.getcwd())
-
-    def get_location(self):
-        """ Return visible label forsource of srpm/spec
-        """
-        self.log.error( "Calling abstract method" + __method__)
+            return prefix + tempfile.mkdtemp(prefix='review-', 
+                                             dir=os.getcwd())
 
     def do_check_options(self, mode, bad_opts):
        for opt in bad_opts:

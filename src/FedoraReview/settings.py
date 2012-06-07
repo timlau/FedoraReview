@@ -92,7 +92,7 @@ class _Settings(object):
             else:
                 self.parser.set(PARSER_SECTION, name, self._dict[name])
 
-    def init(self):
+    def init(self, force=False):
         ''' Delayed setup, to be called when sys.argv is ok...'''
 
         def _check_mock_grp():
@@ -103,7 +103,7 @@ class _Settings(object):
             except:
                 raise ConfigError('No mock group - mock not installed?')
 
-        if hasattr(self, 'init_done'):
+        if hasattr(self, 'init_done') and not force:
              return
 
         self.do_logger_setup()
@@ -162,6 +162,9 @@ class _Settings(object):
                     default='', dest='single',
                     metavar='<test>',
                     help='Single test to run, as named by --display-checks.')
+        optional.add_argument('-r', '--rpm-spec', action='store_true',
+                    dest='rpm_spec', default=False, 
+                    help='Take spec file from srpm instead of separate url.')
         optional.add_argument('-v', '--verbose',  action='store_true',
                     help='Show more output.', default=False, dest='verbose')
         optional.add_argument('-x', '--exclude',

@@ -33,6 +33,7 @@ import glob
 from FedoraReview.helpers import Helpers
 from FedoraReview import Checks, NameBug, Sources, Source, ReviewDirs, \
      SRPMFile, SpecFile, Mock, Settings
+from FedoraReview import BugzillaBug, NameBug
 
 from base import *
 
@@ -147,6 +148,31 @@ class TestMisc(unittest.TestCase):
         helpers = Helpers()
         md5sum = helpers._md5sum('scantailor.desktop')
         self.assertEqual(md5sum, '4a1c937e62192753c550221876613f86')
+
+    def test_bugzilla_bug(self):
+        sys.argv = ['fedora-review','-b','817268']
+        Settings.init(True)
+        bug = BugzillaBug('817268')
+        bug.find_urls()
+        expected ='http://dl.dropbox.com/u/17870887/python-faces-0.11.7-2' \
+                  '/python-faces-0.11.7-2.fc16.src.rpm'
+        self.assertEqual(expected, bug.srpm_url)
+        expected = 'http://dl.dropbox.com/u/17870887/python-faces-0.11.7-2/' \
+                   'python-faces.spec'
+        self.assertEqual(expected, bug.spec_url)
+        self.assertEqual(None, bug.spec_file)
+        self.assertEqual(None, bug.srpm_file)
+
+    def test_rpm_spec(self):
+        sys.argv = ['fedora-review','-n','python-test', '-r']
+        Settings.init(True)
+        bug = NameBug('python-test')
+        bug.find_urls()
+        expected = 'src/test/python-test-1.0-1.fc16.src.rpm'
+        self.assertTrue(bug.srpm_url.endswith(expected))
+        expected = 'src/test/srpm-unpacked/python-test.spec'
+        self.assertTrue(bug.spec_url.endswith(expected))
+        bug.download_files()
 
 if __name__ == '__main__':
     suite = unittest.TestLoader().loadTestsFromTestCase(TestMisc)
