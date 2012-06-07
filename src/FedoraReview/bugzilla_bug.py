@@ -104,6 +104,13 @@ class BugzillaBug(AbstractBug):
     def get_location(self):
         return Settings.bug
 
+    def get_dirname(self):
+        ''' Return dirname to be used for this bug. '''
+        if self.get_name() != '?':
+            return self.bug_num + '-' + self.get_name()
+        else:
+            return self.bug_num
+
     def check_options(self):
         AbstractBug.do_check_options(self, '--bug', ['prebuilt'])
 

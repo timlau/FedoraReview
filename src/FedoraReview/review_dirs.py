@@ -20,35 +20,85 @@
 Tools for helping Fedora package reviewers
 '''
 
+import logging
+import os
 import os.path
 import shutil
+import tempfile
+import logging
 
-from settings import Settings
+from FedoraReview.review_error import FedoraReviewError
+from FedoraReview.settings     import Settings
+
+SRPM              = 'srpm'
+SRPM_UNPACKED     = 'srpm-unpacked'
+UPSTREAM          = 'upstream'
+UPSTREAM_UNPACKED = 'upstream-unpacked'
 
 
-class ReviewDirs(object):
-    SRPM_SRC          = 'review/srpm'
-    SRPM_UNPACKED     = 'review/srpm-unpacked'
-    UPSTREAM          = 'review/upstream'
-    UPSTREAM_UNPACKED = 'review/upstream-unpacked'
+class ReviewDirExistsError(FedoraReviewError):
+    pass
 
-    @staticmethod
-    def get_dir(dir, keep_old=False):
-        dir = os.path.abspath(dir)
-        if os.path.exists(dir) and not keep_old:
-            Settings.get_logger().debug("Clearing temp dir: " + dir)
-            shutil.rmtree(dir)
-        os.makedirs(dir)
-        return dir
 
-    @staticmethod
-    def root():
-        return os.path.abspath('.')
+class ReviewDirChangeError(FedoraReviewError):
+    pass
 
-    @staticmethod
-    def report_path(name):
+
+class _ReviewDirs(object):
+
+    WD_DIRS = [UPSTREAM, UPSTREAM_UNPACKED, SRPM, SRPM_UNPACKED]
+
+    def __init__(self):
+        self.startdir = os.getcwd()
+
+    def reset(self):
+        if hasattr(self, 'wd'):
+            delattr(self, 'wd')
+
+    def report_path(self, name):
         return os.path.abspath('./%s-review.txt' % name)
 
+    def workdir_setup(self, wd, reuse_old=False):
+        reuse = reuse_old or Settings.cache
+        if not reuse and os.path.exists(wd):
+            d = ''.join(wd.split(os.getcwd(), 1))
+            raise ReviewDirExistsError(d)
+        wd = os.path.abspath(wd)
+        if hasattr(self, 'wd'):
+            if self.wd != wd and not reuse_old:
+               raise ReviewDirChangeError('Old dir ' + self.wd + 
+                                           ' new dir: ' + wd)
+        if os.path.exists(wd) and not reuse_old:
+            if Settings.cache:
+                cache = tempfile.mkdtemp(dir='.')
+                for d in self.WD_DIRS:
+                    shutil.move(os.path.join(wd, d), cache)
+            logging.info("Clearing old review directory: " + wd)
+            shutil.rmtree(wd)
+            os.mkdir(wd)
+            if Settings.cache:
+                for d in self.WD_DIRS:
+                    shutil.move(os.path.join(cache,d), wd)
+        if not os.path.exists(wd):
+            os.mkdir(wd)
+        os.chdir(wd)
+        logging.info("Using review directory: " + wd)
+        self.wd = wd
+        for d in self.WD_DIRS:
+            if not os.path.exists(d):
+                os.mkdir(d)
 
+    is_inited = property(lambda self: hasattr(self, 'wd'))
+    root = property(lambda self: self.wd)
+
+    srpm = property(lambda self: os.path.join(self.wd, SRPM))
+    srpm_unpacked = property(lambda self: os.path.join(self.wd, 
+                                                       SRPM_UNPACKED))
+    upstream = property(lambda self: os.path.join(self.wd, UPSTREAM))
+    upstream_unpacked = property(lambda self: 
+                                     os.path.join(self.wd, 
+                                                  UPSTREAM_UNPACKED))
+
+ReviewDirs = _ReviewDirs()
 
 # vim: set expandtab: ts=4:sw=4:

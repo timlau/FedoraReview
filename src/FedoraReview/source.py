@@ -48,8 +48,7 @@ class Source(Helpers):
             self.local = False
             self.log.info("Downloading (%s): %s" % (tag, url))
             try:
-                dir = ReviewDirs.get_dir(ReviewDirs.UPSTREAM)
-                self.filename = self._get_file(self.url, dir)
+                self.filename = self._get_file(url, ReviewDirs.upstream)
             except:
                 self.log.debug('Download error on ' + url,
                                 exc_info=True)
@@ -57,7 +56,7 @@ class Source(Helpers):
                 self.downloaded = False
         else:  # this is a local file in the SRPM
             self.log.info("No upstream for (%s): %s" % (tag, url))
-            srcdir = ReviewDirs.get_dir(ReviewDirs.UPSTREAM_UNPACKED)
+            srcdir = ReviewDirs.upstream_unpacked 
             self.filename = os.path.join(srcdir, url)
             self.url = 'file://' + self.filename
             self.local = True
@@ -76,8 +75,7 @@ class Source(Helpers):
         destroy easily by mock. Prebuilt sources are extracted to
         temporary directory in current dir.
         """
-        self.extract_dir = \
-            ReviewDirs.get_dir(ReviewDirs.UPSTREAM_UNPACKED)
+        self.extract_dir =  ReviewDirs.upstream_unpacked 
         self.rpmdev_extract(self.filename, self.extract_dir)
 
     def get_source_topdir(self):

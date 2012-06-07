@@ -28,7 +28,7 @@ import logging
 import os.path
 import unittest
 
-from FedoraReview import Checks, Settings
+from FedoraReview import Checks, Settings, ReviewDirs
 from FedoraReview.helpers import Helpers
 
 from base import *
@@ -38,6 +38,7 @@ class TestChecks(unittest.TestCase):
     def setUp(self):
         sys.argv = ['test-checks','-b','1234']
         Settings.init()
+        ReviewDirs.workdir_setup('.', True)
         if not os.path.exists(TEST_WORK_DIR):
             os.makedirs(TEST_WORK_DIR)
         self.checks = None

@@ -31,7 +31,7 @@ import unittest
 import glob
 
 from FedoraReview.helpers import Helpers
-from FedoraReview import Checks, NameBug, Sources, Source, \
+from FedoraReview import Checks, NameBug, Sources, Source, ReviewDirs, \
      SRPMFile, SpecFile, Mock, Settings
 
 from base import *
@@ -39,8 +39,9 @@ from base import *
 class TestMisc(unittest.TestCase):
 
     def setUp(self):
-        sys.argv = ['fedora-review','-n','python-test','--prebuilt']
+        sys.argv = ['fedora-review','-n','python-test','--prebuilt','-v']
         Settings.init()
+        ReviewDirs.workdir_setup('.', True)
         self.log = Settings.get_logger()
         self.helpers = Helpers()
         self.srpm_file = os.path.join(os.path.abspath('.'),
@@ -63,8 +64,7 @@ class TestMisc(unittest.TestCase):
         sources = Sources(spec)
         source = Source(sources, 'Source0', TEST_SRC)
         # check that source exists and source.filename point to the right location
-        expected = os.path.abspath(
-                       './review/upstream/python-test-1.0.tar.gz')
+        expected = os.path.abspath('./upstream/python-test-1.0.tar.gz')
         self.assertEqual(source.filename, expected)
         self.assertTrue(os.path.exists(source.filename))
         self.assertEqual(source.check_source_md5(),

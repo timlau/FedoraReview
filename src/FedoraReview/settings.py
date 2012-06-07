@@ -24,8 +24,9 @@ import argparse
 import grp
 import logging
 import os.path
+import sys
 
-from review_error import FedoraReviewError
+from review_error import FedoraReviewError, CleanExitError
 
 SYS_PLUGIN_DIR = "/usr/share/fedora-review/plugins:%s"
 MY_PLUGIN_DIR  = "~/.config/fedora-review/plugins"
@@ -178,10 +179,15 @@ class _Settings(object):
         bz_only.add_argument('-i','--user', dest='user',
                     metavar="<user id>",
                     help = 'The bugzilla user Id')
-        args = parser.parse_args()
+
+        try:
+            args = parser.parse_args()
+        except:
+            raise CleanExitError('Exit from argparse')
+
         self.do_logger_setup(logging.DEBUG if args.verbose else None)
-        _check_mock_grp()
         self.add_args(args)
+        _check_mock_grp()
         self.init_done = True
 
     def add_args(self, args):
