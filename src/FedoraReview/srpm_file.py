@@ -20,10 +20,10 @@
 Tools for helping Fedora package reviewers
 '''
 
-import glob
 import logging
 import os.path
 
+from glob import glob
 from subprocess import call
 
 from helpers import Helpers
@@ -69,23 +69,24 @@ class SRPMFile(Helpers):
 
     def extract(self, path):
         """ Extract a named source and return containing directory. """
-        self.filename=os.path.basename(path)
+        self.filename = os.path.basename(path)
         self.unpack(path)
-        files = glob.glob( self.unpacked_src  + '/*' )
-        if not filename in [os.path.basename(f) for f in files]:
+        files = glob( os.path.join(self.unpacked_src, '*'))
+        if not self.filename in [os.path.basename(f) for f in files]:
             self.log.error(
-               'Trying to unpack non-existing source: ' + filename)
+               'Trying to unpack non-existing source: ' + path)
             return None
-        extract_dir = self.unpacked_src + '/' +  filename  + '-extract'
+        extract_dir = os.path.join(self.unpacked_src,
+                                   self.filename  + '-extract')
         if os.path.exists(extract_dir):
             return extract_dir
         else:
             os.mkdir(extract_dir)
         rc = self.rpmdev_extract(os.path.join(self.unpacked_src,
-                                              filename),
+                                              self.filename),
                                  extract_dir)
         if rc != 0:
-            self.log.error( "Cannot unpack " + filename)
+            self.log.error("Cannot unpack " +  self.filename)
             return None
         return extract_dir
 
@@ -157,7 +158,7 @@ class SRPMFile(Helpers):
         if not hasattr(self, 'unpacked_src'):
             self.log.warn("check_source_md5: Cannot unpack (?)")
             return "ERROR"
-        src_files = glob.glob(self.unpacked_src + '/*')
+        src_files = glob(self.unpacked_src + '/*')
         if not src_files:
             self.log.warn('No unpacked sources found (!)')
             return "ERROR"
@@ -196,18 +197,18 @@ class SRPMFile(Helpers):
         """ Runs rpmlint against the used rpms - prebuilt or built in mock.
         """
         if Settings.prebuilt:
-            rpms = glob.glob('*.rpm')
+            rpms = glob('*.rpm')
         else:
-            rpms = glob.glob(Mock.resultdir + '/*.rpm')
+            rpms = glob(Mock.resultdir + '/*.rpm')
         no_errors, result = self.run_rpmlint(rpms)
         return no_errors, result + '\n'
 
     def get_used_rpms(self, exclude_pattern=None):
         """ Return list of mock built or prebuilt rpms. """
         if Settings.prebuilt:
-            rpms = set( glob.glob('*.rpm'))
+            rpms = set( glob('*.rpm'))
         else:
-            rpms = set(glob.glob(Mock.resultdir + '/*.rpm'))
+            rpms = set(glob(Mock.resultdir + '/*.rpm'))
         if not exclude_pattern:
             return list(rpms)
         matched = filter( lambda s: s.find(exclude_pattern) > 0, rpms)
@@ -221,13 +222,13 @@ class SRPMFile(Helpers):
         if self._rpm_files:
             return self._rpm_files
         if Settings.prebuilt:
-            rpms = glob.glob('*.rpm')
+            rpms = glob('*.rpm')
             hdr = "Using local rpms: "
             sep = '\n' + ' ' * len(hdr)
             self.log.info(hdr + sep.join(rpms))
         else:
             self.build()
-            rpms = glob.glob(Mock.resultdir + '/*.rpm')
+            rpms = glob(Mock.resultdir + '/*.rpm')
         rpm_files = {}
         for rpm in rpms:
             if rpm.endswith('.src.rpm'):

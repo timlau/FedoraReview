@@ -260,6 +260,7 @@ class CheckSourceMD5(CheckBase):
         and text is either the possibly large diff output or None
         """
         for s in sources:
+            s.extract()
             upstream = s.extract_dir
             local = self.base.srpm.extract(s.filename)
             if not local:
@@ -267,6 +268,7 @@ class CheckSourceMD5(CheckBase):
                      "Cannot extract local source: " + s.filename)
                  return(False, None)
             cmd = '/usr/bin/diff -U2 -r %s %s'  % (upstream, local)
+            self.log.debug(' Diff cmd: ' + cmd)
             try:
                 from subprocess import Popen, PIPE
                 p = Popen(cmd.split(), stdout=PIPE, stderr=PIPE)
@@ -274,7 +276,7 @@ class CheckSourceMD5(CheckBase):
             except OSError as e:
                 self.log.error("Cannot run diff", exc_info=True)
                 return (False, None)
-            if output and len(output > 0):
+            if output and len(output) > 0:
                 return (False, output)
         return (True,  None)
 
