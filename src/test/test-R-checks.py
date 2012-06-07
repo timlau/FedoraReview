@@ -39,7 +39,7 @@ class TestRChecks(unittest.TestCase):
     def setUp(self):
         sys.argv = ['test-R-checks','-b','1234']
         Settings.init()
-        FedoraReview.do_logger_setup(loglvl=logging.DEBUG)
+        FedoraReview.do_logger_setup()
         self.checks = None
         self.srpm = TEST_WORK_DIR + os.path.basename(R_TEST_SRPM)
         self.spec = TEST_WORK_DIR + os.path.basename(R_TEST_SPEC)

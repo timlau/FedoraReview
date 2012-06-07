@@ -102,16 +102,31 @@ def get_logger():
     return logging.getLogger(LOG_ROOT)
 
 
-def do_logger_setup(logroot=LOG_ROOT, logfmt='%(message)s',
-    loglvl=logging.INFO):
-    ''' Setup Python logging using a TextViewLogHandler '''
-    logger = logging.getLogger(logroot)
-    logger.setLevel(loglvl)
-    formatter = logging.Formatter(logfmt, "%H:%M:%S")
+def do_logger_setup(lvl=None):
+    ''' Setup Python logging. lvl is a logging.* thing like
+    logging.DEBUG. If None, respects FR_LOGLEVEL environment
+    variable, defaulting to logging.INFO.
+    '''
+    msg = None
+    if not lvl:
+        if 'FR_LOGLEVEL' in os.environ:
+            try:
+                lvl = eval('logging.' +
+                           os.environ['FR_LOGLEVEL'].upper())
+            except:
+                msg = "Cannot set loglevel from FR_LOGLEVEL"
+                lvl = logging.INFO
+        else:
+            lvl = logging.INFO
+    logger = logging.getLogger(LOG_ROOT)
+    logger.setLevel(lvl)
+    formatter = logging.Formatter('%(message)s', "%H:%M:%S")
     handler = logging.StreamHandler()
     handler.setFormatter(formatter)
     handler.propagate = False
     logger.addHandler(handler)
+    if msg:
+        get_logger().warning(msg)
     return handler
 
 
@@ -754,7 +769,7 @@ class SRPMFile(Helpers):
             rpms = glob.glob('*.rpm')
             hdr = "Using local rpms: "
             sep = '\n' + ' ' * len(hdr)
-            print hdr + sep.join(rpms)
+            self.log.info(hdr + sep.join(rpms))
         else:
             self.build()
             rpms = glob.glob(Mock.resultdir + '/*.rpm')

@@ -40,7 +40,7 @@ class TestMisc(unittest.TestCase):
     def setUp(self):
         sys.argv = ['fedora-review','-n','python-test','--prebuilt']
         Settings.init()
-        FedoraReview.do_logger_setup(loglvl=logging.DEBUG)
+        FedoraReview.do_logger_setup()
         self.log = FedoraReview.get_logger()
         self.helper = Helpers()
         self.srpm_file = os.path.join(os.path.abspath('.'),
