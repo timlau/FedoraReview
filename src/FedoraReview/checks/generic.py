@@ -295,6 +295,10 @@ class CheckSourceMD5(CheckBase):
             text = ''
             all_sources_passed = True
             for source in sources:
+                if source.local:
+                    self.log.debug('Skipping md5-tst for '
+                                    + source.filename)
+                    continue
                 local = self.srpm.check_source_md5(source.filename)
                 upstream = source.check_source_md5()
                 text += source.filename + ' :\n'

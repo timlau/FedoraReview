@@ -14,7 +14,8 @@
 #
 # (C) 2011 - Tim Lauridsen <timlau@@fedoraproject.org>
 '''
-Common bug base class.
+Common bug base class. A Bug is a filter that provides usable URL:s to
+srpm and spec file given some kind of key when created.
 '''
 import glob
 import os.path
@@ -28,6 +29,7 @@ from BeautifulSoup import BeautifulSoup
 from helpers import Helpers
 from review_error import FedoraReviewError
 from settings import Settings
+from review_dirs import ReviewDirs
 
 
 class BugException(FedoraReviewError):
@@ -59,7 +61,7 @@ class AbstractBug(Helpers):
         self.srpm_url = None
         self.spec_file = None
         self.srpm_file = None
-        self.dir = os.path.join(Settings.workdir, 'review-srpm-src')
+        self.dir = ReviewDirs.get_dir(ReviewDirs.SRPM_SRC)
 
     def do_download_files(self):
         """ Download the spec file and srpm extracted from the page.
@@ -137,10 +139,10 @@ class AbstractBug(Helpers):
 
     def get_name(self):
        ''' Return name of bug. '''
-       if not self.spec_file:
+       if not self.spec_url:
            return '?'
        else:
-           return os.path.basename(self.spec_file).rsplit('.',1)[0]
+           return os.path.basename(self.spec_url).rsplit('.',1)[0]
 
     def get_location(self):
         """ Return visible label forsource of srpm/spec

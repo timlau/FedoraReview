@@ -164,9 +164,9 @@ $ fedora-review -b 811221 --assign --user my-bugzilla-id --login
 password:
 
 .SH FILES
-.I $HOME/.config/fedora-review/settings
+.I $HOME/.cache/fedora-review.log
 .RS
-User configuration files for fedora-review
+Debug logging from last session.
 .RE
 .I $HOME/.bugzillacookies
 .RS
@@ -185,6 +185,9 @@ User supplied external plugins directory
 .TP
 .B  REVIEW_EXT_DIRS
 If REVIEW_EXT_DIRS is set, it specifies additional directories that will be searched for external plugins
+.TP
+.B FR_LOGLEVEL
+loglevel used when not using -v/--verbose. A logging.* value like 'DEBUG', 'Info', or 'warning'.
 
 .SH AUTHORS
 Original author: Tim Lauridsen <tim.lauridsen@gmail.com>

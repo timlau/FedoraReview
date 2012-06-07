@@ -47,7 +47,7 @@ class Sources(object):
         self._sources[tag] = source
         if source.local:
             print 'The source %s in the srpm can not be retrieved. '\
-            'This is a corner case not supported yet.' % source_url
+            'This is a corner case not supported yet.' % url
 
     def get(self, tag):
         """ Get a single Source object"""

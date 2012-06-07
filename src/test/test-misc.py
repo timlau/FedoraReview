@@ -88,6 +88,9 @@ class TestMisc(unittest.TestCase):
 
     def test_spec_file(self):
         ''' Test the SpecFile class'''
+        dest = Mock.get_builddir('SOURCES')
+        if not os.path.exists(dest):
+            os.makedirs(dest)
         self.helpers._get_file(TEST_SPEC, Mock.get_builddir('SOURCES'))
         spec = SpecFile(self.spec_file)
         # Test misc rpm values (Macro resolved)
@@ -139,6 +142,11 @@ class TestMisc(unittest.TestCase):
         rpms = glob.glob(os.path.join(Mock.resultdir,
                                       'python-test-1.0-1*noarch.rpm'))
         self.assertTrue(len(rpms)==1)
+
+    def test_md5(self):
+        helpers = Helpers()
+        md5sum = helpers._md5sum('scantailor.desktop')
+        self.assertEqual(md5sum, '4a1c937e62192753c550221876613f86')
 
 if __name__ == '__main__':
     suite = unittest.TestLoader().loadTestsFromTestCase(TestMisc)

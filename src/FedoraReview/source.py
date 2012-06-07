@@ -57,8 +57,9 @@ class Source(Helpers):
                 self.downloaded = False
         else:  # this is a local file in the SRPM
             self.log.info("No upstream for (%s): %s" % (tag, url))
-            self.filename = url
-            self.url = 'file://' + os.path.abspath(url)
+            srcdir = ReviewDirs.get_dir(ReviewDirs.UPSTREAM_UNPACKED)
+            self.filename = os.path.join(srcdir, url)
+            self.url = 'file://' + self.filename
             self.local = True
 
     def check_source_md5(self):
