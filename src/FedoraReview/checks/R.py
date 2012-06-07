@@ -5,8 +5,7 @@
 import re
 import os
 import urllib
-from FedoraReview.checks.generic import LangCheckBase
-from FedoraReview import get_logger
+from FedoraReview import LangCheckBase
 
 
 class RCheckBase(LangCheckBase):
@@ -21,7 +20,6 @@ class RCheckBase(LangCheckBase):
     'http://cran.at.r-project.org/src/contrib/PACKAGES',
     'http://r-forge.r-project.org/src/contrib/PACKAGES',
     ]
-    log = get_logger()
 
     def is_applicable(self):
         """ Check is the tests are applicable, here it checks whether

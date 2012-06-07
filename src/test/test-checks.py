@@ -20,24 +20,22 @@
 Unit checks for automatic test of fedora review guidelines
 '''
 
-import logging
+import os
 import sys
-import os.path
 sys.path.insert(0,os.path.abspath('../'))
 
-import os
+import logging
+import os.path
 import unittest
 
-import FedoraReview
-from FedoraReview import Helpers, Settings
-from FedoraReview.checks_class import Checks
-from bugzilla import Bugzilla
+from FedoraReview import Checks, Settings
+from FedoraReview.helpers import Helpers
+
 from base import *
 
 class TestChecks(unittest.TestCase):
 
     def setUp(self):
-        FedoraReview.do_logger_setup()
         sys.argv = ['test-checks','-b','1234']
         Settings.init()
         if not os.path.exists(TEST_WORK_DIR):

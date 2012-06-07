@@ -29,10 +29,11 @@ sys.path.insert(0,os.path.abspath('../'))
 import os
 import unittest
 import glob
-from FedoraReview import Helpers, Source, Sources, SRPMFile, SpecFile, Mock, Settings
-from FedoraReview.checks_class import Checks
-from FedoraReview.name_bug import NameBug
-import FedoraReview
+
+from FedoraReview.helpers import Helpers
+from FedoraReview import Checks, NameBug, Sources, Source, \
+     SRPMFile, SpecFile, Mock, Settings
+
 from base import *
 
 class TestMisc(unittest.TestCase):
@@ -40,9 +41,8 @@ class TestMisc(unittest.TestCase):
     def setUp(self):
         sys.argv = ['fedora-review','-n','python-test','--prebuilt']
         Settings.init()
-        FedoraReview.do_logger_setup()
-        self.log = FedoraReview.get_logger()
-        self.helper = Helpers()
+        self.log = Settings.get_logger()
+        self.helpers = Helpers()
         self.srpm_file = os.path.join(os.path.abspath('.'),
                                       os.path.basename(TEST_SRPM))
         self.spec_file = os.path.join(Mock.get_builddir('SOURCES'),
@@ -51,7 +51,7 @@ class TestMisc(unittest.TestCase):
                                         os.path.basename(TEST_SRC))
         if not os.path.exists(TEST_WORK_DIR):
             os.makedirs(TEST_WORK_DIR)
-        self.helper._get_file(TEST_SRPM, TEST_WORK_DIR)
+        self.helpers._get_file(TEST_SRPM, TEST_WORK_DIR)
         #self.helper._get_file(TEST_SRC)
 
     def test_source_file(self):
@@ -66,7 +66,7 @@ class TestMisc(unittest.TestCase):
         expected = os.path.abspath(
                        './review/upstream/python-test-1.0.tar.gz')
         self.assertEqual(source.filename, expected)
-        self.assertTrue(os.path.exists(self.source_file))
+        self.assertTrue(os.path.exists(source.filename))
         self.assertEqual(source.check_source_md5(),
                          "289cb714af3a85fe36a51fa3612b57ad")
 
@@ -88,13 +88,13 @@ class TestMisc(unittest.TestCase):
 
     def test_spec_file(self):
         ''' Test the SpecFile class'''
-        self.helper._get_file(TEST_SPEC, Mock.get_builddir('SOURCES'))
+        self.helpers._get_file(TEST_SPEC, Mock.get_builddir('SOURCES'))
         spec = SpecFile(self.spec_file)
         # Test misc rpm values (Macro resolved)
         self.assertEqual(spec.name,'python-test')
         self.assertEqual(spec.version,'1.0')
         # resolve the dist-tag
-        dist = self.helper._run_cmd('rpm --eval %dist')[:-1]
+        dist = self.helpers._run_cmd('rpm --eval %dist')[:-1]
         self.assertEqual(spec.release,'1'+dist)
         # test misc rpm values (without macro resolve)
         self.assertEqual(spec.find_tag('Release'), ['1%{?dist}'])
@@ -124,7 +124,7 @@ class TestMisc(unittest.TestCase):
 
     def test_srpm_mockbuild(self):
         """ Test the SRPMFile class """
-        self.helper._get_file(TEST_SRPM, os.path.abspath('.'))
+        self.helpers._get_file(TEST_SRPM, os.path.abspath('.'))
         srpm = SRPMFile(self.srpm_file)
         # install the srpm
         srpm.unpack()

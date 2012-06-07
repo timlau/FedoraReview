@@ -27,11 +27,10 @@ import os
 import os.path
 sys.path.insert(0,os.path.abspath('../'))
 import unittest
-import FedoraReview
-from FedoraReview import Helpers, Settings
-from FedoraReview.checks_class import Checks
+
+from FedoraReview import Helpers, Settings, Checks
 from FedoraReview.checks import R
-from bugzilla import Bugzilla
+
 from base import *
 
 class TestRChecks(unittest.TestCase):
@@ -39,7 +38,6 @@ class TestRChecks(unittest.TestCase):
     def setUp(self):
         sys.argv = ['test-R-checks','-b','1234']
         Settings.init()
-        FedoraReview.do_logger_setup()
         self.checks = None
         self.srpm = TEST_WORK_DIR + os.path.basename(R_TEST_SRPM)
         self.spec = TEST_WORK_DIR + os.path.basename(R_TEST_SPEC)

@@ -84,7 +84,8 @@ Display the URL:s found for spec file and source rpm, then exit.
 .TP 4
 .B -m, --mock-config <configurationi>
 Specify which mock config to use, one of the files in /etc/mock,
-with the .cfg suffix stripped
+with the .cfg suffix stripped. Defaults to the root defined in
+/etc/mock/default.cfg
 .TP 4
 .B -o, --mock-options "options..."
 Mock options the build. Defaults to --no-cleanup-after, you might

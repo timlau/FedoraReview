@@ -1,6 +1,6 @@
 #-*- coding: utf-8 -*-
 
-from generic import LangCheckBase
+from FedoraReview import LangCheckBase
 
 class CCppCheckBase(LangCheckBase):
     header='C/C++'

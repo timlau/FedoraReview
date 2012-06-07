@@ -20,20 +20,30 @@
 Tools for helping Fedora package reviewers
 '''
 
-from abstract_bug import SettingsError,BugException
-from bugzilla_bug import BugzillaBug
-from check_base   import CheckBase, LangCheckBase, Attachment
-from checks_class import Checks, ChecksLister
-from mock         import Mock
-from name_bug     import NameBug
-from review_error import FedoraReviewError, CleanExitError
-from review_dirs  import ReviewDirs, ReviewDirExistsError
-from settings     import Settings
-from source       import Source
-from sources      import Sources
-from spec_file    import SpecFile
-from srpm_file    import SRPMFile
-from url_bug      import UrlBug
-from version      import __version__
+import os.path
+import shutil
+
+from settings import Settings
+
+
+class ReviewDirs(object):
+    SRPM_SRC          = 'review/srpm'
+    SRPM_UNPACKED     = 'review/srpm-unpacked'
+    UPSTREAM          = 'review/upstream'
+    UPSTREAM_UNPACKED = 'review/upstream-unpacked'
+
+    @staticmethod
+    def get_dir(dir, keep_old=False):
+        dir = os.path.abspath(dir)
+        if os.path.exists(dir) and not keep_old:
+            Settings.get_logger().debug("Clearing temp dir: " + dir)
+            shutil.rmtree(dir)
+        os.makedirs(dir)
+        return dir
+
+    @staticmethod
+    def root():
+        return os.path.abspath('.')
+
 
 # vim: set expandtab: ts=4:sw=4:

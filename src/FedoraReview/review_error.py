@@ -20,20 +20,16 @@
 Tools for helping Fedora package reviewers
 '''
 
-from abstract_bug import SettingsError,BugException
-from bugzilla_bug import BugzillaBug
-from check_base   import CheckBase, LangCheckBase, Attachment
-from checks_class import Checks, ChecksLister
-from mock         import Mock
-from name_bug     import NameBug
-from review_error import FedoraReviewError, CleanExitError
-from review_dirs  import ReviewDirs, ReviewDirExistsError
-from settings     import Settings
-from source       import Source
-from sources      import Sources
-from spec_file    import SpecFile
-from srpm_file    import SRPMFile
-from url_bug      import UrlBug
-from version      import __version__
+class FedoraReviewError(Exception):
+    """ General Error class for fedora-review. """
+
+    def __init__(self, value):
+        """ Instanciante the error. """
+        self.value = value
+
+    def __str__(self):
+        """ Represent the error. """
+        return repr(self.value)
+
 
 # vim: set expandtab: ts=4:sw=4:
