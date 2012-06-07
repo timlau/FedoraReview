@@ -388,11 +388,8 @@ class CheckRpmLintInstalled(CheckBase):
 
     def run(self):
         if self.srpm.build() != -1:
-            dir = '.' if Settings.prebuilt else Mock.resultdir
-            dir += '/'
             rpms = self.srpm.get_used_rpms('.src.rpm')
-            paths = [ dir + r for r in rpms ]
-            no_errors, rc = Mock.rpmlint_rpms(paths)
+            no_errors, rc = Mock.rpmlint_rpms(rpms)
             text = 'No rpmlint messages.' if no_errors else \
                 'There are rpmlint messages (see attachment).'
             self.set_passed(True, text)
@@ -936,20 +933,38 @@ class CheckConfigNoReplace(CheckBase):
                         extra += line
         self.set_passed(passed, extra)
 
-
-class CheckDesktopInstall(CheckBase):
+class CheckDesktopFile(CheckBase):
     '''
     MUST: Packages containing GUI applications must include a
-    %{name}.desktop file, and that file must be properly installed
-    with desktop-file-install in the %install section.  If you feel
-    that your packaged GUI application does not need a .desktop file,
-    you must put a comment in the spec file with your explanation.
+    %{name}.desktop file. If you feel that your packaged GUI 
+    application does not need a .desktop file, you must put a 
+    comment in the spec file with your explanation.
     http://fedoraproject.org/wiki/Packaging/Guidelines#desktop
     '''
     def __init__(self, base):
         CheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#desktop'
-        self.text = 'Package contains a properly installed %{name}.desktop using desktop-file-install file if it is a GUI application.'
+        self.text = 'Package contains desktop file if it is a GUI application.'
+        self.automatic =True
+        self.type = 'MUST'
+
+    def run(self):
+        have_desktop = self.has_files('*.desktop')
+        self.set_passed(True if have_desktop else 'inconclusive')
+
+
+class CheckDesktopFileInstall(CheckBase):
+    '''
+    MUST: Packages containing GUI applications must include a
+    %{name}.desktop file, and that file must be properly installed
+    with desktop-file-install in the %install section.  
+    http://fedoraproject.org/wiki/Packaging/Guidelines#desktop
+    '''
+    def __init__(self, base):
+        CheckBase.__init__(self, base)
+        self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#desktop'
+        self.text = 'Package installs a  %{name}.desktop using desktop-file-install' \
+                    ' if there is such a file.'
         self.automatic = True
         self.type = 'MUST'
 
@@ -960,12 +975,11 @@ class CheckDesktopInstall(CheckBase):
         return self.has_files('*.desktop')
 
     def run(self):
-        passed = True
-        regex = re.compile(r'(desktop-file-install|desktop-file-validate)(.*\\\n)*.*desktop')
-        result = self.spec.find_all(regex)
-        if not result:
-            passed = False
-        self.set_passed(passed)
+        pattern = r'(desktop-file-install|desktop-file-validate)' \
+                   '.*(desktop|SOURCE)'
+        input = '\n'.join(self.spec.lines)
+        m = re.compile(pattern, re.DOTALL).search(input)
+        self.set_passed(m != None)
 
 
 class CheckSysVScripts(CheckBase):

@@ -224,8 +224,8 @@ class TestMisc(unittest.TestCase):
         check = self.run_single_check(bug, 'CheckSourceMD5')
         self.assertEqual(check.state, 'pass')
         expected = 'diff -r shows no differences'
-        self.assertTrue(expected in check.attachments[0].text)
         os.chdir(self.startdir)
+        self.assertTrue(expected in check.attachments[0].text)
 
     def test_md5sum_diff_fail(self):        
         os.chdir('md5sum-diff-fail')
@@ -252,7 +252,20 @@ class TestMisc(unittest.TestCase):
         self.assertEqual(check.state, 'fail')
         self.assertTrue('#TestTag' in check.attachments[0].text)
         os.chdir(self.startdir)
- 
+
+    def test_desktop_file_bug(self):
+        os.chdir('desktop-file')
+        if os.path.exists('python-test'):
+            shutil.rmtree('python-test')
+        ReviewDirs.workdir_setup('.', True, True)
+        sys.argv = ['fedora-review','-rpn','python-test']
+        Settings.init(True)
+        bug = NameBug('python-test')
+        check = self.run_single_check(bug,'CheckDesktopFileInstall')
+        self.assertEqual(check.state, 'pass')
+        os.chdir(self.startdir)
+
+
 
 if __name__ == '__main__':
     suite = unittest.TestLoader().loadTestsFromTestCase(TestMisc)

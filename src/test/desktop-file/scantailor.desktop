@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Scan Tailor
+GenericName=Scan Tailor
+Comment=An interactive post-processing tool for scanned pages
+Exec=scantailor
+Icon=scantailor
+Terminal=false
+Type=Application
+Categories=Qt;Office;
+StartupNotify=true
