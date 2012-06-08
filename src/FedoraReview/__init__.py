@@ -255,6 +255,9 @@ class _Settings(object):
         'editor':       '',
         'work_dir':     '.',
         'bz_user':      '',
+        'exclude':      '',
+        'edit':         False,
+        'single':       '',
         'mock_config':  'fedora-rawhide-i386',
         'mock_options': '--no-cleanup-after',
         'ext_dirs':     path

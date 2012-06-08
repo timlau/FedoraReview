@@ -19,12 +19,16 @@
 '''
 This module contains misc helper funtions and classes
 '''
+
 import sys
 import os
 from operator import attrgetter
+from straight.plugin import load
 
+from FedoraReview import get_logger, Settings
 from FedoraReview import Sources, SRPMFile, SpecFile, __version__
 from FedoraReview.jsonapi import JSONPlugin
+
 
 HEADER = """
 Package Review
@@ -38,18 +42,12 @@ x = Pass
 
 """
 
-from straight.plugin import load
-
-from FedoraReview import get_logger, Settings
 
 
 class Checks(object):
-    def __init__(self, args, spec_file, srpm_file):
+    def __init__(self, spec_file, srpm_file, tests=None):
         self.checks = []
         self.ext_checks = []
-        self.args = args  # Command line arguments & options
-        self.cache = args.cache
-        self.nobuild = args.nobuild
         self._results = {'PASSED': [], 'FAILED': [], 'NA': [], 'USER': []}
         if spec_file:
             self.spec = SpecFile(spec_file)
@@ -108,12 +106,48 @@ class Checks(object):
             print ext
         for test in self.checks:
             print test.__class__.__name__, ' -- ', test.text
+        for c in self.get_checks():
+            print c
+
+    def exclude_checks(self, exclude_arg):
+        for c in [l.strip() for l in exclude_arg.split(',')]:
+            found = filter( lambda  i: i.name == c,  self.checks)
+            if  len(found) > 0:
+                self.checks = list( set(self.checks) - set(found))
+                continue
+            found = filter(lambda  i: i.name == c,  self.ext_checks)
+            if  len(found) > 0:
+                self.ext_checks = list(set(self.ext_checks) - set(found))
+                continue
+            self.log.warn("I can't remove check: " + c)
+
+    def set_single_check(self, check):
+        found = filter(lambda c: c.name == check, self.checks)
+        if len(found) > 0:
+              self.checks = found
+              self.ext_checks = []
+              return
+        found = filter(lambda c: c.name == check, self.ext_checks)
+        if len(found) > 0:
+              self.ext_checks = found
+              self.checks = []
+              return
+        self.log.warn("I can't find check: " + check)
+
+    def get_checks(self):
+        c = self.ext_checks
+        c.extend([t.__class__.__name__ for t in self.checks])
+        return c
 
     def run_checks(self, output=sys.stdout, writedown=True):
         issues = []
         results = []
         deprecated = []
         attachments = []
+        if Settings.exclude:
+             self.exclude_checks(Settings.exclude)
+        if Settings.single:
+             self.set_single_check(Settings.single)
         # run external checks first so we can get what they deprecate
         for ext in self.ext_checks:
             self.log.debug('Running external module : %s' % ext.plugin_path)
@@ -182,3 +216,5 @@ class Checks(object):
         for plugin in self.ext_checks:
             output.write("%s version: %s\n" % (plugin.plugin_path,
                                                plugin.version))
+
+# vim: set expandtab: ts=4:sw=4:
