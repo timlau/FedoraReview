@@ -84,6 +84,12 @@ class _Mock(Helpers):
         Run  'mock install' on a list of files, return None if
         OK, else the stdout+stderr
         """
+
+        def log_text(output, error):
+           return  "Install output: " +  \
+                    output if output else '' +  \
+                    error if error else ''
+
         cmd = ["mock", "install"]
         if Settings.mock_config:
              cmd.extend(['-r', Settings.mock_config])
@@ -92,17 +98,9 @@ class _Mock(Helpers):
         try:
             p = Popen(cmd, stdout=PIPE, stderr=STDOUT)
             output, error = p.communicate()
-            if Settings.verbose:
-                txt = "Install output: "
-                txt += output if output else ''
-                txt += error if error else ''
-                print txt
+            logging.debug(log_text(output, error), exc_info=True)
         except OSError as e:
-            if Settings.verbose:
-                txt = "Install output: "
-                txt += output if output else ''
-                txt += error if error else ''
-                print txt
+            logging.warning(log_text(output, error), exc_info=True)
             return output[0]
         if p.returncode != 0:
             logging.warning("Install command returned error code %i",
@@ -143,7 +141,7 @@ class _Mock(Helpers):
         if not ok:
             return False, output + '\n'
 
-        ok, err_msg = self.check_rpmlint_errors(output)
+        ok, err_msg = self.check_rpmlint_errors(output, self.log)
         if err_msg:
             return False, err_msg
 

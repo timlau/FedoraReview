@@ -40,7 +40,7 @@ from base import *
 class TestMisc(unittest.TestCase):
 
     def setUp(self):
-        sys.argv = ['fedora-review','-n','python-test','--prebuilt','-v']
+        sys.argv = ['fedora-review','-n','python-test','--prebuilt']
         Settings.init()
         ReviewDirs.workdir_setup('.', True)
         self.log = Settings.get_logger()
@@ -155,7 +155,7 @@ class TestMisc(unittest.TestCase):
         src_files = [os.path.basename(f) for f in  src_files]
         self.assertTrue('python-test-1.0.tar.gz' in src_files)
         self.log.info("Starting mock build (patience...)")
-        srpm.mockbuild(silence=True)
+        srpm.mockbuild()
         self.assertTrue(srpm.is_build)
         rpms = glob.glob(os.path.join(Mock.resultdir,
                                       'python-test-1.0-1*noarch.rpm'))

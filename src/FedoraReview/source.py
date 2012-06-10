@@ -64,7 +64,7 @@ class Source(Helpers):
             self.local = True
 
     def check_source_md5(self):
-        self.log.info("Checking source md5 : %s" % self.filename)
+        self.log.debug("Checking source md5 : %s" % self.filename)
         if self.downloaded:
             sum = self._md5sum(self.filename)
             return sum

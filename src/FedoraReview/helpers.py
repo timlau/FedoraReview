@@ -42,7 +42,8 @@ class Helpers(object):
             proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
             output, error = proc.communicate()
         except OSError, e:
-            print "OSError : %s" % str(e)
+            self.log.debug("OS error", exc_info=True)
+            self.log.error("OS error running " + cmd, str(e))
         return output
 
     def _md5sum(self, file):
@@ -89,7 +90,7 @@ class Helpers(object):
         return rc == 0
 
     @staticmethod
-    def check_rpmlint_errors(out):
+    def check_rpmlint_errors(out, log):
         """ Check the rpmlint output, return(ok, errmsg)
         If ok, output is OK and there is 0 warnings/errors
         If not ok, and errmsg!= None there is system errors,
