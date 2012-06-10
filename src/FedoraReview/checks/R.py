@@ -110,18 +110,18 @@ class RCheckDoc(RCheckBase):
     def __init__(self, base):
         """ Instanciate check variable """
         RCheckBase.__init__(self, base)
+        self.url = 'http://fedoraproject.org/wiki/Packaging:R'
+        self.automatic = True
+        self.text = 'Package have the default element marked as %%doc :'
+
+    def run(self):
+        """ Run the check """
         self.doc_found = []
         for doc in self.DOCS:
             if self.srpm and self.has_files("*" + doc):
                 self.doc_found.append(doc)
-        self.url = 'http://fedoraproject.org/wiki/Packaging:R'
-        self.text = 'Package have the default element marked as %%doc : %s' % (
-        ", ".join(self.doc_found))
-        self.automatic = True
-
-    def run(self):
-        """ Run the check """
         docs = self.spec.find_all(re.compile("%doc.*"))
+        self.text += ", ".join(self.doc_found)
         for entry in docs:
             entry = os.path.basename(entry.group(0)).strip()
             if str(entry) in self.doc_found:
