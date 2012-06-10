@@ -2,7 +2,7 @@
 - refactor SRPMFile, Source and related classes so that they really
   contain functions related only to them (i.e. SRPMFile.get_files_rpms)
 - automate some checks that can be automated (mostly generic ones)
-- Review, fix and document the configuration file use.
+- Review, fix, document and re-implement the configuration file use.
 - Doc: fix manpage/Bugs
 - Remove --grab
 - Remove --no-report?

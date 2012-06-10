@@ -53,9 +53,7 @@ class TestChecks(unittest.TestCase):
 
     def test_all_checks(self):
         ''' Run all automated review checks'''
-        print('Setup Checks')
         self.checks = Checks(self.spec, self.srpm)
-        print('Running All Checks')
         self.checks.run_checks(writedown=False)
         # Automatic Checks
         checks = self.checks.checks

@@ -388,7 +388,7 @@ class CheckRpmLintInstalled(CheckBase):
 
     def run(self):
         if self.srpm.build() != -1:
-            dir = '.' if Settings.prebuilt else self.get_mock_dir()
+            dir = '.' if Settings.prebuilt else Mock.resultdir
             dir += '/'
             rpms = self.srpm.get_used_rpms('.src.rpm')
             paths = [ dir + r for r in rpms ]

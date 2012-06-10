@@ -73,7 +73,7 @@ class _Mock(Helpers):
         p = self._get_dir('root/builddir/build')
         return os.path.join(p, subdir) if subdir else p
 
-    """  The directory where mock leaves built rpms and logs """
+    """ The directory where mock leaves built rpms and logs """
     resultdir=property(get_resultdir)
 
     """ Mock's %_topdir seen from the outside. """
@@ -94,16 +94,32 @@ class _Mock(Helpers):
         if Settings.mock_config:
              cmd.extend(['-r', Settings.mock_config])
         cmd.extend(rpm_files)
-        self.log.debug('Command: ' + ' '.join(cmd))
+        self.log.debug('Install command: ' + ' '.join(cmd))
         try:
             p = Popen(cmd, stdout=PIPE, stderr=STDOUT)
             output, error = p.communicate()
             logging.debug(log_text(output, error), exc_info=True)
         except OSError as e:
             logging.warning(log_text(output, error), exc_info=True)
-            return output[0]
+            return output
         if p.returncode != 0:
             logging.warning("Install command returned error code %i",
+                            p.returncode)
+        return None if p.returncode == 0 else output
+
+    def init(self):
+        """ Run a mock --init command. """
+        cmd = ["mock", "--init"]
+        self.log.debug('Init command: ' + ' '.join(cmd))
+        try:
+            p = Popen(cmd, stdout=PIPE, stderr=STDOUT)
+            output, error = p.communicate()
+            logging.debug(output + str(error), exc_info=True)
+        except OSError as e:
+            logging.warning(output + str(error), exc_info=True)
+            return output
+        if p.returncode != 0:
+            logging.warning("init command returned error code %i",
                             p.returncode)
         return None if p.returncode == 0 else output
 

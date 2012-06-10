@@ -20,47 +20,40 @@ Unit checks for automatic test of fedora R review guidelines
 '''
 
 
-
-import logging
 import sys
 import os
 import os.path
 sys.path.insert(0,os.path.abspath('../'))
+
+import shutil
 import unittest
 
-from FedoraReview import Helpers, Settings, Checks
+from FedoraReview import Settings, Checks, ReviewDirs, NameBug
 from FedoraReview.checks import R
 
-from base import *
 
 class TestRChecks(unittest.TestCase):
 
     def setUp(self):
-        sys.argv = ['test-R-checks','-b','1234']
-        Settings.init()
-        self.checks = None
-        self.srpm = TEST_WORK_DIR + os.path.basename(R_TEST_SRPM)
-        self.spec = TEST_WORK_DIR + os.path.basename(R_TEST_SPEC)
-        self.source = TEST_WORK_DIR + os.path.basename(R_TEST_SRC)
-        if not os.path.exists(TEST_WORK_DIR):
-            os.makedirs(TEST_WORK_DIR)
-        helper = Helpers()
-        helper._get_file(R_TEST_SRPM, TEST_WORK_DIR)
-        helper._get_file(R_TEST_SPEC, TEST_WORK_DIR)
-        helper._get_file(R_TEST_SRC, TEST_WORK_DIR)
-        del helper
+        sys.argv = ['fedora-review','-rpn','R-Rdummypkg']
+        os.chdir('test-R')
+        if os.path.exists('R-Rdummypkg'):
+             shutil.rmtree('R-Rdummypkg')
+        Settings.init(True)
+        ReviewDirs.reset()
 
     def test_all_checks(self):
         ''' Run all automated review checks'''
-        print('Setup Checks')
-        self.checks = Checks(self.spec, self.srpm)
-        print('Running R Checks')
+        self.bug = NameBug('R-Rdummypkg')
+        self.bug.find_urls()
+        self.bug.download_files()
+        self.checks = Checks(self.bug.spec_file, self.bug.srpm_file)
         self.checks.run_checks(writedown=False)
         for check in self.checks.checks:
             if check.is_applicable():
                 self.assertTrue(check.header == 'Generic' or check.header == 'R')
                 result = check.get_result()
-                self.assertNotEqual(result[1:2], '!')
+                self.assertTrue(result.result in ['pass', 'pending', 'fail']) 
 
 
 if __name__ == '__main__':

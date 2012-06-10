@@ -29,6 +29,7 @@ TEST_SRPM = BASE_URL + 'python-test-1.0-1.fc16.src.rpm'
 TEST_SRC = BASE_URL + 'python-test-1.0.tar.gz'
 TEST_WORK_DIR = os.path.abspath('test-work/')+'/'
 
-R_TEST_SRPM = BASE_URL + 'R-Rdummypkg-1.0-1.fc16.src.rpm'
+R_TEST_SRPM =            'https://fedorahosted.org/releases/F/e' \
+                         '/FedoraReview/R-Rdummypkg-1.0-2.fc15.src.rpm'
 R_TEST_SPEC = BASE_URL + 'R-Rdummypkg.spec'
 R_TEST_SRC = BASE_URL + 'Rdummypkg_1.0.tar.gz'

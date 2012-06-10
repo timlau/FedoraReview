@@ -20,15 +20,16 @@
 Unit tests for bugzilla bug handling
 '''
 
-import logging
 import sys
 import os.path
-import re
 sys.path.insert(0,os.path.abspath('../'))
 
-import os
-import unittest
 import glob
+import logging
+import unittest
+import os
+import re
+import shutil
 
 from FedoraReview.helpers import Helpers
 from FedoraReview import Checks, NameBug, Sources, Source, ReviewDirs, \
@@ -69,8 +70,13 @@ class TestMisc(unittest.TestCase):
 
     def test_source_file(self):
         """ Test the SourceFile class """
+        if os.path.exists('python-test'):
+            shutil.rmtree('python-test')
+        sys.argv = ['fedora-review','-n','python-test']
+        Settings.init(True)
+        ReviewDirs.reset()
+        ReviewDirs.workdir_setup('.', True)
         bug = NameBug('python-test')
-        ReviewDirs.workdir_setup(os.getcwd(), True)
         bug.find_urls()
         bug.download_files()
         spec = SpecFile(bug.spec_file)
@@ -82,10 +88,16 @@ class TestMisc(unittest.TestCase):
         self.assertTrue(os.path.exists(source.filename))
         self.assertEqual(source.check_source_md5(),
                          "289cb714af3a85fe36a51fa3612b57ad")
+        os.chdir(self.startdir)
 
     def test_sources(self):
+        if os.path.exists('python-test'):
+            shutil.rmtree('python-test')
+        sys.argv = ['fedora-review','-n','python-test']
+        Settings.init(True)
+        ReviewDirs.reset()
+        ReviewDirs.workdir_setup('.', True)
         bug = NameBug('python-test')
-        ReviewDirs.workdir_setup(os.getcwd(), True)
         bug.find_urls()
         bug.download_files()
         checks = Checks(bug.spec_file, bug.srpm_file)
@@ -99,10 +111,11 @@ class TestMisc(unittest.TestCase):
         if result.output_extra:
            self.log.debug("Result extra text: " + result.output_extra)
         self.assertEqual( result.result, 'pass')
+        os.chdir(self.startdir)
 
     def test_spec_file(self):
         ''' Test the SpecFile class'''
-        ReviewDirs.workdir_setup(os.getcwd(), True)
+        ReviewDirs.workdir_setup('.', True)
         dest = Mock.get_builddir('SOURCES')
         if not os.path.exists(dest):
             os.makedirs(dest)
@@ -139,10 +152,11 @@ class TestMisc(unittest.TestCase):
             self.assertEqual(res.groups(), ('1%{?dist}',))
         else:
             self.assertTrue(False)
+        os.chdir(self.startdir)
 
     def test_srpm_mockbuild(self):
         """ Test the SRPMFile class """
-        ReviewDirs.workdir_setup(os.getcwd(), True)
+        ReviewDirs.workdir_setup('.', True)
         sys.argv = ['fedora-review','-b','817268', '-m', 'fedora-16-i386']
         Settings.init(True)
         self.helpers._get_file(TEST_SRPM, os.path.abspath('.'))
@@ -160,6 +174,7 @@ class TestMisc(unittest.TestCase):
         rpms = glob.glob(os.path.join(Mock.resultdir,
                                       'python-test-1.0-1*noarch.rpm'))
         self.assertTrue(len(rpms)==1)
+        os.chdir(self.startdir)
 
     def test_md5(self):
         helpers = Helpers()
@@ -169,7 +184,7 @@ class TestMisc(unittest.TestCase):
     def test_bugzilla_bug(self):
         sys.argv = ['fedora-review','-b','817268']
         Settings.init(True)
-        ReviewDirs.workdir_setup(os.getcwd(), True)
+        ReviewDirs.workdir_setup('.', True)
         bug = BugzillaBug('817268')
         bug.find_urls()
         expected ='http://dl.dropbox.com/u/17870887/python-faces-0.11.7-2' \
@@ -180,24 +195,31 @@ class TestMisc(unittest.TestCase):
         self.assertEqual(expected, bug.spec_url)
         self.assertEqual(None, bug.spec_file)
         self.assertEqual(None, bug.srpm_file)
+        os.chdir(self.startdir)
 
     def test_rpm_spec(self):
-        sys.argv = ['fedora-review','-n','python-test', '-r']
+        if os.path.exists('python-test'):
+            shutil.rmtree('python-test')
+        sys.argv = ['fedora-review','-rn','python-test']
         Settings.init(True)
-        ReviewDirs.workdir_setup(os.getcwd(), True)
+        ReviewDirs.reset()
         bug = NameBug('python-test')
         bug.find_urls()
         expected = 'src/test/python-test-1.0-1.fc16.src.rpm'
         self.assertTrue(bug.srpm_url.endswith(expected))
-        expected = 'src/test/srpm-unpacked/python-test.spec'
+        expected = 'src/test/python-test/srpm-unpacked/python-test.spec'
         self.assertTrue(bug.spec_url.endswith(expected))
         bug.download_files()
+        os.chdir(self.startdir)
 
     def test_md5sum_diff_ok(self):        
         os.chdir('md5sum-diff-ok')
-        ReviewDirs.workdir_setup('.', True)
         sys.argv = ['fedora-review','-n','python-test','-rp']
         Settings.init(True)
+        ReviewDirs.reset()
+        if os.path.exists('python-test'):
+            shutil.rmtree('python-test')
+
         bug = NameBug('python-test')
         check = self.run_single_check(bug, 'CheckSourceMD5')
         self.assertEqual(check.state, 'pass')
@@ -208,9 +230,11 @@ class TestMisc(unittest.TestCase):
     def test_md5sum_diff_fail(self):        
         os.chdir('md5sum-diff-fail')
         
-        ReviewDirs.workdir_setup('.', True)
-        sys.argv = ['fedora-review','-n','python-test','-rp']
+        ReviewDirs.reset()
+        sys.argv = ['fedora-review','-rpn','python-test']
         Settings.init(True)
+        if os.path.exists('python-test'):
+            shutil.rmtree('python-test')
         bug = NameBug('python-test')
         check =self. run_single_check(bug, 'CheckSourceMD5')
         self.assertEqual(check.state, 'fail')
@@ -220,7 +244,7 @@ class TestMisc(unittest.TestCase):
 
     def test_bad_specfile(self):        
         os.chdir('bad-spec')
-        ReviewDirs.workdir_setup('.', True, True)
+        ReviewDirs.workdir_setup('.', True)
         sys.argv = ['fedora-review','-n','python-test','-p']
         Settings.init(True)
         bug = NameBug('python-test')
