@@ -64,7 +64,10 @@ class _Mock(Helpers):
         return p
 
     def get_resultdir(self):
-        return self._get_dir('result')
+        if Settings.resultdir:
+            return Settings.resultdir
+        else:
+            return self._get_dir('result')
 
     def get_builddir(self, subdir=None):
         """ Return the directory which corresponds to %_topdir inside
@@ -79,22 +82,44 @@ class _Mock(Helpers):
     """ Mock's %_topdir seen from the outside. """
     topdir = property(lambda self: get_builddir(self))
 
+    def is_installed(self, package):
+        cmd = 'rpm --dbpath '
+        cmd += self._get_dir('root/var/lib/rpm')
+        cmd += ' -q ' + package
+        cmd += ' &>/dev/null'
+        self.log.debug('Check install cmd: ' + cmd)
+        rc = call(cmd, shell=True)
+        return rc == 0
+
     def install(self, rpm_files):
         """
         Run  'mock install' on a list of files, return None if
         OK, else the stdout+stderr
         """
 
-        def log_text(output, error):
-           return  "Install output: " +  \
-                    output if output else '' +  \
-                    error if error else ''
+        def log_text(out, err):
+           return  "Install output: " + str(out) + ' ' + str(err)
 
-        cmd = ["mock", "install"]
-        if Settings.mock_config:
-             cmd.extend(['-r', Settings.mock_config])
+        def mock_cmd():
+            cmd = ["mock"]
+            if Settings.mock_config:
+                 cmd.extend(['-r', Settings.mock_config])
+            if Settings.mock_options:
+                 cmd.extend(Settings.mock_options.split())
+            return cmd
+
+        for f in rpm_files:
+            p = os.path.basename(f).rsplit('-',2)[0]
+            if self.is_installed(p):
+                self.log.debug('Removing already installed: ' + f)
+                rpm_files.remove(f)
+
+        if len(rpm_files) == 0:
+            return
+        cmd = mock_cmd()
+        cmd.append("install")
         cmd.extend(rpm_files)
-        self.log.debug('Install command: ' + ' '.join(cmd))
+        self.log.debug('Install command: ' + ', '.join(cmd))
         try:
             p = Popen(cmd, stdout=PIPE, stderr=STDOUT)
             output, error = p.communicate()

@@ -64,10 +64,9 @@ class Helpers(object):
         url = urlparse(link)
         fname = os.path.basename(url.path)
         path = os.path.join(directory, fname)
-        if os.path.exists(path) \
-            and Settings.cache:
-                 logging.debug('Using cached source: ' + fname)
-                 return  path
+        if os.path.exists(path) and Settings.cache:
+             logging.debug('Using cached source: ' + fname)
+             return  path
         self.log.debug("  --> %s : %s" % (directory, link))
         try:
             file, headers = urllib.urlretrieve(link, path)

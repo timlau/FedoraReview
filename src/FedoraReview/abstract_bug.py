@@ -21,7 +21,6 @@ import os.path
 import re
 import shutil
 import tempfile
-import urllib2
 import urllib
 
 from glob import glob
@@ -92,9 +91,17 @@ class AbstractBug(Helpers):
     def do_download_srpm(self):
         """ Download the spec file and srpm extracted from the page.
         """
+
+        def has_srpm():
+           return hasattr(self,'srpm_file')  and self.srpm_file and  \
+                   os.path.exists(self.srpm_file)
+
         if not hasattr( self, 'dir'):
             self.dir = ReviewDirs.srpm
 
+        if has_srpm() and Settings.cache:
+            self.log.debug( "Using cached source: " + self.srpm_file)
+            return
         srpm_name = os.path.basename(self.srpm_url)
         srpm_path = os.path.join(self.dir, srpm_name)
         file, headers = urllib.urlretrieve(self.srpm_url, srpm_path)
@@ -117,9 +124,13 @@ class AbstractBug(Helpers):
 
     def _check_cache(self):
         try:
-            specs = glob(os.path.join(self.dir, '*.spec'))
+            name = self.get_name()
+            assert(name != '?')
+            specs = glob(os.path.join(ReviewDirs.srpm, 
+                         name + '*.spec'))
             found = len(specs)
-            srpms = glob(os.path.join(self.dir, '*.src.rpm'))
+            srpms = glob(os.path.join(ReviewDirs.srpm, 
+                         name + '*.src.rpm'))
             found += len(srpms)
             if found == 2:
                 self.spec_file = specs[0]

@@ -24,6 +24,7 @@ import argparse
 import grp
 import logging
 import os.path
+import re
 import sys
 
 from review_error import FedoraReviewError, CleanExitError
@@ -34,7 +35,11 @@ MY_PLUGIN_DIR  = "~/.config/fedora-review/plugins"
 PARSER_SECTION = 'review'
 
 LOG_ROOT = 'FedoraReview'
-SESSION_LOG = os.path.expanduser('~/.cache/fedora-review.log')
+
+# REVIEW_LOGFILE is intentionally hidden from UI and manpage...
+SESSION_LOG = os.environ['REVIEW_LOGFILE'] \
+                  if 'REVIEW_LOGFILE' in os.environ \
+              else os.path.expanduser('~/.cache/fedora-review.log')
 
 
 class ConfigError(FedoraReviewError):
@@ -144,8 +149,7 @@ class _Settings(object):
                          " defaults to 'root' defined in" 
                          ' /etc/mock/default.cfg')
         optional.add_argument('--no-report',  action='store_true',
-                    dest='noreport',
-                    help='Do not make a review report.')
+                    help='Do not print review report.')
         optional.add_argument('--no-build', action='store_true',
                     dest='nobuild',
                     help = 'Do not rebuild the srpm, use currently'
@@ -157,8 +161,7 @@ class _Settings(object):
         optional.add_argument('-p', '--prebuilt',  action='store_true',
                     dest='prebuilt', help='When using -n <name>, use'
                     ' prebuilt rpms in current directory.')
-        optional.add_argument('-s', '--single',
-                    dest='single', metavar='<test>',
+        optional.add_argument('-s', '--single', metavar='<test>',
                     help='Single test to run, as named by --display-checks.')
         optional.add_argument('-r', '--rpm-spec', action='store_true',
                     dest='rpm_spec', default=False, 
@@ -188,6 +191,15 @@ class _Settings(object):
         self.add_args(args)
         self.do_logger_setup(logging.DEBUG if args.verbose else None)
         _check_mock_grp()
+        # resultdir as present in mock_options, possibly null
+        self.resultdir = None
+        if self.mock_options:
+            rx=re.compile('--resultdir=([^ ]+)')
+            m = rx.search(self.mock_options)
+            self.resultdir = m.groups()[0] if m else None
+            if not 'no-cleanup-after' in self.mock_options:
+                self.mock_options += ' --no-cleanup-after'
+      
         self.init_done = True
 
     def add_args(self, args):
@@ -260,6 +272,5 @@ class _Settings(object):
         return self.log
 
 Settings = _Settings()
-
 
 # vim: set expandtab: ts=4:sw=4:
