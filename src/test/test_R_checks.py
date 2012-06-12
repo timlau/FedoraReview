@@ -21,12 +21,13 @@ Unit checks for automatic test of fedora R review guidelines
 
 
 import sys
-import os
 import os.path
 sys.path.insert(0,os.path.abspath('../'))
 
+import os
 import shutil
 import unittest
+
 
 from FedoraReview import Settings, Checks, ReviewDirs, NameBug
 from FedoraReview.checks import R
@@ -54,6 +55,7 @@ class TestRChecks(unittest.TestCase):
                 self.assertTrue(check.header == 'Generic' or check.header == 'R')
                 result = check.get_result()
                 self.assertTrue(result.result in ['pass', 'pending', 'fail']) 
+        os.chdir('..')
 
 
 if __name__ == '__main__':

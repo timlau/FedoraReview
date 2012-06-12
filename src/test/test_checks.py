@@ -36,8 +36,10 @@ from base import *
 class TestChecks(unittest.TestCase):
 
     def setUp(self):
+        self.startdir = os.getcwd()
         sys.argv = ['test-checks','-b','1234']
-        Settings.init()
+        Settings.init(True)
+        ReviewDirs.reset()
         ReviewDirs.workdir_setup('.', True)
         if not os.path.exists(TEST_WORK_DIR):
             os.makedirs(TEST_WORK_DIR)
@@ -60,6 +62,7 @@ class TestChecks(unittest.TestCase):
         for check in checks:
             result = check.get_result()
             self.assertNotEqual(result, None)
+        os.chdir(self.startdir)
 
 
 if __name__ == '__main__':

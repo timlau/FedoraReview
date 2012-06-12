@@ -34,20 +34,13 @@ from test_misc     import TestMisc
 from test_bugzilla import TestBugzilla
 from test_checks   import TestChecks
 from test_R_checks import TestRChecks
+from test_options  import TestOptions
 
 
 VERBOSITY = 2
 
 Mock.init()
 
-misc = unittest.TestLoader().loadTestsFromTestCase(TestMisc)
-unittest.TextTestRunner(verbosity=VERBOSITY).run(misc)
-
-bugzilla = unittest.TestLoader().loadTestsFromTestCase(TestBugzilla)
-unittest.TextTestRunner(verbosity=VERBOSITY).run(bugzilla)
-
-checks = unittest.TestLoader().loadTestsFromTestCase(TestChecks)
-unittest.TextTestRunner(verbosity=VERBOSITY).run(checks)
-
-r_checks = unittest.TestLoader().loadTestsFromTestCase(TestRChecks)
-unittest.TextTestRunner(verbosity=VERBOSITY).run(r_checks)
+for t in 'Misc', 'Bugzilla', 'Checks', 'RChecks', 'Options':
+   test = eval( 'unittest.TestLoader().loadTestsFromTestCase(Test%s)' % t)
+   unittest.TextTestRunner(verbosity=VERBOSITY).run(test)

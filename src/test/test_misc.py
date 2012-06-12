@@ -42,7 +42,8 @@ class TestMisc(unittest.TestCase):
 
     def setUp(self):
         sys.argv = ['fedora-review','-n','python-test','--prebuilt']
-        Settings.init()
+        Settings.init(True)
+        ReviewDirs.reset()
         ReviewDirs.workdir_setup('.', True)
         self.log = Settings.get_logger()
         self.helpers = Helpers()
@@ -56,12 +57,13 @@ class TestMisc(unittest.TestCase):
             os.makedirs(TEST_WORK_DIR)
         self.helpers._get_file(TEST_SRPM, TEST_WORK_DIR)
         self.startdir = os.getcwd()
+        if os.path.exists('python-test'):
+            shutil.rmtree('python-test')
 
     def run_single_check(self, bug, the_check):
         bug.find_urls()
         bug.download_files()
         checks = Checks(bug.spec_file, bug.srpm_file)
-        checks.add_check_classes()
         checks.set_single_check(the_check)
         self.assertEqual(len(checks.checks), 1)
         check = checks.checks[0]
@@ -79,6 +81,7 @@ class TestMisc(unittest.TestCase):
         bug = NameBug('python-test')
         bug.find_urls()
         bug.download_files()
+        
         spec = SpecFile(bug.spec_file)
         sources = Sources(spec)
         source = Source(sources, 'Source0', TEST_SRC)
@@ -101,7 +104,6 @@ class TestMisc(unittest.TestCase):
         bug.find_urls()
         bug.download_files()
         checks = Checks(bug.spec_file, bug.srpm_file)
-        checks.add_check_classes()
         checks.set_single_check('CheckSourceMD5')
         self.assertEqual(len(checks.checks), 1)
         check = checks.checks[0]
@@ -115,6 +117,7 @@ class TestMisc(unittest.TestCase):
 
     def test_spec_file(self):
         ''' Test the SpecFile class'''
+        ReviewDirs.reset()
         ReviewDirs.workdir_setup('.', True)
         dest = Mock.get_builddir('SOURCES')
         if not os.path.exists(dest):
@@ -156,6 +159,7 @@ class TestMisc(unittest.TestCase):
 
     def test_srpm_mockbuild(self):
         """ Test the SRPMFile class """
+        ReviewDirs.reset()
         ReviewDirs.workdir_setup('.', True)
         sys.argv = ['fedora-review','-b','817268', '-m', 'fedora-16-i386']
         Settings.init(True)
@@ -184,6 +188,7 @@ class TestMisc(unittest.TestCase):
     def test_bugzilla_bug(self):
         sys.argv = ['fedora-review','-b','817268']
         Settings.init(True)
+        ReviewDirs.reset()
         ReviewDirs.workdir_setup('.', True)
         bug = BugzillaBug('817268')
         bug.find_urls()
@@ -198,18 +203,18 @@ class TestMisc(unittest.TestCase):
         os.chdir(self.startdir)
 
     def test_rpm_spec(self):
-        if os.path.exists('python-test'):
-            shutil.rmtree('python-test')
         sys.argv = ['fedora-review','-rn','python-test']
         Settings.init(True)
-        ReviewDirs.reset()
+        if hasattr(ReviewDirs, 'wd'):
+            delattr(ReviewDirs, 'wd')
+        if os.path.exists('python-test'):
+            shutil.rmtree('python-test')
         bug = NameBug('python-test')
         bug.find_urls()
         expected = 'src/test/python-test-1.0-1.fc16.src.rpm'
         self.assertTrue(bug.srpm_url.endswith(expected))
         expected = 'src/test/python-test/srpm-unpacked/python-test.spec'
         self.assertTrue(bug.spec_url.endswith(expected))
-        bug.download_files()
         os.chdir(self.startdir)
 
     def test_md5sum_diff_ok(self):        
@@ -221,22 +226,33 @@ class TestMisc(unittest.TestCase):
             shutil.rmtree('python-test')
 
         bug = NameBug('python-test')
-        check = self.run_single_check(bug, 'CheckSourceMD5')
+        bug.find_urls()
+        bug.download_files()
+        checks = Checks(bug.spec_file, bug.srpm_file)
+        checks.set_single_check('CheckSourceMD5')
+        self.assertEqual(len(checks.checks), 1)
+        check = checks.checks[0]
+        check.run()
         self.assertEqual(check.state, 'pass')
         expected = 'diff -r shows no differences'
-        os.chdir(self.startdir)
         self.assertTrue(expected in check.attachments[0].text)
+        os.chdir(self.startdir)
 
     def test_md5sum_diff_fail(self):        
         os.chdir('md5sum-diff-fail')
         
-        ReviewDirs.reset()
         sys.argv = ['fedora-review','-rpn','python-test']
         Settings.init(True)
+        ReviewDirs.reset()
         if os.path.exists('python-test'):
             shutil.rmtree('python-test')
         bug = NameBug('python-test')
-        check =self. run_single_check(bug, 'CheckSourceMD5')
+        bug.find_urls()
+        checks = Checks(bug.spec_file, bug.srpm_file)
+        checks.set_single_check('CheckSourceMD5')
+        self.assertEqual(len(checks.checks), 1)
+        check = checks.checks[0]
+        check.run()
         self.assertEqual(check.state, 'fail')
         expected = 'diff -r also reports differences'
         self.assertTrue(expected in check.attachments[0].text)
@@ -244,9 +260,12 @@ class TestMisc(unittest.TestCase):
 
     def test_bad_specfile(self):        
         os.chdir('bad-spec')
-        ReviewDirs.workdir_setup('.', True)
-        sys.argv = ['fedora-review','-n','python-test','-p']
+        if os.path.exists('python-test'):
+            shutil.rmtree('python-test')
+        sys.argv = ['fedora-review','-pn','python-test']
         Settings.init(True)
+        ReviewDirs.reset()
+        ReviewDirs.workdir_setup('.', True)
         bug = NameBug('python-test')
         check = self.run_single_check(bug,'CheckSpecAsInSRPM')
         self.assertEqual(check.state, 'fail')
@@ -257,14 +276,13 @@ class TestMisc(unittest.TestCase):
         os.chdir('desktop-file')
         if os.path.exists('python-test'):
             shutil.rmtree('python-test')
-        ReviewDirs.workdir_setup('.', True, True)
         sys.argv = ['fedora-review','-rpn','python-test']
         Settings.init(True)
+        ReviewDirs.reset()
         bug = NameBug('python-test')
         check = self.run_single_check(bug,'CheckDesktopFileInstall')
         self.assertEqual(check.state, 'pass')
         os.chdir(self.startdir)
-
 
 
 if __name__ == '__main__':
