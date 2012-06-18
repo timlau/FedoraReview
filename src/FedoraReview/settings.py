@@ -140,9 +140,6 @@ class _Settings(object):
         optional.add_argument('-c','--cache', action='store_true', dest='cache',
                     help = 'Do not redownload files from bugzilla,'
                            ' use the ones in the cache.')
-        optional.add_argument('-g','--grab', default = False,
-                    action='store_true',dest='grab',
-                    help='Display urls and exit')
         optional.add_argument('-m','--mock-config', metavar='<config>',
                     dest='mock_config',
                     help='Configuration to use for the mock build,'
