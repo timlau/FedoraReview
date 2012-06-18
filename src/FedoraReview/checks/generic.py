@@ -982,14 +982,14 @@ class CheckDesktopFileInstall(CheckBase):
         self.set_passed(m != None)
 
 
-class CheckSysVScripts(CheckBase):
+class CheckSystemdScripts(CheckBase):
     '''
-    http://fedoraproject.org/wiki/Packaging:SysVInitScript
+    http://fedoraproject.org/wiki/Packaging:Systemd
     '''
     def __init__(self, base):
         CheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
-        self.text = 'Package contains a SysV-style init script if in need of one.'
+        self.text = 'Package contains  systemd file(s) if in need.'
         self.automatic = False
         self.type = 'MUST'
 
