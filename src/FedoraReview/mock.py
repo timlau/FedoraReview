@@ -47,21 +47,33 @@ class _Mock(Helpers):
         Helpers.__init__(self)
 
         ''' Read mock configuration to get mock root. '''
+
+        
+    def _get_root(self):
+        config = 'default'
+        if Settings.mock_config:
+            config  = Settings.mock_config
+        path = os.path.join('/etc/mock', config + '.cfg')
+
         config_opts= {}
-        with open('/etc/mock/default.cfg') as f:
+        with open(path) as f:
             config = f.read()
         exec config
         self.mock_root = config_opts['root']
 
     def _get_dir(self, subdir=None):
-        if Settings.mock_config:
-            p = os.path.join( '/var/lib/mock', Settings.mock_config )
-        else:
-            p = os.path.join( '/var/lib/mock', self.mock_root )
+        if not hasattr(self, 'mock_root'):
+            self._get_root() 
+        p = os.path.join( '/var/lib/mock', self.mock_root )
         p = os.path.join(p, subdir) if subdir else p
         if not os.path.exists(p):
             os.makedirs(p)
         return p
+
+    def reset(self):
+        """ Clear all repsisten state. """
+        if hasattr(self, 'mock_root'):
+            delattr(self, 'mock_root')
 
     def get_resultdir(self):
         if Settings.resultdir:
