@@ -29,6 +29,18 @@ from subprocess import Popen, PIPE
 
 from FedoraReview import CheckBase, Attachment, ReviewDirs, Mock, Settings
 
+class CheckGuidelines(CheckBase):
+    '''
+    MUST: The package complies to the Packaging Guidelines.
+    http://fedoraproject.org/wiki/Packaging:Guidelines
+    '''
+    def __init__(self, base):
+        CheckBase.__init__(self, base)
+        self.url = 'http://fedoraproject.org/wiki/Packaging:Guidelines'
+        self.text = 'Package complies to the Packaging Guidelines'
+        self.automatic = False
+        self.type = 'MUST'
+
 
 class CheckNaming(CheckBase):
     '''
