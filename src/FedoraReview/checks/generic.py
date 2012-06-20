@@ -1162,6 +1162,13 @@ class CheckUsefulDebuginfo(CheckBase):
         self.automatic = False
         self.type = 'MUST'
 
+    def is_applicable(self): 
+        rpm_files = self.srpm.get_used_rpms('src.rpm')
+        for rpm in rpm_files: 
+            if not rpm.endswith('noarch.rpm'): 
+                return True 
+        return False 
+
 
 class CheckNoConflicts(CheckBase):
     '''
