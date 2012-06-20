@@ -45,10 +45,6 @@ class Sources(object):
         """Add a new Source Object based on spec tag and URL to source"""
         source = Source(self, tag, url)
         self._sources[tag] = source
-        if source.local:
-            self.log.info( 'The source %s in the srpm can not be'
-               ' retrieved. This is a corner case not supported yet.' 
-               % url )
 
     def get(self, tag):
         """ Get a single Source object"""

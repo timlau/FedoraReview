@@ -60,14 +60,18 @@ class Helpers(object):
         else:
             raise FedoraReviewError("Bad md5sum output: " + out)
 
-    def _get_file(self, link, directory):
+    def _get_file(self, link, directory, logger=None):
         url = urlparse(link)
         fname = os.path.basename(link)
         path = os.path.join(directory, fname)
         if os.path.exists(path) and Settings.cache:
+             if logger:
+                 logger(True)
              logging.debug('Using cached source: ' + fname)
              return  path
         self.log.debug("  --> %s : %s" % (directory, link))
+        if logger:
+           logger(False)
         try:
             file, headers = urllib.urlretrieve(link, path)
         except IOError, err:

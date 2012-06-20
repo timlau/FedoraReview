@@ -41,6 +41,16 @@ class Source(Helpers):
            if it's a downloaded url
     '''
     def __init__(self, sources, tag, url):
+
+        def my_logger(cache):
+             if cache:
+                 path = urlparse(url).path
+                 self.log.info("Using cached data for (%s): %s" % 
+                               (tag, os.path.basename(path)))
+             else:
+                 self.log.info("Downloading (%s): %s" % (tag, url))
+                 
+
         Helpers.__init__(self)
         self.sources = sources
         self.tag = tag
@@ -48,9 +58,10 @@ class Source(Helpers):
         if urlparse(url)[0] != '':  # This is a URL, Download it
             self.url = url
             self.local = False
-            self.log.info("Downloading (%s): %s" % (tag, url))
             try:
-                self.filename = self._get_file(url, ReviewDirs.upstream)
+                self.filename = self._get_file(url, 
+                                               ReviewDirs.upstream,
+                                               my_logger)
             except:
                 self.log.debug('Download error on ' + url,
                                 exc_info=True)
