@@ -157,13 +157,13 @@ class CheckSoFiles(CCppCheckBase):
     def run(self):
         files = self.get_files_by_pattern('*.so')
         passed = True
-        extra = ""
+        extra = "Unversioned so-files in non-devel package (fix or explain):"
         for rpm in files:
             for fn in files[rpm]:
                 if not '-devel' in rpm:
-                    passed = False
+                    passed = 'inconclusive'
                     extra += "%s : %s\n" % (rpm, fn)
-        self.set_passed(passed, extra)
+        self.set_passed(passed, None if passed == True else extra)
 
 class CheckLibToolArchives(CCppCheckBase):
     '''
