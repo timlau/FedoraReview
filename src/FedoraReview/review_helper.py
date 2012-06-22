@@ -28,7 +28,9 @@ import os.path
 from FedoraReview import BugException, BugzillaBug, Checks, \
           ChecksLister, CleanExitError, FedoraReviewError, Mock, \
           NameBug, ReviewDirs, ReviewDirExistsError, Settings, \
-          SettingsError, UrlBug, __version__
+          SettingsError, UrlBug
+
+from FedoraReview import __version__, build_full
 
 
 class ConfigError(FedoraReviewError):
@@ -82,7 +84,7 @@ class ReviewHelper(object):
         ChecksLister().list()
 
     def __print_version(self):
-        print('fedora-review version ' + __version__)
+        print('fedora-review version ' + __version__ + ' ' + build_full)
 
     def __run_checks(self, spec, srpm):
         self.checks = Checks(spec, srpm )

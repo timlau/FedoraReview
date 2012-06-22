@@ -17,6 +17,7 @@ setup(
     url = 'https://fedorahosted.org/FedoraReview/',
     package_dir = {'FedoraReview': 'src/FedoraReview'},
     packages = ['FedoraReview', 'FedoraReview.checks'],
+    package_data = { '': ['*.tmpl','version']},
     scripts = ["src/fedora-review", "src/fedora-create-review"],
     maintainer  = 'fedora-review maintainers',
     maintainer_email = 'fedorareview@lists.fedorahosted.org'

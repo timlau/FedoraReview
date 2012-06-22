@@ -7,9 +7,11 @@
 cd $( dirname $( readlink -fn $0 ))
 
 status=$( git status --short )
-[ -n "$status" ] && echo "Warning: there are uncommitted changes" >&2
+[ -n "$status" ] && echo 'Warning: there are uncommitted changes' >&2
 
-source src/FedoraReview/version.py
+./update-version
+
+source src/FedoraReview/version
 dfile="dist/fedora-review-$__version__.tar.gz"
 
 [ -f ${dfile} ] && echo Removing: $dfile
@@ -19,7 +21,7 @@ env PYTHONPATH=src python setup.py --quiet clean
 env PYTHONPATH=src python setup.py --quiet build sdist
 echo "Created: $dfile"
 
-[ "$1" = "-b" ] && exit 0
+[ "$1" = '-b' ] && exit 0
 
 read -i 'n' -e -p "Do you want to upload file $dfile to fedorahosted? (y/n): "
 if [ "$REPLY" = "y" ];then

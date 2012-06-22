@@ -1,0 +1,23 @@
+#!/usr/bin/env python
+#
+# Updates version from version.tmpl
+#
+# Designed to work as git post-commit hook. To install:
+#    $ cd .git/hooks
+#    $ ln -s ../../update-version post-commit
+
+import os.path
+import os
+import sys
+
+here = os.path.dirname(os.path.realpath(__file__))
+os.chdir(os.path.join(here, 'src', 'FedoraReview'))
+if not os.access(os.getcwd(), os.W_OK):
+    print "I cannot write into " + os.getcwd() + ", giving up"
+    sys.exit(1)
+if os.path.exists('version'):
+    os.remove('version')
+
+sys.path.insert(0, os.getcwd())
+import version
+sys.exit(0)
