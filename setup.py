@@ -10,7 +10,6 @@ from src.FedoraReview import __version__
 setup(
     name = 'fedora-review',
     description = 'Tools to help review packages for inclusion in Fedora',
-    description_long = '',
     data_files = [('/usr/share/man/man1/', [ 'fedora-review.1', 'fedora-create-review.1' ] ) ],
     version = __version__,
     license = 'GPLv2+',
@@ -18,5 +17,7 @@ setup(
     url = 'https://fedorahosted.org/FedoraReview/',
     package_dir = {'FedoraReview': 'src/FedoraReview'},
     packages = ['FedoraReview', 'FedoraReview.checks'],
-    scripts=["src/fedora-review", "src/fedora-create-review"],
-    )
+    scripts = ["src/fedora-review", "src/fedora-create-review"],
+    maintainer  = 'fedora-review maintainers',
+    maintainer_email = 'fedorareview@lists.fedorahosted.org'
+)

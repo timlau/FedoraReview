@@ -3,6 +3,7 @@
 .pydev*
 .stgit*
 *.log
+MANIFEST
 diff.txt
 test-work/
 build/
