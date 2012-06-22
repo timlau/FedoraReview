@@ -62,7 +62,7 @@ class Helpers(object):
 
     def _get_file(self, link, directory):
         url = urlparse(link)
-        fname = os.path.basename(url.path)
+        fname = os.path.basename(link)
         path = os.path.join(directory, fname)
         if os.path.exists(path) and Settings.cache:
              logging.debug('Using cached source: ' + fname)
