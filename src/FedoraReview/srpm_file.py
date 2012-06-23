@@ -232,11 +232,12 @@ class SRPMFile(Helpers):
         """
         if self._rpm_files:
             return self._rpm_files
-        if Settings.prebuilt:
+        if Settings.prebuilt and not hasattr(self, 'prebuilt_info'):
             rpms = self.get_used_rpms()
             hdr = "Using local rpms: "
             sep = '\n' + ' ' * len(hdr)
             self.log.info(hdr + sep.join(rpms))
+            self.prebuilt_info = True
         else:
             self.build()
             rpms = glob(os.path.join(Mock.resultdir, '*.rpm'))
