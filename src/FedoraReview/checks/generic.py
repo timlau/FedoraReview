@@ -484,16 +484,21 @@ class CheckMacros(CheckBase):
     '''
     def __init__(self, base):
         CheckBase.__init__(self, base)
-        self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#macros'
-        self.text = 'Package consistently uses macros (instead of hard-coded directory names).'
+        self.url = 'http://fedoraproject.org/' \
+                   'wiki/Packaging/Guidelines#macros'
+        self.text = 'Package consistently uses macro' \
+                    ' is (instead of hard-coded directory names).'
         self.automatic = True
         self.type = 'MUST'
 
     def run(self):
-        br_tag1 = self.spec.find_all(re.compile('.*%{buildroot}.*'))
-        br_tag2 = self.spec.find_all(re.compile('.*\$RPM_BUILD_ROOT.*'))
+        br_tag1 = self.spec.find_all(re.compile('.*%{buildroot}.*'),
+                                     True)
+        br_tag2 = self.spec.find_all(re.compile('.*\$RPM_BUILD_ROOT.*'), 
+                                     True)
         if br_tag1 and br_tag2:
-            self.set_passed(False, 'Using both %{buildroot} and $RPM_BUILD_ROOT')
+            self.set_passed(False, 
+                            'Using both %{buildroot} and $RPM_BUILD_ROOT')
         else:
             self.set_passed('inconclusive')
 

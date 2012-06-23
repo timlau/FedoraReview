@@ -232,9 +232,14 @@ class SpecFile(object):
                 return res
         return None
 
-    def find_all(self, regex):
+    def find_all(self, regex, skip_changelog=False):
+        my_lines = list(self.lines)
+        if skip_changelog:
+           line = my_lines.pop()
+           while not '%changelog' in line:
+               line = my_lines.pop()
         result = []
-        for line in self.lines:
+        for line in my_lines:
             res = regex.search(line)
             if res:
                 result.append(res)
