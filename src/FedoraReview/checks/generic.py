@@ -1172,16 +1172,27 @@ class CheckUsefulDebuginfo(CheckBase):
 
 class CheckNoConflicts(CheckBase):
     '''
-    Whenever possible, Fedora packages should avoid conflicting with each other
+    Whenever possible, Fedora packages should avoid conflicting
+    with each other
     http://fedoraproject.org/wiki/Packaging/Guidelines#Conflicts
     http://fedoraproject.org/wiki/Packaging:Conflicts
     '''
     def __init__(self, base):
         CheckBase.__init__(self, base)
-        self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#Conflicts'
+        self.url = 'http://fedoraproject.org/' \
+                   'wiki/Packaging/Guidelines#Conflicts'
         self.text = 'Package does not generate any conflict.'
-        self.automatic = False
+        self.automatic = True
         self.type = 'MUST'
+
+    def run(self): 
+        if self.spec.find_tag('Conflicts', split_tag=False): 
+            self.set_passed(False, 
+                            'Package contains Conflicts: tag(s)'
+                            ' needing fix or justification.') 
+        else: 
+            self.set_passed('inconclusive',
+                            'Package contains no Conflicts: tag(s)')
 
 
 class CheckExcludeArch(CheckBase):
