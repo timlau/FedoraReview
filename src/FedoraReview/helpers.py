@@ -95,7 +95,7 @@ class Helpers(object):
         """ Check the rpmlint output, return(ok, errmsg)
         If ok, output is OK and there is 0 warnings/errors
         If not ok, and errmsg!= None there is system errors,
-        reflected in errmsg. If not ok and sg == None parsing
+        reflected in errmsg. If not ok and msg == None parsing
         is ok but there are warnings/errors"""
 
         problems = re.compile('(\d+)\serrors\,\s(\d+)\swarnings')

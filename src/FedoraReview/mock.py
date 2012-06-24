@@ -46,9 +46,6 @@ class _Mock(Helpers):
     def __init__(self):
         Helpers.__init__(self)
 
-        ''' Read mock configuration to get mock root. '''
-
-        
     def _get_root(self):
         config = 'default'
         if Settings.mock_config:
@@ -71,7 +68,7 @@ class _Mock(Helpers):
         return p
 
     def reset(self):
-        """ Clear all repsisten state. """
+        """ Clear all persistent state. """
         if hasattr(self, 'mock_root'):
             delattr(self, 'mock_root')
 
@@ -89,7 +86,7 @@ class _Mock(Helpers):
         return os.path.join(p, subdir) if subdir else p
 
     """ The directory where mock leaves built rpms and logs """
-    resultdir=property(get_resultdir)
+    resultdir = property(get_resultdir)
 
     """ Mock's %_topdir seen from the outside. """
     topdir = property(lambda self: get_builddir(self))
@@ -212,7 +209,7 @@ class _Mock(Helpers):
         return ok, text
 
     def have_cache_for(self, name):
-        ''' return true if there is at least one srpm and one rpm in
+        ''' Return true if there is at least one srpm and one rpm in
         resultdir, prefixed with the given name
         '''
         path = self.get_resultdir()

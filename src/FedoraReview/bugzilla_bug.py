@@ -40,7 +40,6 @@ class BugzillaBug(AbstractBug):
         :arg bug, the bug number on bugzilla
         :kwarg user, the username with which to log in in bugzilla.
         :kwarg password, the password associated with this account.
-        be re-downloaded or not.
         """
         AbstractBug.__init__(self)
         self.check_options()

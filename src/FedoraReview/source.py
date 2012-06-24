@@ -86,7 +86,7 @@ class Source(Helpers):
     def extract(self ):
         ''' Extract the source into a directory under upstream-unpacked,
             available in the extract_dir property. Sources which not 
-            be extracted e. g., plain files are copied to the 
+            could be extracted e. g., plain files are copied to the 
             extract-dir.
         '''
         self.extract_dir = os.path.join(ReviewDirs.upstream_unpacked,

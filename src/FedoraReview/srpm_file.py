@@ -189,7 +189,7 @@ class SRPMFile(Helpers):
     def run_rpmlint(self, filenames):
         """ Runs rpmlint against the provided files.
 
-        karg: filenames, list of filenames  to run rpmlint on
+        arg: filenames, list of filenames  to run rpmlint on
         """
         cmd = 'rpmlint -f .rpmlint ' + ' '.join( filenames )
         out = 'Checking: '
