@@ -64,10 +64,6 @@ class ReviewHelper(object):
         if not self.bug.find_urls():
             self.log.error( 'Cannot find .spec or .srpm URL(s)')
             raise HandledError()
-        if Settings.grab:
-            print "Srpm URL:" + self.bug.srpm_url
-            print "Spec URL:" + self.bug.spec_url
-            return
 
         if not ReviewDirs.is_inited:
             wd = self.bug.get_dirname()

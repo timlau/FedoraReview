@@ -59,6 +59,7 @@ class TestMisc(unittest.TestCase):
         self.startdir = os.getcwd()
         if os.path.exists('python-test'):
             shutil.rmtree('python-test')
+        Mock.reset()
 
     def run_single_check(self, bug, the_check):
         bug.find_urls()

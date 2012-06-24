@@ -88,16 +88,16 @@ class TestOptions(unittest.TestCase):
         bug = BugzillaBug(Settings.bug)
 
         bug.find_urls()
-        home = 'http://dl.dropbox.com/u/17870887/openerp-client'
+        home = 'http://leamas.fedorapeople.org/openerp-client'
         expected = os.path.join( home, 
-                                 'openerp-client-6.1-1.fc16.src.rpm')
+                                 'openerp-client-6.1-2.fc16.src.rpm')
         self.assertEqual(expected, bug.srpm_url)
         expected = os.path.join(home, 'openerp-client.spec')
         self.assertEqual(expected, bug.spec_url),
 
         bug.download_files()
         expected = os.path.abspath(
-                             'srpm/openerp-client-6.1-1.fc16.src.rpm')
+                             'srpm/openerp-client-6.1-2.fc16.src.rpm')
         self.assertEqual(expected, bug.srpm_file),
         expected = os.path.abspath('srpm/openerp-client.spec')
         self.assertEqual(expected, bug.spec_file)

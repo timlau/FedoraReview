@@ -30,6 +30,7 @@ Requirements
 * fedora-packager
 * python-straight-plugin
 * python-kitchen
+* python-BeautifulSoup
 * rpmdevtools
 
 Download
