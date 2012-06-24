@@ -120,6 +120,25 @@ URL for another bugzilla.
 .TP 4
 .B -i id, --user userid
 The bugzilla user id.
+.SH THE REVIEW DIRECTORY
+The report template create by fedora-review lives in a review directory. 
+Besides the report, here is:
+.TP 4
+srpm directory
+Holds whats downloaded, normally a src.rpm and a 
+spec file. When using --rpm-spec, here is no .spec file.
+.TP 4
+srpm-unpacked directory
+Holds the unpacked content of the src.rpm
+file.
+.TP 4
+upstream directory 
+contains sources downloaded from the Source: url in the spec file.
+.TP 4
+upstream-unpacked directory 
+Occasionally contains the unpacked upstream sources, but is 
+normally empty.
+
 .SH EXAMPLES
 Make a report template for Fedora bug 817271:
 .IP "" 4

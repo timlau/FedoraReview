@@ -8,6 +8,7 @@ Like:
 - Downloading SRPM & SPEC from Bugzilla report
 - Download upstream source
 - Check md5sums
+- Run rpmlint
 - Generate review report will both manual & automated checks, ready to
   complete and paste into the Bugzilla report.
 
@@ -17,6 +18,7 @@ Contacts
 --------
 
 * IRC: #fedora-review @ freenode
+* Mailing list: fedorareview@lists.fedorahosted.org
 
 Requirements
 ------------
@@ -25,7 +27,6 @@ Requirements
 * rpm & yum
 * mock
 * editor
-* python-requests
 * python-bugzilla
 * fedora-packager
 * python-straight-plugin
@@ -45,7 +46,7 @@ git clone git://github.com/timlau/FedoraReview.git
 Usage
 -----
 
-See man fedora-review.1
+See nroff -man fedora-review.1 | more
 
 License
 -------
