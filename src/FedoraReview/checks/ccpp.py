@@ -225,19 +225,4 @@ class CheckNoKernelModules(CCppCheckBase):
         self.type = 'MUST'
 
 
-class CheckRelocatable(CCppCheckBase):
-    '''
-    MUST: If the package is designed to be relocatable,
-    the packager must state this fact in the request for review,
-    along with the rationalization for relocation of that specific package.
-    Without this, use of Prefix: /usr is considered a blocker.
-    http://fedoraproject.org/wiki/Packaging/Guidelines#RelocatablePackages
-    '''
-    def __init__(self, base):
-        CCppCheckBase.__init__(self, base)
-        self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#RelocatablePackages'
-        self.text = 'Package is not relocatable.'
-        self.automatic = False
-        self.type = 'MUST'
-
 # vim: set expandtab: ts=4:sw=4:

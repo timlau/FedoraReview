@@ -1076,6 +1076,22 @@ class CheckBundledLibs(CheckBase):
         self.type = 'MUST'
 
 
+class CheckRelocatable(CheckBase):
+    '''
+    MUST: If the package is designed to be relocatable,
+    the packager must state this fact in the request for review,
+    along with the rationalization for relocation of that specific package.
+    Without this, use of Prefix: /usr is considered a blocker.
+    http://fedoraproject.org/wiki/Packaging/Guidelines#RelocatablePackages
+    '''
+    def __init__(self, base):
+        CheckBase.__init__(self, base)
+        self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#RelocatablePackages'
+        self.text = 'Package is not relocatable.'
+        self.automatic = False
+        self.type = 'MUST'
+
+
 class CheckReqPkgConfig(CheckBase):
     '''
     rpm in EPEL5 and below does not automatically create dependencies
