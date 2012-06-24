@@ -1108,6 +1108,20 @@ class CheckReqPkgConfig(CheckBase):
         self.set_passed(found, 'Only applicable for EL-5')
 
 
+class CheckDevelFilesInDevel(CheckBase):
+    '''
+    MUST: Development files must be in a -devel package
+    '''
+
+    def __init__(self, base):
+        CheckBase.__init__(self, base)
+        self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#DevelPackages'
+        self.text = 'Development files must be in a -devel package'
+        self.automatic = False
+        self.type = 'MUST'
+
+
+    
 class CheckFullVerReqSub(CheckBase):
     '''
     MUST: In the vast majority of cases, devel packages must require the base
