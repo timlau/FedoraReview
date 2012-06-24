@@ -136,8 +136,18 @@ upstream directory
 contains sources downloaded from the Source: url in the spec file.
 .TP 4
 upstream-unpacked directory 
-Occasionally contains the unpacked upstream sources, but is 
-normally empty.
+Occasionally contains the unpacked sources, but is normally empty.
+.TP 4 
+BUILD link 
+Points to the mock directory containing the sources used in 
+the build. These sources have been created and modifified by the %prep
+stuff in the spec file. The link is only valid direct after the run, 
+it's overwritten next time mock executes.
+.TP 4
+result link 
+Points to the mock result dir, containing logs and rpms.
+This is also overwritten as soon as mock is run again e. g., by 
+fedora-review.
 
 .SH EXAMPLES
 Make a report template for Fedora bug 817271:
