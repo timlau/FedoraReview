@@ -24,8 +24,7 @@ import logging
 import os.path
 import re
 import urllib
-from subprocess import call, Popen, PIPE, STDOUT
-from urlparse import urlparse
+from subprocess import call, Popen, PIPE
 
 from settings import Settings
 from review_error import FedoraReviewError
@@ -61,7 +60,6 @@ class Helpers(object):
             raise FedoraReviewError("Bad md5sum output: " + out)
 
     def _get_file(self, link, directory, logger=None):
-        url = urlparse(link)
         fname = os.path.basename(link)
         path = os.path.join(directory, fname)
         if os.path.exists(path) and Settings.cache:
