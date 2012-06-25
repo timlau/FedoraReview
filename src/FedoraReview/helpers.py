@@ -60,7 +60,7 @@ class Helpers(object):
             raise FedoraReviewError("Bad md5sum output: " + out)
 
     def _get_file(self, link, directory, logger=None):
-        fname = os.path.basename(link)
+        fname = link.rsplit('/', 1)[1]
         path = os.path.join(directory, fname)
         if os.path.exists(path) and Settings.cache:
              if logger:

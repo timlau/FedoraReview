@@ -149,6 +149,23 @@ Points to the mock result dir, containing logs and rpms.
 This is also overwritten as soon as mock is run again e. g., by 
 fedora-review.
 
+.SH URL limitations
+fedora-review handles two types of URL: the spec and srpm url found in 
+e. g. the bugzilla page, nad the source url(s) found in the spec file.
+
+For the srpm and spec file url:
+.IP \(bu 3 
+The parameters (i. e., the ? and everything beyond) is removed. 
+.IP \(bu 3
+The rest must end with /*.spec or /*.src.rpm
+
+.P
+For the source url, possible parameters are 
+.B not
+removed. It must end with /filename, typically something like
+/package-2.0.1.tar.gz
+
+
 .SH EXAMPLES
 Make a report template for Fedora bug 817271:
 .IP "" 4
