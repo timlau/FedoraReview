@@ -1,0 +1,32 @@
+===================
+ How to contribute
+===================
+
+Basic Rules
+===========
+
+* 4-space indentation
+* No whitespace at the end of the lines
+* Keep the 80 line length limit
+* Run pep8 and pylint to see potential issues
+* Be sensible, ask if you are unsure
+
+
+Sending patches
+================
+
+* Most new work should be done on ``devel`` branch
+* Prepared patches should be generated with ``git format-patch`` and sent
+  to fedorareview@lists.fedorahosted.org mailinglist
+
+Development
+===========
+
+* Branching is following strategy outlined in
+  http://nvie.com/posts/a-successful-git-branching-model
+* Non-trivial features/changes should ideally be reviewed by at least one
+  other developer before merging to devel
+* ``master`` branch is off-limits except for merging new releases. This
+  way ``master`` represents state of latest released version
+* Feature branches can be rebased and/or removed. Don't rely on them
+
