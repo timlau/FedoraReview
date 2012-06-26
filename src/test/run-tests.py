@@ -35,12 +35,13 @@ from test_bugzilla import TestBugzilla
 from test_checks   import TestChecks
 from test_R_checks import TestRChecks
 from test_options  import TestOptions
+from test_util     import TestUtil
 
 
 VERBOSITY = 2
 
 Mock.init()
 
-for t in 'Misc', 'Bugzilla', 'Checks', 'RChecks', 'Options':
+for t in 'Misc', 'Bugzilla', 'Checks', 'RChecks', 'Options', 'Util':
    test = eval( 'unittest.TestLoader().loadTestsFromTestCase(Test%s)' % t)
    unittest.TextTestRunner(verbosity=VERBOSITY).run(test)

@@ -67,7 +67,7 @@ class Sources(object):
     def extract(self, source_url=None, source_filename=None):
         """ Extract the source specified by its url or filename.
         :arg source_url, the url used in the spec as used in the spec
-        :arg souce_filename, the filename of the source as identified
+        :arg source_filename, the filename of the source as identified
         in the spec.
         """
         if source_url is None and source_filename is None:
@@ -93,8 +93,8 @@ class Sources(object):
         for source in self._sources.values():
             # If the sources are not extracted then we add the source itself
             if not source.extract_dir:
-                self.log.debug('%s cannot be extracted, adding as such \
-as sources' % source.filename)
+                self.log.debug('%s cannot be extracted, adding as such'
+                               ' to sources' % source.filename)
                 sources_files.append(source.filename)
             else:
                 self.log.debug('Adding files found in %s' % source.filename)

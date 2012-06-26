@@ -77,10 +77,7 @@ class _Settings(object):
         return self._dict.get(hash)
 
     def _populate(self):
-        '''Set option values from a INI file section.
-
-        :arg parser: ConfigParser instance (or subclass)
-        :arg section: INI file section to read use.
+        '''Set option values from INI file section.
         '''
         if self.parser.has_section(PARSER_SECTION):
             opts = set(self.parser.options(PARSER_SECTION))

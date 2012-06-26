@@ -79,6 +79,7 @@ class _ReviewDirs(object):
             if Settings.cache:
                 for d in self.WD_DIRS:
                     shutil.move(os.path.join(cache,d), wd)
+                shutil.rmtree(cache)
         if not os.path.exists(wd):
             os.mkdir(wd)
         os.chdir(wd)

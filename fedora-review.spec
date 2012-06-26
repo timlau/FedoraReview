@@ -11,6 +11,7 @@ BuildArch:  noarch
 
 BuildRequires:  python2-devel
 Requires:       python-straight-plugin
+Requires:       python-BeautifulSoup
 Requires:       python-bugzilla
 Requires:       fedora-packager
 Requires:       python-requests

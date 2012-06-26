@@ -150,7 +150,7 @@ class SpecFile(object):
                 self.log.warning("Error : [%s]" % (error))
                 return False
 
-    # FIXME: This is dead code, not referenced?!§
+    # FIXME: This is dead code, not referenced?!
     def get_rpm_eval(self, filter):
         lines = "\n".join(self.get_section('main')['main'])
         #print lines

@@ -43,7 +43,7 @@ from base import *
 
 startdir = os.getcwd()
 
-VERSION = '0.2.0git'
+VERSION = '0.2.0'
 
 def abs_file_url(path):
     return 'file://' +  os.path.abspath(path)

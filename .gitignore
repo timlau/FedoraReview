@@ -3,7 +3,9 @@
 .pydev*
 .stgit*
 *.log
+MANIFEST
 diff.txt
+dist
 test-work/
 build/
 patches-*

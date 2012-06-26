@@ -60,7 +60,7 @@ class Helpers(object):
             raise FedoraReviewError("Bad md5sum output: " + out)
 
     def _get_file(self, link, directory, logger=None):
-        fname = os.path.basename(link)
+        fname = link.rsplit('/', 1)[1]
         path = os.path.join(directory, fname)
         if os.path.exists(path) and Settings.cache:
              if logger:
@@ -95,7 +95,7 @@ class Helpers(object):
         """ Check the rpmlint output, return(ok, errmsg)
         If ok, output is OK and there is 0 warnings/errors
         If not ok, and errmsg!= None there is system errors,
-        reflected in errmsg. If not ok and sg == None parsing
+        reflected in errmsg. If not ok and msg == None parsing
         is ok but there are warnings/errors"""
 
         problems = re.compile('(\d+)\serrors\,\s(\d+)\swarnings')

@@ -1,20 +1,33 @@
 #!/bin/bash
 # reads version from setup.py, create a source tarball and optionally
 # upload to fedorahosted
+#
+# Options: -b  Batch mode, don't ask for fedorahosted upload
 
-version=`grep version src/FedoraReview/version.py | sed "s/.*'\(.*\)'.*/\1/"`
-dfile="dist/fedora-review-$version.tar.gz"
-if [ -f ${dfile} ]; then
-    rm -v $dfile
-fi
+cd $( dirname $( readlink -fn $0 ))
 
-python setup.py clean
-python setup.py build sdist
+status=$( git status --short )
+[ -n "$status" ] && echo 'Warning: there are uncommitted changes' >&2
+
+./update-version
+
+source src/FedoraReview/version
+dfile="dist/fedora-review-$__version__.tar.gz"
+
+[ -f ${dfile} ] && echo Removing: $dfile
+rm -f $dfile
+
+env PYTHONPATH=src python setup.py --quiet clean
+env PYTHONPATH=src python setup.py --quiet build sdist
+echo "Created: $dfile"
+
+[ "$1" = '-b' ] && exit 0
 
 read -i 'n' -e -p "Do you want to upload file $dfile to fedorahosted? (y/n): "
-
 if [ "$REPLY" = "y" ];then
     scp "${dfile}" fedorahosted.org:FedoraReview
+    git tag $__version__
+    git push --tags
 fi
 
 
