@@ -26,6 +26,8 @@ echo "Created: $dfile"
 read -i 'n' -e -p "Do you want to upload file $dfile to fedorahosted? (y/n): "
 if [ "$REPLY" = "y" ];then
     scp "${dfile}" fedorahosted.org:FedoraReview
+    git tag $__version__
+    git push --tags
 fi
 
 
