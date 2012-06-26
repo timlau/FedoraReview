@@ -34,6 +34,7 @@ from sources      import Sources
 from spec_file    import SpecFile
 from srpm_file    import SRPMFile
 from url_bug      import UrlBug
-from version      import __version__, build_id, build_date, build_full
+from version      import __version__, \
+                         build_version, build_id, build_date, build_full
 
 # vim: set expandtab: ts=4:sw=4:

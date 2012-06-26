@@ -6,7 +6,7 @@
 
 cd $( dirname $( readlink -fn $0 ))
 
-status=$( git status --short )
+status=$( git status --short -uno)
 [ -n "$status" ] && echo 'Warning: there are uncommitted changes' >&2
 
 badlinks=$( find . -type l ! -execdir test -e '{}' \; -print | nl )
@@ -28,13 +28,17 @@ if [ ! -e "$dfile" ];  then
 fi
 echo "Created: $dfile"
 
-echo "Running tests before finalizing release"
 REVIEW_LOGLEVEL=error src/test/run-tests.py
 if [ $? -ne 0 ]; then
     echo "Some tests failed. Review test logs and fix all problems"
     echo "before doing a release. Aborting"
     exit 1
 fi
+
+git_tag=${__version__##*.*.*.}
+sed 's/git_tag[ ]*\.[0-9a-f]*/git_tag  '".$git_tag/" < fedora-review.spec \
+   > dist/fedora-review.spec
+echo Created: dist/fedora-review.spec
 
 [ "$1" = '-b' ] && exit 0
 

@@ -27,8 +27,8 @@ import shutil
 import tempfile
 import logging
 
-from FedoraReview.review_error import FedoraReviewError
-from FedoraReview.settings     import Settings
+from review_error import FedoraReviewError
+from settings     import Settings
 
 SRPM              = 'srpm'
 SRPM_UNPACKED     = 'srpm-unpacked'

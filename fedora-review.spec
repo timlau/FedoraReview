@@ -1,11 +1,12 @@
+%global     git_tag   .289eeb5
 Name:       fedora-review
-Version:    0.1.0
-Release:    2%{?dist}
+Version:    0.2.2
+Release:    1%{?git_tag}%{?dist}
 Summary:    Review tool for fedora rpm packages
 
 License:    GPLv2+
 URL:        https://fedorahosted.org/FedoraReview/
-Source0:    https://fedorahosted.org/released/FedoraReview/%{name}-%{version}.tar.gz
+Source0:    https://fedorahosted.org/released/FedoraReview/%{name}-%{version}%{?git_tag}.tar.gz
 
 BuildArch:  noarch
 
@@ -40,7 +41,7 @@ programming language. There is also support for external plugins that
 can be written in any language supporting JSON format.
 
 %prep
-%setup -q
+%setup -q -n %{name}-%{version}%{?git_tag}
 chmod -x api/examples/*
 
 %build
@@ -54,12 +55,15 @@ install -d -m755 $RPM_BUILD_ROOT/%{_datadir}/%{name}/plugins
 %files
 %doc COPYING AUTHORS TODO README api
 %{python_sitelib}/*
-%{_bindir}/fedora-review
-%{_mandir}/man1/%{name}.1.*
+%{_bindir}/*
+%{_mandir}/man1/*
 %dir %{_datadir}/%{name}
 %dir %{_datadir}/%{name}/plugins
 
 %changelog
+* Tue Jun 26 2012 Alec Leamas <alec.leamas@nowhere.net> - 0.2.0-1
+- Added support for git post-release %%git_tag
+- Adjusted file section to include missing entries
 * Wed Nov 16 2011 Stanislav Ochotnicky <sochotnicky@redhat.com> - 0.1.0-2
 - Remove things not needed in el6+
 
