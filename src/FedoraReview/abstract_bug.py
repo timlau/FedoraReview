@@ -84,9 +84,8 @@ class AbstractBug(Helpers):
             self.dir = ReviewDirs.srpm
 
         spec_name = os.path.basename(self.spec_url)
-        spec_path = os.path.join(self.dir, spec_name)
-        file, headers = urllib.urlretrieve(self.spec_url, spec_path)
-        self.spec_file =  file
+        self.spec_file = os.path.join(self.dir, spec_name)
+        self.urlretrieve(self.spec_url, self.spec_file)
 
     def do_download_srpm(self):
         """ Download the spec file and srpm extracted from the page.
@@ -103,9 +102,8 @@ class AbstractBug(Helpers):
             self.log.debug( "Using cached source: " + self.srpm_file)
             return
         srpm_name = os.path.basename(self.srpm_url)
-        srpm_path = os.path.join(self.dir, srpm_name)
-        file, headers = urllib.urlretrieve(self.srpm_url, srpm_path)
-        self.srpm_file = file
+        self.srpm_file = os.path.join(self.dir, srpm_name)
+        self.urlretrieve(self.srpm_url, self.srpm_file)
 
     def do_download_files(self):
         """ Download the spec file and srpm extracted from the page.
@@ -153,9 +151,9 @@ class AbstractBug(Helpers):
         try:
             self.log.info('Downloading .spec and .srpm files')
             self.do_download_files()
-        except:
+        except Exception as ex:
             self.log.debug('bug download error', exc_info=True)
-            self.log.error('Cannot download file(s)')
+            self.log.error('Cannot download file(s): ' + str(ex))
             return False
         return True
 

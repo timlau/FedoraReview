@@ -29,6 +29,12 @@ from subprocess import call, Popen, PIPE
 from settings import Settings
 from review_error import FedoraReviewError
 
+class DownloadError(FedoraReviewError):
+    def __init__(self, code, url):
+        FedoraReviewError.__init__(
+           self, "Error %s downloading %s" % (code, url))
+
+
 class Helpers(object):
 
     def __init__(self):
@@ -59,6 +65,20 @@ class Helpers(object):
         else:
             raise FedoraReviewError("Bad md5sum output: " + out)
 
+    def urlretrieve(self, url, path):
+        try:
+            istream =  urllib.FancyURLopener().open(url)
+            if istream.getcode() and istream.getcode() != 200:
+                raise DownloadError(istream.getcode(), url)
+            with open(path, 'w') as ostream:
+                bytes = istream.read(32767)
+                while bytes != '':
+                    ostream.write(bytes)
+                    bytes = istream.read(32767)
+        except IOError as err:
+            raise DownloadError(str(err), url)
+
+
     def _get_file(self, link, directory, logger=None):
         fname = link.rsplit('/', 1)[1]
         path = os.path.join(directory, fname)
@@ -70,12 +90,8 @@ class Helpers(object):
         self.log.debug("  --> %s : %s" % (directory, link))
         if logger:
            logger(False)
-        try:
-            file, headers = urllib.urlretrieve(link, path)
-        except IOError, err:
-            raise FedoraReviewError('Getting error "%s" while trying'
-                                    ' to write file: %s' % (err, path))
-        return path if os.path.exists(path) else None
+        self.urlretrieve(link, path)
+        return path 
 
     @staticmethod
     def rpmdev_extract(archive, extract_dir):
