@@ -326,6 +326,9 @@ class CheckSourceMD5(CheckBase):
                 text += source.filename + ' :\n'
                 text += '  MD5SUM this package     : %s\n' % local
                 text += '  MD5SUM upstream package : %s\n' % upstream
+                if hasattr(source, 'local_src'):
+                    text += "Using local file " +  source.local_src + \
+                            " as upstream"
                 if local != upstream:
                     all_sources_passed = False
             passed = all_sources_passed

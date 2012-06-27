@@ -148,10 +148,21 @@ result link
 Points to the mock result dir, containing logs and rpms.
 This is also overwritten as soon as mock is run again e. g., by 
 fedora-review.
+.SH LOCAL SOURCES (GIT-BASED OR SIMILAR)
+Normally, the Source0 (or others SourceX) in the specfile contains an URL
+to the upstream source. fedora-review uses this url to download the 
+upstream source and then compare md5sum with source in rpm.
+
+However, in some cases the Source0: is just a filename e. g., when sources
+are generated from git, svn or similar tools. In these cases, fedora-review
+will look for a file matching the Source0 in current directory. If it exists,
+it's used as upstream source. This way, a reviewer can generate the source
+according the comments in the spec before running fedora-review and then
+have it checked.
 
 .SH URL limitations
 fedora-review handles two types of URL: the spec and srpm url found in 
-e. g. the bugzilla page, nad the source url(s) found in the spec file.
+e. g. the bugzilla page, and the source url(s) found in the spec file.
 
 For the srpm and spec file url:
 .IP \(bu 3 
@@ -238,6 +249,3 @@ For a list of all contributors see AUTHORS file
 
 .SH SEE ALSO
 https://fedorahosted.org/FedoraReview/  - source, issue tracker, etc.
-.SH BUGS
-.sp
-No known bugs at this time

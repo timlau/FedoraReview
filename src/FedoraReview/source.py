@@ -68,11 +68,19 @@ class Source(Helpers):
                 self.log.warning('Cannot download url: ' + url)
                 self.downloaded = False
         else:  # this is a local file in the SRPM
-            self.log.info("No upstream for (%s): %s" % (tag, url))
-            srcdir = ReviewDirs.srpm_unpacked 
+            local_src = os.path.join(ReviewDirs.startdir, url)
+            if os.path.exists(local_src):
+                self.log.info(
+                    "Using local file " + url + " as " + tag)
+                srcdir = ReviewDirs.startdir 
+                self.local_src = local_src
+                self.local = False
+            else:
+                self.log.info("No upstream for (%s): %s" % (tag, url))
+                srcdir = ReviewDirs.srpm_unpacked 
+                self.local = True
             self.filename = os.path.join(srcdir, url)
             self.url = 'file://' + self.filename
-            self.local = True
 
     def check_source_md5(self):
         self.log.debug("Checking source md5 : %s" % self.filename)
