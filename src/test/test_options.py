@@ -132,6 +132,28 @@ class TestOptions(unittest.TestCase):
         output = output.decode('utf-8')
         self.assertTrue(len(output) > 20)
 
+    def test_git_source(self):
+        ''' test use of local source0 tarball '''
+
+        argv = ['fedora-review', '-rpn', 'get-flash-videos']
+        argv.extend(['--mock-config', 'fedora-16-i386-rpmfusion_nonfree'])
+        sys.argv = argv
+        os.chdir('git-source')
+        if os.path.exists('get-flash-videos'):
+            shutil.rmtree('get-flash-videos')
+        ReviewDirs.reset()
+        Settings.init(True)
+  
+        rh = ReviewHelper()
+        sys.stdout = open( '/dev/null', 'w')
+        rh.run()
+        sys.stdout = sys.__stdout__
+        rv = 'get-flash-videos-review.txt'
+        with open(os.path.abspath(rv)) as f:
+            log = f.read()
+        self.assertIn('Using local file' , log)
+        os.chdir(startdir)
+ 
     def test_version(self):
         """ test -d/--display option. """
         os.chdir(startdir)
