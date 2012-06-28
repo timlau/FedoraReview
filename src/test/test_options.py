@@ -106,20 +106,22 @@ class TestOptions(unittest.TestCase):
         """ Test -url option """
         self.init_test(
                     ['fedora-review','-u',
-                    'https://bugzilla.rpmfusion.org/show_bug.cgi?id=2298'])
+                    'https://bugzilla.rpmfusion.org/show_bug.cgi?id=2200'])
         bug = UrlBug(Settings.url)
 
         bug.find_urls()
-        home = 'http://www.lesloueizeh.com/musuruan'
-        expected = os.path.join( home, 'fceux-2.1.5-2.fc16.src.rpm')
+        home = 'https://dl.dropbox.com/u/17870887/get-flash-videos'
+        expected = os.path.join( home, 
+                                 'get-flash-videos-1.24-4.20120409gita965329.fc16.src.rpm')
         self.assertEqual(expected, bug.srpm_url)
-        expected = os.path.join(home, 'fceux.spec')
+        expected = os.path.join(home, 'get-flash-videos.spec')
         self.assertEqual(expected, bug.spec_url),
 
         bug.download_files()
-        expected = os.path.abspath('srpm/fceux-2.1.5-2.fc16.src.rpm')
+        expected = os.path.abspath(
+            'srpm/get-flash-videos-1.24-4.20120409gita965329.fc16.src.rpm')
         self.assertEqual(expected, bug.srpm_file),
-        expected = os.path.abspath('srpm/fceux.spec')
+        expected = os.path.abspath('srpm/get-flash-videos.spec')
         self.assertEqual(expected, bug.spec_file)
 
     def test_display(self):
