@@ -34,6 +34,11 @@ Requirements
 * python-BeautifulSoup
 * rpmdevtools
 
+The mock requirement is not hard, it's possible to use fedora-review
+without mock when always using the --prebuilt/-p option. This means 
+that packages must be built using other tools e. g., koji. Generally,
+installing without mock is not recommended.
+
 Download
 --------
 Install git and run the command below to clone the source:
