@@ -184,7 +184,8 @@ class _Settings(object):
 
         self.add_args(args)
         self.do_logger_setup(logging.DEBUG if args.verbose else None)
-        _check_mock_grp()
+        if not self.prebuilt:
+            _check_mock_grp()
         # resultdir as present in mock_options, possibly null
         self.resultdir = None
         if self.mock_options:
