@@ -77,21 +77,6 @@ class TestBugzilla(unittest.TestCase):
         self.assertTrue(os.path.exists(srpm))
         self.assertTrue(os.path.exists(spec))
 
-    @unittest.skipIf(no_net, 'No network available')
-    def test_login(self):
-        ''' test login to bugzilla
-        You need to use BZ_USER=<user> BZ_PASS=<password> make test to 
-        active the login test
-        '''
-        # Test failed login
-        with self.assertRaises(SettingsError):
-            rc = self.bug.login('dummmy', 'dummy')
-        if 'BZ_USER' in os.environ and 'BZ_PASS' in os.environ:
-            user = os.environ['BZ_USER']
-            password = os.environ['BZ_PASS']
-            rc = self.bug.login(user=user, password=password)
-            self.assertEqual(rc, True)
-
 if __name__ == '__main__':
     suite = unittest.TestLoader().loadTestsFromTestCase(TestBugzilla)
     unittest.TextTestRunner(verbosity=2).run(suite)

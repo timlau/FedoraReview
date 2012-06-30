@@ -50,29 +50,6 @@ class BugzillaBug(AbstractBug):
         self.log.info("Trying bugzilla cookies for authentication")
         self.user = user
         self.bug = self.bugzilla.getbug(self.bug_num)
-        if Settings.login:
-             self.login(Settings.user)
-        if Settings.assign:
-            self.assign_bug()
-
-    def login(self, user, password=None):
-        """ Handles the login of the user into bugzilla. Will ask for
-        password on the commandline unless it's provided as argument.
-        :arg user, the bugzilla username.
-        :arg password, bugzilla password.
-        """
-        if not user:
-            raise SettingsError('--user required for --login')
-        if not password:
-            password=getpass.getpass()
-        ret = self.bugzilla.login(user=user, password=password)
-        if ret:
-            self.log.info("You are logged in to bugzilla. "
-                          "Credential cookies cached for future.")
-        else:
-            raise SettingsError("Can't login (bad password?)")
-        self.user = user
-        return True
 
     def _find_urls(self):
         """ Reads the page on bugzilla, search for all urls and extract
@@ -123,49 +100,8 @@ class BugzillaBug(AbstractBug):
     def check_options(self):
         AbstractBug.do_check_options(self, '--bug', ['prebuilt'])
 
-    def assign_bug(self):
-        """ Assign the bug to the reviewer.
-        """
-        try:
-            self.bug.setstatus('ASSIGNED')
-            self.bug.setassignee(assigned_to=self.user)
-            self.bug.addcomment('I will review this package')
-            flags = {'fedora-review': '?'}
-            self.bug.updateflags(flags)
-            self.bug.addcc([self.user])
-        except xmlrpclib.Fault, e:
-            self.handle_xmlrpc_err(e)
-            self.log.error("Some parts of bug assignment "
-                           "failed. Please check manually")
-        except ValueError, e:
-            self.log.error("Invalid bugzilla values: %s" % e)
-            self.log.error("Some parts of bug assignment "
-                           "failed. Please check manually")
-
-    def add_comment(self, comment):
-        """ Add a given comment to the bugzilla page.
-        :arg comment, the comment to be added to the page.
-        """
-        try:
-            self.bug.addcomment(comment)
-        except xmlrpclib.Fault, e:
-            self.handle_xmlrpc_err(e)
-            self.log.error("Comment to bugzilla has not been added")
-
     def handle_xmlrpc_err(self, exception):
         self.log.error("Server error: %s" % str(exception))
-        self.log.error("Your bugzilla cookie probably expired."
-                       " Please provide fresh credentials")
-
-    def add_comment_from_file(self, fname):
-        """ Add the content from a file as comment.
-        :arg fname, the filename from which the content is added as
-        comment on the bug.
-        """
-        stream = open(fname, "r")
-        lines = stream.readlines()
-        stream.close
-        self.add_comment("".join(lines))
 
 
 # vim: set expandtab: ts=4:sw=4:

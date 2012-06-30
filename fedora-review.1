@@ -42,10 +42,6 @@ You will need to have mock installed and be member of the mock group
 for the build to work. Run as root:
 .IP "" 4
 # usermod -a -G mock [your user name] && newgrp mock
-.PP
-To assign bugs in bugzilla automatically you will first have to login
-into bugzilla (--login). This will create a bugzilla cookie so you
-don't have to login every time.
 .SH MODE OPTIONS - one is required
 .TP 4
 .B -b, --bug <bug nr>
@@ -92,6 +88,10 @@ Do not generate the review report.
 .B --no-build
 Do not rebuild the source rpm, use the one currently built in mock.
 .TP 4
+.B --other_bz
+Url of alternative bugzilla, instead of using default 
+https://bugzilla.redhat.com
+.TP 4
 .B -p, --prebuilt
 When using -n <name>, use prebuilt rpms in current directory instead
 of building new ones in mock
@@ -107,22 +107,6 @@ Provides a more detailed output of what's going on.
 .TP 4
 .B -x  "test1, test2, ...", --exclude "test1, test2, ..."
 Comma-separated list of test(s) to exclude, as listed by --display-checks
-.TP 4
-.B -k, --checksum {md5,sha1,sha224,sha256,sha384,sha512}
-algorithm used for checksum (currently supported: md5, sha1, sha224, sha256, sha384, sha512)
-.SH BUGZILLA OPTIONS
-.TP 4
-.B -a, --assign
-Assign the Fedora bugzilla ticket to yourself. Only known to work with bugzilla.redhat.com
-.TP 4
-.B -l, --login "Fedora FAS user id"
-Login into Fedora Bugzilla before starting.
-.TP 4
-.B -o url,--other-bz url
-URL for another bugzilla.
-.TP 4
-.B -i id, --user userid
-The bugzilla user id.
 .SH THE REVIEW DIRECTORY
 The report template create by fedora-review lives in a review directory. 
 Besides the report, here is:
@@ -227,21 +211,11 @@ $ fedora-review --rpm-spec -n my-package
 This works if (and only if) the local files has name with correct prefix
 as given to -n (my-package in this example). The filenames must also end
 with \.spec and \.src.rpm
-.PP
-Finally, you can assign the bug from the commandline:
-.nf
-.IP "" 4
-$ fedora-review -b 811221 --assign --user my-bugzilla-id --login
-password:
 
 .SH FILES
 .I $HOME/.cache/fedora-review.log
 .RS
 Debug logging from last session.
-.RE
-.I $HOME/.bugzillacookies
-.RS
-Persistent credentials setup when using --login.
 .RE
 .I /usr/share/fedora-review/plugins
 .RS
@@ -260,6 +234,9 @@ If REVIEW_EXT_DIRS is set, it specifies additional directories that will be sear
 .B REVIEW_LOGLEVEL
 loglevel used when not using -v/--verbose. A logging.* value like 'DEBUG', 'Info', or 'warning'. Setting
 REVIEW_LOGLEVEL to 'debug' is the same as providing the -v/--verbose option.
+
+.SH SEE ALSO
+bugzilla(1) - CLI tool to create and modify bugzilla bug tickets.
 
 .SH AUTHORS
 Original author: Tim Lauridsen <tim.lauridsen@gmail.com>

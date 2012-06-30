@@ -65,10 +65,8 @@ class NameBug(AbstractBug):
         self.spec_url = 'file://' + specs[0]
 
     def check_options(self):
-        bad_opts = list(AbstractBug.BZ_OPTIONS)
-        bad_opts.append('cache')
-        AbstractBug.do_check_options(self, '--name', bad_opts)
-
+        AbstractBug.do_check_options(self, '--name',
+                                     ['cache', 'other_bz'])
 
     def download_files(self):
         self.srpm_file  = urlparse(self.srpm_url).path

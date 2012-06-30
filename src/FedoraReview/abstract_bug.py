@@ -56,8 +56,6 @@ class AbstractBug(Helpers):
     set the urls, this base class handles the rest.
     """
 
-    BZ_OPTIONS = [ 'assign', 'login', 'other_bz', 'user' ]
-
     def __init__(self):
         Helpers.__init__(self)
         self.spec_url = None

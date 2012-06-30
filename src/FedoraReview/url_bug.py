@@ -81,9 +81,8 @@ class UrlBug(AbstractBug):
         return self.bug_url
 
     def check_options(self):
-        bad_opts = list(AbstractBug.BZ_OPTIONS)
-        bad_opts.extend( ['prebuilt'])
-        AbstractBug.do_check_options(self, '--url', bad_opts)
+        AbstractBug.do_check_options(self, '--url', 
+                                     ['prebuilt', 'other_bz'])
 
 
 # vim: set expandtab: ts=4:sw=4:
