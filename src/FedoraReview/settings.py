@@ -115,8 +115,6 @@ class _Settings(object):
         mode =  parser.add_argument_group('Operation mode - one is required')
         modes =  mode.add_mutually_exclusive_group(required=True)
         optional =  parser.add_argument_group('General options')
-        bz_only = parser.add_argument_group(
-                     'Only to be used with bugzilla.redhat.com i. e., --bug')
         modes.add_argument('-b', '--bug', metavar='<bug>',
                     help='Operate on fedora bugzilla using its bug number.')
         modes.add_argument('-n', '--name', metavar='<name>',
@@ -152,6 +150,9 @@ class _Settings(object):
                     default = '--no-cleanup-after', dest='mock_options',
                     help='Options to specify to mock for the build,'
                          ' defaults to --no-cleanup-after')
+        optional.add_argument('--other-bz', default=None,
+                    metavar='<bugzilla url>', dest='other_bz',
+                    help='Alternative bugzilla URL')
         optional.add_argument('-p', '--prebuilt',  action='store_true',
                     dest='prebuilt', help='When using -n <name>, use'
                     ' prebuilt rpms in current directory.')
@@ -165,18 +166,6 @@ class _Settings(object):
         optional.add_argument('-x', '--exclude',
                     dest='exclude', metavar='"test,..."',
                     help='Comma-separated list of tests to exclude.')
-        bz_only.add_argument('-a','--assign', action='store_true',
-                    help = 'Assign the bug and set review flags')
-        bz_only.add_argument('-l', '--login', action='store_true',
-                    default=False,
-                    help='Login into Fedora Bugzilla before starting')
-        bz_only.add_argument('--other-bz', default=None,
-                    metavar='<bugzilla url>', dest='other_bz',
-                    help='Alternative bugzilla URL')
-        bz_only.add_argument('-i','--user', dest='user',
-                    metavar="<user id>",
-                    help = 'The bugzilla user Id')
-
         try:
             args = parser.parse_args()
         except:
