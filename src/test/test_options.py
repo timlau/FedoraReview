@@ -40,6 +40,7 @@ from FedoraReview.review_helper import ReviewHelper
 
 
 from base import *
+from test_env import no_net
 
 startdir = os.getcwd()
 
@@ -65,6 +66,7 @@ class TestOptions(unittest.TestCase):
         Settings.init(True)
 
 
+    @unittest.skipIf(no_net, 'No network available')
     def test_name(self):
         """ Test -name option """
         self.init_test(['fedora-review','-n','python-test'])
@@ -82,6 +84,7 @@ class TestOptions(unittest.TestCase):
         expected = os.path.abspath('./python-test.spec')
         self.assertEqual(expected, bug.spec_file),
                          
+    @unittest.skipIf(no_net, 'No network available')
     def test_bug(self):
         """ Test -bug option """
         self.init_test(['fedora-review','-b','818805'])
@@ -102,6 +105,7 @@ class TestOptions(unittest.TestCase):
         expected = os.path.abspath('srpm/openerp-client.spec')
         self.assertEqual(expected, bug.spec_file)
 
+    @unittest.skipIf(no_net, 'No network available')
     def test_url(self):
         """ Test -url option """
         self.init_test(
@@ -112,7 +116,7 @@ class TestOptions(unittest.TestCase):
         bug.find_urls()
         home = 'https://dl.dropbox.com/u/17870887/get-flash-videos'
         expected = os.path.join( home, 
-                                 'get-flash-videos-1.24-4.20120409gita965329.fc16.src.rpm')
+                'get-flash-videos-1.24-4.20120409gita965329.fc16.src.rpm')
         self.assertEqual(expected, bug.srpm_url)
         expected = os.path.join(home, 'get-flash-videos.spec')
         self.assertEqual(expected, bug.spec_url),
@@ -163,6 +167,7 @@ class TestOptions(unittest.TestCase):
         self.assertIn('fedora-review', output)
         self.assertIn(VERSION, output)
 
+    @unittest.skipIf(no_net, 'No network available')
     def test_cache(self):
         def get_mtime(pattern):
             pattern = os.path.join(ReviewDirs.root, pattern)
@@ -193,7 +198,7 @@ class TestOptions(unittest.TestCase):
         self.assertEqual(upstream_org_time, upstream_new_time, 'upstream')
         self.assertEqual(srpm_org_time, srpm_new_time, 'srpm')
 
-
+    @unittest.skipIf(no_net, 'No network available')
     def test_mock_options(self):
         ''' test -o/--mock-options and -m/mock-config '''
         dflt = os.readlink('/etc/mock/default.cfg')
@@ -211,6 +216,7 @@ class TestOptions(unittest.TestCase):
         rpms = glob(os.path.join(d, '*fc%s*.rpm' % v))
         self.assertTrue(len(rpms) > 0)
 
+    @unittest.skipIf(no_net, 'No network available')
     def test_prebuilt(self):
         ''' test --name --prebuilt '''
 
@@ -220,8 +226,7 @@ class TestOptions(unittest.TestCase):
         os.chdir('prebuilt')
         if os.path.exists('python-spiffgtkwidgets'):
             shutil.rmtree('python-spiffgtkwidgets')
-        if hasattr(ReviewDirs, 'wd'):
-           delattr(ReviewDirs, 'wd')
+        ReviewDirs.reset()
         Settings.init(True)
   
         rpms = glob('/var/lib/mock/fedora-16-i386/*.rpm')
@@ -239,14 +244,14 @@ class TestOptions(unittest.TestCase):
         self.assertIn('Using prebuilt rpms', log)
         os.chdir(startdir)
  
+    @unittest.skipIf(no_net, 'No network available')
     def test_rpm_spec(self):
         """ Test --rpm-spec/-r option """
         self.init_test(['fedora-review','-rn','python-test'],
                        'desktop-file')
         if os.path.exists('python-test'):
             shutil.rmtree('python-test')
-        if hasattr(ReviewDirs, 'wd'):
-            delattr(ReviewDirs, 'wd')
+        ReviewDirs.reset()
         bug = NameBug(Settings.name)
         bug.find_urls()
 

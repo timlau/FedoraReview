@@ -31,6 +31,7 @@ import unittest
 from FedoraReview import BugzillaBug, Settings, ReviewDirs
 from FedoraReview.abstract_bug import SettingsError
 from base import *
+from test_env import no_net
 
 class TestBugzilla(unittest.TestCase):
 
@@ -40,18 +41,24 @@ class TestBugzilla(unittest.TestCase):
         ReviewDirs.workdir_setup('.', True)
         self.bug = BugzillaBug(TEST_BUG)
 
+    @unittest.skipIf(no_net, 'No network available')
     def test_find_urls(self):
         ''' Test that we can get the urls from a bugzilla report'''
         rc = self.bug.find_urls()
         self.assertTrue(rc)
+        home = 'http://timlau.fedorapeople.org/files/test/review-test'
         self.assertEqual(self.bug.srpm_url,
-        'http://timlau.fedorapeople.org/files/test/review-test/python-test-1.0-1.fc14.src.rpm')
-        self.assertEqual(self.bug.spec_url,
-        'http://timlau.fedorapeople.org/files/test/review-test/python-test.spec')
+                         os.path.join(home, 
+                                      'python-test-1.0-1.fc14.src.rpm'))
+        self.assertEqual(self.bug.spec_url, 
+                         os.path.join(home, 'python-test.spec'))
 
 
+    @unittest.skipIf(no_net, 'No network available')
     def test_download_files(self):
-        ''' Test that we can download the spec and srpm from a bugzilla report'''
+        ''' 
+        Test that we can download the spec and srpm from a bugzilla report
+        '''
         self.bug.find_urls()
         rc = self.bug.download_files()
         self.assertTrue(rc)
@@ -70,9 +77,11 @@ class TestBugzilla(unittest.TestCase):
         self.assertTrue(os.path.exists(srpm))
         self.assertTrue(os.path.exists(spec))
 
+    @unittest.skipIf(no_net, 'No network available')
     def test_login(self):
         ''' test login to bugzilla
-        You need to use BZ_USER=<user> BZ_PASS=<password> make test to active the login test
+        You need to use BZ_USER=<user> BZ_PASS=<password> make test to 
+        active the login test
         '''
         # Test failed login
         with self.assertRaises(SettingsError):

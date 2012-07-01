@@ -32,6 +32,7 @@ from FedoraReview import Checks, Settings, ReviewDirs
 from FedoraReview.helpers import Helpers
 
 from base import *
+from test_env import no_net
 
 class TestChecks(unittest.TestCase):
 
@@ -53,6 +54,7 @@ class TestChecks(unittest.TestCase):
         helper._get_file(TEST_SPEC, TEST_WORK_DIR)
         del helper
 
+    @unittest.skipIf(no_net, 'No network available')
     def test_all_checks(self):
         ''' Run all automated review checks'''
         self.checks = Checks(self.spec, self.srpm)

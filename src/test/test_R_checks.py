@@ -32,6 +32,8 @@ import unittest
 from FedoraReview import Settings, Checks, ReviewDirs, NameBug
 from FedoraReview.checks import R
 
+from test_env import no_net
+
 
 class TestRChecks(unittest.TestCase):
 
@@ -43,6 +45,7 @@ class TestRChecks(unittest.TestCase):
         Settings.init(True)
         ReviewDirs.reset()
 
+    @unittest.skipIf(no_net, 'No network available')
     def test_all_checks(self):
         ''' Run all automated review checks'''
         self.bug = NameBug('R-Rdummypkg')
@@ -52,7 +55,8 @@ class TestRChecks(unittest.TestCase):
         self.checks.run_checks(writedown=False)
         for check in self.checks.checks:
             if check.is_applicable():
-                self.assertTrue(check.header == 'Generic' or check.header == 'R')
+                self.assertTrue(check.header == 'Generic' or 
+                                check.header == 'R')
                 result = check.get_result()
                 self.assertTrue(result.result in ['pass', 'pending', 'fail']) 
         os.chdir('..')

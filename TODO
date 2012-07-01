@@ -4,9 +4,10 @@
 - automate some checks that can be automated (mostly generic ones)
 - Review, fix, document and re-implement the configuration file use.
 - Doc: fix manpage/Bugs
-- Remove --grab
-- Remove --no-report?
 - Refactor: move code to define and initiate workdir to abstract_bug
 - Sanitize the srpm.build() with symbolic status, accessors. Refactor
   the FSM? Move to mock?!
 - See if -p can be used with -b and -u?!
+- Tests: use ReviewDirs.reset(). Non-network tests fix. Invocation from
+  other dirs.
+- 
