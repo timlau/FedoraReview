@@ -23,6 +23,7 @@ This module contains misc helper funtions and classes
 import sys
 import os
 from operator import attrgetter
+from sets import Set
 from straight.plugin import load
 
 from settings import  Settings
@@ -203,14 +204,20 @@ class Checks(object):
 
     def __show_output(self, output, results, issues, attachments):
         output.write(HEADER)
-        current_section = None
+        groups = Set([])
         for res in results:
-            if res.group != current_section:
-                output.write("\n\n==== %s ====\n" % res.group)
-                current_section = res.group
+            groups = groups | Set([res.group])
+        output.write( "Applying tests: " + " ".join(list(groups)))
 
-            output.write(res.get_text())
-            output.write('\n')
+        output.write("\n\n===== MUST items =====\n")
+        for res in filter( lambda r: r.type == 'MUST', results):
+            output.write(res.get_text() + '\n')
+        output.write("\n===== SHOULD items =====\n")
+        for res in filter( lambda r: r.type == 'SHOULD', results):
+            output.write(res.get_text() + '\n')
+        output.write("\n===== EXTRA items =====\n")
+        for res in filter( lambda r: r.type == 'EXTRA', results):
+            output.write(res.get_text() + '\n')
 
         if issues:
             output.write("\nIssues:\n")
