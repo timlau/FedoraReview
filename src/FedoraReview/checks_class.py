@@ -23,6 +23,7 @@ This module contains misc helper funtions and classes
 import sys
 import os
 from operator import attrgetter
+from sets import Set
 from straight.plugin import load
 
 from settings import  Settings
@@ -198,18 +199,33 @@ class Checks(object):
                                attachments)
 
     def __show_output(self, output, results, issues, attachments):
-        output.write(HEADER)
-        current_section = None
-        for res in results:
-            if res.group != current_section:
-                output.write("\n\n==== %s ====\n" % res.group)
-                current_section = res.group
 
-            output.write(res.get_text())
-            output.write('\n')
+        def write_sections(results):
+            groups = sorted(list(set([test.group for test in results])))
+            for group in groups:
+                 res = filter(lambda t: t.group == group, results)
+                 if res == []:
+                    continue
+                 output.write('\n' + group + ':\n')
+                 for r in res:
+                     output.write(r.get_text() + '\n')
+
+        output.write(HEADER)
+
+        output.write("\n\n===== MUST items =====\n")
+        musts = filter( lambda r: r.type == 'MUST', results)
+        write_sections(musts)
+
+        output.write("\n===== SHOULD items =====\n")
+        shoulds = filter( lambda r: r.type == 'SHOULD', results)
+        write_sections(shoulds)
+
+        output.write("\n===== EXTRA items =====\n")
+        extras = filter( lambda r: r.type == 'EXTRA', results)
+        write_sections(extras)
 
         if issues:
-            output.write("\nIssues:\n")
+            output.write("\nIssues:\n=======\n")
             for fail in issues:
                 output.write(fail.get_text() + "\n")
                 output.write("See: %s\n" % fail.url)
