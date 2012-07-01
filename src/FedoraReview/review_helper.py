@@ -112,6 +112,7 @@ class ReviewHelper(object):
             print "Review in: " + self.outfile
 
     def run(self):
+        self.log.debug( "Command  line: " + ' '.join(sys.argv))
         try:
             Settings.init()
             make_report = True

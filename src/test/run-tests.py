@@ -24,6 +24,7 @@
 
 import sys
 import os.path
+os.chdir(os.path.dirname(os.path.realpath(__file__)))
 sys.path.insert(0,os.path.abspath('../'))
 
 import unittest
@@ -37,8 +38,14 @@ from test_R_checks import TestRChecks
 from test_options  import TestOptions
 from test_util     import TestUtil
 
+from test_env      import no_net
 
 VERBOSITY = 2
+
+if no_net:
+    print "Warning:  No network available, only some tests run"
+if not 'REVIEW_LOGLEVEL' in os.environ:
+    print "Warning:  REVIEW_LOGLEVEL not set, lot's of output ahead."
 
 Mock.init()
 
