@@ -168,10 +168,8 @@ class TestResult(object):
 
     def get_text(self):
         strbuf = StringIO.StringIO()
-        main_lines = self.wrapper.wrap("%s: %s %s" %
-                                                     (TEST_STATES[self.result],
-                                                      self.type,
-                                                      self.text))
+        main_lines = self.wrapper.wrap("%s: %s" % (TEST_STATES[self.result],
+                                                   self.text))
         strbuf.write("%s" % '\n'.join(main_lines))
         if self.output_extra and self.output_extra != "":
             strbuf.write("\n")
