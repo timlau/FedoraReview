@@ -9,6 +9,9 @@ cd $( dirname $( readlink -fn $0 ))
 status=$( git status --short )
 [ -n "$status" ] && echo 'Warning: there are uncommitted changes' >&2
 
+badlinks=$( find . -type l ! -execdir test -e '{}' \; -print | nl )
+[ -n "$badlinks" ] && echo "Warning: unresolved  symlinks: $badlinks"
+
 ./update-version
 
 source src/FedoraReview/version
