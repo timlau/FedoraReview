@@ -31,8 +31,13 @@ import sys
 
 from review_error import FedoraReviewError, CleanExitError
 
-SYS_PLUGIN_DIR = "/usr/share/fedora-review/plugins:%s"
-MY_PLUGIN_DIR  = "~/.config/fedora-review/plugins"
+SYS_PLUGIN_DIR  = "/usr/share/fedora-review/plugins:%s"
+MY_PLUGIN_DIR   = "~/.config/fedora-review/plugins"
+BZ_OPTS_MESSAGE = """
+The options --assign, --login and --user has been removed from
+fedora-review in favor of using the bugzilla tool instead. See
+fedora-review(1), section ASSIGN AND LOGIN and bugzilla(1).
+"""
 
 PARSER_SECTION = 'review'
 
@@ -113,6 +118,11 @@ class _Settings(object):
              return
 
         self.do_logger_setup()
+        for opt in ['--assign', '--login', '--user',  '-a', '-i', '-l']:
+            if opt in sys.argv:
+                print BZ_OPTS_MESSAGE
+                self.init_done = True
+                raise CleanExitError('Attempt to use old bz options')
         parser = argparse.ArgumentParser(
                     description='Review a package using Fedora Guidelines',
                     add_help=False)

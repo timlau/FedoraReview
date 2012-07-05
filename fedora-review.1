@@ -183,6 +183,18 @@ For the source url, possible parameters are
 removed. It must end with /filename, typically something like
 /package-2.0.1.tar.gz
 
+.SH LOGIN AND ASSIGN
+fedora-review as of version 0.2.2 had options to login and assign a bugzilla
+bug. As of version 0.2.3 these options have been removed in favor of using
+bugzilla(1). Direct correspondence with old options:
+.PP
+--login --user <user id>
+.IP "" 4
+bugzilla login --user <user id>
+.PP
+--assign
+.IP "" 4
+bugzilla modify --assignee=<user id> --status=ASSIGNED --flag='fedora-cvs?'
 
 .SH EXAMPLES
 Make a report template for Fedora bug 817271:
