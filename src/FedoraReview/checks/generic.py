@@ -1467,26 +1467,20 @@ class CheckSourcePatchPrefix(CheckBase):
         self.automatic = True
         self.type = 'SHOULD'
 
-    def is_applicable(self):
-        return self.spec.has_patches()
-
     def run(self):
-        regex = re.compile(r'^(Source|Patch)\d*\s*:\s*(.*)')
-        result = self.spec.find_all(regex)
-        passed = True
+        sources = self.spec.get_sources()
+        sources.update(self.spec.get_sources('Patch'))
         extra = ''
-        if result:
-            for res in result:
-                value = os.path.basename(res.group(2))
-                if value.startswith('%{name}') or value.startswith('%{'):
-                    continue
-                passed = False
-                extra += '%s (%s)\n' % (res.string[:-1], value)
-            self.set_passed(False, extra)
-        else:
+        passed = True
+        if len(sources) == 0:
             passed = False
             extra = 'No SourceX/PatchX tags found'
-        self.set_passed(passed, extra)
+        for tag,path in sources.iteritems():
+            file = os.path.basename(path)
+            if not file.startswith(self.spec.name):
+                passed = False
+                extra += '%s (%s)\n' % (tag, file)
+        self.set_passed(passed, extra if extra != '' else None)
 
 
 class CheckFinalRequiresProvides(CheckBase):
