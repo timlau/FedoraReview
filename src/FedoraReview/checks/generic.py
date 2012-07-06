@@ -668,6 +668,11 @@ class CheckLicenseField(CheckBase):
         self.type = 'MUST'
 
     def run(self):
+
+        def license_valid(license):
+           return not 'UNKNOWN'  in license and \
+                  not 'GENERATED' in license
+
         source = self.sources.get('Source0')
         try:
             if self.srpm.build() != 0:
@@ -693,6 +698,7 @@ class CheckLicenseField(CheckBase):
                 # remove dupes
                 licenses = map(lambda l: l.strip(),
                                list(set(regex.findall(out))))
+                licenses = filter(license_valid, licenses)
             else:
                 self.log.error('Source directory %s does not exist!' % 
                                 source_dir)
