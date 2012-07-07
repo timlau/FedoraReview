@@ -10,7 +10,7 @@ status=$( git status --short )
 [ -n "$status" ] && echo 'Warning: there are uncommitted changes' >&2
 
 badlinks=$( find . -type l ! -execdir test -e '{}' \; -print | nl )
-[ -n "$badlinks" ] && echo "Warning: unresolved  symlinks: $badlinks"
+[ -n "$badlinks" ] && echo "Warning: unresolved  symlinks: $badlinks" >&2
 
 ./update-version
 
@@ -22,6 +22,10 @@ rm -f $dfile
 
 env PYTHONPATH=src python setup.py --quiet clean
 env PYTHONPATH=src python setup.py --quiet build sdist
+if [ ! -e "$dfile" ];  then
+    echo "Error: could not create $dfile"
+    exit 1
+fi
 echo "Created: $dfile"
 
 [ "$1" = '-b' ] && exit 0
@@ -32,5 +36,3 @@ if [ "$REPLY" = "y" ];then
     git tag $__version__
     git push --tags
 fi
-
-
