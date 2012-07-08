@@ -58,9 +58,11 @@ class TestMisc(unittest.TestCase):
             os.makedirs(TEST_WORK_DIR)
         self.helpers._get_file(TEST_SRPM, TEST_WORK_DIR)
         self.startdir = os.getcwd()
-        if os.path.exists('python-test'):
-            shutil.rmtree('python-test')
+        for tree in ['python-test', 'results']:
+            if os.path.exists(tree):
+                shutil.rmtree(tree)
         Mock.reset()
+      
 
     def run_single_check(self, bug, the_check):
         bug.find_urls()
@@ -187,7 +189,7 @@ class TestMisc(unittest.TestCase):
         self.assertTrue(srpm.is_build)
         rpms = glob.glob(os.path.join(Mock.resultdir,
                                       'python-test-1.0-1*noarch.rpm'))
-        self.assertTrue(len(rpms)==1)
+        self.assertEqual(1, len(rpms))
         os.chdir(self.startdir)
 
     @unittest.skipIf(no_net, 'No network available')

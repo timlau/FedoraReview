@@ -134,8 +134,7 @@ class SRPMFile(Helpers):
         if Settings.log_level > logging.INFO:
             cmd += ' -q'
         cmd += ' --rebuild'
-        if Settings.mock_options:
-            cmd += ' ' + Settings.mock_options
+        cmd +=  ' ' + Mock.get_mock_options()
         cmd += ' ' + self.filename + ' 2>&1 | tee build.log'
         if not Settings.verbose and not ' -q' in cmd:
             cmd += ' | egrep "Results and/or logs|ERROR" '

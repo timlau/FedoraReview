@@ -34,6 +34,7 @@ SRPM              = 'srpm'
 SRPM_UNPACKED     = 'srpm-unpacked'
 UPSTREAM          = 'upstream'
 UPSTREAM_UNPACKED = 'upstream-unpacked'
+RESULTS           = 'results'
 
 
 class ReviewDirExistsError(FedoraReviewError):
@@ -46,7 +47,7 @@ class ReviewDirChangeError(FedoraReviewError):
 
 class _ReviewDirs(object):
 
-    WD_DIRS = [UPSTREAM, UPSTREAM_UNPACKED, SRPM, SRPM_UNPACKED]
+    WD_DIRS = [UPSTREAM, UPSTREAM_UNPACKED, SRPM, SRPM_UNPACKED, RESULTS]
 
     def __init__(self):
         self.startdir = os.getcwd()
@@ -99,6 +100,7 @@ class _ReviewDirs(object):
     upstream_unpacked = property(lambda self: 
                                      os.path.join(self.wd, 
                                                   UPSTREAM_UNPACKED))
+    results = property(lambda self: os.path.join(self.wd, RESULTS))
 
 ReviewDirs = _ReviewDirs()
 
