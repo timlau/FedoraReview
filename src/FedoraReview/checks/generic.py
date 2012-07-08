@@ -321,14 +321,14 @@ class CheckSourceMD5(CheckBase):
                     self.log.debug('Skipping md5-tst for '
                                     + source.filename)
                     continue
-                local = self.srpm.check_source_md5(source.filename)
-                upstream = source.check_source_md5()
-                text += source.filename + ' :\n'
-                text += '  MD5SUM this package     : %s\n' % local
-                text += '  MD5SUM upstream package : %s\n' % upstream
                 if hasattr(source, 'local_src'):
                     text += "Using local file " +  source.local_src + \
                             " as upstream\n"
+                local = self.srpm.check_source_md5(source.filename)
+                upstream = source.check_source_md5()
+                text += source.url + ' :\n'
+                text += '  MD5SUM this package     : %s\n' % local
+                text += '  MD5SUM upstream package : %s\n' % upstream
                 if local != upstream:
                     all_sources_passed = False
             passed = all_sources_passed
