@@ -104,8 +104,6 @@ class ReviewHelper(object):
             self.checks.run_checks(output=output, 
                                    writedown=not Settings.no_report)
             output.close()
-        if not os.path.exists('result'):
-            os.symlink( Mock.resultdir, 'result')
         if not os.path.exists('BUILD'):
             os.symlink(Mock.get_builddir('BUILD'), 'BUILD')
         if not Settings.no_report:

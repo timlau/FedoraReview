@@ -28,8 +28,9 @@ from glob import glob
 from urlparse import urlparse
 from subprocess import call, Popen, PIPE, STDOUT
 
-from settings import Settings
 from helpers import Helpers
+from review_dirs import ReviewDirs
+from settings import Settings
 
 
 _RPMLINT_SCRIPT="""
@@ -76,7 +77,7 @@ class _Mock(Helpers):
         if Settings.resultdir:
             return Settings.resultdir
         else:
-            return self._get_dir('result')
+            return ReviewDirs.results
 
     def get_builddir(self, subdir=None):
         """ Return the directory which corresponds to %_topdir inside
@@ -90,6 +91,16 @@ class _Mock(Helpers):
 
     """ Mock's %_topdir seen from the outside. """
     topdir = property(lambda self: get_builddir(self))
+
+    def get_mock_options(self):
+        """ --mock-config option, with a guaranteed ---'resultdir' part
+        """
+        opt = Settings.mock_options
+        if not opt:
+            opt = ''
+        if not 'resultdir' in opt:
+            opt += ' --resultdir=' + ReviewDirs.results + ' '
+        return opt
 
     def is_installed(self, package):
         cmd = 'rpm --dbpath '
@@ -113,8 +124,7 @@ class _Mock(Helpers):
             cmd = ["mock"]
             if Settings.mock_config:
                  cmd.extend(['-r', Settings.mock_config])
-            if Settings.mock_options:
-                 cmd.extend(Settings.mock_options.split())
+            cmd.extend(self.get_mock_options().split())
             return cmd
 
         for f in rpm_files:
