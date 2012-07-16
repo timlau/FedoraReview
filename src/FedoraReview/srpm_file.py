@@ -112,7 +112,7 @@ class SRPMFile(Helpers):
                 return SRPMFile.BUILD_OK
             else:
                 self.log.info(
-                     'No valid cache, building despite --nobuild.')
+                     'No valid cache, building despite --no-build.')
         return self.mockbuild(force)
 
     def mockbuild(self, force=False):
