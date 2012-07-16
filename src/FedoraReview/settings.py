@@ -36,9 +36,8 @@ PARSER_SECTION = 'review'
 
 LOG_ROOT = 'FedoraReview'
 
-# REVIEW_LOGFILE is intentionally hidden from UI and manpage...
-SESSION_LOG = os.environ['REVIEW_LOGFILE'] \
-                  if 'REVIEW_LOGFILE' in os.environ \
+SESSION_LOG = '%s/fedora-review.log' % os.environ['XDG_CACHE_HOME'] \
+                  if 'XDG_CACHE_HOME' in os.environ \
               else os.path.expanduser('~/.cache/fedora-review.log')
 
 
