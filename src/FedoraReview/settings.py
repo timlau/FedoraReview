@@ -23,6 +23,8 @@ Tools for helping Fedora package reviewers
 import argparse
 import grp
 import logging
+import errno
+import os
 import os.path
 import re
 import sys
@@ -234,6 +236,7 @@ class _Settings(object):
                 lvl = logging.INFO
 
         if not hasattr(self, '_log_config_done'):
+            self._make_log_dir()
             logging.basicConfig(level=logging.DEBUG,
                                 format='%(asctime)s %(name)-12s'
                                        ' %(levelname)-8s %(message)s',
@@ -264,6 +267,15 @@ class _Settings(object):
         if not hasattr(self, 'log'):
             self.do_logger_setup()
         return self.log
+    
+    def _make_log_dir(self):
+        try:
+            os.makedirs(os.path.dirname(SESSION_LOG))
+        except OSError as exc:
+            if exc.errno == errno.EEXIST:
+                pass
+            else: raise
+ 
 
 Settings = _Settings()
 
