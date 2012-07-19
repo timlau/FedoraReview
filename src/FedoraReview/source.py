@@ -45,11 +45,11 @@ class Source(Helpers):
         def my_logger(cache):
              if cache:
                  path = urlparse(url).path
-                 self.log.info("Using cached data for (%s): %s" % 
+                 self.log.info("Using cached data for (%s): %s" %
                                (tag, os.path.basename(path)))
              else:
                  self.log.info("Downloading (%s): %s" % (tag, url))
-                 
+
 
         Helpers.__init__(self)
         self.sources = sources
@@ -59,7 +59,7 @@ class Source(Helpers):
             self.url = url
             self.local = False
             try:
-                self.filename = self._get_file(url, 
+                self.filename = self._get_file(url,
                                                ReviewDirs.upstream,
                                                my_logger)
             except:
@@ -72,12 +72,12 @@ class Source(Helpers):
             if os.path.exists(local_src):
                 self.log.info(
                     "Using local file " + url + " as " + tag)
-                srcdir = ReviewDirs.startdir 
+                srcdir = ReviewDirs.startdir
                 self.local_src = local_src
                 self.local = False
             else:
                 self.log.info("No upstream for (%s): %s" % (tag, url))
-                srcdir = ReviewDirs.srpm_unpacked 
+                srcdir = ReviewDirs.srpm_unpacked
                 self.local = True
             self.filename = os.path.join(srcdir, url)
             self.url = 'file://' + self.filename
@@ -93,16 +93,17 @@ class Source(Helpers):
 
     def extract(self ):
         ''' Extract the source into a directory under upstream-unpacked,
-            available in the extract_dir property. Sources which not 
-            could be extracted e. g., plain files are copied to the 
+            available in the extract_dir property. Sources which not
+            could be extracted e. g., plain files are copied to the
             extract-dir.
         '''
         self.extract_dir = os.path.join(ReviewDirs.upstream_unpacked,
                                         self.tag)
         if not os.path.exists(self.extract_dir):
             os.mkdir(self.extract_dir)
-        if not self.rpmdev_extract(self.filename, self.extract_dir):
-            shutil.copy(self.filename, self.extract_dir)
+        if self.downloaded:
+            if not self.rpmdev_extract(self.filename, self.extract_dir):
+                shutil.copy(self.filename, self.extract_dir)
 
     def get_source_topdir(self):
         """
