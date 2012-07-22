@@ -55,7 +55,8 @@ class Source(Helpers):
         self.sources = sources
         self.tag = tag
         self.downloaded = True
-        if urlparse(url)[0] != '':  # This is a URL, Download it
+        is_url = urlparse(url)[0] != ''
+        if is_url:  # This is a URL, Download it
             self.url = url
             self.local = False
             try:
@@ -67,7 +68,10 @@ class Source(Helpers):
                                 exc_info=True)
                 self.log.warning('Cannot download url: ' + url)
                 self.downloaded = False
-        else:  # this is a local file in the SRPM
+                # get the filename
+                url = urlparse(url)[2].split('/')[-1]
+
+        if not is_url or not self.downloaded:  # this is a local file in the SRPM
             local_src = os.path.join(ReviewDirs.startdir, url)
             if os.path.exists(local_src):
                 self.log.info(
