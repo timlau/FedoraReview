@@ -91,6 +91,13 @@ class Source(Helpers):
             raise FedoraReviewError(self.tag +
                                     ": upstream source not found")
 
+    def is_archive(self):
+        filename = self.filename.split('/')[-1]
+        for i in ('.tar.gz','.tar.bz2','.tar.lzma','.tar.xz','.zip', '.7z'):
+            if filename.endswith(i):
+                return True
+        return False
+
     def extract(self ):
         ''' Extract the source into a directory under upstream-unpacked,
             available in the extract_dir property. Sources which not
