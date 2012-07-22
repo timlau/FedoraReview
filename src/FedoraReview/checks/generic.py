@@ -1456,6 +1456,30 @@ class CheckSourceUrl(CheckBase):
         else:
             self.set_passed(False, output)
 
+class CheckSourceComment(CheckBase):
+    '''
+    https://fedoraproject.org/wiki/Packaging:SourceURL#Troublesome_URLs
+    and https://fedoraproject.org/wiki/Packaging:SourceURL#Using_Revision_Control
+    '''
+    def __init__(self, base):
+        CheckBase.__init__(self, base)
+        self.url = 'http://fedoraproject.org/wiki/Packaging:SourceURL'
+        self.text = 'SourceX tarball generation or download is documented.'
+        self.automatic = True
+        self.type = 'SHOULD'
+
+    def run(self):
+        passed = True
+        for source in self.sources.get_all():
+            if source.local and source.is_archive():
+                passed = False
+
+        if passed:
+            self.set_passed(True)
+        else:
+            self.set_passed('inconclusive',
+                            'Package contains tarball without URL, check comments')
+
 
 class CheckSourcePatchPrefix(CheckBase):
     '''
