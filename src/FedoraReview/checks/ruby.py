@@ -109,10 +109,10 @@ class RubyCheckTestsNotRunByRake(RubyCheckTestsRun):
 
     def run(self):
         self.set_passed(True)
-
-        for line in self.spec.get_section('%check')['%check']:
-            if line.find('rake') != -1:
-                self.set_passed(False)
+        if self.spec.get_section('%check'):
+            for line in self.spec.get_section('%check')['%check']:
+                if line.find('rake') != -1:
+                    self.set_passed(False)
 
 class NonGemCheckUsesMacros(NonGemCheckBase):
     def __init__(self, base):
