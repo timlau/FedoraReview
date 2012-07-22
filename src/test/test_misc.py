@@ -93,6 +93,7 @@ class TestMisc(unittest.TestCase):
         # check that source exists and source.filename point to the right location
         expected = os.path.abspath('./upstream/python-test-1.0.tar.gz')
         self.assertEqual(source.filename, expected)
+        self.assertEqual(source.is_archive(), True)
         self.assertTrue(os.path.exists(source.filename))
         self.assertEqual(source.check_source_md5(),
                          "289cb714af3a85fe36a51fa3612b57ad")
