@@ -95,11 +95,6 @@ class ReviewHelper(object):
         else:
             self.outfile = ReviewDirs.report_path(self.checks.spec.name)
         with open(self.outfile,"w") as output:
-            # get upstream sources
-            rc = self.__download_sources()
-            if not rc:
-                self.log.info('Cannot download upstream sources')
-                sys.exit(1)
             if Settings.nobuild:
                 self.checks.srpm.is_build = True
             self.log.info('Running checks and generate report\n')
