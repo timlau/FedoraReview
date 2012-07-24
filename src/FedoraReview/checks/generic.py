@@ -723,6 +723,23 @@ class CheckLicenseField(CheckBase):
             self.set_passed('inconclusive', msg)
 
 
+class CheckMultipleLicenses(CheckBase):
+    '''
+    http://fedoraproject.org/wiki/Packaging:LicensingGuidelines#Multiple_Licensing_Scenarios
+    '''
+    def __init__(self, base):
+        CheckBase.__init__(self, base)
+        self.url = 'http://fedoraproject.org/wiki/' \
+                   'Packaging/LicensingGuidelines#Multiple_Licensing_Scenarios'
+        self.text = 'If the package is under multiple licenses, the licensing' \
+                    ' breakdown must be documented in the spec.'
+        self.automatic = False
+        self.type = 'MUST'
+
+    def is_applicable(self):
+        license = self.spec.get_from_spec('License')
+        return 'and' in license.lower().split()
+
 class CheckLicensInDoc(CheckBase):
     '''
     MUST: If (and only if) the source package includes the text of the
