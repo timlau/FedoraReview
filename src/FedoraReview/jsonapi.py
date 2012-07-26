@@ -24,6 +24,7 @@ from json import JSONEncoder, JSONDecoder
 
 from helpers import Helpers
 from check_base import TestResult
+from mock import Mock
 
 class ERR_CODE(object):
     ERR_NO_COMMAND = 1
@@ -47,7 +48,7 @@ class SetupPlugin(JSONAPI):
         for rpm in srpm.get_files_rpms().keys():
             self.rpms.append(rpm)
         self.rpmlint = "\n".join(srpm.rpmlint_output)
-        self.build_dir = srpm.get_build_dir()
+        self.build_dir = Mock.get_builddir()
 
 
 class GetSectionReply(JSONAPI):
