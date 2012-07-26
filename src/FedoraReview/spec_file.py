@@ -101,6 +101,7 @@ class SpecFile(object):
             else:
                 if line and line.strip() != '':
                     section_lines.append(line)
+        self._section_list.append(cur_sec)
         self._sections[cur_sec] = section_lines
         cur_sec = this_sec
         #self.dump_sections()
