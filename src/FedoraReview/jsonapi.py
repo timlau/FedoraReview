@@ -100,18 +100,22 @@ class JSONPlugin(Helpers):
         self.plug_err = plugin_proc.stderr
 
         setup = SetupPlugin(self.spec, self.srpm, self.sources)
-        self.__send_obj(setup)
+        try:
+            self.__send_obj(setup)
 
-        final_data = ""
-        while True:
-            data = plugin_proc.stdout.readline()
-            if data == "":
-                break
-            final_data = final_data + data
-            obj = self.__get_class_from_json(final_data)
-            if obj:
-                self.__handle_reply(obj)
-                final_data = ""
+            final_data = ""
+            while True:
+                data = plugin_proc.stdout.readline()
+                if data == "":
+                    break
+                final_data = final_data + data
+                obj = self.__get_class_from_json(final_data)
+                if obj:
+                    self.__handle_reply(obj)
+                    final_data = ""
+        except IOError, e:
+            self.__error("Error communicating")
+            self.__error(e)
 
         errout = self.plug_err.read()
         while errout != "":
