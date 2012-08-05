@@ -166,6 +166,10 @@ class _Settings(object):
         optional.add_argument('-x', '--exclude',
                     dest='exclude', metavar='"test,..."',
                     help='Comma-separated list of tests to exclude.')
+        optional.add_argument('-k', '--checksum', dest='checksum', default='sha256',
+                    choices=['md5', 'sha1', 'sha224', 'sha256',
+                             'sha384', 'sha512'],
+                    help='algorithm used for checksum')
         bz_only.add_argument('-a','--assign', action='store_true',
                     help = 'Assign the bug and set review flags')
         bz_only.add_argument('-l', '--login', action='store_true',

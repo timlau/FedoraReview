@@ -324,11 +324,13 @@ class CheckSourceMD5(CheckBase):
                 if hasattr(source, 'local_src'):
                     text += "Using local file " +  source.local_src + \
                             " as upstream\n"
-                local = self.srpm.check_source_md5(source.filename)
-                upstream = source.check_source_md5()
+                local = self.srpm.check_source_checksum(source.filename)
+                upstream = source.check_source_checksum()
                 text += source.url + ' :\n'
-                text += '  MD5SUM this package     : %s\n' % local
-                text += '  MD5SUM upstream package : %s\n' % upstream
+                text += '  CHECKSUM({0}) this package     : {1}\n'.\
+                        format(Settings.checksum.upper(), local)
+                text += '  CHECKSUM({0}) upstream package : {1}\n'.\
+                        format(Settings.checksum.upper(), upstream)
                 if local != upstream:
                     all_sources_passed = False
             passed = all_sources_passed
@@ -336,7 +338,7 @@ class CheckSourceMD5(CheckBase):
                 passed, diff = self.make_diff(sources)
                 if passed:
                    text += 'However, diff -r shows no differences\n'
-                   msg = 'MD5sum differs but diff -r is OK'
+                   msg = 'checksum differs but diff -r is OK'
                 else:
                    p = os.path.join(ReviewDirs.root, 'diff.txt')
                    with open(p, 'w') as f:

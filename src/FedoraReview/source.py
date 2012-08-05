@@ -28,7 +28,7 @@ from urlparse import urlparse
 from helpers import Helpers
 from review_dirs import ReviewDirs
 from review_error import FedoraReviewError
-
+from settings import Settings
 
 class Source(Helpers):
     ''' A source defined in the specfile.
@@ -82,10 +82,11 @@ class Source(Helpers):
             self.filename = os.path.join(srcdir, url)
             self.url = 'file://' + self.filename
 
-    def check_source_md5(self):
-        self.log.debug("Checking source md5 : %s" % self.filename)
+    def check_source_checksum(self):
+        self.log.debug("Checking source {0} : {1}".format(Settings.checksum,
+                                                          self.filename))
         if self.downloaded:
-            sum = self._md5sum(self.filename)
+            sum = self._checksum(self.filename)
             return sum
         else:
             raise FedoraReviewError(self.tag +

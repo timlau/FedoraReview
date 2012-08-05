@@ -1,5 +1,5 @@
 #!/usr/bin/python -tt
-#-*- coding: UTF-8 -*-
+#-*- coding: utf-8 -*-
 
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -95,7 +95,7 @@ class TestMisc(unittest.TestCase):
         self.assertEqual(source.filename, expected)
         self.assertEqual(source.is_archive(), True)
         self.assertTrue(os.path.exists(source.filename))
-        self.assertEqual(source.check_source_md5(),
+        self.assertEqual(source.check_source_checksum(),
                          "289cb714af3a85fe36a51fa3612b57ad")
         os.chdir(self.startdir)
 
@@ -196,8 +196,8 @@ class TestMisc(unittest.TestCase):
     @unittest.skipIf(no_net, 'No network available')
     def test_md5(self):
         helpers = Helpers()
-        md5sum = helpers._md5sum('scantailor.desktop')
-        self.assertEqual(md5sum, '4a1c937e62192753c550221876613f86')
+        checksum = helpers._checksum('scantailor.desktop')
+        self.assertEqual(checksum, '4a1c937e62192753c550221876613f86')
 
     @unittest.skipIf(no_net, 'No network available')
     def test_bugzilla_bug(self):
@@ -257,7 +257,6 @@ class TestMisc(unittest.TestCase):
     @unittest.skipIf(no_net, 'No network available')
     def test_md5sum_diff_fail(self):        
         os.chdir('md5sum-diff-fail')
-        
         sys.argv = ['fedora-review','-rpn','python-test']
         Settings.init(True)
         ReviewDirs.reset()
