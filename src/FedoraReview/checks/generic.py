@@ -25,7 +25,7 @@ import os
 import os.path
 import re
 
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, check_output
 
 from FedoraReview import CheckBase, Attachment, ReviewDirs, Mock, Settings
 
@@ -763,30 +763,35 @@ class CheckLicensInDoc(CheckBase):
         """ Check if there is a license file and if it is present in the
         %doc section.
         """
-        haslicensefile = False
+
         licenses = []
         for potentialfile in ['COPYING', 'LICEN', 'copying', 'licen']:
-            if self.has_files('*' + potentialfile + '*'):
-                haslicensefile = True
-                licenses.append(potentialfile)
-
-        # Checks for license tagged by %doc or directly present in
-        # %{_docdir}
-        for docmotif in ['%doc.*', '%{_docdir}.*']:
-            br = self.spec.find_all(re.compile(docmotif))
-            for match in br:
-                files = match.group(0).strip().split()
-                for entry in files:
-                    entry = os.path.basename(entry)
-                    for licensefile in licenses:
-                        if entry.startswith(licensefile):
-                            licenses.remove(licensefile)
-
-        if not haslicensefile:
+            pattern = '*' + potentialfile + '*'
+            rpm_files = self.get_files_by_pattern(pattern)
+            for files in rpm_files.itervalues():
+                licenses.extend(files)
+        licenses = map(lambda f:f.split('/')[-1], licenses)
+        if licenses == []:
             self.set_passed('inconclusive')
-        else:
-            self.set_passed(licenses == [])
+            return
 
+        rpms = self.srpm.get_used_rpms('src.rpm')
+        docs = []
+        for rpm in rpms:
+            cmd = 'rpm -qldp ' + rpm
+            doclist = check_output(cmd.split())
+            docs.extend(doclist.split())
+        docs = map(lambda f:f.split('/')[-1], docs)
+
+        for license in licenses:
+            if not license in docs:
+                self.log.debug( "Cannot find " + license +
+                                " in doclist")
+                self.set_passed( False, 
+                                 "Cannot find %s in rpm(s)" % license)
+                return
+        self.set_passed(True)       
+   
 
 class CheckLicenseInSubpackages(CheckBase):
     '''
