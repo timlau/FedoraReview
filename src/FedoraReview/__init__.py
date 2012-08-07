@@ -28,7 +28,7 @@ from mock         import Mock
 from name_bug     import NameBug
 from review_error import FedoraReviewError, CleanExitError
 from review_dirs  import ReviewDirs, ReviewDirExistsError
-from settings     import Settings
+from settings     import Settings, MockConfigError
 from source       import Source
 from sources      import Sources
 from spec_file    import SpecFile
