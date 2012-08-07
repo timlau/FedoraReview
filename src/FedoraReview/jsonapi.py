@@ -78,7 +78,6 @@ class JSONPlugin(Helpers):
     def __init__(self, base, plugin_path):
         Helpers.__init__(self)
         self.plugin_path = plugin_path
-        self.name = plugin_path
         self.version = None
         self.spec = base.spec
         self.srpm = base.srpm
@@ -89,6 +88,17 @@ class JSONPlugin(Helpers):
         self.plug_in = None
         self.plug_out = None
         self.plug_err = None
+
+    name = property(lambda self: self.plugin_path)
+
+    def __eq__(self, other):
+       return self.name.__eq__(other)
+
+    def __ne__(self, other):
+       return self.name.__ne__(other)
+
+    def __hash__(self):
+        return self.name.__hash__()
 
     def run(self):
         """Run the plugin to produce results"""
