@@ -78,6 +78,7 @@ class JSONPlugin(Helpers):
     def __init__(self, base, plugin_path):
         Helpers.__init__(self)
         self.plugin_path = plugin_path
+        self.name = plugin_path
         self.version = None
         self.spec = base.spec
         self.srpm = base.srpm
