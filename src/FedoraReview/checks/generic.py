@@ -96,6 +96,7 @@ class CheckBuildroot(CheckBase):
                    'Packaging/Guidelines#BuildRoot_tag'
         self.text = 'Buildroot is not present'
         self.automatic = True
+        self.type = 'SHOULD'
 
     def run(self):
         br_tags = self.spec.find_tag('BuildRoot', split_tag=False)
@@ -182,6 +183,7 @@ class CheckClean(CheckBase):
         self.text = 'Package has no %clean section with rm -rf' \
                     ' %{buildroot} (or $RPM_BUILD_ROOT)'
         self.automatic = True
+        self.type = 'SHOULD'
 
     def run(self):
         passed = True
