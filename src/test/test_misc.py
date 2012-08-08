@@ -96,7 +96,8 @@ class TestMisc(unittest.TestCase):
         self.assertEqual(source.is_archive(), True)
         self.assertTrue(os.path.exists(source.filename))
         self.assertEqual(source.check_source_checksum(),
-                         "289cb714af3a85fe36a51fa3612b57ad")
+                         "7ef644ee4eafa62cfa773cad4056cdcea592e27dacd5ae"
+                         "b4e8b11f51f5bf60d3")
         os.chdir(self.startdir)
 
     @unittest.skipIf(no_net, 'No network available')
@@ -204,6 +205,7 @@ class TestMisc(unittest.TestCase):
 
     @unittest.skipIf(no_net, 'No network available')
     def test_md5(self):
+        Settings.checksum = 'md5'
         helpers = Helpers()
         checksum = helpers._checksum('scantailor.desktop')
         self.assertEqual(checksum, '4a1c937e62192753c550221876613f86')
