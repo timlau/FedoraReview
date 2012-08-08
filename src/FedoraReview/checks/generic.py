@@ -185,7 +185,7 @@ class CheckClean(CheckBase):
 
     def run(self):
         passed = True
-        msg = 'Clean would be needed if support for EPEL is required'
+        msg = 'Clean would be needed if support for EPEL5 is required'
         sec_clean = self.spec.get_section('%clean')
         for sec in sec_clean:
             sec_lines = sec_clean[sec]
@@ -195,7 +195,7 @@ class CheckClean(CheckBase):
                 for line in sec_lines:
                     if regex.search(line):
                         passed = False
-                        msg = 'Clean is needed only if supporting EPEL'
+                        msg = 'Clean is needed only if supporting EPEL5'
                         break
         self.set_passed(passed, msg)
 
