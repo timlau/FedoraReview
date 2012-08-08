@@ -347,6 +347,10 @@ class CheckSourceMD5(CheckBase):
                        f.write(diff)
                    text += 'diff -r also reports differences\n'
                    msg = 'Upstream MD5sum check error, diff is in ' + p
+        except AttributeError as e:
+            self.log.debug( "CheckSourceMD5(): Attribute error " + str(e))
+            msg = 'Internal Error!'
+            passed = False;
         finally:
             if passed:
                 msg = None
@@ -517,10 +521,10 @@ class CheckMacros(CheckBase):
     def run(self):
         br_tag1 = self.spec.find_all(re.compile('.*%{buildroot}.*'),
                                      True)
-        br_tag2 = self.spec.find_all(re.compile('.*\$RPM_BUILD_ROOT.*'), 
+        br_tag2 = self.spec.find_all(re.compile('.*\$RPM_BUILD_ROOT.*'),
                                      True)
         if br_tag1 and br_tag2:
-            self.set_passed(False, 
+            self.set_passed(False,
                             'Using both %{buildroot} and $RPM_BUILD_ROOT')
         else:
             self.set_passed('inconclusive')
@@ -589,7 +593,7 @@ class CheckBuildRequires(CheckBase):
             else:
                 self.set_passed(True)
         else:
-            self.set_passed(False, 
+            self.set_passed(False,
                             'The package did not build '
                             'BR could therefore not be checked or the'
                             ' package failed to build because of'
@@ -673,6 +677,11 @@ class CheckLicenseField(CheckBase):
         self.type = 'MUST'
 
     def run(self):
+
+        def license_valid(license):
+           return not 'UNKNOWN'  in license and \
+                  not 'GENERATED' in license
+
         source = self.sources.get('Source0')
         try:
             if self.srpm.build() != 0:
@@ -698,8 +707,9 @@ class CheckLicenseField(CheckBase):
                 # remove dupes
                 licenses = map(lambda l: l.strip(),
                                list(set(regex.findall(out))))
+                licenses = filter(license_valid, licenses)
             else:
-                self.log.error('Source directory %s does not exist!' % 
+                self.log.error('Source directory %s does not exist!' %
                                 source_dir)
 
             if not licenses:
@@ -716,6 +726,23 @@ class CheckLicenseField(CheckBase):
             msg += ' Programmer error: ' + e.strerror
             self.set_passed('inconclusive', msg)
 
+
+class CheckMultipleLicenses(CheckBase):
+    '''
+    http://fedoraproject.org/wiki/Packaging:LicensingGuidelines#Multiple_Licensing_Scenarios
+    '''
+    def __init__(self, base):
+        CheckBase.__init__(self, base)
+        self.url = 'http://fedoraproject.org/wiki/' \
+                   'Packaging/LicensingGuidelines#Multiple_Licensing_Scenarios'
+        self.text = 'If the package is under multiple licenses, the licensing' \
+                    ' breakdown must be documented in the spec.'
+        self.automatic = False
+        self.type = 'MUST'
+
+    def is_applicable(self):
+        license = self.spec.get_from_spec('License')
+        return 'and' in license.lower().split()
 
 class CheckLicensInDoc(CheckBase):
     '''
@@ -1010,8 +1037,8 @@ class CheckConfigNoReplace(CheckBase):
 class CheckDesktopFile(CheckBase):
     '''
     MUST: Packages containing GUI applications must include a
-    %{name}.desktop file. If you feel that your packaged GUI 
-    application does not need a .desktop file, you must put a 
+    %{name}.desktop file. If you feel that your packaged GUI
+    application does not need a .desktop file, you must put a
     comment in the spec file with your explanation.
     http://fedoraproject.org/wiki/Packaging/Guidelines#desktop
     '''
@@ -1033,7 +1060,7 @@ class CheckDesktopFileInstall(CheckBase):
     '''
     MUST: Packages containing GUI applications must include a
     %{name}.desktop file, and that file must be properly installed
-    with desktop-file-install in the %install section.  
+    with desktop-file-install in the %install section.
     http://fedoraproject.org/wiki/Packaging/Guidelines#desktop
     '''
     def __init__(self, base):
@@ -1207,7 +1234,7 @@ class CheckDevelFilesInDevel(CheckBase):
         self.type = 'MUST'
 
 
-    
+
 class CheckFullVerReqSub(CheckBase):
     '''
     MUST: In the vast majority of cases, devel packages must require the base
@@ -1272,12 +1299,12 @@ class CheckUsefulDebuginfo(CheckBase):
         self.automatic = False
         self.type = 'MUST'
 
-    def is_applicable(self): 
+    def is_applicable(self):
         rpm_files = self.srpm.get_used_rpms('src.rpm')
-        for rpm in rpm_files: 
-            if not rpm.endswith('noarch.rpm'): 
-                return True 
-        return False 
+        for rpm in rpm_files:
+            if not rpm.endswith('noarch.rpm'):
+                return True
+        return False
 
 
 class CheckNoConflicts(CheckBase):
@@ -1295,12 +1322,12 @@ class CheckNoConflicts(CheckBase):
         self.automatic = True
         self.type = 'MUST'
 
-    def run(self): 
-        if self.spec.find_tag('Conflicts', split_tag=False): 
-            self.set_passed(False, 
+    def run(self):
+        if self.spec.find_tag('Conflicts', split_tag=False):
+            self.set_passed(False,
                             'Package contains Conflicts: tag(s)'
-                            ' needing fix or justification.') 
-        else: 
+                            ' needing fix or justification.')
+        else:
             self.set_passed('inconclusive',
                             'Package contains no Conflicts: tag(s)')
 
@@ -1453,7 +1480,7 @@ class CheckSourceUrl(CheckBase):
             if not source.url.startswith('file:'):
                 if not source.downloaded:
                     passed = False
-                    output += '%s\n' % source.URL
+                    output += '%s\n' % source.url
 
         if passed:
             self.set_passed(True)
@@ -1808,6 +1835,15 @@ class CheckPatchComments(CheckBase):
 
     def is_applicable(self):
         return self.spec.has_patches()
+
+class CheckObsoletesForRename(CheckBase):
+    def __init__(self, base):
+        CheckBase.__init__(self, base)
+        self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines#Renaming.2FReplacing_Existing_Packages'
+        self.text = 'If the package is a rename of another package, proper Obsoletes and Provides are present.'
+        self.automatic = False
+        self.type = 'MUST'
+
 
 
 class LangCheckBase(CheckBase):

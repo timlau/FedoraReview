@@ -97,10 +97,13 @@ class Sources(object):
                                ' to sources' % source.filename)
                 sources_files.append(source.filename)
             else:
-                self.log.debug('Adding files found in %s' % source.filename)
-                for root, subFolders, files in os.walk(source.extract_dir):
-                    for filename in files:
-                        sources_files.append(os.path.join(root, filename))
+                try:
+                    self.log.debug('Adding files found in %s' % source.filename)
+                    for root, subFolders, files in os.walk(source.extract_dir):
+                        for filename in files:
+                            sources_files.append(os.path.join(root, filename))
+                except AttributeError as e:
+                    self.log.debug( "get_files_sources(): Attribute error " + str(e))
         self._sources_files = sources_files
         return sources_files
 
