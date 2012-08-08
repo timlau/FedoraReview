@@ -101,9 +101,13 @@ class _Settings(object):
             try:
                 mock_gid = grp.getgrnam('mock')[2]
                 if not mock_gid in os.getgroups():
-                    raise ConfigError( 'Not in mock group, see manpage')
-            except:
-                raise ConfigError('No mock group - mock not installed?')
+                    raise ConfigError('No mock group - mock not installed or '
+                        'mock not in effective groups. Try running  '
+                        '"newgrp mock" or logging out from all your local '
+                        'sessions and logging back in.')
+            except ConfigError, e:
+                self.log.error(e)
+                raise e
 
         if hasattr(self, 'init_done') and not force:
              return
