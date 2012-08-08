@@ -53,10 +53,11 @@ class _Mock(Helpers):
             config  = Settings.mock_config
         path = os.path.join('/etc/mock', config + '.cfg')
 
-        config_opts= {}
+        config_opts = {}
         with open(path) as f:
-            config = f.read()
-        exec config
+            config = [line for line in f.readlines() if \
+                      line.find("config_opts['root']") >= 0]
+        exec config[0]
         self.mock_root = config_opts['root']
 
     def _get_dir(self, subdir=None):
