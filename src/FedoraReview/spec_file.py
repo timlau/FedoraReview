@@ -99,8 +99,8 @@ class SpecFile(object):
                     section_lines = []
                     cur_sec = this_sec
             else:
-                if line and line.strip() != '':
-                    section_lines.append(line)
+                if line:
+                    section_lines.append(line.strip())
         self._section_list.append(cur_sec)
         self._sections[cur_sec] = section_lines
         cur_sec = this_sec

@@ -152,7 +152,7 @@ class TestMisc(unittest.TestCase):
         self.assertEqual(spec.get_section('%build'), expected)
         expected = {'%install': ['rm -rf $RPM_BUILD_ROOT', 
                     '%{__python} setup.py install -O1 --skip-build'
-                    ' --root $RPM_BUILD_ROOT']}
+                    ' --root $RPM_BUILD_ROOT','']}
         self.assertEqual(spec.get_section('%install'),expected)
         expected = {'%files': ['%defattr(-,root,root,-)', 
                     '%doc COPYING', '%{python_sitelib}/*']}
