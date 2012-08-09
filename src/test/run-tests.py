@@ -51,7 +51,7 @@ if not 'REVIEW_LOGLEVEL' in os.environ:
 Mock.init()
 
 testFail = 0
-for t in 'Misc', 'Bugzilla', 'Checks', 'RChecks', 'Options', 'Util', 'Ext':
+for t in 'Misc', 'Bugzilla', 'Checks', 'RChecks', 'Options', 'Ext':
    test = eval( 'unittest.TestLoader().loadTestsFromTestCase(Test%s)' % t)
    result = unittest.TextTestRunner(verbosity=VERBOSITY).run(test)
    testFail = testFail + len(result.errors) + len(result.failures)
