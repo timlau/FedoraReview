@@ -40,25 +40,17 @@ class TestExt(unittest.TestCase):
         del os.environ['REVIEW_EXT_DIRS']
 
     def test_display(self):
-        check_call('../fedora-review -d | grep test1.sh >/dev/null', 
+        check_call('../fedora-review -d | grep test1 >/dev/null', 
                    shell=True)
 
     @unittest.skipIf(no_net, 'No network available')
     def test_single(self):
-        path  = os.environ['REVIEW_EXT_DIRS'] + '/test1.sh'
-        check_call('../fedora-review -n python-test  -s ' + path + 
+        check_call('../fedora-review -n python-test  -s test1 '  
                    ' >/dev/null', 
                    shell=True)
-        check_call('grep test1.sh python-test/python-test-review.txt' +
-                   ' >/dev/null',
-                    shell=True)
 
     @unittest.skipIf(no_net, 'No network available')
     def test_exclude(self):
-        path  = os.environ['REVIEW_EXT_DIRS'] + '/test1.sh'
-        check_call('../fedora-review -n python-test  -x ' + path + 
+        check_call('../fedora-review -n python-test  -x test1' 
                    ' >/dev/null',
                    shell=True)
-        check_call('grep -v test1.sh python-test/python-test-review.txt'+
-                   ' >/dev/null',
-                    shell=True)

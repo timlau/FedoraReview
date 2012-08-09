@@ -35,7 +35,7 @@ from glob import glob
 from FedoraReview.helpers import Helpers
 from FedoraReview import Checks, NameBug, ReviewDirs, \
      SRPMFile, SpecFile, Mock, Settings, Sources, Source
-from FedoraReview import BugzillaBug, NameBug, UrlBug
+from FedoraReview import BugzillaBug,  NameBug, UrlBug
 from FedoraReview.review_helper import ReviewHelper
 
 
@@ -53,6 +53,7 @@ class TestOptions(unittest.TestCase):
 
     def setUp(self):
         self.log = Settings.get_logger()
+        self.startdir = os.getcwd()
 
     def init_test(self, argv= ['fedora-review'], d=None):
         os.chdir(startdir)
@@ -60,7 +61,7 @@ class TestOptions(unittest.TestCase):
             os.chdir(d)
         if os.path.exists('python-test'):
             shutil.rmtree('python-test')
-        ReviewDirs.reset()
+        ReviewDirs.reset(d)
         ReviewDirs.workdir_setup('.', True)
         sys.argv = argv
         Settings.init(True)
@@ -104,6 +105,7 @@ class TestOptions(unittest.TestCase):
         self.assertEqual(expected, bug.srpm_file),
         expected = os.path.abspath('srpm/openerp-client.spec')
         self.assertEqual(expected, bug.spec_file)
+        ReviewDirs.reset(startdir)
 
     @unittest.skipIf(no_net, 'No network available')
     def test_url(self):
@@ -142,10 +144,11 @@ class TestOptions(unittest.TestCase):
         argv = ['fedora-review', '-rpn', 'get-flash-videos']
         argv.extend(['--mock-config', 'fedora-16-i386-rpmfusion_nonfree'])
         sys.argv = argv
+        startdir = os.getcwd()
         os.chdir('git-source')
         if os.path.exists('get-flash-videos'):
             shutil.rmtree('get-flash-videos')
-        ReviewDirs.reset()
+        ReviewDirs.reset(os.getcwd())
         Settings.init(True)
   
         rh = ReviewHelper()
@@ -157,6 +160,7 @@ class TestOptions(unittest.TestCase):
             log = f.read()
         self.assertIn('Using local file' , log)
         os.chdir(startdir)
+        ReviewDirs.reset(startdir)
  
     def test_version(self):
         """ test -d/--display option. """
@@ -197,6 +201,7 @@ class TestOptions(unittest.TestCase):
 
         self.assertEqual(upstream_org_time, upstream_new_time, 'upstream')
         self.assertEqual(srpm_org_time, srpm_new_time, 'srpm')
+        ReviewDirs.reset(startdir)
 
     @unittest.skipIf(no_net, 'No network available')
     def test_mock_options(self):
@@ -266,6 +271,7 @@ class TestOptions(unittest.TestCase):
         expected = os.path.abspath('./srpm-unpacked/python-test.spec')
         self.assertEqual(expected, bug.spec_file),
         os.chdir(startdir)
+        ReviewDirs.reset(startdir)
 
     def test_single(self):
         ''' test --single/-s option '''
@@ -276,9 +282,9 @@ class TestOptions(unittest.TestCase):
         bug = NameBug(Settings.name)
         bug.find_urls()
         bug.download_files()
-        checks = Checks(bug.spec_file, bug.srpm_file)
-        self.assertEqual(len(checks.checks), 1)
-        check = checks.checks[0]
+        checks = Checks(bug.spec_file, bug.srpm_file).get_checks()
+        self.assertEqual(len(checks), 1)
+        check = checks['CheckRequires']
         self.assertEqual(check.name, 'CheckRequires') 
 
     def test_exclude(self):
@@ -290,8 +296,8 @@ class TestOptions(unittest.TestCase):
         bug = NameBug(Settings.name)
         bug.find_urls()
         bug.download_files()
-        checks = Checks(bug.spec_file, bug.srpm_file)
-        self.assertFalse('CheckRequires' in checks.get_checks()) 
+        checks = Checks(bug.spec_file, bug.srpm_file).get_checks()
+        self.assertFalse('CheckRequires' in checks) 
 
 
 if __name__ == '__main__':

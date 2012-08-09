@@ -60,10 +60,8 @@ class TestChecks(unittest.TestCase):
         self.checks = Checks(self.spec, self.srpm)
         self.checks.run_checks(writedown=False)
         # Automatic Checks
-        checks = self.checks.checks
-        for check in checks:
-            result = check.get_result()
-            self.assertNotEqual(result, None)
+        for check in self.checks.get_checks().itervalues():
+            self.assertTrue(hasattr(check, 'result'))
         os.chdir(self.startdir)
 
 

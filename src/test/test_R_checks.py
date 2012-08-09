@@ -38,12 +38,14 @@ from test_env import no_net
 class TestRChecks(unittest.TestCase):
 
     def setUp(self):
+        self.startdir = os.getcwd()
         sys.argv = ['fedora-review','-rpn','R-Rdummypkg']
         os.chdir('test-R')
         if os.path.exists('R-Rdummypkg'):
              shutil.rmtree('R-Rdummypkg')
         Settings.init(True)
-        ReviewDirs.reset()
+        self.log = Settings.get_logger()
+        ReviewDirs.reset(os.getcwd())
 
     @unittest.skipIf(no_net, 'No network available')
     def test_all_checks(self):
@@ -51,15 +53,18 @@ class TestRChecks(unittest.TestCase):
         self.bug = NameBug('R-Rdummypkg')
         self.bug.find_urls()
         self.bug.download_files()
-        self.checks = Checks(self.bug.spec_file, self.bug.srpm_file)
-        self.checks.run_checks(writedown=False)
-        for check in self.checks.checks:
-            if check.is_applicable():
-                self.assertTrue(check.header == 'Generic' or 
-                                check.header == 'R')
-                result = check.get_result()
+        checks = Checks(self.bug.spec_file, self.bug.srpm_file)
+        checks.run_checks(writedown=False)
+        for check in checks.get_checks().itervalues():
+            if hasattr(check, 'result'):
+                if not(check.group == 'Generic' or check.group == 'R'):
+                    continue
+                result = check.result
+                if not result:
+                    continue
                 self.assertTrue(result.result in ['pass', 'pending', 'fail']) 
         os.chdir('..')
+        ReviewDirs.reset(self.startdir)
 
 
 if __name__ == '__main__':

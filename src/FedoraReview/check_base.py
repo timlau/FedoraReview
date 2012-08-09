@@ -20,8 +20,9 @@
 This module contains automatic test for Fedora Packaging guidelines
 '''
 
-import re
+import inspect
 import fnmatch
+import re
 import StringIO
 
 from textwrap import TextWrapper
@@ -29,69 +30,189 @@ from textwrap import TextWrapper
 from helpers import Helpers
 from settings import Settings
 from mock import Mock
+from review_error import FedoraReviewError
 
 TEST_STATES = {'pending': '[ ]', 'pass': '[x]', 'fail': '[!]', 'na': '[-]'}
+DEFAULT_API_VERSION = '0.1'
+
+class AbstractRegistry(object):
+    """ 
+    The overall interface for a plugin module is that it must 
+    contain a class Registry. This has a single function register()
+    which return a list of checks defined by the module.
+    """
+
+    def register(self, plugin, checks):
+        """
+        Return list of checks in current module
+        Parameters:
+           plugin: loaded module object
+           checks: Checks instance used when initiating check
+                   object
+        Returns:   CheckDict instance.
+          
+        """
+        raise FedoraReviewError('Abstract register() called')
+        
+
+class RegistryBase(AbstractRegistry):
+    """
+    Register all classes containing 'Check' and not ending with 'Base'
+    """
+
+    def register(self, plugin, checks):
+        tests = []
+        id_and_classes = inspect.getmembers(plugin, inspect.isclass)
+        for c in id_and_classes:
+            if not 'Check' in c[0]:
+                continue
+            if c[0].endswith('Base'):
+                continue
+            obj = (c[1])(checks)
+            tests.append(obj)
+        return tests
 
 
-class CheckBase(Helpers):
+class AbstractCheck(object):
+    """
+    The basic interface for a test (a. k a. check).
+
+    Properties:
+      - name: unique string
+      - text: free format user info on test, one line.
+      - description: longer, multiline free format text info.
+      - type: 'MUST'|'SHOULD'|'EXTRA'|'UNDEFINED'
+      - url: Usually guidelines url, possibly None.
+      - defined_in: filename (complete path).
+      - group: 'Generic', 'C/C++', 'php' ...
+      - implementation: 'json'|'python'|'undefined'
+      - version version of api, defaults to 0.1
+      - deprecates: list of  tests replaced (should not run) by this test.
+      - needs: List of tests which should run before this test. 
+      - result: doesn't exist if test hasn't run. Else  TestResult or None.
+      - checklist: the CheckDict instance this check is part of.
+   
+    Methods:
+      - run(): run the test, sets result.
+
+    Equality:
+      - tests are considered equal if they have the same name.
+    """
+
+    def __init__(self, defined_in):
+        self.defined_in = defined_in
+        self._name = 'undefined'
+        self.url = None
+        self.text = None
+        self.description = None
+        self.type = 'UNDEFINED'
+        self.group = 'Undefined'
+        self.implementation = 'undefined'
+        self.version = '0.1'
+        self.deprecates = []
+        self.needs = []
+ 
+
+    name = property(lambda self: self._name,
+                    lambda self,n: setattr(self, '_name', n))
+
+    def __eq__(self, other):
+       return self.name.__eq__(other)
+
+    def __ne__(self, other):
+       return self.name.__ne__(other)
+
+    def __hash__(self):
+        return self.name.__hash__()
+
+
+class CheckDict(dict):
+    """
+    A Dictionary of AbstractCheck, maintaining checkdict property. 
+    """
+
+    def __init__(self, *args, **kwargs):
+        self.update(*args, **kwargs)
+
+    def __setitem__(self, key, value):
+        value.checkdict = self
+        dict.__setitem__(self, key, value)
+
+    def update(self, *args, **kwargs):
+        if len(args) > 1:
+            raise TypeError("update: at most 1 arguments, got %d" % 
+                            len(args))
+        other = dict(*args, **kwargs)
+        for key in other.iterkeys():
+            self[key] = other[key]
+
+    def add(self, check):
+        self[check.name] = check
+
+    def extend(self, checks):
+        for c in checks:
+            self.add(c)
+
+    def set_single_check(self, check_name):
+        c = self[check_name]
+        self.clear()
+        self[check_name] = c
+
+
+class CheckBase(AbstractCheck, Helpers):
+    """ Base class for native, python plugins in checks directory. """
 
     deprecates = []
     header = 'Generic'
 
-    def __init__(self, base):
+    def __init__(self, base, sourcefile):
         Helpers.__init__(self)
+        AbstractCheck.__init__(self, sourcefile)
         self.base = base
         self.spec = base.spec
         self.srpm = base.srpm
         self.sources = base.sources
-        self.url = None
-        self.text = None
-        self.description = None
-        self.state = 'pending'
-        self.type = 'MUST'
-        self.result = None
+        self.state = None
         self.output_extra = None
         self.attachments = []
-
-    def __eq__(self, other):
-       return self.__class__.__name__.__eq__(other)
-
-    def __ne__(self, other):
-       return self.__class__.__name__.__ne__(other)
-
-    def __hash__(self):
-        return self.__class__.__name__.__hash__()
+        
+    name = property(lambda self: self.__class__.__name__)
 
     def run(self):
+        if self.is_applicable():
+            self.run_if_applicable()
+        else:
+            self.set_passed('not_applicable')
+
+    def run_if_applicable(self):
         ''' By default, a manual test returning 'inconclusive'.'''
         self.set_passed('inconclusive')
 
-    def set_passed(self, result, output_extra=None):
+    def set_passed(self, result, output_extra=None, attachments=[]):
         '''
         Set if the test is passed, failed or N/A
         and set optional extra output to be shown in repost
         '''
-        if result == None:
+
+        if result == 'not_applicable':
+            self.result = None
+            return
+        if result == None or result == 'na':
             self.state = 'na'
-        elif result == True:
+        elif result == True or result == 'pass':
             self.state = 'pass'
-        elif result == 'inconclusive':
+        elif result == 'inconclusive' or result == 'pending':
             self.state = 'pending'
         else:
             self.state = 'fail'
         if output_extra:
             self.output_extra = output_extra
-
-    name = property(lambda self: self.__class__.__name__)
-
-    def get_result(self):
-        '''
-        Get the test report result for this test
-        '''
-        ret = TestResult(self.__class__.__name__, self.url, self.__class__.header,
-                          self.__class__.deprecates, self.text, self.type,
-                          self.state, self.output_extra, self.attachments)
-        return ret
+        if attachments != []:
+            self.attachments = attachments
+        r = TestResult(self.name, self.url, self.group,
+                       self.deprecates, self.text, self.type,
+                       self.state, self.output_extra, self.attachments)
+        self.result = r
 
     def is_applicable(self):
         '''
