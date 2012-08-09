@@ -257,7 +257,7 @@ class CheckDefattr(CheckBase):
                     ' OK if packaging for EPEL5. Otherwise not needed' % sec
                     break
         if passed:
-            self.set_passed(passed, 'Note: defattr macros not found. They '
+            self.set_passed(passed, '%defattr macros not found. They '
                             'would be needed for EPEL5')
         else:
             self.set_passed(passed, output)
