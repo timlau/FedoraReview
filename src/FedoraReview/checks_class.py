@@ -155,10 +155,6 @@ class Checks(object):
         results = []
         deprecated = []
         attachments = []
-        if Settings.exclude:
-             self.exclude_checks(Settings.exclude)
-        if Settings.single:
-             self.set_single_check(Settings.single)
 
         # First, run state-changing build and install:
         mv_check_to_front('CheckPackageInstalls')
@@ -242,7 +238,7 @@ class ChecksLister(Checks):
     def list(self):
         """ List all the checks available. """
         for ext in self.ext_checks:
-            print ext
+            print ext.name
         for test in self.checks:
             print test.name, ' -- ', test.text
 

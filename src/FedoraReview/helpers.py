@@ -25,6 +25,7 @@ import os.path
 import re
 import urllib
 from subprocess import call, Popen, PIPE
+import hashlib
 
 from settings import Settings
 from review_error import FedoraReviewError
@@ -51,19 +52,17 @@ class Helpers(object):
             self.log.error("OS error running " + cmd, str(e))
         return output
 
-    def _md5sum(self, file):
-        ''' get the md5sum for a file
+    def _checksum(self, file):
+        ''' get the checksum for a file using algorithm set by configuration
+        (default: md5)
 
-        :arg file: the file to get the the md5sum for
-        :return: md5sum
+        :arg file: the file to get the the checksum for
+        :return: checksum
         '''
-        cmd = "md5sum %s" % file
-        out = self._run_cmd(cmd)
-        words = out.split(' ', 1)
-        if len(words) == 2:
-            return words[0]
-        else:
-            raise FedoraReviewError("Bad md5sum output: " + out)
+        ck = hashlib.new(Settings.checksum)
+        with open(file, 'rb') as f:
+            [ck.update(chunk) for chunk in iter(lambda: f.read(8192), '')]
+        return ck.hexdigest()
 
     def urlretrieve(self, url, path):
         try:

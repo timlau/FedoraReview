@@ -23,6 +23,8 @@ Tools for helping Fedora package reviewers
 import argparse
 import grp
 import logging
+import errno
+import os
 import os.path
 import re
 import sys
@@ -36,9 +38,8 @@ PARSER_SECTION = 'review'
 
 LOG_ROOT = 'FedoraReview'
 
-# REVIEW_LOGFILE is intentionally hidden from UI and manpage...
-SESSION_LOG = os.environ['REVIEW_LOGFILE'] \
-                  if 'REVIEW_LOGFILE' in os.environ \
+SESSION_LOG = '%s/fedora-review.log' % os.environ['XDG_CACHE_HOME'] \
+                  if 'XDG_CACHE_HOME' in os.environ \
               else os.path.expanduser('~/.cache/fedora-review.log')
 
 
@@ -100,9 +101,13 @@ class _Settings(object):
             try:
                 mock_gid = grp.getgrnam('mock')[2]
                 if not mock_gid in os.getgroups():
-                    raise ConfigError( 'Not in mock group, see manpage')
-            except:
-                raise ConfigError('No mock group - mock not installed?')
+                    raise ConfigError('No mock group - mock not installed or '
+                        'mock not in effective groups. Try running  '
+                        '"newgrp mock" or logging out from all your local '
+                        'sessions and logging back in.')
+            except ConfigError, e:
+                self.log.error(e)
+                raise e
 
         if hasattr(self, 'init_done') and not force:
              return
@@ -165,6 +170,10 @@ class _Settings(object):
         optional.add_argument('-x', '--exclude',
                     dest='exclude', metavar='"test,..."',
                     help='Comma-separated list of tests to exclude.')
+        optional.add_argument('-k', '--checksum', dest='checksum', default='sha256',
+                    choices=['md5', 'sha1', 'sha224', 'sha256',
+                             'sha384', 'sha512'],
+                    help='algorithm used for checksum')
         bz_only.add_argument('-a','--assign', action='store_true',
                     help = 'Assign the bug and set review flags')
         bz_only.add_argument('-l', '--login', action='store_true',
@@ -235,6 +244,7 @@ class _Settings(object):
                 lvl = logging.INFO
 
         if not hasattr(self, '_log_config_done'):
+            self._make_log_dir()
             logging.basicConfig(level=logging.DEBUG,
                                 format='%(asctime)s %(name)-12s'
                                        ' %(levelname)-8s %(message)s',
@@ -265,6 +275,15 @@ class _Settings(object):
         if not hasattr(self, 'log'):
             self.do_logger_setup()
         return self.log
+    
+    def _make_log_dir(self):
+        try:
+            os.makedirs(os.path.dirname(SESSION_LOG))
+        except OSError as exc:
+            if exc.errno == errno.EEXIST:
+                pass
+            else: raise
+ 
 
 Settings = _Settings()
 

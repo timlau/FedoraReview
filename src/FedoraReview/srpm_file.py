@@ -112,7 +112,7 @@ class SRPMFile(Helpers):
                 return SRPMFile.BUILD_OK
             else:
                 self.log.info(
-                     'No valid cache, building despite --nobuild.')
+                     'No valid cache, building despite --no-build.')
         return self.mockbuild(force)
 
     def mockbuild(self, force=False):
@@ -167,11 +167,11 @@ class SRPMFile(Helpers):
                 return bdir_root + entry
         return None
 
-    def check_source_md5(self, path):
+    def check_source_checksum(self, path):
         filename = os.path.basename(path)
         self.unpack(self.filename)
         if not hasattr(self, 'unpacked_src'):
-            self.log.warn("check_source_md5: Cannot unpack (?)")
+            self.log.warn("check_source_checksum: Cannot unpack (?)")
             return "ERROR"
         src_files = glob(self.unpacked_src + '/*')
         if not src_files:
@@ -181,8 +181,8 @@ class SRPMFile(Helpers):
             self.log.warn('Cannot find source: ' + filename)
             return "ERROR"
         path = os.path.join(self.unpacked_src, filename)
-        self.log.debug("Checking md5 for " + path)
-        sum = self._md5sum(path)
+        self.log.debug("Checking {0} for {1}".format(Settings.checksum, path))
+        sum = self._checksum(path)
         return sum
 
     def run_rpmlint(self, filenames):

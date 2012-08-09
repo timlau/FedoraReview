@@ -37,6 +37,7 @@ from test_checks   import TestChecks
 from test_R_checks import TestRChecks
 from test_options  import TestOptions
 from test_util     import TestUtil
+from test_ext      import TestExt
 
 from test_env      import no_net
 
@@ -49,6 +50,6 @@ if not 'REVIEW_LOGLEVEL' in os.environ:
 
 Mock.init()
 
-for t in 'Misc', 'Bugzilla', 'Checks', 'RChecks', 'Options', 'Util':
+for t in 'Misc', 'Bugzilla', 'Checks', 'RChecks', 'Options', 'Util', 'Ext':
    test = eval( 'unittest.TestLoader().loadTestsFromTestCase(Test%s)' % t)
    unittest.TextTestRunner(verbosity=VERBOSITY).run(test)
