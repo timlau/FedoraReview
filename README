@@ -43,10 +43,26 @@ Download
 --------
 Install git and run the command below to clone the source:
 
-git clone http://git.fedorahosted.org/git/FedoraReview.git
+    $ git clone http://git.fedorahosted.org/git/FedoraReview.git
 
 Alternative repository for users wishing to use github:
 git clone git://github.com/timlau/FedoraReview.git
+
+
+Running from git
+----------------
+
+After downloading (above) checkout proper branch (usually 'devel')
+and use try-fedora-review:
+
+    $ cd FedoraReview
+    $ git checkout devel
+    $ ./update-version
+    $ ./try-fedora-review --help
+
+To run from any directory, install try-fedora-review according to
+instructions in that script. update-version only needs to run once.
+
 
 Usage
 -----
