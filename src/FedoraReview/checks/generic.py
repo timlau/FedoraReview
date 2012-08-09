@@ -65,7 +65,7 @@ class CheckNameCharset(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/NamingGuidelines'
-        self.text = 'Package is named using only allowed ascii characters.'
+        self.text = 'Package is named using only allowed ASCII characters.'
         self.automatic = True
         self.type = 'MUST'
 
