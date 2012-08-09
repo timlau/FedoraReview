@@ -181,13 +181,11 @@ class _Settings(object):
         optional.add_argument('-x', '--exclude',
                     dest='exclude', metavar='"test,..."',
                     help='Comma-separated list of tests to exclude.')
-        optional.add_argument('-k', '--checksum', dest='checksum', default='sha256',
+        optional.add_argument('-k', '--checksum', dest='checksum', 
+                    default='sha256',
                     choices=['md5', 'sha1', 'sha224', 'sha256',
                              'sha384', 'sha512'],
-                    help='algorithm used for checksum')
-        optional.add_argument('--other-bz', default=None,
-                    metavar='<bugzilla url>', dest='other_bz',
-                    help='Alternative bugzilla URL')
+                    help='Algorithm used for checksum')
         try:
             args = parser.parse_args()
         except:
