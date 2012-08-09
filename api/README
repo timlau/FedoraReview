@@ -64,8 +64,8 @@ Results object ::=
          "text":"Check description that shows on review template",
          "deprecates":["DeprecatedTest", ...]
          "type":"MUST"|"SHOULD",
-         "result":"pass"|"fail"|"inconclusive",
-         "extra_output":"text",
+         "result":"pass"|"fail"|"pending"|"na",
+         "output_extra":"text",
         },
         ...
     ]

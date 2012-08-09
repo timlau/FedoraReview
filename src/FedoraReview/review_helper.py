@@ -28,7 +28,7 @@ import os.path
 from FedoraReview import BugException, BugzillaBug, Checks, \
           ChecksLister, CleanExitError, FedoraReviewError, Mock, \
           NameBug, ReviewDirs, ReviewDirExistsError, Settings, \
-          SettingsError, UrlBug
+          SettingsError, UrlBug, Sources
 
 from FedoraReview import __version__, build_full
 
@@ -55,6 +55,8 @@ class ReviewHelper(object):
 
     def __download_sources(self):
         sources = self.checks.spec.get_sources('Source')
+        self.sources = Sources(self.checks.spec)
+        self.sources.extract_all()
         return True
 
     def __do_report(self):
@@ -93,15 +95,10 @@ class ReviewHelper(object):
         else:
             self.outfile = ReviewDirs.report_path(self.checks.spec.name)
         with open(self.outfile,"w") as output:
-            # get upstream sources
-            rc = self.__download_sources()
-            if not rc:
-                self.log.info('Cannot download upstream sources')
-                sys.exit(1)
             if Settings.nobuild:
                 self.checks.srpm.is_build = True
             self.log.info('Running checks and generate report\n')
-            self.checks.run_checks(output=output, 
+            self.checks.run_checks(output=output,
                                    writedown=not Settings.no_report)
             output.close()
         if not os.path.exists('BUILD'):

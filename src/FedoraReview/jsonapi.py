@@ -24,6 +24,7 @@ from json import JSONEncoder, JSONDecoder
 
 from helpers import Helpers
 from check_base import TestResult
+from mock import Mock
 
 class ERR_CODE(object):
     ERR_NO_COMMAND = 1
@@ -47,7 +48,7 @@ class SetupPlugin(JSONAPI):
         for rpm in srpm.get_files_rpms().keys():
             self.rpms.append(rpm)
         self.rpmlint = "\n".join(srpm.rpmlint_output)
-        self.build_dir = srpm.get_build_dir()
+        self.build_dir = Mock.get_builddir()
 
 
 class GetSectionReply(JSONAPI):
@@ -88,6 +89,17 @@ class JSONPlugin(Helpers):
         self.plug_out = None
         self.plug_err = None
 
+    name = property(lambda self: self.plugin_path)
+
+    def __eq__(self, other):
+       return self.name.__eq__(other)
+
+    def __ne__(self, other):
+       return self.name.__ne__(other)
+
+    def __hash__(self):
+        return self.name.__hash__()
+
     def run(self):
         """Run the plugin to produce results"""
         plugin_proc = subprocess.Popen(self.plugin_path,
@@ -100,18 +112,22 @@ class JSONPlugin(Helpers):
         self.plug_err = plugin_proc.stderr
 
         setup = SetupPlugin(self.spec, self.srpm, self.sources)
-        self.__send_obj(setup)
+        try:
+            self.__send_obj(setup)
 
-        final_data = ""
-        while True:
-            data = plugin_proc.stdout.readline()
-            if data == "":
-                break
-            final_data = final_data + data
-            obj = self.__get_class_from_json(final_data)
-            if obj:
-                self.__handle_reply(obj)
-                final_data = ""
+            final_data = ""
+            while True:
+                data = plugin_proc.stdout.readline()
+                if data == "":
+                    break
+                final_data = final_data + data
+                obj = self.__get_class_from_json(final_data)
+                if obj:
+                    self.__handle_reply(obj)
+                    final_data = ""
+        except IOError, e:
+            self.__error("Error communicating")
+            self.__error(e)
 
         errout = self.plug_err.read()
         while errout != "":

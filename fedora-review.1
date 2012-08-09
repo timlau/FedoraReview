@@ -107,6 +107,9 @@ Provides a more detailed output of what's going on.
 .TP 4
 .B -x  "test1, test2, ...", --exclude "test1, test2, ..."
 Comma-separated list of test(s) to exclude, as listed by --display-checks
+.TP 4
+.B -k, --checksum {md5,sha1,sha224,sha256,sha384,sha512}
+algorithm used for checksum (currently supported: md5, sha1, sha224, sha256, sha384, sha512)
 .SH BUGZILLA OPTIONS
 .TP 4
 .B -a, --assign
@@ -159,6 +162,26 @@ will look for a file matching the Source0 in current directory. If it exists,
 it's used as upstream source. This way, a reviewer can generate the source
 according the comments in the spec before running fedora-review and then
 have it checked.
+.SH USING KOJI SCRATCH BUILDS
+It's possible to use koji to build packages instead of mock when using
+fedora-review. The basic idea is to run a koji scratch build, download
+the built packages and invoke fedora-review on these. This workflow
+uses the --prebuilt option, and has some limitations on checks performed
+since fedora-review cannot access the build directories.
+.PP
+The workflow:
+.IP \(bu 3 
+Invoke koji, note the task number: 
+.IP "" 8
+koji build --scratch my-package.src.rpm
+.IP \(bu 3 
+Download the results: 
+.IP "" 8
+koji-download-scratch <task number>
+.IP \(bu 3 
+Invoke fedora-review using --prebuilt, --name options and --rpmspec:
+.IP "" 8
+fedora-review --rpm-spec --prebuilt --name my-package
 
 .SH URL limitations
 fedora-review handles two types of URL: the spec and srpm url found in 

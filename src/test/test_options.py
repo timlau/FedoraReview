@@ -44,7 +44,7 @@ from test_env import no_net
 
 startdir = os.getcwd()
 
-VERSION = '0.2.0'
+VERSION = '0.2.1'
 
 def abs_file_url(path):
     return 'file://' +  os.path.abspath(path)

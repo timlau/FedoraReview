@@ -124,7 +124,7 @@ class CheckStaticLibs(CCppCheckBase):
 
 
 
-class CheckNoStatucExecutables(CCppCheckBase):
+class CheckNoStaticExecutables(CCppCheckBase):
     '''
     http://fedoraproject.org/wiki/Packaging/Guidelines#Staticly_Linking_Executables
     '''

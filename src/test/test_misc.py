@@ -1,5 +1,5 @@
 #!/usr/bin/python -tt
-#-*- coding: UTF-8 -*-
+#-*- coding: utf-8 -*-
 
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -95,8 +95,9 @@ class TestMisc(unittest.TestCase):
         self.assertEqual(source.filename, expected)
         self.assertEqual(source.is_archive(), True)
         self.assertTrue(os.path.exists(source.filename))
-        self.assertEqual(source.check_source_md5(),
-                         "289cb714af3a85fe36a51fa3612b57ad")
+        self.assertEqual(source.check_source_checksum(),
+                         "7ef644ee4eafa62cfa773cad4056cdcea592e27dacd5ae"
+                         "b4e8b11f51f5bf60d3")
         os.chdir(self.startdir)
 
     @unittest.skipIf(no_net, 'No network available')
@@ -194,10 +195,55 @@ class TestMisc(unittest.TestCase):
         os.chdir(self.startdir)
 
     @unittest.skipIf(no_net, 'No network available')
-    def test_md5(self):
+    def test_checksum_command_line(self):
+        sys.argv = ['fedora-review','-n','python-test','--prebuilt',
+                    '-k','sha1']
+        Settings.init(True)
         helpers = Helpers()
-        md5sum = helpers._md5sum('scantailor.desktop')
-        self.assertEqual(md5sum, '4a1c937e62192753c550221876613f86')
+        checksum = helpers._checksum('scantailor.desktop')
+        self.assertEqual(checksum, '5315b33321883c15c19445871cd335f7f698a2aa')
+
+    @unittest.skipIf(no_net, 'No network available')
+    def test_md5(self):
+        Settings.checksum = 'md5'
+        helpers = Helpers()
+        checksum = helpers._checksum('scantailor.desktop')
+        self.assertEqual(checksum, '4a1c937e62192753c550221876613f86')
+
+    @unittest.skipIf(no_net, 'No network available')
+    def test_sha1(self):
+        Settings.checksum = 'sha1'
+        helpers = Helpers()
+        checksum = helpers._checksum('scantailor.desktop')
+        self.assertEqual(checksum, '5315b33321883c15c19445871cd335f7f698a2aa')
+
+    @unittest.skipIf(no_net, 'No network available')
+    def test_sha224(self):
+        Settings.checksum = 'sha224'
+        helpers = Helpers()
+        checksum = helpers._checksum('scantailor.desktop')
+        self.assertEqual(checksum, '01959559db8ef8d596ff824fe207fc0345be67df6b8a51942214adb7')
+
+    @unittest.skipIf(no_net, 'No network available')
+    def test_sha256(self):
+        Settings.checksum = 'sha256'
+        helpers = Helpers()
+        checksum = helpers._checksum('scantailor.desktop')
+        self.assertEqual(checksum, 'd8669d49c8557ac47681f9b85e322849fa84186a8683c93959a590d6e7b9ae29')
+
+    @unittest.skipIf(no_net, 'No network available')
+    def test_sha384(self):
+        Settings.checksum = 'sha384'
+        helpers = Helpers()
+        checksum = helpers._checksum('scantailor.desktop')
+        self.assertEqual(checksum, '3d6a580100b1e8a40dc41892f6b289ff13c0b489b8079d8b7c01a17c67b88bf77283f784b4e8dacac6572050df8c948e')
+
+    @unittest.skipIf(no_net, 'No network available')
+    def test_sha512(self):
+        Settings.checksum = 'sha512'
+        helpers = Helpers()
+        checksum = helpers._checksum('scantailor.desktop')
+        self.assertEqual(checksum, '77a138fbd918610d55d9fd22868901bd189d987f17701498164badea88dd6f5612c118fc9e66d7b57f802bf0cddadc1cec54674ee1c3df2ddfaf1cac4007ac26')
 
     @unittest.skipIf(no_net, 'No network available')
     def test_bugzilla_bug(self):
@@ -257,7 +303,6 @@ class TestMisc(unittest.TestCase):
     @unittest.skipIf(no_net, 'No network available')
     def test_md5sum_diff_fail(self):        
         os.chdir('md5sum-diff-fail')
-        
         sys.argv = ['fedora-review','-rpn','python-test']
         Settings.init(True)
         ReviewDirs.reset()
