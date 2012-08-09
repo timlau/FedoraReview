@@ -46,9 +46,6 @@ class ConfigError(FedoraReviewError):
     def __init__(self, what):
         FedoraReviewError.__init__(self, 'Configuration error: ' + what)
 
-class MockConfigError(ConfigError):
-    pass
-
 
 class _Settings(object):
     """
@@ -103,7 +100,7 @@ class _Settings(object):
             try:
                 mock_gid = grp.getgrnam('mock')[2]
                 if not mock_gid in os.getgroups():
-                    raise MockConfigError('Not in mock group, see manpage')
+                    raise ConfigError( 'Not in mock group, see manpage')
             except:
                 raise ConfigError('No mock group - mock not installed?')
 

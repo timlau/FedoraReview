@@ -27,8 +27,8 @@ import os.path
 
 from FedoraReview import BugException, BugzillaBug, Checks, \
           ChecksLister, CleanExitError, FedoraReviewError, Mock, \
-          MockConfigError, NameBug, ReviewDirs, ReviewDirExistsError, \
-          Settings, SettingsError, UrlBug, Sources
+          NameBug, ReviewDirs, ReviewDirExistsError, Settings, \
+          SettingsError, UrlBug, Sources
 
 from FedoraReview import __version__, build_full
 
@@ -137,11 +137,6 @@ class ReviewHelper(object):
             return 2
         except SettingsError as err:
             self.log.error("Incompatible settings: " + str(err))
-            return 2
-        except MockConfigError as err:
-            print(str(err))
-            print("If you just have created the group, try newgrp(1) or "
-                  "log out and in again before proceeding")
             return 2
         except ReviewDirExistsError as err:
             print("The directory %s is in the way, please remove." %
