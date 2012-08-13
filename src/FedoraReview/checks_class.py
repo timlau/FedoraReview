@@ -196,14 +196,9 @@ class Checks(object):
 
 
 class ChecksLister(Checks):
-    """ A Checks instance only capable of listing checks. """
+    """ A Checks instance only capable of get_checks. """
     def __init__(self):
         self.sources = None
         Checks.__init__(self,None, None)
-
-    def list(self):
-        """ List all the checks available. """
-        for name in self.checkdict.iterkeys():
-            print name
 
 # vim: set expandtab: ts=4:sw=4:
