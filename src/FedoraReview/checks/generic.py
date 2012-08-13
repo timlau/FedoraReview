@@ -243,6 +243,7 @@ class CheckDefattr(CheckBase):
                    'Packaging/Guidelines#FilePermissions'
         self.text = 'Each %files section contains %defattr if rpm < 4.4'
         self.automatic = True
+        self.type = 'SHOULD'
 
     def run(self):
         passed = True
