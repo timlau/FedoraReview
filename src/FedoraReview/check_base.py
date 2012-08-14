@@ -262,6 +262,15 @@ class CheckBase(AbstractCheck, Helpers):
         return result
 
 
+    def has_config_files(self):
+        sections = self.spec.get_section('%files')
+        for section in sections:
+            for line in sections[section]:
+                if line.startswith('%config'):
+                    return True
+        return False
+
+
 class LangCheckBase(CheckBase):
     """ Base class for language specific class. """
     header = 'Language'
