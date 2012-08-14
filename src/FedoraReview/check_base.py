@@ -93,7 +93,9 @@ class AbstractCheck(object):
       - checklist: the CheckDict instance this check is part of.
    
     Methods:
-      - run(): run the test, sets result.
+      - run(): run the test, sets result. The result is None if
+        the test is not applicable. Otherwise, it's a TestResult
+        reflecting either "pass","fail" or "na"
 
     Equality:
       - tests are considered equal if they have the same name.
