@@ -80,7 +80,7 @@ class CheckNameCharset(GenericCheckBase):
         self.automatic = True
         self.type = 'MUST'
 
-    def run_if_applicable(self):
+    def run(self):
         allowed_chars = 'abcdefghijklmnopqrstuvwxyz' \
             'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._+'
         output = ''
@@ -616,14 +616,13 @@ class CheckMakeinstall(GenericCheckBase):
         self.automatic = True
         self.type = 'MUST'
 
-    def is_applicable(self):
+    def run(self):
         regex = re.compile(r'^(%makeinstall.*)')
         res = self.spec.find(regex)
         if res:
             self.set_passed(False, res.group(0))
-            return True
         else:
-            return False
+            self.set_passed('not_applicable')
 
 
 class CheckLocale(GenericCheckBase):
@@ -638,11 +637,14 @@ class CheckLocale(GenericCheckBase):
         self.url = 'http://fedoraproject.org/wiki/' \
                    'Packaging/Guidelines#Handling_Locale_Files'
         self.text = 'The spec file handles locales properly.'
-        self.automatic = False
+        self.automatic = True
         self.type = 'MUST'
 
-    def is_applicable(self):
-        return self.has_files('/usr/share/locale/*/LC_MESSAGES/*.mo')
+    def run(self):
+        if self.has_files('/usr/share/locale/*/LC_MESSAGES/*.mo'):
+            self.set_passed('inconclusive')
+        else:
+            self.set_passed('not_applicable')
 
 
 class CheckChangelogFormat(GenericCheckBase):
@@ -735,12 +737,15 @@ class CheckMultipleLicenses(GenericCheckBase):
                    'Packaging/LicensingGuidelines#Multiple_Licensing_Scenarios'
         self.text = 'If the package is under multiple licenses, the licensing' \
                     ' breakdown must be documented in the spec.'
-        self.automatic = False
+        self.automatic = True
         self.type = 'MUST'
 
-    def is_applicable(self):
+    def run(self):
         license = self.spec.get_from_spec('License')
-        return 'and' in license.lower().split()
+        if 'and' in license.lower().split():
+            self.set_passed('inconclusive')
+        else:
+            self.set_passed('not_applicable')
 
 class CheckLicensInDoc(GenericCheckBase):
     '''
@@ -789,11 +794,11 @@ class CheckLicensInDoc(GenericCheckBase):
             if not license in docs:
                 self.log.debug( "Cannot find " + license +
                                 " in doclist")
-                self.set_passed( False, 
+                self.set_passed( False,
                                  "Cannot find %s in rpm(s)" % license)
                 return
-        self.set_passed(True)       
-   
+        self.set_passed(True)
+
 
 class CheckLicenseInSubpackages(GenericCheckBase):
     '''
@@ -808,13 +813,13 @@ class CheckLicenseInSubpackages(GenericCheckBase):
         self.automatic = False
         self.type = 'MUST'
 
-    def is_applicable(self):
-        '''Check if subpackages exists'''
+    def run(self):
+        # Check if subpackages exists
         sections = self.spec.get_section('%package')
         if len(sections) == 0:
-            return False
+            self.set_passed('not_applicable')
         else:
-            return True
+            self.set_passed('inconclusive')
 
 
 class CheckApprovedLicense(GenericCheckBase):
@@ -981,15 +986,10 @@ class CheckNoConfigInUsr(GenericCheckBase):
         self.automatic = False
         self.type = 'MUST'
 
-    def is_applicable(self):
-        sections = self.spec.get_section('%files')
-        for section in sections:
-            for line in sections[section]:
-                if line.startswith('%config'):
-                    return True
-        return False
-
-    def run_if_applicable(self):
+    def run(self):
+        if not self.has_config_files():
+            self.set_passed('not_applicable')
+            return
         passed = True
         extra = ''
         sections = self.spec.get_section('%files')
@@ -1017,15 +1017,10 @@ class CheckConfigNoReplace(GenericCheckBase):
         self.automatic = True
         self.type = 'MUST'
 
-    def is_applicable(self):
-        sections = self.spec.get_section('%files')
-        for section in sections:
-            for line in sections[section]:
-                if line.startswith('%config'):
-                    return True
-        return False
-
-    def run_if_applicable(self):
+    def run(self):
+        if not self.has_config_files():
+            self.set_passed('not_applicable')
+            return
         passed = True
         extra = ''
         sections = self.spec.get_section('%files')
@@ -1289,15 +1284,16 @@ class CheckUsefulDebuginfo(GenericCheckBase):
                    'Packaging/Guidelines#Debuginfo_packages'
         self.text = 'Useful -debuginfo package or justification' \
                     ' otherwise.'
-        self.automatic = False
+        self.automatic = True
         self.type = 'MUST'
 
-    def is_applicable(self):
+    def run(self):
         rpm_files = self.srpm.get_used_rpms('src.rpm')
         for rpm in rpm_files:
             if not rpm.endswith('noarch.rpm'):
-                return True
-        return False
+                self.set_passed('inconclusive')
+                return
+        self.set_passed('not_applicable')
 
 
 class CheckNoConflicts(GenericCheckBase):
@@ -1646,12 +1642,16 @@ class CheckScriptletSanity(GenericCheckBase):
         self.url = 'http://fedoraproject.org/wiki/' \
                    'Packaging/Guidelines#Scriptlets'
         self.text = 'Scriptlets must be sane, if used.'
-        self.automatic = False
+        self.automatic = True
         self.type = 'SHOULD'
 
-    def is_applicable(self):
+    def run(self):
         regex = re.compile('%(post|postun|posttrans|preun|pretrans|pre)\s+')
-        return self.spec.find(regex)
+        if self.spec.find(regex):
+            self.set_passed('inconclusive')
+        else:
+            self.set_passed('not_applicable')
+
 
 
 class CheckPkgConfigFiles(GenericCheckBase):
@@ -1775,8 +1775,11 @@ class CheckManPages(GenericCheckBase):
         self.automatic = False
         self.type = 'SHOULD'
 
-    def is_applicable(self):
-        return self.has_files('[/usr]/[s]bin/*')
+    def run(self):
+        if self.has_files('[/usr]/[s]bin/*'):
+            self.set_passed('inconclusive')
+        else:
+            self.set_passed('not_applicable')
 
 
 class CheckParallelMake(GenericCheckBase):
@@ -1787,29 +1790,17 @@ class CheckParallelMake(GenericCheckBase):
         self.automatic = False
         self.type = 'SHOULD'
 
-    def is_applicable(self):
-        '''
-        check if this test is applicable
-        '''
-        regex = re.compile(r'^make')
+    def run(self):
+        make_regex = re.compile(r'^make')
+        make_par_regex = re.compile(r'^make*.%{?_smp_mflags}')
         lines = self.spec.get_section('build')
-        found = False
         for line in lines:
-            res = regex.search(line)
-            if res:
-                found = True
-        self.set_passed(found)
-        return found
-
-    def run_if_applicable(self):
-        regex = re.compile(r'^make*.%{?_smp_mflags}')
-        lines = self.spec.get_section('build')
-        found = False
-        for line in lines:
-            res = regex.search(line)
-            if res:
-                found = True
-        self.set_passed(found)
+            make_found = make_regex.search(line)
+            make_par_found = make_par_regex.search(line)
+            if make_found:
+                self.set_passed(make_par_found)
+                return
+        self.set_passed('not_applicable')
 
 
 class CheckPatchComments(GenericCheckBase):
@@ -1819,11 +1810,14 @@ class CheckPatchComments(GenericCheckBase):
                    'Packaging:Guidelines'
         self.text = 'Patches link to upstream bugs/comments/lists' \
                     ' or are otherwise justified.'
-        self.automatic = False
+        self.automatic = True
         self.type = 'SHOULD'
 
-    def is_applicable(self):
-        return self.spec.has_patches()
+    def run(self):
+        if self.spec.has_patches():
+            self.set_passed('inconclusive')
+        else:
+            self.set_passed('not_applicable')
 
 class CheckObsoletesForRename(GenericCheckBase):
     def __init__(self, base):
@@ -1832,7 +1826,6 @@ class CheckObsoletesForRename(GenericCheckBase):
         self.text = 'If the package is a rename of another package, proper Obsoletes and Provides are present.'
         self.automatic = False
         self.type = 'MUST'
-
 
 
 class LangCheckBase(GenericCheckBase):

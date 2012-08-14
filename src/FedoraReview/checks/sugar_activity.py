@@ -32,8 +32,14 @@ class SugarActivityCheckBase(LangCheckBase):
         LangCheckBase.__init__(self, base, __file__)
         self.group = 'SugarActivity'
 
-    def is_applicable(self):
-        return self.has_files_re('^/usr/(share|lib|lib64)/sugar/activities/')
+    @staticmethod
+    def if_sugarpackage(run_f):
+        def wrapper(self, *args, **kwargs):
+            if self.has_files_re('^/usr/(share|lib|lib64)/sugar/activities/'):
+                return run_f(self, *args, **kwargs)
+            else:
+                self.set_passed('not_applicable')
+        return wrapper
 
 
 class SugarActivityCheckNaming(SugarActivityCheckBase):
@@ -45,7 +51,8 @@ class SugarActivityCheckNaming(SugarActivityCheckBase):
         self.type = 'MUST'
         self.automatic = True
 
-    def run_if_applicable(self):
+    @SugarActivityCheckBase.if_sugarpackage
+    def run(self):
         if not self.spec.name.startswith('sugar-'):
             self.set_passed(False)
             return
@@ -62,7 +69,8 @@ class SugarActivityCheckBuildRequires(SugarActivityCheckBase):
         self.type = 'MUST'
         self.automatic = True
 
-    def run_if_applicable(self):
+    @SugarActivityCheckBase.if_sugarpackage
+    def run(self):
         br = self.spec.find_tag('BuildRequires')
         self.set_passed('sugar-toolkit' in br)
 

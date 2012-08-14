@@ -1,0 +1,1 @@
+/var/lib/mock/fedora-rawhide-x86_64/root/builddir/build/BUILD

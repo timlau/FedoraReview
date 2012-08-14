@@ -13,16 +13,19 @@ class CCppCheckBase(LangCheckBase):
         LangCheckBase.__init__(self, base, __file__)
         self.group = 'C/C++'
 
-    def is_applicable(self):
-        """Need more comprehensive check and return True in valid cases"""
-        if self.has_files_re('/usr/(lib|lib64)/[\w\-]*\.so\.[0-9]') or \
-           self.has_files('*.h') or \
-           self.has_files('*.a') or \
-           self.sources_have_files('*.c') or \
-           self.sources_have_files('*.C') or \
-           self.sources_have_files('*.cpp') :
-           return True
-        return False
+    @staticmethod
+    def if_applicable(run_f):
+        def wrapper(self, *args, **kwargs):
+            if self.has_files_re('/usr/(lib|lib64)/[\w\-]*\.so\.[0-9]') or \
+                    self.has_files('*.h') or \
+                    self.has_files('*.a') or \
+                    self.sources_have_files('*.c') or \
+                    self.sources_have_files('*.C') or \
+                    self.sources_have_files('*.cpp') :
+                return run_f(self, *args, **kwargs)
+            else:
+                self.set_passed('not_applicable')
+        return wrapper
 
 class CheckLDConfig(CCppCheckBase):
     '''
@@ -37,14 +40,10 @@ class CheckLDConfig(CCppCheckBase):
         self.automatic = True
         self.type = 'MUST'
 
-    def is_applicable(self):
-        '''
-        check if this test is applicable
-        '''
-        return self.has_files_re('/usr/(lib|lib64)/[\w\-]*\.so\.[0-9]')
-
-
-    def run_if_applicable(self):
+    def run(self):
+        if not self.has_files_re('/usr/(lib|lib64)/[\w\-]*\.so\.[0-9]'):
+            self.set_passed('not_applicable')
+            return
         sources = ['%post','%postun']
         for source in sources:
             passed = False
@@ -77,13 +76,10 @@ class CheckHeaderFiles(CCppCheckBase):
         self.automatic = True
         self.type = 'MUST'
 
-    def is_applicable(self):
-        '''
-        check if this test is applicable
-        '''
-        return self.has_files('*.h')
-
-    def run_if_applicable(self):
+    def run(self):
+        if not self.has_files('*.h'):
+            self.set_passed('not_applicable')
+            return
         files = self.get_files_by_pattern('*.h')
         passed = True
         extra = ""
@@ -99,7 +95,6 @@ class CheckHeaderFiles(CCppCheckBase):
         self.set_passed(passed, extra)
 
 
-
 class CheckStaticLibs(CCppCheckBase):
     '''
     MUST: Static libraries must be in a -static package.
@@ -112,13 +107,10 @@ class CheckStaticLibs(CCppCheckBase):
         self.automatic = False
         self.type = 'MUST'
 
-    def is_applicable(self):
-        '''
-        check if this test is applicable
-        '''
-        return self.has_files('*.a')
-
-    def run_if_applicable(self):
+    def run(self):
+        if not self.has_files('*.a'):
+            self.set_passed('not_applicable')
+            return
         files = self.get_files_by_pattern('*.a')
         passed = True
         extra = ""
@@ -128,8 +120,6 @@ class CheckStaticLibs(CCppCheckBase):
                     passed = False
                     extra += "%s : %s\n" % (rpm, fn)
         self.set_passed(passed, extra)
-
-
 
 
 class CheckNoStaticExecutables(CCppCheckBase):
@@ -142,6 +132,7 @@ class CheckNoStaticExecutables(CCppCheckBase):
         self.text = 'Package contains no static executables.'
         self.automatic = False
         self.type = 'MUST'
+
 
 class CheckSoFiles(CCppCheckBase):
     '''
@@ -156,13 +147,10 @@ class CheckSoFiles(CCppCheckBase):
         self.automatic = True
         self.type = 'MUST'
 
-    def is_applicable(self):
-        '''
-        check if this test is applicable
-        '''
-        return self.has_files('*.so')
-
-    def run_if_applicable(self):
+    def run(self):
+        if not self.has_files('*.so'):
+            self.set_passed('not_applicable')
+            return
         files = self.get_files_by_pattern('*.so')
         passed = True
         extra = "Unversioned so-files in non-devel package (fix or explain):"
@@ -186,7 +174,8 @@ class CheckLibToolArchives(CCppCheckBase):
         self.automatic = True
         self.type = 'MUST'
 
-    def run_if_applicable(self):
+    @CCppCheckBase.if_applicable
+    def run(self):
         if not self.has_files('*.la'):
             self.set_passed(True)
         else:
@@ -209,7 +198,8 @@ class CheckRPATH(CCppCheckBase):
         self.automatic = True
         self.type = 'MUST'
 
-    def run_if_applicable(self):
+    @CCppCheckBase.if_applicable
+    def run(self):
         for line in self.srpm.rpmlint_output:
             if 'binary-or-shlib-defines-rpath' in line:
                 self.set_passed(False, 'See rpmlint output')

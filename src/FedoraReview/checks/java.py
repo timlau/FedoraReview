@@ -17,11 +17,23 @@ class JavaCheckBase(LangCheckBase):
         LangCheckBase.__init__(self, base, __file__)
         self.group = "Java"
 
-    def is_applicable(self):
-        if self.has_files("*.jar") or self.has_files("*.pom"):
-            return True
-        else:
-            return False
+    @staticmethod
+    def if_mavenpackage(run_f):
+        def wrapper(self, *args, **kwargs):
+            if self.has_files("*.pom"):
+                return run_f(self, *args, **kwargs)
+            else:
+                self.set_passed('not_applicable')
+        return wrapper
+
+    @staticmethod
+    def if_javapackage(run_f):
+        def wrapper(self, *args, **kwargs):
+            if self.has_files("*.jar") or self.has_files("*.pom"):
+                return run_f(self, *args, **kwargs)
+            else:
+                self.set_passed('not_applicable')
+        return wrapper
 
     def _get_javadoc_sub(self):
         """Returns name of javadoc rpm or None if no such subpackage
@@ -74,8 +86,8 @@ class CheckNotJavaApplicable(JavaCheckBase):
     deprecates = ['CheckBuildCompilerFlags', 'CheckUsefulDebuginfo',
                   'CheckLargeDocs']
 
-    def is_applicable(self):
-        return False
+    def run(self):
+        self.set_passed('not_applicable')
 
 
 class CheckJavadoc(JavaCheckBase):
@@ -88,6 +100,7 @@ class CheckJavadoc(JavaCheckBase):
         included in -javadoc subpackage"""
         self.automatic = True
 
+    @JavaCheckBase.if_javapackage
     def run(self):
         files = self.get_files_by_pattern("/usr/share/javadoc/%s/*.html" %
                                           self.spec.name)
@@ -114,7 +127,8 @@ class CheckJavadocdirName(JavaCheckBase):
         (no -%{version} symlink)"""
         self.automatic = True
 
-    def run_if_applicable(self):
+    @JavaCheckBase.if_javapackage
+    def run(self):
         name = self.get_files_by_pattern("/usr/share/javadoc/%s" % self.spec.name)
         name_ver = self.get_files_by_pattern("/usr/share/javadoc/%s-%s" %
                                              (self.spec.name, self.spec.version))
@@ -148,7 +162,8 @@ class CheckJPackageRequires(JavaCheckBase):
         jpackage-utils"""
         self.automatic = True
 
-    def run_if_applicable(self):
+    @JavaCheckBase.if_javapackage
+    def run(self):
         brs = self.spec.find_tag('BuildRequires')
         requires = self.spec.find_tag('Requires')
         br_found = False
@@ -175,7 +190,8 @@ class CheckJavadocJPackageRequires(JavaCheckBase):
         self.automatic = True
 
 
-    def run_if_applicable(self):
+    @JavaCheckBase.if_javapackage
+    def run(self):
         brs = self.spec.find_tag('Requires', '%package javadoc')
         self.set_passed('jpackage-utils' in brs)
 
@@ -193,6 +209,7 @@ class CheckJavaFullVerReqSub(JavaCheckBase):
         self.automatic = True
         self.type = 'MUST'
 
+    @JavaCheckBase.if_javapackage
     def run(self):
         regex = re.compile(r'Requires:\s*%{name}\s*=\s*%{version}-%{release}')
         sections = self.spec.get_section("%package")
@@ -226,7 +243,8 @@ class CheckNoOldMavenDepmap(JavaCheckBase):
         self.type = 'MUST'
         self.regex = re.compile(r'^\s*%add_to_maven_depmap\s+.*')
 
-    def run_if_applicable(self):
+    @JavaCheckBase.if_javapackage
+    def run(self):
         self.set_passed(not self.spec.find(self.regex))
 
 
@@ -242,10 +260,8 @@ class CheckAddMavenDepmap(JavaCheckBase):
         self.type = 'MUST'
         self.regex = re.compile(r'^\s*%add_maven_depmap\s+.*')
 
+    @JavaCheckBase.if_mavenpackage
     def run(self):
-        if not self.has_files("*.pom"):
-            self.set_passed('not_applicable')
-            return
         if not self.spec.find(self.regex):
             self.set_passed(False, "No add_maven_depmap calls found but pom files present")
         else:
@@ -265,10 +281,8 @@ class CheckUseMavenpomdirMacro(JavaCheckBase):
         self.type = 'MUST'
         self.regex = re.compile(r'%{_datadir}/maven2/poms')
 
+    @JavaCheckBase.if_mavenpackage
     def run(self):
-        if not self.has_files("*.pom"):
-            self.set_passed('not_applicable')
-            return
         self.set_passed(not self.spec.find(self.regex))
 
 
@@ -284,10 +298,8 @@ class CheckUpdateDepmap(JavaCheckBase):
         self.type = 'MUST'
         self.regex = re.compile(r'^\s*%update_maven_depmap\s+.*')
 
+    @JavaCheckBase.if_mavenpackage
     def run(self):
-        if not self.has_files("*.pom"):
-            self.set_passed('not_applicable')
-            return
         self.set_passed(not self.spec.find(self.regex))
 
 
@@ -305,10 +317,8 @@ class CheckNoRequiresPost(JavaCheckBase):
         self.type = 'MUST'
         self.regex = re.compile(r'^\s*Requires\((post|postun)\):\s*jpackage-utils.*')
 
+    @JavaCheckBase.if_mavenpackage
     def run(self):
-        if not self.has_files("*.pom"):
-            self.set_passed('not_applicable')
-            return
         self.set_passed(not self.spec.find(self.regex))
 
 

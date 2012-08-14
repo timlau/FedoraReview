@@ -1,4 +1,4 @@
-#-*- coding: UTF-8 -*-
+#-*- coding: utf-8 -*-
 
 import re
 import os
@@ -19,10 +19,33 @@ class RubyCheckBase(LangCheckBase):
     def __init__(self, base):
         LangCheckBase.__init__(self, base, __file__)
         self.group = 'Ruby'
- 
 
-    def is_applicable(self):
-        return self.is_gem() or self.is_nongem()
+    @staticmethod
+    def if_rubypackage(run_f):
+        def wrapper(self, *args, **kwargs):
+            if self.is_gem() or self.is_nongem():
+                return run_f(self, *args, **kwargs)
+            else:
+                self.set_passed('not_applicable')
+        return wrapper
+
+    @staticmethod
+    def if_gempackage(run_f):
+        def wrapper(self, *args, **kwargs):
+            if self.is_gem():
+                return run_f(self, *args, **kwargs)
+            else:
+                self.set_passed('not_applicable')
+        return wrapper
+
+    @staticmethod
+    def if_nongempackage(run_f):
+        def wrapper(self, *args, **kwargs):
+            if self.is_nongem():
+                return run_f(self, *args, **kwargs)
+            else:
+                self.set_passed('not_applicable')
+        return wrapper
 
     def is_nongem(self):
         return self.spec.name.startswith('ruby-')
@@ -40,15 +63,6 @@ class RubyCheckBase(LangCheckBase):
     def gl_fmt_uri(self, fmt):
         return self._guidelines_section_uri % fmt
 
-class GemCheckBase(RubyCheckBase):
-    """ Base class for all Gem specific checks. """
-    def is_applicable(self):
-        return self.is_gem()
-
-class NonGemCheckBase(RubyCheckBase):
-    """ Base class for all non-Gem specific checks. """
-    def is_applicable(self):
-        return self.is_nongem()
 
 class RubyCheckRequiresRubyAbi(RubyCheckBase):
     def __init__(self, base):
@@ -57,7 +71,8 @@ class RubyCheckRequiresRubyAbi(RubyCheckBase):
         self.text = 'Package contains Requires: ruby(abi).'
         self.automatic = True
 
-    def run_if_applicable(self):
+    @RubyCheckBase.if_rubypackage
+    def run(self):
         """ Run the check """
         br = self.spec.find_tag('Requires')
         self.set_passed('ruby(abi)' in br)
@@ -69,7 +84,8 @@ class RubyCheckBuildArchitecture(RubyCheckBase):
         self.text = 'Pure Ruby package must be built as noarch'
         self.automatic = True
 
-    def run_if_applicable(self):
+    @RubyCheckBase.if_rubypackage
+    def run(self):
         arch = self.spec.find_tag('BuildArch')
         if self.has_extension():
             self.set_passed('noarch' not in arch, 'Package with binary extension can\'t be built as noarch.')
@@ -83,10 +99,10 @@ class RubyCheckPlatformSpecificFilePlacement(RubyCheckBase):
         self.text = 'Platform specific files must be located under /usr/lib[64]'
         self.automatic = True
 
-    def is_applicable(self):
-        return super(RubyCheckBase, self).is_applicable() and self.has_extension()
-
-    def run_if_applicable(self):
+    @RubyCheckBase.if_rubypackage
+    def run(self):
+        if not self.has_extension():
+            self.set_passed('not_applicable')
         usr_lib_re = re.compile(r'/usr/lib')
         so_file_re = re.compile(r'\.so$')
         self.set_passed(True)
@@ -104,7 +120,8 @@ class RubyCheckTestsRun(RubyCheckBase):
         self.automatic = True
         self.type = 'SHOULD'
 
-    def run_if_applicable(self):
+    @RubyCheckBase.if_rubypackage
+    def run(self):
         check_sections = self.spec.get_section('%check')
         self.set_passed(True)
 
@@ -117,22 +134,24 @@ class RubyCheckTestsNotRunByRake(RubyCheckTestsRun):
         RubyCheckTestsRun.__init__(self, base)
         self.text = 'Test suite should not be run by rake.'
 
-    def run_if_applicable(self):
+    @RubyCheckBase.if_rubypackage
+    def run(self):
         self.set_passed(True)
         if self.spec.get_section('%check'):
             for line in self.spec.get_section('%check')['%check']:
                 if line.find('rake') != -1:
                     self.set_passed(False)
 
-class NonGemCheckUsesMacros(NonGemCheckBase):
+class NonGemCheckUsesMacros(RubyCheckBase):
     def __init__(self, base):
-        NonGemCheckBase.__init__(self, base)
+        RubyCheckBase.__init__(self, base)
         self.url = self.gl_fmt_uri({'section': 'Macros'})
         self.text = 'Specfile should utilize macros from ruby-devel package.'
         self.automatic = True
         self.type = 'SHOULD'
 
-    def run_if_applicable(self):
+    @RubyCheckBase.if_nongempackage
+    def run(self):
         self.set_passed(False)
         vendorarchdir_re = re.compile('%{vendorarchdir}', re.I)
         vendorlibdir_re = re.compile('%{vendorlibdir}', re.I)
@@ -143,75 +162,80 @@ class NonGemCheckUsesMacros(NonGemCheckBase):
             if not self.has_extension() and vendorlibdir_re.match(line):
                 self.set_passed(True)
 
-class NonGemCheckFilePlacement(NonGemCheckBase):
+class NonGemCheckFilePlacement(RubyCheckBase):
     def __init__(self, base):
-        NonGemCheckBase.__init__(self, base)
+        RubyCheckBase.__init__(self, base)
         self.url = self.gl_fmt_uri({'section': 'Build_Architecture_and_File_Placement'})
         self.text = 'Platform dependent files must go under %{ruby_vendorarchdir}, platform independent under %{ruby_vendorlibdir}.'
         self.automatic = False
 
-class GemCheckFilePlacement(GemCheckBase):
+class GemCheckFilePlacement(RubyCheckBase):
     def __init__(self, base):
-        GemCheckBase.__init__(self, base)
+        RubyCheckBase.__init__(self, base)
         self.url = self.gl_fmt_uri({'section': '.25install'})
         self.text = 'Platform dependent files must all go under %{gem_extdir}, platform independent under %{gem_dir}.'
         self.automatic = False
 
-class GemCheckRequiresProperDevel(GemCheckBase):
+class GemCheckRequiresProperDevel(RubyCheckBase):
     def __init__(self, base):
-        GemCheckBase.__init__(self, base)
+        RubyCheckBase.__init__(self, base)
         self.url = self.gl_fmt_uri({'section': 'RubyGems'})
         self.text = 'Package contains BuildRequires: rubygems-devel.'
         self.automatic = True
 
-    def run_if_applicable(self):
+    @RubyCheckBase.if_gempackage
+    def run(self):
         """ Run the check """
         br = self.spec.find_tag('BuildRequires')
         self.set_passed('rubygems-devel' in br)
         if self.has_extension():
             self.set_passed('ruby-devel' in br, 'The Gem package must have BuildRequires: ruby-devel, if the Gem contains binary extension.')
 
-class NonGemCheckRequiresProperDevel(NonGemCheckBase):
+class NonGemCheckRequiresProperDevel(RubyCheckBase):
     def __init__(self, base):
-        NonGemCheckBase.__init__(self, base)
+        RubyCheckBase.__init__(self, base)
         self.url = self.gl_fmt_uri({'section': 'Non-Gem_Packages'})
         self.text = 'Package contains BuildRequires: ruby-devel.'
         self.automatic = True
 
-    def run_if_applicable(self):
+    @RubyCheckBase.if_nongempackage
+    def run(self):
         """ Run the check """
         self.set_passed('ruby-devel' in self.spec.find_tag('BuildRequires'))
 
-class GemCheckSetsGemName(GemCheckBase):
+class GemCheckSetsGemName(RubyCheckBase):
     def __init__(self, base):
-        GemCheckBase.__init__(self, base)
+        RubyCheckBase.__init__(self, base)
         self.url = self.gl_fmt_uri({'section': 'RubyGems'})
         self.text = 'Gem package must define %{gem_name} macro.'
         self.automatic = True
 
-    def run_if_applicable(self):
+    @RubyCheckBase.if_gempackage
+    def run(self):
         self.set_passed(len(self.spec.find_tag('gem_name')) > 0)
 
 
-class GemCheckProperName(GemCheckBase):
+class GemCheckProperName(RubyCheckBase):
     def __init__(self, base):
-        GemCheckBase.__init__(self, base)
+        RubyCheckBase.__init__(self, base)
         self.url = self.gl_fmt_uri({'section': 'Naming_Guidelines'})
         self.text = 'Gem package is named rubygem-%{gem_name}'
         self.automatic = True
 
-    def run_if_applicable(self):
+    @RubyCheckBase.if_gempackage
+    def run(self):
         names = self.spec.find_tag('Name')
         self.set_passed('rubygem-%{gem_name}' in names)
 
-class GemCheckDoesntHaveNonGemSubpackage(GemCheckBase):
+class GemCheckDoesntHaveNonGemSubpackage(RubyCheckBase):
     def __init__(self, base):
-        GemCheckBase.__init__(self, base)
+        RubyCheckBase.__init__(self, base)
         self.url = self.gl_fmt_uri({'section': 'Packaging_for_Gem_and_non-Gem_use'})
         self.text = 'Gem package must not define a non-gem subpackage'
         self.automatic = True
 
-    def run_if_applicable(self):
+    @RubyCheckBase.if_gempackage
+    def run(self):
         subpackage_re = re.compile(r'^%package\s+-n\s+ruby-.*')
         self.set_passed(True)
 
@@ -220,14 +244,15 @@ class GemCheckDoesntHaveNonGemSubpackage(GemCheckBase):
                 self.set_passed(False)
                 break
 
-class GemCheckExcludesGemCache(GemCheckBase):
+class GemCheckExcludesGemCache(RubyCheckBase):
     def __init__(self, base):
-        GemCheckBase.__init__(self, base)
+        RubyCheckBase.__init__(self, base)
         self.url = self.gl_uri
         self.text = 'Gem package must exclude cached Gem.'
         self.automatic = True
 
-    def run_if_applicable(self):
+    @RubyCheckBase.if_gempackage
+    def run(self):
         # it seems easier to check whether .gem is not present in rpms than to examine %files
         gemfile_re = re.compile(r'.*\.gem$')
         self.set_passed(True)
@@ -237,15 +262,16 @@ class GemCheckExcludesGemCache(GemCheckBase):
                 if gemfile_re.match(file):
                     self.set_passed(False)
 
-class GemCheckUsesMacros(GemCheckBase):
+class GemCheckUsesMacros(RubyCheckBase):
     def __init__(self, base):
-        GemCheckBase.__init__(self, base)
+        RubyCheckBase.__init__(self, base)
         self.url = self.gl_fmt_uri({'section': 'Macros'})
         self.text = 'Specfile should utilize macros from rubygem-devel package.'
         self.automatic = True
         self.type = 'SHOULD'
 
-    def run_if_applicable(self):
+    @RubyCheckBase.if_gempackage
+    def run(self):
         gem_libdir_re = re.compile('%{gem_libdir}', re.I)
         gem_extdir_re = re.compile('%{gem_extdir}', re.I)
         doc_gem_docdir_re = re.compile('%doc\s+%{gem_docdir}', re.I)

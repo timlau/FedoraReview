@@ -25,15 +25,17 @@ class PhpCheckBase(LangCheckBase):
         LangCheckBase.__init__(self, base, __file__)
         self.group = "PHP"
 
-    def is_applicable(self):
+    @staticmethod
+    def if_phppackage(run_f):
         """ Check is the tests are applicable, here it checks whether
         it is a PHP package (spec starts with 'php-') or not.
         """
-        if self.spec.name.startswith("php-"):
-            return True
-        else:
-            return False
-
+        def wrapper(self, *args, **kwargs):
+            if self.spec.name.startswith("php-"):
+                return run_f(self, *args, **kwargs)
+            else:
+                self.set_passed('not_applicable')
+        return wrapper
 
 
 class PhpCheckPhpRequire(PhpCheckBase):
@@ -46,7 +48,8 @@ class PhpCheckPhpRequire(PhpCheckBase):
         self.text = 'Package requires php-common instead of php.'
         self.automatic = True
 
-    def run_if_applicable(self):
+    @PhpCheckBase.if_phppackage
+    def run(self):
         """ Run the check """
         brs = self.spec.find_tag('Requires')
         if ('php' in brs and not 'php-common' in brs):
@@ -54,7 +57,3 @@ class PhpCheckPhpRequire(PhpCheckBase):
                 "Package should require php-common rather than php.")
         else:
             self.set_passed('php-common' in brs)
-
-
-
-

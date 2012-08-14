@@ -29,11 +29,14 @@ class RCheckBase(LangCheckBase):
         LangCheckBase.__init__(self, base, __file__)
         self.group = 'R'
 
-    def is_applicable(self):
-        """ Check is the tests are applicable, here it checks whether
-        it is a R package (spec starts with 'R-') or not.
-        """
-        return self.spec.name.startswith("R-")
+    @staticmethod
+    def if_rpackage(run_f):
+        def wrapper(self, *args, **kwargs):
+            if self.spec.name.startswith("R-"):
+                return run_f(self, *args, **kwargs)
+            else:
+                self.set_passed('not_applicable')
+        return wrapper
 
     def get_upstream_r_package_version(self):
         """ Browse the PACKAGE file of the different repo to find the
@@ -74,7 +77,8 @@ class RCheckBuildRequires(RCheckBase):
         self.text = 'Package contains the mandatory BuildRequires.'
         self.automatic = True
 
-    def run_if_applicable(self):
+    @RCheckBase.if_rpackage
+    def run(self):
         """ Run the check """
         brs = self.spec.find_tag('BuildRequires')
         tocheck = ['R-devel','tex(latex)']
@@ -95,7 +99,8 @@ class RCheckRequires(RCheckBase):
         self.text = 'Package requires R-core.'
         self.automatic = True
 
-    def run_if_applicable(self):
+    @RCheckBase.if_rpackage
+    def run(self):
         """ Run the check """
         brs = self.spec.find_tag('Requires')
         if ('R' in brs and not 'R-core' in brs):
@@ -115,7 +120,8 @@ class RCheckDoc(RCheckBase):
         self.automatic = True
         self.text = 'Package have the default element marked as %%doc :'
 
-    def run_if_applicable(self):
+    @RCheckBase.if_rpackage
+    def run(self):
         """ Run the check """
         self.doc_found = []
         for doc in self.DOCS:
@@ -143,7 +149,8 @@ class RCheckLatestVersionIsPackaged(RCheckBase):
         self.automatic = True
         self.type = 'SHOULD'
 
-    def run_if_applicable(self):
+    @RCheckBase.if_rpackage
+    def run(self):
         """ Run the check """
         cur_version = self.spec.find_tag('Version')[0]
         up_version = self.get_upstream_r_package_version()
@@ -169,7 +176,8 @@ class RCheckCheckMacro(RCheckBase):
         self.automatic = True
         self.type = 'SHOULD'
 
-    def run_if_applicable(self):
+    @RCheckBase.if_rpackage
+    def run(self):
         """ Run the check """
         sec_check = self.spec.get_section('%check')
         self.set_passed(sec_check != None)
@@ -187,7 +195,7 @@ class RCheckDir(RCheckBase):
         self.type = 'MUST'
 
     def dont_run_if_applicable(self):
-        # Disabled, does not call set_passed -> errors. 
+        # Disabled, does not call set_passed -> errors.
         """ Run the check """
         dirs = self.spec.find_tag('%dir')
         #print dirs
@@ -203,7 +211,8 @@ class RCheckBuildSection(RCheckBase):
         self.automatic = True
         self.type = 'MUST'
 
-    def run_if_applicable(self):
+    @RCheckBase.if_rpackage
+    def run(self):
         """ Run the check """
         b_dir = False
         b_test = False

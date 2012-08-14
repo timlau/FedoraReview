@@ -36,8 +36,8 @@ TEST_STATES = {'pending': '[ ]', 'pass': '[x]', 'fail': '[!]', 'na': '[-]'}
 DEFAULT_API_VERSION = '0.1'
 
 class AbstractRegistry(object):
-    """ 
-    The overall interface for a plugin module is that it must 
+    """
+    The overall interface for a plugin module is that it must
     contain a class Registry. This has a single function register()
     which return a list of checks defined by the module.
     """
@@ -50,10 +50,10 @@ class AbstractRegistry(object):
            checks: Checks instance used when initiating check
                    object
         Returns:   CheckDict instance.
-          
+
         """
         raise FedoraReviewError('Abstract register() called')
-        
+
 
 class RegistryBase(AbstractRegistry):
     """
@@ -88,10 +88,10 @@ class AbstractCheck(object):
       - implementation: 'json'|'python'|'undefined'
       - version version of api, defaults to 0.1
       - deprecates: list of  tests replaced (should not run) by this test.
-      - needs: List of tests which should run before this test. 
+      - needs: List of tests which should run before this test.
       - result: doesn't exist if test hasn't run. Else  TestResult or None.
       - checklist: the CheckDict instance this check is part of.
-   
+
     Methods:
       - run(): run the test, sets result. The result is None if
         the test is not applicable. Otherwise, it's a TestResult
@@ -113,7 +113,7 @@ class AbstractCheck(object):
         self.version = '0.1'
         self.deprecates = []
         self.needs = []
- 
+
 
     name = property(lambda self: self._name,
                     lambda self,n: setattr(self, '_name', n))
@@ -130,7 +130,7 @@ class AbstractCheck(object):
 
 class CheckDict(dict):
     """
-    A Dictionary of AbstractCheck, maintaining checkdict property. 
+    A Dictionary of AbstractCheck, maintaining checkdict property.
     """
 
     def __init__(self, *args, **kwargs):
@@ -142,7 +142,7 @@ class CheckDict(dict):
 
     def update(self, *args, **kwargs):
         if len(args) > 1:
-            raise TypeError("update: at most 1 arguments, got %d" % 
+            raise TypeError("update: at most 1 arguments, got %d" %
                             len(args))
         other = dict(*args, **kwargs)
         for key in other.iterkeys():
@@ -177,17 +177,10 @@ class CheckBase(AbstractCheck, Helpers):
         self.state = None
         self.output_extra = None
         self.attachments = []
-        
+
     name = property(lambda self: self.__class__.__name__)
 
     def run(self):
-        if self.is_applicable():
-            self.run_if_applicable()
-        else:
-            self.set_passed('not_applicable')
-
-    def run_if_applicable(self):
-        ''' By default, a manual test returning 'inconclusive'.'''
         self.set_passed('inconclusive')
 
     def set_passed(self, result, output_extra=None, attachments=[]):
@@ -215,13 +208,6 @@ class CheckBase(AbstractCheck, Helpers):
                        self.deprecates, self.text, self.type,
                        self.state, self.output_extra, self.attachments)
         self.result = r
-
-    def is_applicable(self):
-        '''
-        check if this test is applicable
-        overload in child class if needed
-        '''
-        return True
 
     def sources_have_files(self, pattern):
         ''' Check if rpms has file matching a pattern'''
@@ -275,9 +261,9 @@ class LangCheckBase(CheckBase):
     """ Base class for language specific class. """
     header = 'Language'
 
-    def is_applicable(self):
+    def run(self):
         """ By default, language specific check are disabled. """
-        return False
+        self.set_passed('not_applicable')
 
 
 class TestResult(object):
