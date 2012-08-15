@@ -214,8 +214,9 @@ class GemCheckExcludesGemCache(GemCheckBase):
     def __init__(self, base):
         GemCheckBase.__init__(self, base)
         self.url = self.gl_uri
-        self.text = 'Gem package must exclude cached Gem.'
+        self.text = 'Gem package should exclude cached Gem.'
         self.automatic = True
+        self.type = 'SHOULD'
 
     def run(self):
         # it seems easier to check whether .gem is not present in rpms than to examine %files
