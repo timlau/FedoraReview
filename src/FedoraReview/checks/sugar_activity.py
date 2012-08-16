@@ -16,12 +16,14 @@
 #
 # (C) 2012 - Michael Scherer <misc@fedoraproject.org>
 
-
 from FedoraReview import LangCheckBase
 
 
 class SugarActivityCheckBase(LangCheckBase):
     header = 'SugarActivity'
+
+    def __init__(self, base):
+        LangCheckBase.__init__(self, base)
 
     def is_applicable(self):
         return self.has_files_re('^/usr/(share|lib|lib64)/sugar/activities/')
@@ -36,7 +38,7 @@ class SugarActivityCheckNaming(SugarActivityCheckBase):
         self.type = 'MUST'
         self.automatic = True
 
-    def run(self):
+    def run_on_applicable(self):
         if not self.spec.name.startswith('sugar-'):
             self.set_passed(False)
             return
@@ -53,7 +55,7 @@ class SugarActivityCheckBuildRequires(SugarActivityCheckBase):
         self.type = 'MUST'
         self.automatic = True
 
-    def run(self):
+    def run_on_applicable(self):
         br = self.spec.find_tag('BuildRequires')
         self.set_passed('sugar-toolkit' in br)
 

@@ -166,6 +166,8 @@ class Checks(object):
             self.log.debug('Running external module : %s' % ext.plugin_path)
             ext.run()
             for result in ext.get_results():
+                if result.result == 'not_applicable':
+                    continue
                 results.append(result)
                 if result.type == 'MUST' and result.result == "fail":
                     issues.append(result)
@@ -178,10 +180,11 @@ class Checks(object):
                 deprecated.extend(test.deprecates)
 
         for test in self.checks:
-            if test.is_applicable() and test.name not in deprecated:
+            if  test.name not in deprecated:
                 test.run()
                 result = test.get_result()
-                results.append(result)
+                if result:
+                    results.append(result)
                 attachments.extend(result.attachments)
                 self.log.debug('Running check : %s %s [%s] ' % (
                     test.name,
@@ -199,11 +202,16 @@ class Checks(object):
                                attachments)
 
     def __show_output(self, output, results, issues, attachments):
+      
 
         def write_sections(results):
+
             groups = sorted(list(set([test.group for test in results])))
             for group in groups:
-                 res = filter(lambda t: t.group == group, results)
+                 res = filter(lambda t: 
+                                  t.group == group and 
+                                  t.result != 'not_applicable', 
+                              results)
                  if res == []:
                     continue
                  output.write('\n' + group + ':\n')
