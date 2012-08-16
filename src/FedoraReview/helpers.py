@@ -66,6 +66,10 @@ class Helpers(object):
 
     def urlretrieve(self, url, path):
         try:
+            # we need to timeout eventually if there are problems
+            import socket
+            socket.setdefaulttimeout(30)
+
             istream =  urllib.FancyURLopener().open(url)
             if istream.getcode() and istream.getcode() != 200:
                 raise DownloadError(istream.getcode(), url)
