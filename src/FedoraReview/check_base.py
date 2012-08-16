@@ -61,25 +61,35 @@ class CheckBase(Helpers):
     def __hash__(self):
         return self.__class__.__name__.__hash__()
 
+    def run_on_applicable(self):
+        self.set_passed('inconclusive')
+
     def run(self):
         ''' By default, a manual test returning 'inconclusive'.'''
-        self.set_passed('inconclusive')
+        if self.is_applicable():
+             self.run_on_applicable()
+        else:
+             self.set_passed('not_applicable')
 
     def set_passed(self, result, output_extra=None):
         '''
         Set if the test is passed, failed or N/A
         and set optional extra output to be shown in repost
         '''
-        if result == None:
+        if result == 'not_applicable':
+            self.state = 'not_applicable'
+        elif result == None or result == 'na':
             self.state = 'na'
-        elif result == True:
+        elif result == True or result == 'pass':
             self.state = 'pass'
-        elif result == 'inconclusive':
+        elif result == False or result == 'fail':
+            self.state = 'fail'
+        elif result == 'inconclusive' or result == 'pending':
             self.state = 'pending'
         else:
             self.state = 'fail'
-        if output_extra:
-            self.output_extra = output_extra
+        self.output_extra = output_extra
+
 
     name = property(lambda self: self.__class__.__name__)
 

@@ -5,7 +5,10 @@ import re
 from FedoraReview import LangCheckBase, Attachment
 
 class CCppCheckBase(LangCheckBase):
-    header='C/C++'
+    header = 'C/C++'
+
+    def __init__(self, base):
+        LangCheckBase.__init__(self, base)
 
     def is_applicable(self):
         """Need more comprehensive check and return True in valid cases"""
@@ -31,6 +34,7 @@ class CheckLDConfig(CCppCheckBase):
         self.automatic = True
         self.type = 'MUST'
 
+
     def is_applicable(self):
         '''
         check if this test is applicable
@@ -38,7 +42,7 @@ class CheckLDConfig(CCppCheckBase):
         return self.has_files_re('/usr/(lib|lib64)/[\w\-]*\.so\.[0-9]')
 
 
-    def run(self):
+    def run_on_applicable(self):
         sources = ['%post','%postun']
         for source in sources:
             passed = False
@@ -77,7 +81,7 @@ class CheckHeaderFiles(CCppCheckBase):
         '''
         return self.has_files('*.h')
 
-    def run(self):
+    def run_on_applicable(self):
         files = self.get_files_by_pattern('*.h')
         passed = True
         extra = ""
@@ -112,7 +116,7 @@ class CheckStaticLibs(CCppCheckBase):
         '''
         return self.has_files('*.a')
 
-    def run(self):
+    def run_on_applicable(self):
         files = self.get_files_by_pattern('*.a')
         passed = True
         extra = ""
@@ -158,7 +162,7 @@ class CheckSoFiles(CCppCheckBase):
         '''
         return self.has_files("*.so")
 
-    def run(self):
+    def run_on_applicable(self):
         files = self.get_files_by_pattern('*.so')
         in_libdir = False
         in_private = False
@@ -204,7 +208,7 @@ class CheckLibToolArchives(CCppCheckBase):
         self.automatic = True
         self.type = 'MUST'
 
-    def run(self):
+    def run_on_applicable(self):
         if not self.has_files('*.la'):
             self.set_passed(True)
         else:
@@ -227,7 +231,7 @@ class CheckRPATH(CCppCheckBase):
         self.automatic = True
         self.type = 'MUST'
 
-    def run(self):
+    def run_on_applicable(self):
         for line in self.srpm.rpmlint_output:
             if 'binary-or-shlib-defines-rpath' in line:
                 self.set_passed(False, 'See rpmlint output')

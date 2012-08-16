@@ -38,12 +38,13 @@ from test_env import no_net
 class TestRChecks(unittest.TestCase):
 
     def setUp(self):
-        sys.argv = ['fedora-review','-rpn','R-Rdummypkg']
         os.chdir('test-R')
         if os.path.exists('R-Rdummypkg'):
              shutil.rmtree('R-Rdummypkg')
-        Settings.init(True)
         ReviewDirs.reset()
+        ReviewDirs.startdir = os.getcwd()
+        sys.argv = ['fedora-review','-rpn','R-Rdummypkg']
+        Settings.init(True)
 
     @unittest.skipIf(no_net, 'No network available')
     def test_all_checks(self):

@@ -330,11 +330,12 @@ class TestMisc(unittest.TestCase):
 
     def test_desktop_file_bug(self):
         os.chdir('desktop-file')
+        ReviewDirs.reset()
+        ReviewDirs.startdir = os.getcwd()
         if os.path.exists('python-test'):
             shutil.rmtree('python-test')
         sys.argv = ['fedora-review','-rpn','python-test']
         Settings.init(True)
-        ReviewDirs.reset()
         bug = NameBug('python-test')
         check = self.run_single_check(bug,'CheckDesktopFileInstall')
         self.assertEqual(check.state, 'pass')
