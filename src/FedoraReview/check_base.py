@@ -36,7 +36,6 @@ TEST_STATES = {'pending': '[ ]', 'pass': '[x]', 'fail': '[!]', 'na': '[-]'}
 class CheckBase(Helpers):
 
     deprecates = []
-    header = 'Generic'
 
     def __init__(self, base):
         Helpers.__init__(self)
