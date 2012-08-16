@@ -30,6 +30,7 @@ import re
 import sys
 
 from review_error import FedoraReviewError, CleanExitError
+from xdg_dirs import XdgDirs
 
 SYS_PLUGIN_DIR  = "/usr/share/fedora-review/plugins:%s"
 MY_PLUGIN_DIR   = "~/.config/fedora-review/plugins"
@@ -43,10 +44,7 @@ PARSER_SECTION = 'review'
 
 LOG_ROOT = 'FedoraReview'
 
-SESSION_LOG = '%s/fedora-review.log' % os.environ['XDG_CACHE_HOME'] \
-                  if 'XDG_CACHE_HOME' in os.environ \
-              else os.path.expanduser('~/.cache/fedora-review.log')
-
+SESSION_LOG = os.path.join(XdgDirs.cachedir, 'fedora-review.log')
 
 class ConfigError(FedoraReviewError):
     def __init__(self, what):
