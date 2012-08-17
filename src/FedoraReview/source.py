@@ -73,7 +73,7 @@ class Source(Helpers):
 
         if not is_url or not self.downloaded:  # this is a local file in the SRPM
             local_src = os.path.join(ReviewDirs.startdir, url)
-            if os.path.exists(local_src):
+            if os.path.isfile(local_src):
                 self.log.info(
                     "Using local file " + url + " as " + tag)
                 srcdir = ReviewDirs.startdir
