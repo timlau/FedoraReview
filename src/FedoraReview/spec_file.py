@@ -237,7 +237,7 @@ class SpecFile(object):
         my_lines = list(self.lines)
         if skip_changelog:
            line = my_lines.pop()
-           while not '%changelog' in line:
+           while not '%changelog' in line.lower():
                line = my_lines.pop()
         result = []
         for line in my_lines:
