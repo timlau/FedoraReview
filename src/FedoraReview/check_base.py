@@ -71,36 +71,30 @@ class CheckBase(Helpers):
         else:
              self.set_passed('not_applicable')
 
-    def set_passed(self, result, output_extra=None):
+    def set_passed(self, result, output_extra=None, attachments=[]):
         '''
         Set if the test is passed, failed or N/A
         and set optional extra output to be shown in repost
         '''
         if result == 'not_applicable':
-            self.state = 'not_applicable'
-        elif result == None or result == 'na':
-            self.state = 'na'
+            self.result = None
+            return
+        if result == None or result == 'na':
+            state = 'na'
         elif result == True or result == 'pass':
-            self.state = 'pass'
+            state = 'pass'
         elif result == False or result == 'fail':
-            self.state = 'fail'
+            state = 'fail'
         elif result == 'inconclusive' or result == 'pending':
-            self.state = 'pending'
+            state = 'pending'
         else:
-            self.state = 'fail'
-        self.output_extra = output_extra
-
+            state = 'fail'
+        r = TestResult(self.name, self.url, self.header,
+                       self.deprecates, self.text, self.type,
+                       state, output_extra, attachments)
+        self.result = r
 
     name = property(lambda self: self.__class__.__name__)
-
-    def get_result(self):
-        '''
-        Get the test report result for this test
-        '''
-        ret = TestResult(self.__class__.__name__, self.url, self.__class__.header,
-                          self.__class__.deprecates, self.text, self.type,
-                          self.state, self.output_extra, self.attachments)
-        return ret
 
     def is_applicable(self):
         '''
