@@ -1002,8 +1002,7 @@ class CheckNoConfigInUsr(CheckBase):
         for section in sections:
             for line in sections[section]:
                 if line.startswith('%config'):
-                    fn = line.split(' ')[1]
-                    if fn.startswith('%{_datadir}'):
+                    if line.find('%{_datadir}') != -1:
                         passed = False
                         extra += line
 
