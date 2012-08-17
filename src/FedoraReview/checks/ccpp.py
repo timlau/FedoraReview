@@ -5,10 +5,10 @@ import re
 from FedoraReview import LangCheckBase, Attachment
 
 class CCppCheckBase(LangCheckBase):
-    header = 'C/C++'
+    group = 'C/C++'
 
     def __init__(self, base):
-        LangCheckBase.__init__(self, base)
+        LangCheckBase.__init__(self, base, __file__)
 
     def is_applicable(self):
         """Need more comprehensive check and return True in valid cases"""

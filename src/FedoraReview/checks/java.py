@@ -7,10 +7,10 @@ from FedoraReview import LangCheckBase
 
 class JavaCheckBase(LangCheckBase):
     """Base check for Java checks"""
-    header = "Java"
+    group = "Java"
 
     def __init__(self, base):
-        LangCheckBase.__init__(self, base)
+        LangCheckBase.__init__(self, base, __file__)
 
     def is_applicable(self):
         if self.has_files("*.jar") or self.has_files("*.pom"):
@@ -212,7 +212,7 @@ class CheckJavaFullVerReqSub(JavaCheckBase):
 
 class CheckNoOldMavenDepmap(JavaCheckBase):
     """Check if old add_to_maven_depmap macro is being used"""
-    header = "Maven"
+    group = "Maven"
 
     def __init__(self, base):
         JavaCheckBase.__init__(self, base)
@@ -228,7 +228,7 @@ class CheckNoOldMavenDepmap(JavaCheckBase):
 
 class CheckAddMavenDepmap(JavaCheckBase):
     """Check if there is a proper call of add_maven_depmap macro"""
-    header = "Maven"
+    group = "Maven"
 
     def __init__(self, base):
         JavaCheckBase.__init__(self, base)
@@ -251,7 +251,7 @@ class CheckAddMavenDepmap(JavaCheckBase):
 
 class CheckUseMavenpomdirMacro(JavaCheckBase):
     """Use proper _mavenpomdir macro instead of old path"""
-    header = "Maven"
+    group = "Maven"
 
     def __init__(self, base):
         JavaCheckBase.__init__(self, base)
@@ -270,7 +270,7 @@ class CheckUseMavenpomdirMacro(JavaCheckBase):
 
 class CheckUpdateDepmap(JavaCheckBase):
     """Check if there is deprecated %update_maven_depmap macro being used"""
-    header = "Maven"
+    group = "Maven"
 
     def __init__(self, base):
         JavaCheckBase.__init__(self, base)
@@ -290,7 +290,7 @@ class CheckUpdateDepmap(JavaCheckBase):
 class CheckNoRequiresPost(JavaCheckBase):
     """Check if package still has requires(post/postun) on
     jpackage-utils"""
-    header = "Maven"
+    group = "Maven"
 
     def __init__(self, base):
         JavaCheckBase.__init__(self, base)
@@ -311,7 +311,7 @@ class CheckNoRequiresPost(JavaCheckBase):
 class CheckTestSkip(JavaCheckBase):
     """Check if -Dmaven.test.skip is being used and look for
     comment"""
-    header = "Maven"
+    group = "Maven"
 
     def __init__(self, base):
         JavaCheckBase.__init__(self, base)
@@ -352,7 +352,7 @@ class CheckTestSkip(JavaCheckBase):
 class CheckLocalDepmap(JavaCheckBase):
     """Check if -Dmaven.local.depmap is being used and look for
     comment"""
-    header = "Maven"
+    group = "Maven"
 
     def __init__(self, base):
         JavaCheckBase.__init__(self, base)
@@ -416,7 +416,7 @@ class JarFilename(JavaCheckBase):
 
 class CheckPomInstalled(JavaCheckBase):
     """Check if pom.xml files from source tarballs are installed"""
-    header = "Maven"
+    group = "Maven"
 
     def __init__(self, base):
         JavaCheckBase.__init__(self, base)

@@ -9,12 +9,12 @@ from FedoraReview import LangCheckBase
 
 class RubyCheckBase(LangCheckBase):
     """ Base class for all Ruby specific checks. """
-    header = 'Ruby'
+    group = 'Ruby'
     _guidelines_uri = 'http://fedoraproject.org/wiki/Packaging:Ruby'
     _guidelines_section_uri = '%(uri)s#%%(section)s' % {'uri': _guidelines_uri}
 
     def __init__(self, base):
-        LangCheckBase.__init__(self, base)
+        LangCheckBase.__init__(self, base, __file__)
 
     def is_applicable(self):
         return self.is_gem() or self.is_nongem()
