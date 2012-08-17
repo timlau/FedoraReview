@@ -31,10 +31,10 @@ from FedoraReview import CheckBase, Attachment, ReviewDirs, Mock, Settings
 
 
 class GenericCheckBase(CheckBase):
-    header = 'Generic'
+    group = 'Generic'
 
     def __init__(self, base):
-        CheckBase.__init__(self, base)
+        CheckBase.__init__(self, base, __file__)
         self.group = 'Generic'
 
     def is_applicable(self):
@@ -294,7 +294,7 @@ class CheckSourceMD5(GenericCheckBase):
         for s in sources:
             s.extract()
             upstream = s.extract_dir
-            local = self.base.srpm.extract(s.filename)
+            local = self.srpm.extract(s.filename)
             if not local:
                  self.log.warn(
                      "Cannot extract local source: " + s.filename)
@@ -312,7 +312,7 @@ class CheckSourceMD5(GenericCheckBase):
         return (True,  None)
 
     def run(self):
-        sources = self.base.sources.get_all()
+        sources = self.sources.get_all()
         if len(sources) == 0:
             self.log.debug('No testable sources')
             self.set_passed('inconclusive', 'Package has no sources or they'
@@ -1842,15 +1842,5 @@ class CheckObsoletesForRename(GenericCheckBase):
         self.text = 'If the package is a rename of another package, proper Obsoletes and Provides are present.'
         self.automatic = False
         self.type = 'MUST'
-
-
-
-class LangCheckBase(GenericCheckBase):
-    """ Base class for language specific class. """
-    header = 'Language'
-
-    def is_applicable(self):
-        """ By default, language specific check are disabled. """
-        return False
 
 # vim: set expandtab: ts=4:sw=4:

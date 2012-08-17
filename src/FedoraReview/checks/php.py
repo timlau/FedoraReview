@@ -11,14 +11,14 @@ from FedoraReview import LangCheckBase, Settings
 
 class PhpCheckBase(LangCheckBase):
     """ Base class for all PHP specific checks. """
-    header="PHP"
+    group="PHP"
     DIR = ['%{packname}']
     DOCS = []
     URLS = []
     log = Settings.get_logger()
 
     def __init__(self, base):
-        LangCheckBase.__init__(self, base)
+        LangCheckBase.__init__(self, base, __file__)
         self.group = "PHP"
 
     def is_applicable(self):

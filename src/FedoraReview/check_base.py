@@ -30,46 +30,92 @@ from helpers import Helpers
 from settings import Settings
 from mock import Mock
 
-TEST_STATES = {'pending': '[ ]', 'pass': '[x]', 'fail': '[!]', 'na': '[-]'}
+
+class AbstractCallError(Exception):
+    pass
 
 
-class CheckBase(Helpers):
+class AbstractCheck(object):
+    """
+    The basic interface for a test (a. k a. check) as seen from
+    the outside.
 
-    deprecates = []
+    Class attributes:
+      - version version of api, defaults to 0.1
+      - group: 'Generic', 'C/C++', 'PHP': name of the registry
+                which instantiated this check.
+      - implementation: 'json'|'python'|'shell', defaults to 
+        'python'.
 
-    def __init__(self, base):
-        Helpers.__init__(self)
-        self.base = base
-        self.spec = base.spec
-        self.srpm = base.srpm
-        self.sources = base.sources
-        self.url = None
-        self.text = None
-        self.description = None
-        self.state = 'pending'
-        self.type = 'MUST'
-        self.result = None
-        self.output_extra = None
-        self.attachments = []
+    Properties:
+      - name: Unique string.
+      - defined_in: Filename (complete path).
+      - deprecates: List of  tests replaced (should not run) by this
+        test  if the test is applicable.
+      - needs: List of tests which should run before this test.
+      - result: Undefined until run(), None if test is not
+        applicable, else TestResult.
+
+    Methods:
+      - run(): Run the test, sets result
+
+    Equality:
+      - Tests are considered equal if they have the same name.
+    """
+
+    version        = '0.1'
+    implementation = 'python'
+
+    def __init__(self, defined_in):
+        self.defined_in = defined_in
+        self.deprecates = []
+        self.needs = []
+        self._name = 'Undefined'
+
+    name = property(lambda self: self._name,
+                    lambda self,n: setattr(self, '_name', n))
 
     def __eq__(self, other):
-       return self.__class__.__name__.__eq__(other)
+       return self.name.__eq__(other)
 
     def __ne__(self, other):
-       return self.__class__.__name__.__ne__(other)
+       return self.name.__ne__(other)
 
     def __hash__(self):
-        return self.__class__.__name__.__hash__()
+        return self.name.__hash__()
 
-    def run_on_applicable(self):
-        self.set_passed('inconclusive')
+    def __str__(self):
+        return self.name
 
     def run(self):
-        ''' By default, a manual test returning 'inconclusive'.'''
-        if self.is_applicable():
-             self.run_on_applicable()
-        else:
-             self.set_passed('not_applicable')
+        raise AbstractCallError('AbstractCheck')
+
+class GenericCheck(AbstractCheck):
+    """
+    Common interface inherited by all Check implementations.
+
+    Properties:
+      - text: free format user info on test, one line.
+      - description: longer, multiline free format text info.
+      - type: 'MUST'|'SHOULD'|'EXTRA'|'UNDEFINED', defaults to
+        'MUST'
+      - url: Usually guidelines url, possibly None.
+      - checks: Checks instance which created this check.
+    """
+
+    def __init__(self, checks, defined_in):
+        AbstractCheck.__init__(self, defined_in)
+        self.checks = checks
+        self.url = '(this test has no URL)'
+        self.text = 'No description'
+        self.description = 'This test has no description'
+        self.type = 'MUST'
+        self.needs = ['CheckBuildCompleted']
+
+    spec = property(lambda self: self.checks.spec)
+    srpm = property(lambda self: self.checks.srpm)
+    sources = property(lambda self: self.checks.sources)
+    name = property(lambda self: self.__class__.__name__)
 
     def set_passed(self, result, output_extra=None, attachments=[]):
         '''
@@ -89,19 +135,8 @@ class CheckBase(Helpers):
             state = 'pending'
         else:
             state = 'fail'
-        r = TestResult(self.name, self.url, self.header,
-                       self.deprecates, self.text, self.type,
-                       state, output_extra, attachments)
+        r = TestResult(self, state, output_extra, attachments)
         self.result = r
-
-    name = property(lambda self: self.__class__.__name__)
-
-    def is_applicable(self):
-        '''
-        check if this test is applicable
-        overload in child class if needed
-        '''
-        return True
 
     def sources_have_files(self, pattern):
         ''' Check if rpms has file matching a pattern'''
@@ -124,12 +159,36 @@ class CheckBase(Helpers):
         ''' Check if rpms has file matching a pattern'''
         fn_pat = re.compile(pattern_re)
         rpm_files = self.srpm.get_files_rpms()
-        #print rpm_files, pattern_re
         for rpm in rpm_files:
             for fn in rpm_files[rpm]:
                 if fn_pat.search(fn):
                     return True
         return False
+
+
+class CheckBase(GenericCheck, Helpers):
+    """ Base class for "regular" python checks. """
+
+    def __init__(self, checks, defined_in):
+        Helpers.__init__(self)
+        GenericCheck.__init__(self, checks, defined_in)
+
+    def is_applicable(self):
+        '''
+        check if this test is applicable
+        overload in child class if needed
+        '''
+        return True
+
+    def run_if_applicable(self):
+        self.set_passed('inconclusive')
+
+    def run(self):
+        ''' By default, a manual test returning 'inconclusive'.'''
+        if self.is_applicable():
+             self.run_if_applicable()
+        else:
+             self.set_passed('not_applicable')
 
     def get_files_by_pattern(self, pattern):
         result = {}
@@ -141,26 +200,61 @@ class CheckBase(Helpers):
                     result[rpm].append(fn)
         return result
 
+    group = property(lambda self: self.registry.group)
+
 
 class LangCheckBase(CheckBase):
     """ Base class for language specific class. """
-    header = 'Language'
 
     def is_applicable(self):
         """ By default, language specific check are disabled. """
         return False
 
 
-class TestResult(object):
+class CheckDict(dict):
+    """
+    A Dictionary of AbstractCheck, maintaining checkdict property.
+    """
 
-    def __init__(self, name, url, group, deprecates, text, check_type,
-                 result, output_extra, attachments=[]):
-        self.name = name
-        self.url = url
-        self.group = group
-        self.deprecates = deprecates
-        self.text = re.sub("\s+", " ", text) if text else ''
-        self.type = check_type
+    def __init__(self, *args, **kwargs):
+        self.update(*args, **kwargs)
+
+    def __setitem__(self, key, value):
+        value.checkdict = self
+        dict.__setitem__(self, key, value)
+
+    def update(self, *args, **kwargs):
+        if len(args) > 1:
+            raise TypeError("update: at most 1 arguments, got %d" %
+                            len(args))
+        other = dict(*args, **kwargs)
+        for key in other.iterkeys():
+            self[key] = other[key]
+
+    def add(self, check):
+        self[check.name] = check
+
+    def extend(self, checks):
+        for c in checks:
+            self.add(c)
+
+    def set_single_check(self, check_name):
+        c = self[check_name]
+        self.clear()
+        self[check_name] = c
+
+
+class TestResult(object):
+    TEST_STATES = {
+         'pending': '[ ]', 'pass': '[x]', 'fail': '[!]', 'na': '[-]'}
+
+    def __init__(self, check, result, output_extra, attachments=[]):
+        self.name = check.name
+        self.url = check.url
+        self.group = check.group
+        self.deprecates = check.deprecates
+        self.text = re.sub("\s+", " ", check.text) if check.text else ''
+        self.type = check.type
         self.result = result
         self.output_extra = output_extra
         self.attachments = attachments
@@ -171,8 +265,8 @@ class TestResult(object):
 
     def get_text(self):
         strbuf = StringIO.StringIO()
-        main_lines = self.wrapper.wrap("%s: %s" % (TEST_STATES[self.result],
-                                                   self.text))
+        main_lines = self.wrapper.wrap(
+            "%s: %s" % (self.TEST_STATES[self.result], self.text))
         strbuf.write("%s" % '\n'.join(main_lines))
         if self.output_extra and self.output_extra != "":
             strbuf.write("\n")
@@ -181,6 +275,9 @@ class TestResult(object):
             strbuf.write('\n'.join(extra_lines))
 
         return strbuf.getvalue()
+
+    def __str__(self):
+        self.get_text()
 
 
 class Attachment(object):

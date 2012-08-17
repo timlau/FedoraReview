@@ -55,11 +55,11 @@ class TestRChecks(unittest.TestCase):
         self.checks = Checks(self.bug.spec_file, self.bug.srpm_file)
         self.checks.run_checks(writedown=False)
         for check in self.checks.checks:
-            if check.is_applicable():
-                self.assertTrue(check.header == 'Generic' or
-                                check.header == 'R')
-                result = check.get_result()
-                self.assertTrue(result.result in ['pass', 'pending', 'fail'])
+            if check.result:
+                self.assertTrue(check.group == 'Generic' or 
+                                check.group == 'R')
+                self.assertIn(check.result.result, 
+                              ['pass','pending','fail'])
         os.chdir('..')
 
 

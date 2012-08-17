@@ -163,22 +163,28 @@ class JSONPlugin(Helpers):
 
     def __handle_reply(self, reply):
         """Handle incomming commands and results"""
+
+        class JSON_TestResult(TestResult):
+            def __init__(self, map_):
+                 self.name = map_['name']
+                 self.text = map_['text']
+                 self.url = map_['url']
+                 self.type = map_['type']
+                 self.deprecates = map_['deprecates']
+                 self.result = map_['result']
+                 self.group = 'json'
+                 extra = None
+                 if "output_extra" in map_:
+                     extra  =  map_['output_extra']
+                 TestResult.__init__(self, self, map_['result'], extra, [])
+
         if reply.command == "results":
             self.__debug("Processing results")
             if hasattr(reply, "version"):
                 self.version = reply.version
 
             for result in reply.checks:
-                extra = None
-                if "output_extra" in result:
-                    extra = result["output_extra"]
-                self.results.append(TestResult(result["name"],
-                                               result["url"],
-                                               result["group"],
-                                               result["deprecates"],
-                                               result["text"],
-                                               result["type"],
-                                               result["result"], extra))
+                self.results.append(JSON_TestResult(result))
         elif reply.command == "get_section":
             self.__debug("get_section call")
             sec_name = "%%%s" % reply.section

@@ -10,7 +10,7 @@ from FedoraReview import LangCheckBase
 
 class RCheckBase(LangCheckBase):
     """ Base class for all R specific checks. """
-    header="R"
+    group =  'R'
     DIR = ['%{packname}']
     DOCS = ['doc', 'DESCRIPTION', 'NEWS', 'CITATION']
     URLS = [
@@ -22,7 +22,7 @@ class RCheckBase(LangCheckBase):
     ]
 
     def __init__(self, base):
-        LangCheckBase.__init__(self, base)
+        LangCheckBase.__init__(self, base, __file__)
 
     def is_applicable(self):
         """ Check is the tests are applicable, here it checks whether

@@ -20,10 +20,10 @@ from FedoraReview import LangCheckBase
 
 
 class SugarActivityCheckBase(LangCheckBase):
-    header = 'SugarActivity'
+    group = 'SugarActivity'
 
     def __init__(self, base):
-        LangCheckBase.__init__(self, base)
+        LangCheckBase.__init__(self, base, __file__)
 
     def is_applicable(self):
         return self.has_files_re('^/usr/(share|lib|lib64)/sugar/activities/')
