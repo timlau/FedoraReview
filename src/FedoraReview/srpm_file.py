@@ -22,6 +22,7 @@ Tools for helping Fedora package reviewers
 
 import logging
 import os.path
+import shutil
 
 from glob import glob
 from subprocess import call
@@ -87,8 +88,9 @@ class SRPMFile(Helpers):
                                               self.filename),
                                  extract_dir)
         if not rv:
-            self.log.error("Cannot unpack " +  self.filename)
-            return None
+            self.log.debug("Cannot unpack %s, so probably not an "
+                    "archive. Copying instead" %  self.filename )
+            shutil.copy(os.path.join(self.unpacked_src, self.filename), extract_dir)
         return extract_dir
 
     def build(self, force=False):
