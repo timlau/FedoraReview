@@ -35,6 +35,7 @@ class GenericCheckBase(CheckBase):
 
     def __init__(self, base):
         CheckBase.__init__(self, base)
+        self.group = 'Generic'
 
     def is_applicable(self):
         return True
@@ -362,9 +363,8 @@ class CheckSourceMD5(GenericCheckBase):
         finally:
             if passed:
                 msg = None
-            self.set_passed(passed, msg)
-            self.attachments = [Attachment('MD5-sum check', text, 10)]
-
+            attachments = [Attachment('MD5-sum check', text, 10)]
+            self.set_passed(passed, msg, attachments)
 
 
 class CheckBuild(GenericCheckBase):
@@ -411,8 +411,8 @@ class CheckRpmLint(GenericCheckBase):
             no_errors, rc = self.srpm.rpmlint_rpms()
             text = 'No rpmlint messages.' if no_errors else \
                 'There are rpmlint messages (see attachment).'
-            self.set_passed(True, text)
-            self.attachments = [ Attachment('Rpmlint', rc, 5) ]
+            attachments = [ Attachment('Rpmlint', rc, 5) ]
+            self.set_passed(True, text, attachments)
         else:
             self.set_passed(False, 'Mock build failed')
 
@@ -439,9 +439,9 @@ class CheckRpmLintInstalled(GenericCheckBase):
             no_errors, rc = Mock.rpmlint_rpms(rpms)
             text = 'No rpmlint messages.' if no_errors else \
                 'There are rpmlint messages (see attachment).'
-            self.set_passed(True, text)
-            self.attachments = \
+            attachments = \
                 [Attachment('Rpmlint (installed packages)', rc+'\n', 5)]
+            self.set_passed(True, text, attachments)
         else:
             self.set_passed(False, 'Mock build failed')
 
@@ -483,13 +483,12 @@ class CheckSpecAsInSRPM(GenericCheckBase):
             self.set_passed(False, "OS error runnning diff")
             return
         if output and len(output) > 0:
-            self.set_passed(False, 'Spec file as given by url is not'
-                                   ' the same as in SRPM'
-                                   ' (see attached diff).')
             a = Attachment("Diff spec file in url and in SRPM",
                            output,
                            8)
-            self.attachments = [a]
+            text = ('Spec file as given by url is not the same as in '
+                    'SRPM (see attached diff).')
+            self.set_passed(False, text, [a])
         else:
             self.set_passed(True)
         return
@@ -1375,12 +1374,10 @@ class CheckPackageInstalls(GenericCheckBase):
         if output == None:
             self.set_passed(True, None)
         else:
+            attachments = [Attachment('Installation errors', output, 3)]
             self.set_passed(False,
-                           "Installation errors (see attachment)")
-            self.attachments = \
-                [Attachment('Installation errors', output, 3)]
-
-
+                           "Installation errors (see attachment)",
+                            attachments)
 
 
 class CheckObeysFHS(GenericCheckBase):
@@ -1752,12 +1749,13 @@ class CheckFileRequires(GenericCheckBase):
             cmd = 'rpm -qp --provides ' + rpm
             provides = self._run_cmd(cmd).split('\n')
             prov_txt += get_provides(rpm, provides) + '\n'
-        self.attachments = [ Attachment( 'Requires', req_txt, 10),
-                             Attachment( 'Provides', prov_txt, 10)]
+        attachments = [ Attachment( 'Requires', req_txt, 10),
+                        Attachment( 'Provides', prov_txt, 10)]
         if len(wrong_req) == 0:
-            self.set_passed(True)
+            self.set_passed(True, None, attachments)
         else:
-            self.set_passed(False, "Incorrect Requires : %s " %  (', '.join(wrong_req)))
+            text= "Incorrect Requires : %s " % (', '.join(wrong_req))
+            self.set_passed(False, text, attachments)
 
 
 class CheckTimeStamps(GenericCheckBase):

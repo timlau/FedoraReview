@@ -182,15 +182,14 @@ class Checks(object):
         for test in self.checks:
             if  test.name not in deprecated:
                 test.run()
-                result = test.get_result()
-                if result:
-                    results.append(result)
-                attachments.extend(result.attachments)
                 self.log.debug('Running check : %s %s [%s] ' % (
                     test.name,
                     " " * (30 - len(test.name)),
                     test.state))
+                result = test.result
                 if result:
+                    results.append(result)
+                    attachments.extend(result.attachments)
                     if result.type == 'MUST' and result.result == "fail":
                         issues.append(result)
 
