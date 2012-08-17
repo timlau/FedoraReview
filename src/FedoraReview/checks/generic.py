@@ -342,6 +342,9 @@ class CheckSourceMD5(CheckBase):
                 if passed:
                    text += 'However, diff -r shows no differences\n'
                    msg = 'checksum differs but diff -r is OK'
+                elif not diff:
+                    msg += 'checksum differs and there are problems '\
+                           'running diff. Please verify manually.\n'
                 else:
                    p = os.path.join(ReviewDirs.root, 'diff.txt')
                    with open(p, 'w') as f:
