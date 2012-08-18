@@ -430,7 +430,8 @@ class CheckRpmLintInstalled(CheckBase):
     def run(self):
         if self.srpm.build() != -1:
             rpms = self.srpm.get_used_rpms('.src.rpm')
-            Mock.install(rpms)
+            if not Settings.nobuild:
+                Mock.install(rpms)
             no_errors, rc = Mock.rpmlint_rpms(rpms)
             text = 'No rpmlint messages.' if no_errors else \
                 'There are rpmlint messages (see attachment).'
@@ -1371,6 +1372,10 @@ class CheckPackageInstalls(CheckBase):
     def run(self):
         if Settings.prebuilt:
             self.set_passed('inconclusive', 'Using prebuilt rpms')
+            return
+        if Settings.nobuild:
+            self.set_passed('inconclusive', 
+                            'Will not install using --no-build')
             return
         rpms = self.srpm.get_used_rpms('.src.rpm')
         output = Mock.install(rpms)
