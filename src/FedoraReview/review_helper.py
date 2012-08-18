@@ -90,18 +90,18 @@ class ReviewHelper(object):
         checks_list = list(ChecksLister().get_checks().itervalues())
         files = list(set([c.defined_in for c in checks_list]))
         for f in sorted(files):
-            print 'File:  ' + f 
-            files_per_src = filter(lambda c: c.defined_in == f, 
+            print 'File:  ' + f
+            files_per_src = filter(lambda c: c.defined_in == f,
                                    checks_list)
             groups = list(set([c.group for c in files_per_src]))
             for group in sorted(groups):
                 checks = filter(check_match, checks_list)
                 if checks == []:
                     continue
-                print 'Group: ' + group 
+                print 'Group: ' + group
                 for c in sorted(checks):
                       print '    ' + c.name
-            
+
 
     def __print_version(self):
         print('fedora-review version ' + __version__ + ' ' + build_full)
@@ -119,8 +119,6 @@ class ReviewHelper(object):
             self.checks.run_checks(output=output,
                                    writedown=not Settings.no_report)
             output.close()
-        if not os.path.exists('BUILD'):
-            os.symlink(Mock.get_builddir('BUILD'), 'BUILD')
         if not Settings.no_report:
             print "Review in: " + self.outfile
 

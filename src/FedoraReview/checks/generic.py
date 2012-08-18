@@ -385,6 +385,8 @@ class CheckBuild(GenericCheckBase):
 
     def run(self):
         rc = self.srpm.build()
+        if not os.path.exists('BUILD'):
+            os.symlink(Mock.get_builddir('BUILD'), 'BUILD')
 
         if rc == 0:
             self.set_passed(True)
