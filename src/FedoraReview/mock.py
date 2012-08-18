@@ -93,6 +93,13 @@ class _Mock(Helpers):
     """ Mock's %_topdir seen from the outside. """
     topdir = property(lambda self: get_builddir(self))
 
+    def _mock_cmd(self):
+        cmd = ["mock"]
+        if Settings.mock_config:
+             cmd.extend(['-r', Settings.mock_config])
+        cmd.extend(self.get_mock_options().split())
+        return cmd
+
     def get_mock_options(self):
         """ --mock-config option, with a guaranteed ---'resultdir' part
         """
@@ -104,12 +111,13 @@ class _Mock(Helpers):
         return opt
 
     def is_installed(self, package):
-        cmd = 'rpm --dbpath '
-        cmd += self._get_dir('root/var/lib/rpm')
-        cmd += ' -q ' + package
-        cmd += ' &>/dev/null'
-        self.log.debug('Check install cmd: ' + cmd)
+        cmd = self._mock_cmd()
+        cmd.append('--shell')
+        cmd.append('"rpm -q ' + package + '" &>/dev/null' )
+        cmd = ' '.join(cmd)
         rc = call(cmd, shell=True)
+        self.log.debug('Tested package ' + package + 
+                        'result: ' + str(rc))
         return rc == 0
 
     def install(self, rpm_files):
@@ -128,12 +136,16 @@ class _Mock(Helpers):
             cmd.extend(self.get_mock_options().split())
             return cmd
 
-        for f in rpm_files:
-            p = os.path.basename(f).rsplit('-',2)[0]
+        def is_not_installed(path):
+            p = path
+            if os.path.exists(p):
+                p = os.path.basename(p).rsplit('-',2)[0]
             if self.is_installed(p):
-                self.log.debug('Removing already installed: ' + f)
-                rpm_files.remove(f)
+                self.log.debug('Skipping already installed: ' + p)
+                return False
+            return True
 
+        rpm_files = filter(is_not_installed, rpm_files)
         if len(rpm_files) == 0:
             return
         cmd = mock_cmd()
