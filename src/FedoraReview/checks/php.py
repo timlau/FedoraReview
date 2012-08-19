@@ -6,12 +6,21 @@ import re
 import os
 import urllib
 
-from FedoraReview import LangCheckBase, Settings
+from FedoraReview import LangCheckBase, Settings, RegistryBase
+
+
+class Registry(RegistryBase):
+    group = 'PHP'
+
+    def is_applicable(self):
+        """ Check is the tests are applicable, here it checks whether
+        it is a PHP package (spec starts with 'php-') or not.
+        """
+        return self.spec.name.startswith("php-")
 
 
 class PhpCheckBase(LangCheckBase):
     """ Base class for all PHP specific checks. """
-    group="PHP"
     DIR = ['%{packname}']
     DOCS = []
     URLS = []
@@ -19,16 +28,6 @@ class PhpCheckBase(LangCheckBase):
 
     def __init__(self, base):
         LangCheckBase.__init__(self, base, __file__)
-        self.group = "PHP"
-
-    def is_applicable(self):
-        """ Check is the tests are applicable, here it checks whether
-        it is a PHP package (spec starts with 'php-') or not.
-        """
-        if self.spec.name.startswith("php-"):
-            return True
-        else:
-            return False
 
 
 class PhpCheckPhpRequire(PhpCheckBase):

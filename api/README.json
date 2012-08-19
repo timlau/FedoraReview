@@ -1,0 +1,111 @@
+== JSON interface (deprecated)
+
+NOTE: As of 0.3, this API is deprecated and should no be used in new 
+code.
+
+This document should serve as description of API provided for external
+plugins. First a few basic rules:
+
+ * Communication is done through stdin/stdout/stderr
+ * API is using JSON for encoding data (see json.org)
+ * Plugin is can exit without providing any output (though empty reply
+   is preferred)
+ * Communication is serial and plugin can expect reply to every API
+   call (except final "results" call)
+ * Messages are separated by newlines (0x0A, LF, \n character)
+ * Text containing newlines is encoded with literal "\n"
+ * Each transferred JSON message must have "supported_api" key with
+   value equal to highest supported API version
+
+== Communication diagram ==
+
+1.    Plugin receives Init JSON object on stdin
+2..n. Plugin can ask for additional information by sending JSON
+n+1.  Plugin *can* send results
+
+Format of the data specified below
+
+            +------>* Review tool<---------+
+            |       |                      |
+            |       |                      |
+  results (n+1)    (1) Init JSON object (2..n) Q/A messages
+            |       |                      |
+            |       |                      |
+            |       v                      |
+            +-------* Plugin <-------------+
+
+
+== Main structures ==
+
+In the beginning a plugin will get following JSON message on stdin
+
+Init JSON object ::=
+{
+    "supported_api":1,
+    "pkgname":"package name",
+    "version":"package version",
+    "release":"package release",
+    "srpm":"path/to/srpm",
+    "spec":{path:"path/to/spec",
+           "text":"spec text with expanded macros"},
+    "rpms":["path/to/rpm",...],
+    "rpmlint":"rpmlint output",
+    "build_dir":"/path/to/src/directory/after/build"
+}
+
+If the plugin has test results to report it prints following to stdout:
+
+Results object ::=
+{
+    "command":"results",
+    "supported_api":1,
+    "version":"version of plugin", # optional, but preferred
+    "checks":[
+        {"name":"CheckName",
+         "url":"URL to guidelines usually",
+         "group":"Group for this test.(Java, Perl, etc.)",
+         "text":"Check description that shows on review template",
+         "deprecates":["DeprecatedTest", ...]
+         "type":"MUST"|"SHOULD",
+         "result":"pass"|"fail"|"pending"|"na",
+         "output_extra":"text",
+        },
+        ...
+    ]
+}
+
+
+== Additional RPC calls ==
+
+*Note*: All messages MUST contain "supported_api". It is not included
+        in examples for brewity
+
+After each call plugin can receive an error reply in following format:
+
+error_reply ::=
+{
+"error":"textual description of error",
+"code":code_number
+}
+
+
+=== Get Section ===
+
+Use: Get section of spec file
+Data:
+     - section to return. Possible values: 'build',
+       'changelog', 'check', 'clean', 'description', 'files',
+       'install', 'package', 'prep', 'pre', 'post', 'preun',
+       'postun', 'trigger', 'triggerin', 'triggerun', 'triggerprein',
+       'triggerpostun', 'pretrans', 'posttrans'
+
+get_section ::=
+{
+  "command":"get_section",
+  "section":"section_to_return"
+}
+
+get_section_reply ::=
+{
+  "text":"text of requested spec" # empty if section does not exist
+}

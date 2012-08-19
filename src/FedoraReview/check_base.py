@@ -218,7 +218,7 @@ class CheckDict(dict):
 
     def update(self, *args, **kwargs):
         if len(args) > 1:
-            raise TypeError("update: at most 1 arguments, got %d" %
+            raise TypeError("update: at most 1 arguments, got %d" % 
                             len(args))
         other = dict(*args, **kwargs)
         for key in other.iterkeys():

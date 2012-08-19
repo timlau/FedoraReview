@@ -52,9 +52,11 @@ class _ReviewDirs(object):
     def __init__(self):
         self.startdir = os.getcwd()
 
-    def reset(self):
+    def reset(self, startdir=None):
         if hasattr(self, 'wd'):
             delattr(self, 'wd')
+        if startdir:
+            self.startdir = startdir
 
     def report_path(self, name):
         return os.path.abspath('./%s-review.txt' % name)

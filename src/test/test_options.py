@@ -53,6 +53,7 @@ class TestOptions(unittest.TestCase):
 
     def setUp(self):
         self.log = Settings.get_logger()
+        self.startdir = os.getcwd()
 
     def init_test(self, argv= ['fedora-review'], d=None):
         os.chdir(startdir)
@@ -162,13 +163,14 @@ class TestOptions(unittest.TestCase):
         os.chdir(startdir)
 
     def test_version(self):
-        """ test -d/--display option. """
-        os.chdir(startdir)
+        """ test --version option. """
+        os.chdir(self.startdir)
         cmd = '../fedora-review --version'
         output = subprocess.check_output(cmd, shell=True)
         output = output.decode('utf-8')
         self.assertIn('fedora-review', output)
         self.assertIn(VERSION, output)
+        os.chdir(self.startdir)
 
     @unittest.skipIf(no_net, 'No network available')
     def test_cache(self):
@@ -230,6 +232,7 @@ class TestOptions(unittest.TestCase):
         if os.path.exists('python-spiffgtkwidgets'):
             shutil.rmtree('python-spiffgtkwidgets')
         ReviewDirs.reset()
+        ReviewDirs.startdir = os.getcwd()
         Settings.init(True)
 
         rpms = glob('/var/lib/mock/fedora-16-i386/*.rpm')
@@ -280,9 +283,9 @@ class TestOptions(unittest.TestCase):
         bug.find_urls()
         bug.download_files()
         checks = Checks(bug.spec_file, bug.srpm_file)
-        self.assertEqual(len(checks.checks), 1)
-        check = checks.checks[0]
-        self.assertEqual(check.name, 'CheckRequires')
+        self.assertEqual(len(checks.checkdict), 1)
+        check = checks.checkdict['CheckRequires']
+        self.assertEqual(check.name, 'CheckRequires') 
 
     def test_exclude(self):
         ''' test --exclude/-x option. '''

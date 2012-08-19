@@ -1,4 +1,11 @@
 #!/bin/sh
+#    @name: test1
+#    @group: Generic
+#    @type: EXTRA     
+#    @text: A check solely for test purposes.
+#    $url: Guidelines URL, optional
+#    $deprecates: test1, test2, ...
+#    $needs: test4, test5, ...
 
 while read;do
     if [ "$REPLY" == "" ];then

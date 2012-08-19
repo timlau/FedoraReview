@@ -5,12 +5,21 @@
 import re
 import os
 import urllib
-from FedoraReview import LangCheckBase
+from FedoraReview import LangCheckBase, RegistryBase
+
+
+class Registry(RegistryBase):
+    group = 'R'
+
+    def is_applicable(self):
+        """ Check is the tests are applicable, here it checks whether
+        it is a R package (spec starts with 'R-') or not.
+        """
+        return self.spec.name.startswith("R-")
 
 
 class RCheckBase(LangCheckBase):
     """ Base class for all R specific checks. """
-    group =  'R'
     DIR = ['%{packname}']
     DOCS = ['doc', 'DESCRIPTION', 'NEWS', 'CITATION']
     URLS = [
@@ -23,15 +32,6 @@ class RCheckBase(LangCheckBase):
 
     def __init__(self, base):
         LangCheckBase.__init__(self, base, __file__)
-
-    def is_applicable(self):
-        """ Check is the tests are applicable, here it checks whether
-        it is a R package (spec starts with 'R-') or not.
-        """
-        if self.spec.name.startswith("R-"):
-            return True
-        else:
-            return False
 
     def get_upstream_r_package_version(self):
         """ Browse the PACKAGE file of the different repo to find the

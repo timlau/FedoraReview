@@ -54,7 +54,7 @@ class TestRChecks(unittest.TestCase):
         self.bug.download_files()
         self.checks = Checks(self.bug.spec_file, self.bug.srpm_file)
         self.checks.run_checks(writedown=False)
-        for check in self.checks.checks:
+        for check in self.checks.checkdict.itervalues():
             if check.result:
                 self.assertTrue(check.group == 'Generic' or 
                                 check.group == 'R')

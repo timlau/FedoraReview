@@ -4,52 +4,58 @@
 
 import re
 import os
-from FedoraReview import LangCheckBase, CheckBase
-from generic import CheckLatestVersionIsPackaged
+
+from FedoraReview import LangCheckBase, RegistryBase
+
+class Registry(RegistryBase):
+
+    group = 'R'
+
+    def is_applicable(self):
+        return self.spec.name.startswith("R-")
 
 
 class RCheckBase(LangCheckBase):
     """ Base class for all R specific checks. """
 
-    def is_applicable(self):
-        """ Check is the tests are applicable, here it checks whether
-        it is a R package (spec starts with 'R-') or not.
-        """
-        if self.spec.name.startswith("R-"):
-            return True
-        else:
-            return False
+    def __init__(self, base):
+        LangCheckBase.__init__(self, base, __file__)
 
-class RCheckBuildRequires(RCheckBase):
+
+class  RCheckBuildRequires(RCheckBase):
     """ Check if the BuildRequires have the mandatory elements. """
 
-    def __init__(self, base):
-        """ Instanciate check variable """
-        CheckBase.__init__(self, base)
+    def __init__(self, checks):
+        RCheckBase.__init__(self, checks)
         self.url = 'http://fedoraproject.org/wiki/Packaging:R'
         self.text = 'Package contains the mandatory BuildRequires.'
         self.automatic = True
 
-    def run(self):
-        """ Run the check """
+    def run_on_applicable(self):
+        """
+        Overriding run_on_applicable means that this code will run
+        if is_applicable() is True.
+        """
+          
         br = self.spec.find_tag('BuildRequires')
-        self.set_passed('R-devel' in br and 'tex(latex)' in br)
+        passed = 'R-devel' in br and 'tex(latex)' in br
+        self.set_passed('pass' if passed else 'fail')
 
 
 class RCheckLatestVersionIsPackaged(RCheckBase):
     """ Check if the lastest version is packaged. """
 
-    # This global variable for this class is used to remove a test
-    # from the list if one test over-rides a generic one.
+    # This class attribute is used to override an existing test, typically
+    # a generic one.
     # For example, in R FedoraReview can quite safely check if it is the
     # latest version which have been packaged, but there is a generic
     # check for that as in most cases it won't be possible do to so.
     # Here we therefore specify how to turn off this generic check
     # and keep only this specific one.
+
     deprecates = [CheckLatestVersionIsPackaged]
 
     def __init__(self, base):
-        """ Instanciate check variable """
         CheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
         self.text = 'Latest version is packaged.'
@@ -57,7 +63,16 @@ class RCheckLatestVersionIsPackaged(RCheckBase):
         self.type = 'SHOULD'
 
     def run(self):
-        """ Run the check """
+        """
+        A function overriding run is always called, no matter what kind
+        of package. Normally,you should first test whether the test
+        is applicable and quit if not.
+        """
+
+        # See if the package should be checked. if not:
+        #     set_passed('not_applicable')
+        #     return
+
         # do something...
 
         # Access the spec file via:
@@ -70,6 +85,11 @@ class RCheckLatestVersionIsPackaged(RCheckBase):
 
         # Access the rpmlint output via:
         #  self.srpm.rpmlint_output
-        self.set_passed(True)
+        # Return a simple 'approved' ([x])
+        #     self.set_passed('pass')
+        # a failure[!]  with a Note: message:
+        #     self.set_passed('fail', 'test failed because...')
+        # or a pending [ ] status:
+        #     self.set_passed('pending')
 
 # Other classes doing other tests....
