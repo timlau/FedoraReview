@@ -120,6 +120,31 @@ class _Mock(Helpers):
                         'result: ' + str(rc))
         return rc == 0
 
+    def _mock_cmd(self):
+        cmd = ["mock"]
+        if Settings.mock_config:
+             cmd.extend(['-r', Settings.mock_config])
+        cmd.extend(self.get_mock_options().split())
+        return cmd
+    
+    def _run_cmd(self, cmd):
+
+        def log_text(out, err):
+           return  "Mock output: " + str(out) + ' ' + str(err)
+
+        self.log.debug('Mock command: ' + ', '.join(cmd))
+        try:
+            p = Popen(cmd, stdout=PIPE, stderr=STDOUT)
+            output, error = p.communicate()
+            logging.debug(log_text(output, error), exc_info=True)
+        except OSError as e:
+            logging.warning(log_text(output, error), exc_info=True)
+            return output
+        if p.returncode != 0:
+            logging.warning("Mock command returned error code %i",
+                            p.returncode)
+        return None if p.returncode == 0 else output
+
     def install(self, rpm_files):
         """
         Run  'mock install' on a list of files, return None if
@@ -148,7 +173,11 @@ class _Mock(Helpers):
         rpm_files = filter(is_not_installed, rpm_files)
         if len(rpm_files) == 0:
             return
-        cmd = mock_cmd()
+        cmd = self._mock_cmd()
+        cmd.extend(['--shell', 'rm -f /var/lib/rpm/__db*'])
+        self._run_cmd(cmd)
+
+        cmd = self._mock_cmd()
         cmd.append("install")
         cmd.extend(rpm_files)
         self.log.debug('Install command: ' + ', '.join(cmd))
