@@ -28,17 +28,19 @@ import re
 from subprocess import Popen, PIPE, check_output
 
 from FedoraReview import CheckBase, Attachment, ReviewDirs, Mock, Settings
+from FedoraReview import RegistryBase
 
-
-class GenericCheckBase(CheckBase):
+class Registry(RegistryBase):
     group = 'Generic'
-
-    def __init__(self, base):
-        CheckBase.__init__(self, base, __file__)
-        self.group = 'Generic'
 
     def is_applicable(self):
         return True
+
+
+class GenericCheckBase(CheckBase):
+
+    def __init__(self, base):
+        CheckBase.__init__(self, base, __file__)
 
 
 class CheckGuidelines(GenericCheckBase):

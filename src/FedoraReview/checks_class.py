@@ -26,6 +26,7 @@ from operator import attrgetter
 from sets import Set
 from straight.plugin import load
 
+from check_base import CheckDict
 from settings import  Settings
 from srpm_file import  SRPMFile
 from spec_file import  SpecFile
@@ -46,14 +47,14 @@ x = Pass
 
 """
 
+
 class Checks(object):
     ''' Interface class to load, select and run checks. '''
+
     def __init__(self, spec_file, srpm_file):
         ''' Create a Checks set. srpm_file and spec_file are required,
         unless invoked from ChecksLister.
         '''
-        self.checks = []
-        self.ext_checks = []
         self._results = {'PASSED': [], 'FAILED': [], 'NA': [], 'USER': []}
         self.log = Settings.get_logger()
         if hasattr(self, 'sources'):
@@ -64,7 +65,6 @@ class Checks(object):
             self.spec = SpecFile(spec_file)
             self.sources = Sources(self.spec)
             self.srpm = SRPMFile(srpm_file, self.spec)
-        self.plugins = load('FedoraReview.checks')
         self.add_check_classes()
         if Settings.single:
             self.set_single_check(Settings.single)
@@ -72,22 +72,20 @@ class Checks(object):
             self.exclude_checks(Settings.exclude)
 
     def add_check_classes(self):
-        """ get all the check classes in the FedoraReview.checks and add
-        them to be excuted
+        """ 
+        Get all check classes in FedoraReview.checks + external plugin
+        directories and add them to self.checkdict
         """
 
-        for module in self.plugins:
-            objs = module.__dict__
-            for mbr in sorted(objs):
-                if not 'Check' in mbr:
-                    continue
-                if  mbr.endswith('Base'):
-                    continue
-                if mbr in self.checks:
-                    continue
-                obj = objs[mbr]
-                self.log.debug('Add module: %s' % mbr)
-                self.add(obj)
+        self.checkdict = CheckDict()
+        self.groups = {}
+
+        plugins = load('FedoraReview.checks')
+        for plugin in plugins:
+            registry = plugin.Registry(self)
+            tests = registry.register(plugin)
+            self.checkdict.extend(tests)
+            self.groups[registry.group] = registry
 
         ext_dirs = []
         if "REVIEW_EXT_DIRS" in os.environ:
@@ -97,15 +95,12 @@ class Checks(object):
             if not os.path.isdir(ext_dir):
                 continue
             for plugin in os.listdir(ext_dir):
-                full_path = "%s/%s" % (ext_dir, plugin)
+                full_path = os.path.join(ext_dir, plugin)
                 if os.path.isfile(full_path) and os.access(full_path, os.X_OK):
                     self.log.debug('Add external module: %s' % full_path)
                     pl = JSONPlugin(self, full_path)
-                    self.ext_checks.append(pl)
-
-    def add(self, class_name):
-        cls = class_name(self)
-        self.checks.append(cls)
+                    tests = pl.register()
+                    self.checkdict.extend(tests)
 
     def show_file(self, filename, output=sys.stdout):
         fd = open(filename, "r")
@@ -116,82 +111,55 @@ class Checks(object):
 
     def exclude_checks(self, exclude_arg):
         for c in [l.strip() for l in exclude_arg.split(',')]:
-            found = filter( lambda  i: i.name == c,  self.checks)
-            if  len(found) > 0:
-                self.checks = list( set(self.checks) - set(found))
-                continue
-            found = filter(lambda  i: i.name == c,  self.ext_checks)
-            if  len(found) > 0:
-                self.ext_checks = list(set(self.ext_checks) - set(found))
-                continue
-            self.log.warn("I can't remove check: " + c)
+            if  c in self.checkdict:
+                del self.checkdict[c]
+            else:
+                self.log.warn("I can't remove check: " + c)
 
     def set_single_check(self, check):
-        found = filter(lambda c: c.name == check, self.checks)
-        if len(found) > 0:
-              self.checks = found
-              self.ext_checks = []
-              return
-        found = filter(lambda c: c.name == check, self.ext_checks)
-        if len(found) > 0:
-              self.ext_checks = found
-              self.checks = []
-              return
-        self.log.warn("I can't find check: " + check)
+        self.checkdict.set_single_check(check)
 
     def get_checks(self):
-        c = self.ext_checks
-        c.extend([t.name for t in self.checks])
-        return c
+        return self.checkdict
 
     def run_checks(self, output=sys.stdout, writedown=True):
-
-        def mv_check_to_front(name):
-            for check in self.checks:
-                if check.name == name:
-                     self.checks.remove(check)
-                     self.checks.insert(0,check)
 
         issues = []
         results = []
         deprecated = []
         attachments = []
+        names = list(self.checkdict.iterkeys())
 
+        # "Horrible Hack (tm)"
         # First, run state-changing build and install:
-        mv_check_to_front('CheckPackageInstalls')
-        mv_check_to_front('CheckBuild')
-
-        # run external checks first so we can get what they deprecate
-        for ext in self.ext_checks:
-            self.log.debug('Running external module : %s' % ext.plugin_path)
-            ext.run()
-            for result in ext.get_results():
-                if result.result == 'not_applicable':
-                    continue
+        if 'CheckPackageInstalls' in names:
+            names.remove('CheckPackageInstalls')
+            names.insert(0, 'CheckPackageInstalls')
+        if 'CheckBuild' in names:
+            names.remove('CheckBuild')
+            names.insert(0, 'CheckBuild')
+       
+        for name in names:
+            if not name in self.checkdict:
+                continue
+            check = self.checkdict[name]
+            for deprecate in check.deprecates:
+                if deprecate in self.checkdict:
+                    del self.checkdict[deprecate]
+                    self.log.debug( 
+                      'Kill %s, deprecated in %s' % (deprecate, name))
+            
+        for name in names:
+            if not name in self.checkdict:
+                continue
+            check = self.checkdict[name]
+            check.run()
+            if check.result:
+                result = check.result
                 results.append(result)
+                attachments.extend(result.attachments)
                 if result.type == 'MUST' and result.result == "fail":
                     issues.append(result)
-                deprecated.extend(result.deprecates)
-                attachments.extend(result.attachments)
-
-        # we only add to deprecates is deprecating test will be run
-        for test in self.checks:
-            if test.is_applicable():
-                deprecated.extend(test.deprecates)
-
-        for test in self.checks:
-            if  test.name not in deprecated:
-                test.run()
-                result = test.result
-                if result:
-                    self.log.debug('Running check : %s %s [%s] ' % (
-                        test.name,
-                        " " * (30 - len(test.name)),
-                        result.result))
-                    results.append(result)
-                    attachments.extend(result.attachments)
-                    if result.type == 'MUST' and result.result == "fail":
-                        issues.append(result)
 
         if writedown:
             key_getter = attrgetter('group', 'type', 'name')
@@ -201,16 +169,11 @@ class Checks(object):
                                attachments)
 
     def __show_output(self, output, results, issues, attachments):
-      
 
         def write_sections(results):
-
             groups = sorted(list(set([test.group for test in results])))
             for group in groups:
-                 res = filter(lambda t: 
-                                  t.group == group and 
-                                  t.result != 'not_applicable', 
-                              results)
+                 res = filter(lambda t: t.group == group, results)
                  if res == []:
                     continue
                  output.write('\n' + group + ':\n')
@@ -245,23 +208,12 @@ class Checks(object):
                      ' %s (%s) last change: %s\n' %
                      (__version__, build_id, build_date))
         output.write('Command line :' + ' '.join(sys.argv) +'\n')
-        output.write("External plugins:\n")
-        for plugin in self.ext_checks:
-            output.write("%s version: %s\n" % (plugin.plugin_path,
-                                               plugin.version))
 
 
 class ChecksLister(Checks):
-    """ A Checks instance only capable of listing checks. """
+    """ A Checks instance only capable of get_checks. """
     def __init__(self):
         self.sources = None
         Checks.__init__(self,None, None)
-
-    def list(self):
-        """ List all the checks available. """
-        for ext in self.ext_checks:
-            print ext.name
-        for test in self.checks:
-            print test.name, ' -- ', test.text
 
 # vim: set expandtab: ts=4:sw=4:

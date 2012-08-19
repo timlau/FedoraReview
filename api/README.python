@@ -1,0 +1,115 @@
+==  fedora-review python API ==
+
+First: There are good examples in FedoraReview/src/checks directory!
+
+The basic structure is 
+  - A file with tests in this directory is a "test module"
+  - A test module handles a group such as 'Java', 'PHP' etc. i. e.,
+    it tests  packages of a certain kind. Tests which should be applied 
+    to all packages are in the generic module.
+  - The module contains a registry which reports which tests the 
+    module defines.
+  - The module also has a base class and a number of tests derived from 
+    the this class which performs the tests.
+
+=== Creating the Registry. ===
+
+The registry looks like::
+
+    class Registry(RegistryBase):
+        group = 'fortran'
+
+        def is_applicable(self):
+           return self.has_files('.f') or self.has_files('.f90') or \
+               self.has_files('.for')
+
+The registry's main purpose is to register the checks within this module
+when f-r runs.
+
+Deriving from RegistryBase means that the Registry will register all 
+checks in this module with names containing 'Check' and not ending in 
+'Base'.  The name Registry cannot be changed. By implementing the 
+register() function a Registry can use other policys for what tests to 
+register. See e. g. the shell-api.py module.
+
+The is_applicable() function determines whether this module should be used
+for the package  being checked. It normally uses the functions 
+self.has_files() or self.has_files_re()
+
+The group id is used in listings. It's also important when using scripts; 
+scripts using the same group is invoked when this is_applicable() is true.
+
+== Creating the base class ==
+
+A base class looks like::
+
+    class FortranCheckBase(LangCheckBase):
+        """ Base class for all Fortran specific checks. """
+
+        def __init__(self, base):
+            LangCheckBase.__init__(self, base, __file__)
+
+It's often used to add common properties to all checks. By default, it
+uses the Registry's is_applicable() function as it's implementation.
+
+
+== Creating tests ==
+
+A manual test looks like::
+
+    class FortranCheckRequire(FortranCheckBase):
+        """ Check if the fortran require is correct. """
+
+        def __init__(self, base):
+            FortranCheckBase.__init__(self, base)
+            self.url = 'http://fedoraproject.org/wiki/Packaging:Fortran'
+            self.text = 'Package requires fortran stuff.'
+
+And that's it. It will produce a line in the report like::
+    [ ] Package requires fortran stuff.
+
+An automatic test can be written in several ways. One is to override 
+run_on_applicable(). This is invoked iff is_applicable() is true.
+This is the normal case. Rewriting above:
+
+    class FortranCheckRequire(FortranCheckBase):
+        """ Check if the fortran require is correct. """
+
+        def __init__(self, base):
+            """ Instanciate check variable """
+            FortranCheckBase.__init__(self, base)
+            self.url = 'http://fedoraproject.org/wiki/Packaging:Fortran'
+            self.text = 'Package requires fortran stuff.'
+            self.automatic = TRUE
+
+        def run_on_applicable():
+            if self.cannot_determine_requires():
+                self.set_passed('pending')
+            elif self.requires_fortran_ok():
+                self.set_passed('pass')
+            else
+                self.set_passed('fail', 'Does not pass test')
+
+Depending on the set_passed call, the report will contain:
+
+    [ ] Package requires fortran stuff.   ('pending')
+    [x] Package requires fortran stuff.   ('pass')
+    [!] Package requires fortran stuff.   ('fail', 'Does not...')
+        NOTE: Does not pass test
+        See: http://fedoraproject.org/wiki/Packaging:Fortran
+In some cases, the test needs to decide itself on whether the test is
+applicable or not. One way is to simply override run(), returning
+'not_applicable' in some cases:
+
+    class Fortran90Check(FortranCheckBase):
+        ...
+        def run():
+            if not self.is_fortran90():
+                self.set_passed('not_applicable')
+            elif self.requires_f90_ok():
+                self.set_passed('pass')
+            else
+                self.set_passed('fail', 'Does not pass test')
+
+Returning 'not_applicable' means that nothing is written into report.
+

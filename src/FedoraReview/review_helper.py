@@ -83,7 +83,25 @@ class ReviewHelper(object):
     def __list_checks(self):
         """ List all the checks available.
         """
-        ChecksLister().list()
+
+        def check_match(check):
+           return check.group == group and check.defined_in == f
+
+        checks_list = list(ChecksLister().get_checks().itervalues())
+        files = list(set([c.defined_in for c in checks_list]))
+        for f in sorted(files):
+            print 'File:  ' + f 
+            files_per_src = filter(lambda c: c.defined_in == f, 
+                                   checks_list)
+            groups = list(set([c.group for c in files_per_src]))
+            for group in sorted(groups):
+                checks = filter(check_match, checks_list)
+                if checks == []:
+                    continue
+                print 'Group: ' + group 
+                for c in sorted(checks):
+                      print '    ' + c.name
+            
 
     def __print_version(self):
         print('fedora-review version ' + __version__ + ' ' + build_full)

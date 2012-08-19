@@ -32,8 +32,8 @@ import re
 import shutil
 
 from FedoraReview.helpers import Helpers
-from FedoraReview import Checks, NameBug, Sources, Source, ReviewDirs, \
-     SRPMFile, SpecFile, Mock, Settings
+from FedoraReview import AbstractCheck, CheckDict, Checks,  NameBug, \
+     Sources, Source, ReviewDirs, SRPMFile, SpecFile, Mock, Settings
 from FedoraReview import BugzillaBug, NameBug
 
 from base import *
@@ -65,13 +65,13 @@ class TestMisc(unittest.TestCase):
         Mock.reset()
 
 
-    def run_single_check(self, bug, the_check):
+    def run_single_check(self, bug, check_name):
         bug.find_urls()
         bug.download_files()
-        checks = Checks(bug.spec_file, bug.srpm_file)
-        checks.set_single_check(the_check)
-        self.assertEqual(len(checks.checks), 1)
-        check = checks.checks[0]
+        checks = Checks(bug.spec_file, bug.srpm_file).get_checks()
+        checks.set_single_check(check_name)
+        self.assertEqual(len(checks), 1)
+        check = checks[check_name]
         check.run()
         return check
 
@@ -112,17 +112,16 @@ class TestMisc(unittest.TestCase):
         bug = NameBug('python-test')
         bug.find_urls()
         bug.download_files()
-        checks = Checks(bug.spec_file, bug.srpm_file)
+        checks = Checks(bug.spec_file, bug.srpm_file).get_checks()
         checks.set_single_check('CheckSourceMD5')
-        self.assertEqual(len(checks.checks), 1)
-        check = checks.checks[0]
+        self.assertEqual(len(checks), 1)
+        check = checks['CheckSourceMD5']
         check.run()
         result = check.result
-        if result:
-            self.log.debug('result : ' + result.result)
-            if result.output_extra:
-               self.log.debug("Result extra text: " + result.output_extra)
-            self.assertEqual( result.result, 'pass')
+        self.log.debug('test_source, result : ' + result.result)
+        if result.output_extra:
+           self.log.debug("Result extra text: " + result.output_extra)
+        self.assertEqual( result.result, 'pass')
         os.chdir(self.startdir)
 
     @unittest.skipIf(no_net, 'No network available')
@@ -203,8 +202,10 @@ class TestMisc(unittest.TestCase):
         helpers = Helpers()
         checksum = helpers._checksum('scantailor.desktop')
         self.assertEqual(checksum, '5315b33321883c15c19445871cd335f7f698a2aa')
+        os.chdir(self.startdir)
 
     def test_md5(self):
+        os.chdir(self.startdir)
         Settings.checksum = 'md5'
         helpers = Helpers()
         checksum = helpers._checksum('scantailor.desktop')
@@ -274,48 +275,78 @@ class TestMisc(unittest.TestCase):
         os.chdir(self.startdir)
 
     @unittest.skipIf(no_net, 'No network available')
-    def test_md5sum_diff_ok(self):
-        os.chdir('md5sum-diff-ok')
+    
+    def test_jsonapi(self):
+        if os.path.exists('python-test'):
+            shutil.rmtree('python-test')
+        os.environ['REVIEW_EXT_DIRS'] = os.getcwd() + '/api'
+        self.startdir = os.getcwd()
         sys.argv = ['fedora-review','-n','python-test','-rp']
         Settings.init(True)
         ReviewDirs.reset()
-        ReviewDirs.startdir = os.getcwd()
-        if os.path.exists('python-test'):
-            shutil.rmtree('python-test')
 
         bug = NameBug('python-test')
         bug.find_urls()
         bug.download_files()
-        checks = Checks(bug.spec_file, bug.srpm_file)
+        checks = Checks(bug.spec_file, bug.srpm_file).get_checks()
+        test1 = checks['test1']
+        test2 = checks['ExtShellTest2']
+        self.assertEqual( test1.group, 'Generic')
+        self.assertEqual( test1.type, 'EXTRA')
+        self.assertEqual( test1.text, 'A check solely for test purposes.')
+        
+        self.assertEqual( test2.group, 'Generic')
+        self.assertEqual( test2.type, 'EXTRA')
+        self.assertEqual( test2.text,  
+                          'A second check solely for test purposes.')
+        os.chdir(self.startdir)
+        ReviewDirs.reset(self.startdir)
+
+
+    @unittest.skipIf(no_net, 'No network available')
+    def test_md5sum_diff_ok(self):        
+        os.chdir('md5sum-diff-ok')
+        if os.path.exists('python-test'):
+            shutil.rmtree('python-test')
+        ReviewDirs.reset(os.getcwd())
+        sys.argv = ['fedora-review','-n','python-test','-rp']
+        Settings.init(True)
+
+        bug = NameBug('python-test')
+        bug.find_urls()
+        bug.download_files()
+        checks = Checks(bug.spec_file, bug.srpm_file).get_checks()
         checks.set_single_check('CheckSourceMD5')
-        self.assertEqual(len(checks.checks), 1)
-        check = checks.checks[0]
+        self.assertEqual(len(checks), 1)
+        check = checks['CheckSourceMD5']
         check.run()
         self.assertEqual(check.result.result, 'pass')
         expected = 'diff -r shows no differences'
         self.assertTrue(expected in check.result.attachments[0].text)
         os.chdir(self.startdir)
+        ReviewDirs.startdir = self.startdir
 
     @unittest.skipIf(no_net, 'No network available')
-    def test_md5sum_diff_fail(self):
+    def test_md5sum_diff_fail(self):        
+        os.chdir(self.startdir)
         os.chdir('md5sum-diff-fail')
-        ReviewDirs.reset()
-        ReviewDirs.startdir = os.getcwd()
-        sys.argv = ['fedora-review','-rpn','python-test']
-        Settings.init(True)
         if os.path.exists('python-test'):
             shutil.rmtree('python-test')
+        ReviewDirs.reset(os.getcwd())
+        sys.argv = ['fedora-review','-rpn','python-test']
+        Settings.init(True)
         bug = NameBug('python-test')
         bug.find_urls()
-        checks = Checks(bug.spec_file, bug.srpm_file)
+        checks = Checks(bug.spec_file, bug.srpm_file).get_checks()
         checks.set_single_check('CheckSourceMD5')
-        self.assertEqual(len(checks.checks), 1)
-        check = checks.checks[0]
+        self.assertEqual(len(checks), 1)
+        check = checks['CheckSourceMD5']
         check.run()
         self.assertEqual(check.result.result, 'fail')
         expected = 'diff -r also reports differences'
-        self.assertTrue(expected in check.result.attachments[0].text)
+        self.assertTrue(expected in check.result.attachments[0].text) 
         os.chdir(self.startdir)
+        ReviewDirs.reset(self.startdir)
 
     def test_bad_specfile(self):
         os.chdir('bad-spec')
@@ -324,7 +355,6 @@ class TestMisc(unittest.TestCase):
         sys.argv = ['fedora-review','-pn','python-test']
         Settings.init(True)
         ReviewDirs.reset()
-        ReviewDirs.startdir = os.getcwd()
         ReviewDirs.workdir_setup('.', True)
         bug = NameBug('python-test')
         check = self.run_single_check(bug,'CheckSpecAsInSRPM')
@@ -334,16 +364,39 @@ class TestMisc(unittest.TestCase):
 
     def test_desktop_file_bug(self):
         os.chdir('desktop-file')
-        ReviewDirs.reset()
-        ReviewDirs.startdir = os.getcwd()
         if os.path.exists('python-test'):
             shutil.rmtree('python-test')
+        ReviewDirs.reset()
+        ReviewDirs.startdir = os.getcwd()
         sys.argv = ['fedora-review','-rpn','python-test']
         Settings.init(True)
         bug = NameBug('python-test')
         check = self.run_single_check(bug,'CheckDesktopFileInstall')
         self.assertEqual(check.result.result, 'pass')
         os.chdir(self.startdir)
+        ReviewDirs.startdir = self.startdir
+
+    def test_check_dict(self):
+        c = AbstractCheck('a-sourcefile')
+        l = CheckDict()
+        l.add(c)
+        self.assertEqual(len(l), 1)
+        self.assertEqual(c.checkdict, l)
+        c1 = AbstractCheck('sourcefile-1')
+        c1.name = 'test1'
+        c2 = AbstractCheck('sourcefile-2')
+        c2.name = 'test2'
+        l.extend([c1, c2])
+        self.assertEqual(len(l), 3)
+        self.assertEqual(l['test1'].name, c1.name)
+        self.assertEqual(l['test2'].name, c2.name)
+        self.assertEqual(l['test1'], c1)
+        self.assertEqual(l['test2'], c2)
+        self.assertEqual(l['test2'].checkdict, l)
+        l.set_single_check('test1')
+        self.assertEqual(len(l), 1)
+        self.assertEqual(l['test1'], c1)
+  
 
     def test_unversioned_so(self):
         os.chdir('unversioned-so')

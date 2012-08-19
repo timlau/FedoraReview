@@ -16,17 +16,20 @@
 #
 # (C) 2012 - Michael Scherer <misc@fedoraproject.org>
 
-from FedoraReview import LangCheckBase
+from FedoraReview import LangCheckBase, RegistryBase
 
 
-class SugarActivityCheckBase(LangCheckBase):
+class Registry(RegistryBase):
     group = 'SugarActivity'
-
-    def __init__(self, base):
-        LangCheckBase.__init__(self, base, __file__)
 
     def is_applicable(self):
         return self.has_files_re('^/usr/(share|lib|lib64)/sugar/activities/')
+
+
+class SugarActivityCheckBase(LangCheckBase):
+
+    def __init__(self, base):
+        LangCheckBase.__init__(self, base, __file__)
 
 
 class SugarActivityCheckNaming(SugarActivityCheckBase):

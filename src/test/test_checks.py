@@ -60,11 +60,11 @@ class TestChecks(unittest.TestCase):
     @unittest.skipIf(no_net, 'No network available')
     def test_all_checks(self):
         ''' Run all automated review checks'''
-        self.checks = Checks(self.spec, self.srpm)
-        self.checks.run_checks(writedown=False)
+        checks = Checks(self.spec, self.srpm)
+        checks.run_checks(writedown=False)
         # Automatic Checks
-        checks = self.checks.checks
-        for check in checks:
+        checkdict = checks.get_checks()
+        for check in checkdict.itervalues():
             self.assertTrue(hasattr(check, 'result'))
         os.chdir(self.startdir)
 

@@ -5,11 +5,8 @@ import re
 
 from FedoraReview import LangCheckBase, RegistryBase, Attachment
 
-class CCppCheckBase(LangCheckBase):
-    group = 'C/C++'
-
-    def __init__(self, base):
-        LangCheckBase.__init__(self, base, __file__)
+class Registry(RegistryBase):
+    group='C/C++'
 
     def is_applicable(self):
         """Need more comprehensive check and return True in valid cases"""
@@ -21,6 +18,13 @@ class CCppCheckBase(LangCheckBase):
            self.sources_have_files('*.cpp') :
            return True
         return False
+
+
+class CCppCheckBase(LangCheckBase):
+
+    def __init__(self, base):
+        LangCheckBase.__init__(self, base, __file__)
+
 
 class CheckLDConfig(CCppCheckBase):
     '''
