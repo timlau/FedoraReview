@@ -249,6 +249,11 @@ If REVIEW_EXT_DIRS is set, it specifies additional directories that will be sear
 .B REVIEW_LOGLEVEL
 loglevel used when not using -v/--verbose. A logging.* value like 'DEBUG', 'Info', or 'warning'. Setting
 REVIEW_LOGLEVEL to 'debug' is the same as providing the -v/--verbose option.
+.TP
+.B REVIEW_SCRIPT_DIRS
+The directories searched for scripts, see README.scripts. It's a ':'-separated
+search path which replaces the standard path. Defaults to
+$PACKAGE_DIR/scripts:~/.config/fedora-review/scripts
 
 .SH SEE ALSO
 bugzilla(1) - CLI tool to create and modify bugzilla bug tickets.
