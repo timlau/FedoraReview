@@ -72,3 +72,14 @@ class TestExt(unittest.TestCase):
                    ' >/dev/null',
                    shell=True)
 
+    def test_sh_api(self):
+        if os.path.exists('python-test'):
+            shutil.rmtree('python-test')
+        sys.argv = ['fedora-review','-pn','python-test']
+        Settings.init(True)
+        ReviewDirs.reset()
+        ReviewDirs.workdir_setup('.', True)
+        bug = NameBug('python-test')
+        check = self.run_single_check(bug,'check-large-docs.sh')
+        self.assertEqual(check.result.result, 'pending')
+
