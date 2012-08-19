@@ -71,3 +71,4 @@ class TestExt(unittest.TestCase):
         check_call('../fedora-review -n python-test  -x test1' 
                    ' >/dev/null',
                    shell=True)
+
