@@ -40,7 +40,9 @@ class TestChecks(unittest.TestCase):
         self.startdir = os.getcwd()
         if not os.path.exists(TEST_WORK_DIR):
             os.makedirs(TEST_WORK_DIR)
-        sys.argv = ['test-checks','-b','1234']
+        skip = 'CheckBuild,CheckRpmlint,CheckRpmlintInstalled,' \
+                  'CheckPackageInstalls,CheckBuildCompleted'
+        sys.argv = ['test-checks','-b','1234','--no-build','-x', skip]
         Settings.init(True)
         self.checks = None
         self.srpm = TEST_WORK_DIR + os.path.basename(TEST_SRPM)

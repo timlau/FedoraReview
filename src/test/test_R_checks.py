@@ -26,8 +26,8 @@ sys.path.insert(0,os.path.abspath('../'))
 
 import os
 import shutil
+import subprocess
 import unittest
-
 
 from FedoraReview import Settings, Checks, ReviewDirs, NameBug
 from FedoraReview.checks import R
@@ -39,14 +39,16 @@ class TestRChecks(unittest.TestCase):
 
     def setUp(self):
         os.chdir('test-R')
-        if os.path.exists('R-Rdummypkg'):
-             shutil.rmtree('R-Rdummypkg')
+        if not os.path.exists('R-Rdummypkg/BUILD'):
+             sys.stdout.write(' rebuilding cached build...')
+             subprocess.check_call('../../fedora-review' 
+                                       ' -rcn R-Rdummypkg &>/dev/null',
+                                   shell=True)
         ReviewDirs.reset()
         ReviewDirs.startdir = os.getcwd()
-        sys.argv = ['fedora-review','-rpn','R-Rdummypkg']
+        sys.argv = ['fedora-review','--no-build','-rcpn','R-Rdummypkg']
         Settings.init(True)
 
-    @unittest.skipIf(no_net, 'No network available')
     def test_all_checks(self):
         ''' Run all automated review checks'''
         self.bug = NameBug('R-Rdummypkg')
