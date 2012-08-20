@@ -139,8 +139,7 @@ class TestOptions(unittest.TestCase):
     def test_git_source(self):
         ''' test use of local source0 tarball '''
 
-        skipped = 'CheckBuild,CheckRpmlint,CheckRpmlintInstalled,' \
-                  'CheckBuildCompleted'
+        skipped = 'CheckBuild,CheckRpmLint,CheckRpmLintInstalled' 
         argv = ['fedora-review', '-rpn', 'get-flash-videos']
         argv.extend(['--mock-config', 'fedora-16-i386-rpmfusion_free'])
         argv.extend(['-x', skipped])
