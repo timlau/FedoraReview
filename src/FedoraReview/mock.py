@@ -99,7 +99,47 @@ class _Mock(Helpers):
              cmd.extend(['-r', Settings.mock_config])
         cmd.extend(self.get_mock_options().split())
         return cmd
+    
+    def _run_cmd(self, cmd, header='Mock'):
 
+        def log_text(out, err):
+           return  header + " output: " + str(out) + ' ' + str(err)
+
+        self.log.debug(header + ' command: ' + ', '.join(cmd))
+        try:
+            p = Popen(cmd, stdout=PIPE, stderr=STDOUT)
+            output, error = p.communicate()
+            logging.debug(log_text(output, error), exc_info=True)
+        except OSError as e:
+            logging.warning(log_text(output, error), exc_info=True)
+            return str(output)
+        if p.returncode != 0:
+            logging.warning(header + " command returned error code %i",
+                            p.returncode)
+        return None if p.returncode == 0 else str(output)
+
+    def _run_script(self, script):
+        """ Run a script,  return (ok, output). """
+        try:
+            p = Popen(script, stdout=PIPE, stderr=STDOUT, shell=True)
+            output, error = p.communicate()
+        except OSError as e:
+            return False, e.strerror
+        return True, output
+
+    def _clear_rpm_db(self):
+        """ mock install uses host's yum -> bad rpm database. """
+        cmd = self._mock_cmd()
+        cmd.extend(['--shell', 'rm -f /var/lib/rpm/__db*'])
+        self._run_cmd(cmd)
+
+    def _mock_cmd(self):
+        cmd = ["mock"]
+        if Settings.mock_config:
+             cmd.extend(['-r', Settings.mock_config])
+        cmd.extend(self.get_mock_options().split())
+        return cmd
+    
     def get_mock_options(self):
         """ --mock-config option, with a guaranteed ---'resultdir' part
         """
@@ -116,34 +156,9 @@ class _Mock(Helpers):
         cmd.append('"rpm -q ' + package + '" &>/dev/null' )
         cmd = ' '.join(cmd)
         rc = call(cmd, shell=True)
-        self.log.debug('Tested package ' + package + 
-                        'result: ' + str(rc))
+        self.log.debug('is_installed: Tested ' + package + 
+                        ', result: ' + str(rc))
         return rc == 0
-
-    def _mock_cmd(self):
-        cmd = ["mock"]
-        if Settings.mock_config:
-             cmd.extend(['-r', Settings.mock_config])
-        cmd.extend(self.get_mock_options().split())
-        return cmd
-    
-    def _run_cmd(self, cmd):
-
-        def log_text(out, err):
-           return  "Mock output: " + str(out) + ' ' + str(err)
-
-        self.log.debug('Mock command: ' + ', '.join(cmd))
-        try:
-            p = Popen(cmd, stdout=PIPE, stderr=STDOUT)
-            output, error = p.communicate()
-            logging.debug(log_text(output, error), exc_info=True)
-        except OSError as e:
-            logging.warning(log_text(output, error), exc_info=True)
-            return output
-        if p.returncode != 0:
-            logging.warning("Mock command returned error code %i",
-                            p.returncode)
-        return None if p.returncode == 0 else output
 
     def install(self, packages):
         """
@@ -154,15 +169,8 @@ class _Mock(Helpers):
         def log_text(out, err):
            return  "Install output: " + str(out) + ' ' + str(err)
 
-        def mock_cmd():
-            cmd = ["mock"]
-            if Settings.mock_config:
-                 cmd.extend(['-r', Settings.mock_config])
-            cmd.extend(self.get_mock_options().split())
-            return cmd
-
-        def is_not_installed(path):
-            p = path
+        def is_not_installed(package):
+            p = package
             if os.path.exists(p):
                 p = os.path.basename(p).rsplit('-',2)[0]
             if self.is_installed(p):
@@ -173,50 +181,16 @@ class _Mock(Helpers):
         rpms = filter(is_not_installed, packages)
         if len(rpms) == 0:
             return
-        cmd = self._mock_cmd()
-        cmd.extend(['--shell', 'rm -f /var/lib/rpm/__db*'])
-        self._run_cmd(cmd)
+        self._clear_rpm_db()
 
         cmd = self._mock_cmd()
         cmd.append("install")
         cmd.extend(rpms)
-        self.log.debug('Install command: ' + ', '.join(cmd))
-        try:
-            p = Popen(cmd, stdout=PIPE, stderr=STDOUT)
-            output, error = p.communicate()
-            logging.debug(log_text(output, error), exc_info=True)
-        except OSError as e:
-            logging.warning(log_text(output, error), exc_info=True)
-            return output
-        if p.returncode != 0:
-            logging.warning("Install command returned error code %i",
-                            p.returncode)
-        return None if p.returncode == 0 else output
+        return self._run_cmd(cmd, 'Install')
 
     def init(self):
         """ Run a mock --init command. """
-        cmd = ["mock", "--init"]
-        self.log.debug('Init command: ' + ' '.join(cmd))
-        try:
-            p = Popen(cmd, stdout=PIPE, stderr=STDOUT)
-            output, error = p.communicate()
-            logging.debug(output + str(error), exc_info=True)
-        except OSError as e:
-            logging.warning(output + str(error), exc_info=True)
-            return output
-        if p.returncode != 0:
-            logging.warning("init command returned error code %i",
-                            p.returncode)
-        return None if p.returncode == 0 else output
-
-    def _run(self, script):
-        """ Run a script,  return (ok, output). """
-        try:
-            p = Popen(script, stdout=PIPE, stderr=STDOUT, shell=True)
-            output, error = p.communicate()
-        except OSError as e:
-            return False, e.strerror
-        return True, output
+        self._run_cmd(["mock", "--init"], 'Init')
 
     def rpmlint_rpms(self, rpms):
         """ Install and run rpmlint on  packages,
@@ -228,7 +202,7 @@ class _Mock(Helpers):
             return False, error
 
         script = _RPMLINT_SCRIPT
-        basenames = [ os.path.basename(r) for r in rpms]
+        basenames = [os.path.basename(r) for r in rpms]
         names = [r.rsplit('-', 2)[0] for r in basenames]
         rpm_names = ' '.join(list(set(names)))
       
@@ -237,12 +211,10 @@ class _Mock(Helpers):
             config = '-r ' + Settings.mock_config 
         script = script.replace('@config@', config)
         script = script.replace('@rpm_names@', rpm_names)
-        ok, output = self._run(script)
+        ok, output = self._run_script(script)
         self.log.debug( "Script output: " + output)
-
         if not ok:
             return False, output + '\n'
-
         ok, err_msg = self.check_rpmlint_errors(output, self.log)
         if err_msg:
             return False, err_msg

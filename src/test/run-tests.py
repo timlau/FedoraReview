@@ -36,7 +36,6 @@ from test_bugzilla import TestBugzilla
 from test_checks   import TestChecks
 from test_R_checks import TestRChecks
 from test_options  import TestOptions
-from test_util     import TestUtil
 from test_ext      import TestExt
 
 from test_env      import no_net
