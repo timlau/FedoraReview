@@ -29,15 +29,17 @@ import shutil
 
 from glob import glob
 from subprocess import check_call
-from test_env import no_net
+from test_env import no_net, check_python_test
 
-from FedoraReview import Checks, Settings, ReviewDirs, NameBug
+from FedoraReview import Checks, Settings, ReviewDirs, Mock, NameBug
 
 class TestExt(unittest.TestCase):
 
     def setUp(self):
-        os.environ['REVIEW_EXT_DIRS'] = os.getcwd() + '/api'
-        os.environ['REVIEW_SCRIPT_DIRS'] = os.getcwd() + '/sh-api'
+        os.environ['REVIEW_EXT_DIRS'] = os.path.join(os.getcwd(),
+                                                     'api')
+        os.environ['REVIEW_SCRIPT_DIRS'] = os.path.join(os.getcwd(),
+                                                     'sh-api')
         if os.path.exists('python-test'):
             shutil.rmtree('python-test')
         self.startdir = os.getcwd()
@@ -52,34 +54,40 @@ class TestExt(unittest.TestCase):
         check.run()
         return check
 
-
     def tearDown(self):
         del os.environ['REVIEW_EXT_DIRS']
 
     def test_display(self):
-        check_call('../fedora-review -d | grep test1 >/dev/null', 
+        os.chdir('python-test.repo')
+        check_call('../../fedora-review -d | grep test1 >/dev/null', 
                    shell=True)
+        os.chdir(self.startdir)
 
-    @unittest.skipIf(no_net, 'No network available')
     def test_single(self):
-        check_call('../fedora-review -n python-test  -s test1 '  
-                   ' >/dev/null', 
+        check_python_test()
+        os.chdir('python-test.repo')
+        check_call('../../fedora-review --no-build -rcpn python-test'
+                      ' -s test1  >/dev/null', 
                    shell=True)
+        os.chdir(self.startdir)
 
-    @unittest.skipIf(no_net, 'No network available')
     def test_exclude(self):
-        check_call('../fedora-review -n python-test  -x test1' 
-                   ' >/dev/null',
+        check_python_test()
+        os.chdir('python-test.repo')
+        check_call('../../fedora-review --no-build -rcpn python-test'
+                      ' -x test1  >/dev/null',
                    shell=True)
+        os.chdir(self.startdir)
 
     def test_sh_api(self):
-        if os.path.exists('python-test'):
-            shutil.rmtree('python-test')
-        sys.argv = ['fedora-review','-pn','python-test']
+        check_python_test()
+        os.chdir('python-test.repo')
+        sys.argv = ['../../fedora-review']
+        sys.argv .extend(['--no-build', '-rcpn','python-test'])
         Settings.init(True)
-        ReviewDirs.reset()
-        ReviewDirs.workdir_setup('.', True)
+        ReviewDirs.reset('.')
         bug = NameBug('python-test')
         check = self.run_single_check(bug,'check-large-docs.sh')
         self.assertEqual(check.result.result, 'pending')
+        os.chdir(self.startdir)
 

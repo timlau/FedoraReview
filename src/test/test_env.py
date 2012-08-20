@@ -19,6 +19,9 @@
 '''
 Unit tests for bugzilla bug handling
 '''
+import os.path
+import os
+import subprocess
 
 from urllib import urlopen
 
@@ -30,3 +33,12 @@ try:
 except:
     no_net = True
 
+def check_python_test():
+    # re-recreate a cached build for python-test in python-test.repo
+    if not os.path.exists('python-test.repo/python-test'):
+        print "\nInitiating python-test.repo/python-test"
+        os.chdir('python-test.repo')
+        subprocess.check_call(
+                     '../../fedora-review --no-build -rpcn python-test',
+                     shell=True)
+        os.chdir('..')
