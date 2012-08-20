@@ -38,12 +38,10 @@ class TestChecks(unittest.TestCase):
 
     def setUp(self):
         self.startdir = os.getcwd()
-        sys.argv = ['test-checks','-b','1234']
-        Settings.init(True)
-        ReviewDirs.reset()
-        ReviewDirs.workdir_setup('.', True)
         if not os.path.exists(TEST_WORK_DIR):
             os.makedirs(TEST_WORK_DIR)
+        sys.argv = ['test-checks','-b','1234']
+        Settings.init(True)
         self.checks = None
         self.srpm = TEST_WORK_DIR + os.path.basename(TEST_SRPM)
         self.spec = TEST_WORK_DIR + os.path.basename(TEST_SPEC)
@@ -53,6 +51,11 @@ class TestChecks(unittest.TestCase):
         helper._get_file(TEST_SRC, TEST_WORK_DIR)
         helper._get_file(TEST_SPEC, TEST_WORK_DIR)
         del helper
+        os.chdir(TEST_WORK_DIR)
+        ReviewDirs.reset()
+        ReviewDirs.workdir_setup('.', True)
+        ReviewDirs.startdir = os.getcwd()
+
 
     @unittest.skipIf(no_net, 'No network available')
     def test_all_checks(self):
