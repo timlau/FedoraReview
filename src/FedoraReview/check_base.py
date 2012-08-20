@@ -213,15 +213,43 @@ class LangCheckBase(CheckBase):
 
 class CheckDict(dict):
     """
-    A Dictionary of AbstractCheck, maintaining checkdict property.
+    A Dictionary of AbstractCheck, with some added behaviour:
+        - Deprecated checks are removed when new items enter.
+        - Duplicates (overwriting existing entry) is not allowed.
+        - Inserted entry gets a checkdict property pointing to
+          containing CheckDict instance.
     """
 
     def __init__(self, *args, **kwargs):
         self.update(*args, **kwargs)
+        self.log = Settings.get_logger()
+        self.deprecations = {}
 
     def __setitem__(self, key, value):
-        value.checkdict = self
+
+        def log_kill(victim, killer):
+            self.log.info("Removing %s in %s, deprecated by %s in %s" %
+                              (victim.name, victim.defined_in, 
+                               killer.name, killer.defined_in))
+
+        def log_duplicate(first, second):
+            self.log.warning( "Duplicate checks %s in %s, %s in %s" %
+                              (first.name, first.defined_in, 
+                              second.name, second.defined_in))
+            
+
+        if key in self.iterkeys() and key in value.deprecates:
+            log_kill(self[key], value)
+            del(self[key])
+        if key in self.deprecations.iterkeys():
+            log_kill(value, self.deprecations[key])
+            return
+        if key in self.iterkeys():
+            log_duplicate(value, self[key])
         dict.__setitem__(self, key, value)
+        value.checkdict = self
+        for d in value.deprecates:
+            self.deprecations[d] = value
 
     def update(self, *args, **kwargs):
         if len(args) > 1:

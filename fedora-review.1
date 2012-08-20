@@ -109,7 +109,8 @@ Run a single test, as listed by --display-checks
 Provides a more detailed output of what's going on.
 .TP 4
 .B -x  "test1, test2, ...", --exclude "test1, test2, ..."
-Comma-separated list of test(s) to exclude, as listed by --display-checks
+Comma-separated list of test(s) to exclude, as listed by --display-checks.
+A test which depends on an excluded test, will run.
 .SH THE REVIEW DIRECTORY
 The report template create by fedora-review lives in a review directory. 
 Besides the report, here is:

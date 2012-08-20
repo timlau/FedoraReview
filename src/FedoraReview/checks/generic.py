@@ -382,6 +382,7 @@ class CheckBuild(GenericCheckBase):
                     ' binary rpms on at least one supported primary' \
                     ' architecture.'
         self.automatic = True
+        self.needs = []
 
     def run(self):
         rc = self.srpm.build()
@@ -396,7 +397,7 @@ class CheckBuild(GenericCheckBase):
              self.set_passed(False)
 
 
-class CheckRpmLint(GenericCheckBase):
+class CheckRpmlint(GenericCheckBase):
     '''
     MUST: rpmlint must be run on the source rpm and all binary rpms
     the build produces.  The output should be posted in the review.
@@ -408,21 +409,39 @@ class CheckRpmLint(GenericCheckBase):
         self.text = 'Rpmlint is run on all rpms the build produces.'
         self.automatic = True
         self.type = 'MUST'
+        self.needs = ['CheckBuild']
 
     def run(self):
         if self.srpm.build() != -1:
             no_errors, rc = self.srpm.rpmlint_rpms()
             text = 'No rpmlint messages.' if no_errors else \
-                'There are rpmlint messages (see attachment).'
+                        'There are rpmlint messages (see attachment).'
             attachments = [ Attachment('Rpmlint', rc, 5) ]
             self.set_passed(True, text, attachments)
         else:
             self.set_passed(False, 'Mock build failed')
 
 
-class CheckRpmLintInstalled(GenericCheckBase):
+class CheckBuildCompleted(GenericCheckBase):
     '''
-    SHOULD: Not in guidelines, but running rpmlint on the installed
+    DUMMY: This test is the default dependency. Requiring this test means
+    requiring the build and rpmlint. The test leaves no trace in report.
+    '''
+    def __init__(self, base):
+        GenericCheckBase.__init__(self, base)
+        self.url = ''
+        self.text = 'This text is never shown'
+        self.automatic = True
+        self.type = 'EXTRA'
+        self.needs = ['CheckRpmlintInstalled']
+
+    def run(self):
+        self.set_passed('not_applicable')
+
+
+class CheckRpmlintInstalled(GenericCheckBase):
+    '''
+    EXTRA: Not in guidelines, but running rpmlint on the installed
     package occasionally reveals things otherwise not found.
     http://fedoraproject.org/wiki/Packaging/Guidelines#rpmlint
     '''
@@ -433,15 +452,14 @@ class CheckRpmLintInstalled(GenericCheckBase):
         self.text = 'Rpmlint is run on all installed packages.'
         self.automatic = True
         self.type = 'EXTRA'
+        self.needs = ['CheckPackageInstalls']
 
     def run(self):
         if self.srpm.build() != -1:
             rpms = self.srpm.get_used_rpms('.src.rpm')
-            if not Settings.nobuild:
-                Mock.install(rpms)
             no_errors, rc = Mock.rpmlint_rpms(rpms)
             text = 'No rpmlint messages.' if no_errors else \
-                'There are rpmlint messages (see attachment).'
+                             'There are rpmlint messages (see attachment).'
             attachments = \
                 [Attachment('Rpmlint (installed packages)', rc+'\n', 5)]
             self.set_passed(True, text, attachments)
@@ -1356,12 +1374,14 @@ class CheckExcludeArch(GenericCheckBase):
 
 
 class CheckPackageInstalls(GenericCheckBase):
+
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
         self.text = 'Package installs properly.'
         self.automatic = True
         self.type = 'MUST'
+        self.needs = ['CheckRpmlint']
 
     def run(self):
         if Settings.prebuilt:
