@@ -140,7 +140,7 @@ class TestOptions(unittest.TestCase):
     def test_git_source(self):
         ''' test use of local source0 tarball '''
 
-        skipped = 'CheckBuild,CheckRpmLint,CheckRpmLintInstalled'
+        skipped = 'CheckBuild,CheckRpmlint,CheckRpmlintInstalled' 
         argv = ['fedora-review', '-rpn', 'get-flash-videos']
         argv.extend(['--mock-config', 'fedora-16-i386-rpmfusion_free'])
         argv.extend(['-x', skipped])
@@ -297,7 +297,7 @@ class TestOptions(unittest.TestCase):
         bug.find_urls()
         bug.download_files()
         checks = Checks(bug.spec_file, bug.srpm_file)
-        self.assertFalse('CheckRequires' in checks.get_checks())
+        self.assertTrue(checks.checkdict['CheckRequires'].result == None)
 
 
 if __name__ == '__main__':

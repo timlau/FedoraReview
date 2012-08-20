@@ -49,7 +49,12 @@ x = Pass
 
 
 class Checks(object):
-    ''' Interface class to load, select and run checks. '''
+    ''' 
+    Interface class to load, select and run checks.
+    Properties:
+        checkdict: A CheckDict containing all tests (deprecated
+                   removed).
+    '''
 
     def __init__(self, spec_file, srpm_file):
         ''' Create a Checks set. srpm_file and spec_file are required,
@@ -112,54 +117,67 @@ class Checks(object):
     def exclude_checks(self, exclude_arg):
         for c in [l.strip() for l in exclude_arg.split(',')]:
             if  c in self.checkdict:
-                del self.checkdict[c]
+                # Mark check as run, don't delete it. We want
+                # checks depending on this to run.
+                self.checkdict[c].result = None
             else:
                 self.log.warn("I can't remove check: " + c)
 
     def set_single_check(self, check):
         self.checkdict.set_single_check(check)
+        self.checkdict[check].needs = []
 
     def get_checks(self):
         return self.checkdict
 
     def run_checks(self, output=sys.stdout, writedown=True):
 
+        def ready_to_run(name):
+            """
+            Check if all checks listed in 'needs' have run and not
+            already run.
+            """
+            check = self.checkdict[name]
+            if hasattr(check, 'result'):
+                return False
+            for dep in check.needs:
+                if not dep in self.checkdict:
+                    self.log.warning('%s depends on deprecated %s' %
+                                        (name, dep))
+                    self.log.warning('Removing %s, cannot resolve deps' %
+                                     name)
+                    del(self.checkdict[name])
+                    return True
+                elif not hasattr(self.checkdict[dep], 'result'):
+                    return False
+            return True             
+
+        def run_check(name):  
+            """ Run check. Update results, attachments and issues. """
+            check = self.checkdict[name]
+            if hasattr(check, 'result'):
+                return
+            self.log.debug('Running check: ' + name )
+            check.run()
+            result = check.result
+            if not result:
+                return
+            results.append(result)
+            attachments.extend(result.attachments)
+            if result.type == 'MUST' and result.result == "fail":
+                issues.append(result)
+         
         issues = []
         results = []
-        deprecated = []
         attachments = []
-        names = list(self.checkdict.iterkeys())
 
-        # "Horrible Hack (tm)"
-        # First, run state-changing build and install:
-        if 'CheckPackageInstalls' in names:
-            names.remove('CheckPackageInstalls')
-            names.insert(0, 'CheckPackageInstalls')
-        if 'CheckBuild' in names:
-            names.remove('CheckBuild')
-            names.insert(0, 'CheckBuild')
-       
-        for name in names:
-            if not name in self.checkdict:
-                continue
-            check = self.checkdict[name]
-            for deprecate in check.deprecates:
-                if deprecate in self.checkdict:
-                    del self.checkdict[deprecate]
-                    self.log.debug( 
-                      'Kill %s, deprecated in %s' % (deprecate, name))
-            
-        for name in names:
-            if not name in self.checkdict:
-                continue
-            check = self.checkdict[name]
-            check.run()
-            if check.result:
-                result = check.result
-                results.append(result)
-                attachments.extend(result.attachments)
-                if result.type == 'MUST' and result.result == "fail":
-                    issues.append(result)
+        names = list(self.checkdict.iterkeys())
+  
+        tests_to_run = filter(ready_to_run, names)
+        while tests_to_run != []:
+            for name in tests_to_run:
+                run_check(name)
+            tests_to_run = filter(ready_to_run, names)
 
         if writedown:
             key_getter = attrgetter('group', 'type', 'name')
