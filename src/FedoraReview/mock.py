@@ -160,6 +160,34 @@ class _Mock(Helpers):
                         ', result: ' + str(rc))
         return rc == 0
 
+    def rpmbuild_bp(self, srpm_file):
+        """ Try to rebuild the sources from srpm. """
+
+        cmd = self._mock_cmd()
+        cmd.append('--copyin')
+        cmd.append(srpm_file)
+        cmd.append(os.path.basename(srpm_file))
+        errmsg = self._run_cmd(cmd)
+        if  errmsg:
+             self.log.warning("Cannot run mock --copyin: " + errmsg)
+             return errmsg
+        cmd = self._mock_cmd()
+        cmd.append('--shell')
+        cmd.append('rpm -i '+ os.path.basename(srpm_file))
+        errmsg = self._run_cmd(cmd)
+        if  errmsg:
+             self.log.warning("Cannot run mock install src: " + errmsg)
+             return errmsg
+        cmd = self._mock_cmd()
+        cmd.append('--shell')
+        cmd.append('rpmbuild --nodeps -bp /builddir/build/SPECS/*spec')
+        errmsg = self._run_cmd(cmd)
+        if  errmsg:
+             self.log.warning("Cannot run mock --shell rpmbuild -bp: " 
+                              + errmsg)
+             return errmsg
+        return None
+
     def install(self, packages):
         """
         Run  'mock install' on a list of files or packages,
@@ -187,6 +215,7 @@ class _Mock(Helpers):
         cmd.append("install")
         cmd.extend(rpms)
         return self._run_cmd(cmd, 'Install')
+
 
     def init(self):
         """ Run a mock --init command. """

@@ -425,7 +425,8 @@ class CheckRpmlint(GenericCheckBase):
 class CheckBuildCompleted(GenericCheckBase):
     '''
     DUMMY: This test is the default dependency. Requiring this test means
-    requiring the build and rpmlint. The test leaves no trace in report.
+    requiring the build, rpmlint and restored source using rpmbuild -bp
+    under BUILD. The test runs rpmbuild -bp, but leaves no trace in report.
     '''
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
@@ -436,6 +437,7 @@ class CheckBuildCompleted(GenericCheckBase):
         self.needs = ['CheckRpmlintInstalled']
 
     def run(self):
+        Mock.rpmbuild_bp(self.srpm.filename)
         self.set_passed('not_applicable')
 
 
