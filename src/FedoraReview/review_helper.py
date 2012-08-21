@@ -101,7 +101,20 @@ class ReviewHelper(object):
                 print 'Group: ' + group
                 for c in sorted(checks):
                       print '    ' + c.name
-
+        deps_list = filter(lambda c: c.needs != [] and
+                               c.needs != ['CheckBuildCompleted'],
+                           checks_list)
+        for dep in deps_list:
+            print'Dependencies: ' +  dep.name + ': ' + \
+                os.path.basename(dep.defined_in)
+            for needed in dep.needs:
+                print '     ' + needed
+        deprecators =  filter(lambda c: c.deprecates != [], checks_list)
+        for dep in deprecators:
+            print 'Deprecations: ' + dep.name + ': ' + \
+                os.path.basename(dep.defined_in)
+            for victim in dep.deprecates:
+                print '    ' + victim
 
     def __print_version(self):
         print('fedora-review version ' + __version__ + ' ' + build_full)
