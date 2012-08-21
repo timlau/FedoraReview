@@ -1,5 +1,7 @@
 #-*- coding: utf-8 -*-
 
+import re
+
 from FedoraReview import LangCheckBase
 
 class CCppCheckBase(LangCheckBase):
@@ -147,12 +149,15 @@ class CheckSoFiles(CCppCheckBase):
         self.text = 'Development (unversioned) .so files in -devel subpackage, if present.'
         self.automatic = True
         self.type = 'MUST'
+        # we ignore .so files in private directories
+        self.bad_re_str = '/usr/(lib|lib64)/[\w\-]*\.so$'
+        self.bad_re = re.compile(self.bad_re_str)
 
     def is_applicable(self):
         '''
         check if this test is applicable
         '''
-        return self.has_files('*.so')
+        return self.has_files_re(self.bad_re_str)
 
     def run(self):
         files = self.get_files_by_pattern('*.so')
@@ -160,7 +165,7 @@ class CheckSoFiles(CCppCheckBase):
         extra = "Unversioned so-files in non-devel package (fix or explain):"
         for rpm in files:
             for fn in files[rpm]:
-                if not '-devel' in rpm:
+                if not '-devel' in rpm and self.bad_re.search(fn):
                     passed = 'inconclusive'
                     extra += "%s : %s\n" % (rpm, fn)
         self.set_passed(passed, None if passed == True else extra)
