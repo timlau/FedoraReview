@@ -83,7 +83,7 @@ class TestOptions(unittest.TestCase):
         self.assertEqual(expected, bug.srpm_file),
         expected = os.path.abspath('./python-test.spec')
         self.assertEqual(expected, bug.spec_file),
-                         
+
     @unittest.skipIf(no_net, 'No network available')
     def test_bug(self):
         """ Test -bug option """
@@ -92,7 +92,7 @@ class TestOptions(unittest.TestCase):
 
         bug.find_urls()
         home = 'http://leamas.fedorapeople.org/openerp-client'
-        expected = os.path.join( home, 
+        expected = os.path.join( home,
                                  'openerp-client-6.1-2.fc16.src.rpm')
         self.assertEqual(expected, bug.srpm_url)
         expected = os.path.join(home, 'openerp-client.spec')
@@ -115,7 +115,7 @@ class TestOptions(unittest.TestCase):
 
         bug.find_urls()
         home = 'https://dl.dropbox.com/u/17870887/get-flash-videos'
-        expected = os.path.join( home, 
+        expected = os.path.join( home,
                 'get-flash-videos-1.24-4.20120409gita965329.fc16.src.rpm')
         self.assertEqual(expected, bug.srpm_url)
         expected = os.path.join(home, 'get-flash-videos.spec')
@@ -139,7 +139,7 @@ class TestOptions(unittest.TestCase):
     def test_git_source(self):
         ''' test use of local source0 tarball '''
 
-        skipped = 'CheckBuild,CheckRpmLint,CheckRpmLintInstalled' 
+        skipped = 'CheckBuild,CheckRpmLint,CheckRpmLintInstalled'
         argv = ['fedora-review', '-rpn', 'get-flash-videos']
         argv.extend(['--mock-config', 'fedora-16-i386-rpmfusion_free'])
         argv.extend(['-x', skipped])
@@ -160,7 +160,7 @@ class TestOptions(unittest.TestCase):
             log = f.read()
         self.assertIn('Using local file' , log)
         os.chdir(startdir)
- 
+
     def test_version(self):
         """ test -d/--display option. """
         os.chdir(startdir)
@@ -175,7 +175,7 @@ class TestOptions(unittest.TestCase):
         def get_mtime(pattern):
             pattern = os.path.join(ReviewDirs.root, pattern)
             path = glob(pattern)[0]
-            return os.stat(path).st_mtime 
+            return os.stat(path).st_mtime
 
         self.init_test(['fedora-review','-b','818805'])
         if os.path.exists('818805-openerp-client'):
@@ -212,7 +212,7 @@ class TestOptions(unittest.TestCase):
         os.mkdir(d)
         cmd = 'fedora-review -n python-test -m fedora-%s-i386' \
               ' -o=--resultdir=%s --no-report' % (v, d)
-        self.init_test(cmd.split()) 
+        self.init_test(cmd.split())
 
         rh = ReviewHelper()
         rh.run()
@@ -231,7 +231,7 @@ class TestOptions(unittest.TestCase):
             shutil.rmtree('python-spiffgtkwidgets')
         ReviewDirs.reset()
         Settings.init(True)
-  
+
         rpms = glob('/var/lib/mock/fedora-16-i386/*.rpm')
         for r in rpms:
             os.unlink(r)
@@ -246,7 +246,7 @@ class TestOptions(unittest.TestCase):
             log = '\n'.join(f.readlines())
         self.assertIn('Using prebuilt rpms', log)
         os.chdir(startdir)
- 
+
     @unittest.skipIf(no_net, 'No network available')
     def test_rpm_spec(self):
         """ Test --rpm-spec/-r option """
@@ -282,7 +282,7 @@ class TestOptions(unittest.TestCase):
         checks = Checks(bug.spec_file, bug.srpm_file)
         self.assertEqual(len(checks.checks), 1)
         check = checks.checks[0]
-        self.assertEqual(check.name, 'CheckRequires') 
+        self.assertEqual(check.name, 'CheckRequires')
 
     def test_exclude(self):
         ''' test --exclude/-x option. '''
@@ -294,7 +294,7 @@ class TestOptions(unittest.TestCase):
         bug.find_urls()
         bug.download_files()
         checks = Checks(bug.spec_file, bug.srpm_file)
-        self.assertFalse('CheckRequires' in checks.get_checks()) 
+        self.assertFalse('CheckRequires' in checks.get_checks())
 
 
 if __name__ == '__main__':

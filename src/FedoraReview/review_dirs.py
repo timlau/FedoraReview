@@ -67,7 +67,7 @@ class _ReviewDirs(object):
         wd = os.path.abspath(wd)
         if hasattr(self, 'wd'):
             if self.wd != wd and not reuse_old:
-               raise ReviewDirChangeError('Old dir ' + self.wd + 
+               raise ReviewDirChangeError('Old dir ' + self.wd +
                                            ' new dir: ' + wd)
         if os.path.exists(wd) and not reuse_old:
             if Settings.cache:
@@ -94,11 +94,11 @@ class _ReviewDirs(object):
     root = property(lambda self: self.wd)
 
     srpm = property(lambda self: os.path.join(self.wd, SRPM))
-    srpm_unpacked = property(lambda self: os.path.join(self.wd, 
+    srpm_unpacked = property(lambda self: os.path.join(self.wd,
                                                        SRPM_UNPACKED))
     upstream = property(lambda self: os.path.join(self.wd, UPSTREAM))
-    upstream_unpacked = property(lambda self: 
-                                     os.path.join(self.wd, 
+    upstream_unpacked = property(lambda self:
+                                     os.path.join(self.wd,
                                                   UPSTREAM_UNPACKED))
     results = property(lambda self: os.path.join(self.wd, RESULTS))
 

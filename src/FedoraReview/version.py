@@ -39,7 +39,7 @@ def _init():
     try:
         with open('version', 'w') as f:
             f.write(template)
-    except: 
+    except:
         raise VersionError('Cannot write to version file')
 
 

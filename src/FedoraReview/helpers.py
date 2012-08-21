@@ -94,7 +94,7 @@ class Helpers(object):
         if logger:
            logger(False)
         self.urlretrieve(link, path)
-        return path 
+        return path
 
     @staticmethod
     def rpmdev_extract(archive, extract_dir):

@@ -48,27 +48,27 @@ class TestBugzilla(unittest.TestCase):
         self.assertTrue(rc)
         home = 'http://timlau.fedorapeople.org/files/test/review-test'
         self.assertEqual(self.bug.srpm_url,
-                         os.path.join(home, 
+                         os.path.join(home,
                                       'python-test-1.0-1.fc14.src.rpm'))
-        self.assertEqual(self.bug.spec_url, 
+        self.assertEqual(self.bug.spec_url,
                          os.path.join(home, 'python-test.spec'))
 
 
     @unittest.skipIf(no_net, 'No network available')
     def test_download_files(self):
-        ''' 
+        '''
         Test that we can download the spec and srpm from a bugzilla report
         '''
         self.bug.find_urls()
         rc = self.bug.download_files()
         self.assertTrue(rc)
         self.assertEqual(self.bug.srpm_url,
-                         'http://timlau.fedorapeople.org/files/test' 
+                         'http://timlau.fedorapeople.org/files/test'
                          '/review-test/python-test-1.0-1.fc14.src.rpm')
         self.assertEqual(self.bug.spec_url,
                          'http://timlau.fedorapeople.org/files/test/'
                           'review-test/python-test.spec')
-        
+
         cd = os.path.abspath('./srpm')
         srpm = os.path.join(cd,  'python-test-1.0-1.fc14.src.rpm')
         spec = os.path.join(cd,  'python-test.spec')

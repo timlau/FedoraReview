@@ -81,7 +81,7 @@ class UrlBug(AbstractBug):
         return self.bug_url
 
     def check_options(self):
-        AbstractBug.do_check_options(self, '--url', 
+        AbstractBug.do_check_options(self, '--url',
                                      ['prebuilt', 'other_bz'])
 
 

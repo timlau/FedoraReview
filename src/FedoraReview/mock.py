@@ -62,7 +62,7 @@ class _Mock(Helpers):
 
     def _get_dir(self, subdir=None):
         if not hasattr(self, 'mock_root'):
-            self._get_root() 
+            self._get_root()
         p = os.path.join( '/var/lib/mock', self.mock_root )
         p = os.path.join(p, subdir) if subdir else p
         if not os.path.exists(p):
@@ -99,7 +99,7 @@ class _Mock(Helpers):
              cmd.extend(['-r', Settings.mock_config])
         cmd.extend(self.get_mock_options().split())
         return cmd
-    
+
     def _run_cmd(self, cmd, header='Mock'):
 
         def log_text(out, err):
@@ -139,7 +139,7 @@ class _Mock(Helpers):
              cmd.extend(['-r', Settings.mock_config])
         cmd.extend(self.get_mock_options().split())
         return cmd
-    
+
     def get_mock_options(self):
         """ --mock-config option, with a guaranteed ---'resultdir' part
         """
@@ -156,13 +156,13 @@ class _Mock(Helpers):
         cmd.append('"rpm -q ' + package + '" &>/dev/null' )
         cmd = ' '.join(cmd)
         rc = call(cmd, shell=True)
-        self.log.debug('is_installed: Tested ' + package + 
+        self.log.debug('is_installed: Tested ' + package +
                         ', result: ' + str(rc))
         return rc == 0
 
     def install(self, packages):
         """
-        Run  'mock install' on a list of files or packages, 
+        Run  'mock install' on a list of files or packages,
         return None if OK, else the stdout+stderr
         """
 
@@ -205,10 +205,10 @@ class _Mock(Helpers):
         basenames = [os.path.basename(r) for r in rpms]
         names = [r.rsplit('-', 2)[0] for r in basenames]
         rpm_names = ' '.join(list(set(names)))
-      
+
         config = ''
         if Settings.mock_config:
-            config = '-r ' + Settings.mock_config 
+            config = '-r ' + Settings.mock_config
         script = script.replace('@config@', config)
         script = script.replace('@rpm_names@', rpm_names)
         ok, output = self._run_script(script)

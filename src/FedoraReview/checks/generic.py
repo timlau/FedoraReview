@@ -796,11 +796,11 @@ class CheckLicensInDoc(CheckBase):
             if not license in docs:
                 self.log.debug( "Cannot find " + license +
                                 " in doclist")
-                self.set_passed( False, 
+                self.set_passed( False,
                                  "Cannot find %s in rpm(s)" % license)
                 return
-        self.set_passed(True)       
-   
+        self.set_passed(True)
+
 
 class CheckLicenseInSubpackages(CheckBase):
     '''
@@ -1374,7 +1374,7 @@ class CheckPackageInstalls(CheckBase):
             self.set_passed('inconclusive', 'Using prebuilt rpms')
             return
         if Settings.nobuild:
-            self.set_passed('inconclusive', 
+            self.set_passed('inconclusive',
                             'Will not install using --no-build')
             return
         rpms = self.srpm.get_used_rpms('.src.rpm')

@@ -153,7 +153,7 @@ class _Settings(object):
         optional.add_argument('-m','--mock-config', metavar='<config>',
                     dest='mock_config',
                     help='Configuration to use for the mock build,'
-                         " defaults to 'root' defined in" 
+                         " defaults to 'root' defined in"
                          ' /etc/mock/default.cfg')
         optional.add_argument('--no-report',  action='store_true',
                     help='Do not print review report.')
@@ -174,14 +174,14 @@ class _Settings(object):
         optional.add_argument('-s', '--single', metavar='<test>',
                     help='Single test to run, as named by --display-checks.')
         optional.add_argument('-r', '--rpm-spec', action='store_true',
-                    dest='rpm_spec', default=False, 
+                    dest='rpm_spec', default=False,
                     help='Take spec file from srpm instead of separate url.')
         optional.add_argument('-v', '--verbose',  action='store_true',
                     help='Show more output.', default=False, dest='verbose')
         optional.add_argument('-x', '--exclude',
                     dest='exclude', metavar='"test,..."',
                     help='Comma-separated list of tests to exclude.')
-        optional.add_argument('-k', '--checksum', dest='checksum', 
+        optional.add_argument('-k', '--checksum', dest='checksum',
                     default='sha256',
                     choices=['md5', 'sha1', 'sha224', 'sha256',
                              'sha384', 'sha512'],
@@ -203,7 +203,7 @@ class _Settings(object):
             self.resultdir = m.groups()[0] if m else None
             if not 'no-cleanup-after' in self.mock_options:
                 self.mock_options += ' --no-cleanup-after'
-      
+
         self.init_done = True
 
     def add_args(self, args):
@@ -275,7 +275,7 @@ class _Settings(object):
         if not hasattr(self, 'log'):
             self.do_logger_setup()
         return self.log
-    
+
     def _make_log_dir(self):
         try:
             os.makedirs(os.path.dirname(SESSION_LOG))
@@ -283,7 +283,7 @@ class _Settings(object):
             if exc.errno == errno.EEXIST:
                 pass
             else: raise
- 
+
 
 Settings = _Settings()
 

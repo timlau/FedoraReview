@@ -62,7 +62,7 @@ class TestMisc(unittest.TestCase):
             if os.path.exists(tree):
                 shutil.rmtree(tree)
         Mock.reset()
-      
+
 
     def run_single_check(self, bug, the_check):
         bug.find_urls()
@@ -86,7 +86,7 @@ class TestMisc(unittest.TestCase):
         bug = NameBug('python-test')
         bug.find_urls()
         bug.download_files()
-        
+
         spec = SpecFile(bug.spec_file)
         sources = Sources(spec)
         source = Source(sources, 'Source0', TEST_SRC)
@@ -150,11 +150,11 @@ class TestMisc(unittest.TestCase):
         self.assertEqual(spec.get_section('%clean'), expected)
         expected = {'%build': ['%{__python} setup.py build']}
         self.assertEqual(spec.get_section('%build'), expected)
-        expected = {'%install': ['rm -rf $RPM_BUILD_ROOT', 
+        expected = {'%install': ['rm -rf $RPM_BUILD_ROOT',
                     '%{__python} setup.py install -O1 --skip-build'
                     ' --root $RPM_BUILD_ROOT','']}
         self.assertEqual(spec.get_section('%install'),expected)
-        expected = {'%files': ['%defattr(-,root,root,-)', 
+        expected = {'%files': ['%defattr(-,root,root,-)',
                     '%doc COPYING', '%{python_sitelib}/*']}
         self.assertEqual(spec.get_section('%files'),expected)
         # Test get_sources (return the Source/Patch lines with macros resolved)
@@ -279,7 +279,7 @@ class TestMisc(unittest.TestCase):
         os.chdir(self.startdir)
 
     @unittest.skipIf(no_net, 'No network available')
-    def test_md5sum_diff_ok(self):        
+    def test_md5sum_diff_ok(self):
         os.chdir('md5sum-diff-ok')
         sys.argv = ['fedora-review','-n','python-test','-rp']
         Settings.init(True)
@@ -301,7 +301,7 @@ class TestMisc(unittest.TestCase):
         os.chdir(self.startdir)
 
     @unittest.skipIf(no_net, 'No network available')
-    def test_md5sum_diff_fail(self):        
+    def test_md5sum_diff_fail(self):
         os.chdir('md5sum-diff-fail')
         sys.argv = ['fedora-review','-rpn','python-test']
         Settings.init(True)
@@ -321,7 +321,7 @@ class TestMisc(unittest.TestCase):
         os.chdir(self.startdir)
 
     @unittest.skipIf(no_net, 'No network available')
-    def test_bad_specfile(self):        
+    def test_bad_specfile(self):
         os.chdir('bad-spec')
         if os.path.exists('python-test'):
             shutil.rmtree('python-test')

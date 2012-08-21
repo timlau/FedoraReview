@@ -122,10 +122,10 @@ class AbstractBug(Helpers):
         try:
             name = self.get_name()
             assert(name != '?')
-            specs = glob(os.path.join(ReviewDirs.srpm, 
+            specs = glob(os.path.join(ReviewDirs.srpm,
                          name + '*.spec'))
             found = len(specs)
-            srpms = glob(os.path.join(ReviewDirs.srpm, 
+            srpms = glob(os.path.join(ReviewDirs.srpm,
                          name + '*.src.rpm'))
             found += len(srpms)
             if found == 2:
@@ -160,9 +160,9 @@ class AbstractBug(Helpers):
         name = os.path.basename(path).rsplit('-',2)[0]
         ReviewDirs.workdir_setup(name)
         self.do_download_srpm()
-        
+
         SRPMFile(self.srpm_file).unpack()
-        file = glob(os.path.join(ReviewDirs.srpm_unpacked, 
+        file = glob(os.path.join(ReviewDirs.srpm_unpacked,
                                  name + '*.spec'))[0]
         self.spec_file = file
         self.spec_url = 'file://' + file
@@ -197,13 +197,13 @@ class AbstractBug(Helpers):
            return basename.rsplit('-',2)[0]
        else:
            return '?'
-           
+
     def get_dirname(self, prefix=''):
         ''' Return dirname to be used for this bug. '''
         if self.get_name() != '?':
             return prefix + self.get_name()
         else:
-            return prefix + tempfile.mkdtemp(prefix='review-', 
+            return prefix + tempfile.mkdtemp(prefix='review-',
                                              dir=os.getcwd())
 
     def do_check_options(self, mode, bad_opts):

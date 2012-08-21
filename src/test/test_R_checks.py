@@ -55,10 +55,10 @@ class TestRChecks(unittest.TestCase):
         self.checks.run_checks(writedown=False)
         for check in self.checks.checks:
             if check.is_applicable():
-                self.assertTrue(check.header == 'Generic' or 
+                self.assertTrue(check.header == 'Generic' or
                                 check.header == 'R')
                 result = check.get_result()
-                self.assertTrue(result.result in ['pass', 'pending', 'fail']) 
+                self.assertTrue(result.result in ['pass', 'pending', 'fail'])
         os.chdir('..')
 
 
