@@ -160,22 +160,22 @@ class CheckSoFiles(CCppCheckBase):
 
     def run(self):
         files = self.get_files_by_pattern('*.so')
-        passed = True
-        extra = None
         for rpm in files:
             for fn in files[rpm]:
                 if not '-devel' in rpm:
                     self.attachments= [Attachment('Unversioned so-files', 
                             "%s: %s" % (rpm, fn), 10)]
                     if self.bad_re.search(fn):
-                        passed = 'fail'
                         extra = "Uversioned so-files directly in %_libdir"
+                        self.set_passed('fail', extra)
+                        return
                     else:
-                        passed = 'inconclusive'
                         extra = "Unversioned so-files in private %_libdir" \
                             " subdirectory (see attachment). Verify they" \
                             " are not in ld path"
-        self.set_passed(passed, None if passed == True else extra)
+                        self.set_passed('inconclusive', extra)
+                        return
+        self.set_passed(True)
 
 class CheckLibToolArchives(CCppCheckBase):
     '''
