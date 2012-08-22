@@ -230,6 +230,8 @@ class _Mock(Helpers):
             if l.startswith('rpmlint-done:'):
                 break
             text += l + '\n'
+        with open('rpmlint.txt', 'a') as f:
+            f.write(text)
         return ok, text
 
     def have_cache_for(self, name):

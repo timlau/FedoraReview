@@ -199,6 +199,8 @@ class SRPMFile(Helpers):
         out += '\n'
         out += self._run_cmd(cmd)
         out += '\n'
+        with open('rpmlint.txt', 'w') as f:
+            f.write(out)
         for line in out.split('\n'):
             if line and len(line) > 0:
                 self.rpmlint_output.append(line)
