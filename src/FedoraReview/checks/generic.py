@@ -1646,7 +1646,7 @@ class CheckUseGlobal(CheckBase):
 
     def run(self):
         regex = re.compile('(\%define.*)')
-        result = self.spec.find_all(regex)
+        result = self.spec.find_all(regex, skip_changelog=True)
         if result:
             extra = ''
             for res in result:
