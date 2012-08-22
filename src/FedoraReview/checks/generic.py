@@ -1003,7 +1003,10 @@ class CheckNoConfigInUsr(CheckBase):
         for section in sections:
             for line in sections[section]:
                 if line.startswith('%config'):
-                    if line.find('%{_datadir}') != -1:
+                    cmd = ['rpm', '--eval', line.replace('%config', '')]
+                    stdout = check_output(cmd)
+                    output = stdout.decode('utf-8').strip()
+                    if output.startswith('/usr'):
                         passed = False
                         extra += line
 
