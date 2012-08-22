@@ -56,7 +56,8 @@ class TestMisc(unittest.TestCase):
                                         os.path.basename(TEST_SRC))
         if not os.path.exists(TEST_WORK_DIR):
             os.makedirs(TEST_WORK_DIR)
-        self.helpers._get_file(TEST_SRPM, TEST_WORK_DIR)
+        if not no_net:
+            self.helpers._get_file(TEST_SRPM, TEST_WORK_DIR)
         self.startdir = os.getcwd()
         for tree in ['python-test', 'results']:
             if os.path.exists(tree):
@@ -194,7 +195,6 @@ class TestMisc(unittest.TestCase):
         self.assertEqual(1, len(rpms))
         os.chdir(self.startdir)
 
-    @unittest.skipIf(no_net, 'No network available')
     def test_checksum_command_line(self):
         sys.argv = ['fedora-review','-n','python-test','--prebuilt',
                     '-k','sha1']
@@ -203,42 +203,36 @@ class TestMisc(unittest.TestCase):
         checksum = helpers._checksum('scantailor.desktop')
         self.assertEqual(checksum, '5315b33321883c15c19445871cd335f7f698a2aa')
 
-    @unittest.skipIf(no_net, 'No network available')
     def test_md5(self):
         Settings.checksum = 'md5'
         helpers = Helpers()
         checksum = helpers._checksum('scantailor.desktop')
         self.assertEqual(checksum, '4a1c937e62192753c550221876613f86')
 
-    @unittest.skipIf(no_net, 'No network available')
     def test_sha1(self):
         Settings.checksum = 'sha1'
         helpers = Helpers()
         checksum = helpers._checksum('scantailor.desktop')
         self.assertEqual(checksum, '5315b33321883c15c19445871cd335f7f698a2aa')
 
-    @unittest.skipIf(no_net, 'No network available')
     def test_sha224(self):
         Settings.checksum = 'sha224'
         helpers = Helpers()
         checksum = helpers._checksum('scantailor.desktop')
         self.assertEqual(checksum, '01959559db8ef8d596ff824fe207fc0345be67df6b8a51942214adb7')
 
-    @unittest.skipIf(no_net, 'No network available')
     def test_sha256(self):
         Settings.checksum = 'sha256'
         helpers = Helpers()
         checksum = helpers._checksum('scantailor.desktop')
         self.assertEqual(checksum, 'd8669d49c8557ac47681f9b85e322849fa84186a8683c93959a590d6e7b9ae29')
 
-    @unittest.skipIf(no_net, 'No network available')
     def test_sha384(self):
         Settings.checksum = 'sha384'
         helpers = Helpers()
         checksum = helpers._checksum('scantailor.desktop')
         self.assertEqual(checksum, '3d6a580100b1e8a40dc41892f6b289ff13c0b489b8079d8b7c01a17c67b88bf77283f784b4e8dacac6572050df8c948e')
 
-    @unittest.skipIf(no_net, 'No network available')
     def test_sha512(self):
         Settings.checksum = 'sha512'
         helpers = Helpers()
@@ -320,7 +314,6 @@ class TestMisc(unittest.TestCase):
         self.assertTrue(expected in check.attachments[0].text)
         os.chdir(self.startdir)
 
-    @unittest.skipIf(no_net, 'No network available')
     def test_bad_specfile(self):
         os.chdir('bad-spec')
         if os.path.exists('python-test'):
@@ -335,7 +328,6 @@ class TestMisc(unittest.TestCase):
         self.assertTrue('#TestTag' in check.attachments[0].text)
         os.chdir(self.startdir)
 
-    @unittest.skipIf(no_net, 'No network available')
     def test_desktop_file_bug(self):
         os.chdir('desktop-file')
         if os.path.exists('python-test'):
