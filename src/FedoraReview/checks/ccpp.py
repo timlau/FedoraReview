@@ -2,7 +2,7 @@
 
 import re
 
-from FedoraReview import LangCheckBase
+from FedoraReview import LangCheckBase, Attachment
 
 class CCppCheckBase(LangCheckBase):
     header='C/C++'
@@ -150,24 +150,31 @@ class CheckSoFiles(CCppCheckBase):
         self.automatic = True
         self.type = 'MUST'
         # we ignore .so files in private directories
-        self.bad_re_str = '/usr/(lib|lib64)/[\w\-]*\.so$'
-        self.bad_re = re.compile(self.bad_re_str)
+        self.bad_re = re.compile('/usr/(lib|lib64)/[\w\-]*\.so$')
 
     def is_applicable(self):
         '''
         check if this test is applicable
         '''
-        return self.has_files_re(self.bad_re_str)
+        return self.has_files("*.so")
 
     def run(self):
         files = self.get_files_by_pattern('*.so')
         passed = True
-        extra = "Unversioned so-files in non-devel package (fix or explain):"
+        extra = None
         for rpm in files:
             for fn in files[rpm]:
-                if not '-devel' in rpm and self.bad_re.search(fn):
-                    passed = 'inconclusive'
-                    extra += "%s : %s\n" % (rpm, fn)
+                if not '-devel' in rpm:
+                    self.attachments= [Attachment('Unversioned so-files', 
+                            "%s: %s" % (rpm, fn), 10)]
+                    if self.bad_re.search(fn):
+                        passed = 'fail'
+                        extra = "Uversioned so-files directly in %_libdir"
+                    else:
+                        passed = 'inconclusive'
+                        extra = "Unversioned so-files in private %_libdir" \
+                            " subdirectory (see attachment). Verify they" \
+                            " are not in ld path"
         self.set_passed(passed, None if passed == True else extra)
 
 class CheckLibToolArchives(CCppCheckBase):
