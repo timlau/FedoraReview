@@ -340,6 +340,31 @@ class TestMisc(unittest.TestCase):
         self.assertEqual(check.state, 'pass')
         os.chdir(self.startdir)
 
+    def test_unversioned_so(self):
+        os.chdir('unversioned-so')
+        if os.path.exists('python-test'):
+            shutil.rmtree('python-test')
+        sys.argv = ['fedora-review','-rpn','python-test']
+        Settings.init(True)
+        ReviewDirs.reset()
+        ReviewDirs.startdir = os.getcwd()
+        bug = NameBug('python-test')
+        check = self.run_single_check(bug,'CheckSoFiles')
+        self.assertEqual(check.state, 'fail')
+        os.chdir(self.startdir)
+
+    def test_unversioned_so_private(self):
+        os.chdir('unversioned-so-private')
+        if os.path.exists('python-test'):
+            shutil.rmtree('python-test')
+        sys.argv = ['fedora-review','-rpn','python-test']
+        Settings.init(True)
+        ReviewDirs.reset()
+        ReviewDirs.startdir = os.getcwd()
+        bug = NameBug('python-test')
+        check = self.run_single_check(bug,'CheckSoFiles')
+        self.assertEqual(check.state, 'pending')
+        os.chdir(self.startdir)
 
 if __name__ == '__main__':
     suite = unittest.TestLoader().loadTestsFromTestCase(TestMisc)
