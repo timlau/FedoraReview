@@ -177,6 +177,8 @@ class AbstractBug(Helpers):
             else:
                 self.find_spec_url()
             self.log.info("  --> Spec url: " + self.spec_url)
+        except FedoraReviewError as fre:
+            raise fre
         except:
             self.log.debug('url_bug link parse error', exc_info=True)
             self.log.error('Cannot find usable urls here')
