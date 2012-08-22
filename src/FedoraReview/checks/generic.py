@@ -1703,12 +1703,15 @@ class CheckPkgConfigFiles(CheckBase):
 
     def run(self):
         files = self.get_files_by_pattern('*.pc')
-        passed = True
+        if files == []:
+            self.set_passed('not_applicable')
+            return
+        passed = 'pass'
         extra = ''
         for rpm in files:
             for fn in files[rpm]:
                 if not '-devel' in rpm:
-                    passed = False
+                    passed = 'pending'
                     extra += '%s : %s\n' % (rpm, fn)
         self.set_passed(passed, extra)
 
