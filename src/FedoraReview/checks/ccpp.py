@@ -1,8 +1,9 @@
 #-*- coding: utf-8 -*-
 
+import operator
 import re
 
-from FedoraReview import LangCheckBase, Attachment
+from FedoraReview import LangCheckBase, RegistryBase, Attachment
 
 class CCppCheckBase(LangCheckBase):
     group = 'C/C++'
@@ -156,44 +157,33 @@ class CheckSoFiles(CCppCheckBase):
         # we ignore .so files in private directories
         self.bad_re = re.compile('/usr/(lib|lib64)/[\w\-]*\.so$')
 
-    def is_applicable(self):
-        '''
-        check if this test is applicable
-        '''
-        return self.has_files("*.so")
-
-    def run_on_applicable(self):
-        files = self.get_files_by_pattern('*.so')
-        in_libdir = False
-        in_private = False
-        bad_list=[]
-        extra = ""
-        passed = True
-        for rpm in files:
-            for fn in files[rpm]:
-                if not '-devel' in rpm:
-                    bad_list.append("%s: %s" % (rpm, fn))
-                    if self.bad_re.search(fn):
-                        in_libdir = True
-                    else:
-                        in_private = True
-
-        if in_private and not in_libdir:
-            extra = extra + "Unversioned so-files in private" \
-                            " %_libdir subdirectory (see attachment)." \
-                            " Verify they are not in ld path. "
-            passed = 'inconclusive'
-
-        if in_libdir:
-            extra = extra + "Unversioned so-files directly" \
-                                    "in %_libdir."
-            passed = 'fail'
-
-        if bad_list:
-            self.attachments = [Attachment('Unversioned so-files',
-                "\n".join(bad_list), 10)]
-
-        self.set_passed(passed, None if passed == True else extra)
+    def run(self):
+        if not self.has_files('*.so'):
+            self.set_passed('not_applicable')
+            return
+        passed = 'pass'
+        attachments = []
+        extra = None
+        text = ''
+        files_by_rpm = self.get_files_by_pattern('*.so')
+        non_devel_rpms = filter(lambda r: not '-devel' in r,
+                                files_by_rpm.iterkeys())
+        for rpm in non_devel_rpms:
+            for fn in files_by_rpm[rpm]:
+                text += "%s: %s" % (rpm, fn)
+                if self.bad_re.search(fn):
+                    extra = "Unversioned so-files directly in %_libdir"
+                    passed ='fail'
+                    break
+                else:
+                    extra = "Unversioned so-files in private " \
+                        " directory (see attachment). Verify they" \
+                        " are not in ld path"
+                    passed = 'pending'
+                    break
+        if text:
+           attachments = [Attachment('Unversioned so-files', text, 10)]
+        self.set_passed(passed, extra, attachments)
 
 class CheckLibToolArchives(CCppCheckBase):
     '''

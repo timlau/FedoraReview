@@ -355,8 +355,8 @@ class TestMisc(unittest.TestCase):
         ReviewDirs.startdir = os.getcwd()
         bug = NameBug('python-test')
         check = self.run_single_check(bug,'CheckSoFiles')
-        self.assertEqual(check.state, 'fail')
         os.chdir(self.startdir)
+        self.assertEqual(check.result.result,'fail')
 
     def test_unversioned_so_private(self):
         os.chdir('unversioned-so-private')
@@ -368,8 +368,8 @@ class TestMisc(unittest.TestCase):
         ReviewDirs.startdir = os.getcwd()
         bug = NameBug('python-test')
         check = self.run_single_check(bug,'CheckSoFiles')
-        self.assertEqual(check.state, 'pending')
         os.chdir(self.startdir)
+        self.assertEqual(check.result.result, 'pending')
 
 if __name__ == '__main__':
     suite = unittest.TestLoader().loadTestsFromTestCase(TestMisc)
