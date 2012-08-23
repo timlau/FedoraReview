@@ -166,27 +166,36 @@ class CheckSoFiles(CCppCheckBase):
             self.set_passed('not_applicable')
             return
         passed = 'pass'
+        in_libdir = False
+        in_private = False
+        bad_list=[]
         attachments = []
         extra = None
-        text = ''
         files_by_rpm = self.get_files_by_pattern('*.so')
         non_devel_rpms = filter(lambda r: not '-devel' in r,
                                 files_by_rpm.iterkeys())
         for rpm in non_devel_rpms:
             for fn in files_by_rpm[rpm]:
-                text += "%s: %s" % (rpm, fn)
+                bad_list.append("%s: %s" % (rpm, fn))
                 if self.bad_re.search(fn):
-                    extra = "Unversioned so-files directly in %_libdir"
-                    passed ='fail'
-                    break
+                    in_libdir = True
                 else:
-                    extra = "Unversioned so-files in private " \
-                        " directory (see attachment). Verify they" \
-                        " are not in ld path"
-                    passed = 'pending'
-                    break
-        if text:
-           attachments = [Attachment('Unversioned so-files', text, 10)]
+                    in_private = True
+
+        if in_private and not in_libdir:
+            extra = "Unversioned so-files in private" \
+                    " %_libdir subdirectory (see attachment)." \
+                    " Verify they are not in ld path. "
+            passed = 'pending'
+
+        if in_libdir:
+            extra = "Unversioned so-files directly in %_libdir."
+            passed = 'fail'
+
+        if bad_list:
+            attachments = [Attachment('Unversioned so-files',
+                "\n".join(bad_list), 10)]
+
         self.set_passed(passed, extra, attachments)
 
 class CheckLibToolArchives(CCppCheckBase):
