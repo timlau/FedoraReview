@@ -297,10 +297,9 @@ class CheckSourceMD5(CheckBase):
             cmd = '/usr/bin/diff -U2 -r %s %s'  % (upstream, local)
             self.log.debug(' Diff cmd: ' + cmd)
             try:
-                from subprocess import Popen, PIPE
                 p = Popen(cmd.split(), stdout=PIPE, stderr=PIPE)
                 output, error = p.communicate()
-            except OSError as e:
+            except OSError:
                 self.log.error("Cannot run diff", exc_info=True)
                 return (False, None)
             if output and len(output) > 0:
@@ -471,7 +470,7 @@ class CheckSpecAsInSRPM(CheckBase):
         try:
             p = Popen(cmd, stdout=PIPE, stderr=PIPE)
             output, error = p.communicate()
-        except OSError as e:
+        except OSError:
             self.log.error("Cannot run diff", exc_info=True)
             self.set_passed(False, "OS error runnning diff")
             return
@@ -938,7 +937,6 @@ class CheckFilesDuplicates(CheckBase):
         self.type = 'MUST'
 
     def run(self):
-        from subprocess import Popen, PIPE
         filename = os.path.join(Mock.resultdir, 'build.log')
         try:
             stream = open(filename)
