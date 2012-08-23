@@ -25,7 +25,6 @@ import os
 import os.path
 
 from glob import glob
-from urlparse import urlparse
 from subprocess import call, Popen, PIPE, STDOUT
 
 from helpers import Helpers
@@ -114,7 +113,7 @@ class _Mock(Helpers):
             p = Popen(cmd, stdout=PIPE, stderr=STDOUT)
             output, error = p.communicate()
             logging.debug(log_text(output, error), exc_info=True)
-        except OSError as e:
+        except OSError:
             logging.warning(log_text(output, error), exc_info=True)
             return str(output)
         if p.returncode != 0:
@@ -136,13 +135,6 @@ class _Mock(Helpers):
         cmd = self._mock_cmd()
         cmd.extend(['--shell', 'rm -f /var/lib/rpm/__db*'])
         self._run_cmd(cmd)
-
-    def _mock_cmd(self):
-        cmd = ["mock"]
-        if Settings.mock_config:
-             cmd.extend(['-r', Settings.mock_config])
-        cmd.extend(self.get_mock_options().split())
-        return cmd
 
     def get_mock_options(self):
         """ --mock-config option, with a guaranteed ---'resultdir' part
