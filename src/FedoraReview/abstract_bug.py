@@ -18,15 +18,10 @@ Common bug base class. A Bug is a filter that provides usable URL:s to
 srpm and spec file given some kind of key when created.
 '''
 import os.path
-import re
-import shutil
 import tempfile
-import urllib
 
 from glob import glob
 from urlparse import urlparse
-
-from BeautifulSoup import BeautifulSoup
 
 from helpers import Helpers
 from review_error import FedoraReviewError
@@ -65,15 +60,15 @@ class AbstractBug(Helpers):
 
     def find_spec_url(self):
         """ Grab the spec url, update self.spec_url.  """
-        self.log.error( "Calling abstract method" + __method__)
+        self.log.error( "Calling abstract method find_spec_url")
 
     def find_srpm_url(self):
         """ Grab the srpm url, update self.srpm_url.  """
-        self.log.error( "Calling abstract method" + __method__)
+        self.log.error( "Calling abstract method find_srpm_url")
 
     def get_location(self):
         """ Return visible label for source of srpm/spec """
-        self.log.error( "Calling abstract method" + __method__)
+        self.log.error( "Calling abstract method get_location")
 
     def do_download_spec(self):
         """ Download the spec file and srpm extracted from the page.
