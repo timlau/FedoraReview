@@ -940,16 +940,16 @@ class CheckFilesDuplicates(CheckBase):
         filename = os.path.join(Mock.resultdir, 'build.log')
         try:
             stream = open(filename)
-            content = stream.read()
-            stream.close()
-            for line in content.split('\n'):
-                if 'File listed twice' in line:
-                    self.set_passed(False, line)
-                    return
-            self.set_passed(True)
-        except Exception, er:
+        except IOError:
             self.set_passed('inconclusive')
-
+            return 
+        content = stream.read()
+        stream.close()
+        for line in content.split('\n'):
+            if 'File listed twice' in line:
+                self.set_passed(False, line)
+                return
+        self.set_passed(True)
 
 class CheckFilePermissions(CheckBase):
     '''
