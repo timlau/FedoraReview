@@ -123,8 +123,8 @@ export -f unpack_rpms get_used_rpms unpack_sources
 
 ENV_PATH = 'review-env.sh'
 
-TAGS= ['name', 'version', 'release', 'group', 'license', 'url']
-SECTIONS = [ 'prep', 'build', 'install', 'pre', 'post',
+_TAGS= ['name', 'version', 'release', 'group', 'license', 'url']
+_SECTIONS = [ 'prep', 'build', 'install', 'pre', 'post',
              'preun', 'postun', 'posttrans']
 
 _PASS = 80
@@ -198,12 +198,16 @@ class Registry(AbstractRegistry):
         env = ENVIRON_TEMPLATE
         env = env.replace('FR_SETTINGS_generator', settings_generator())
         env = env.replace('@review_dir@', ReviewDirs.root)
-        for tag in TAGS:
-            value = spec.get_from_spec(tag.upper())
-            env = env.replace('@' + tag  + '@', value)
+        for tag in _TAGS:
+            try:
+                value = spec.get_from_spec(tag.upper())
+                env = env.replace('@' + tag  + '@', value)
+            except:
+                log.debug('Cannot get value for: ' + tag)
+                env = env.replace('@' + tag  + '@','""')
         env = env.replace('FR_SOURCE_generator', source_generator())
         env = env.replace('FR_PATCH_generator', patch_generator())
-        for s in SECTIONS:
+        for s in _SECTIONS:
             body = ''
             section = '%' + s.strip()
             try:
@@ -257,6 +261,11 @@ class ShellCheck(GenericCheck):
     DEFAULT_TYPE  = 'MUST'
 
     def __init__(self, checks, path):
+        for tag in _TAGS:
+           try:
+               setattr(self, tag, tag + ' : undefined')
+           except:
+               pass
         GenericCheck.__init__(self, checks, path)
         self.implementation='shell'
         self.groups = checks.groups
