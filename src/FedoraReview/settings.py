@@ -151,7 +151,7 @@ class _Settings(object):
         optional.add_argument('-m','--mock-config', metavar='<config>',
                     dest='mock_config',
                     help='Configuration to use for the mock build,'
-                         " defaults to 'root' defined in"
+                         " defaults to 'default' i. e.,"
                          ' /etc/mock/default.cfg')
         optional.add_argument('--no-report',  action='store_true',
                     help='Do not print review report.')
@@ -197,11 +197,15 @@ class _Settings(object):
         self.resultdir = None
         # uniqueext as present in resultdir w leading '-', or None
         self.uniqueext = None
+        # configdir as present in mock_options, or None
+        self.configdir = None
         if self.mock_options:
             m = re.search( '--uniqueext=([^ ]+)', self.mock_options)
             self.uniqueext = '-' + m.groups()[0] if m else None
             m = re.search('--resultdir=([^ ]+)', self.mock_options)
             self.resultdir = m.groups()[0] if m else None
+            m = re.search('--configdir=([^ ]+)', self.mock_options)
+            self.configdir = m.groups()[0] if m else None
             if not 'no-cleanup-after' in self.mock_options:
                 self.mock_options += ' --no-cleanup-after'
 

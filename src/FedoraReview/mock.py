@@ -51,7 +51,9 @@ class _Mock(Helpers):
         config = 'default'
         if Settings.mock_config:
             config  = Settings.mock_config
-        path = os.path.join('/etc/mock', config + '.cfg')
+        mockdir = Settings.configdir if Settings.configdir \
+            else '/etc/mock'
+        path = os.path.join(mockdir , config + '.cfg')
 
         config_opts = {}
         with open(path) as f:
