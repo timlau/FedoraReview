@@ -193,11 +193,14 @@ class _Settings(object):
         self.do_logger_setup(logging.DEBUG if args.verbose else None)
         if not self.prebuilt:
             _check_mock_grp()
-        # resultdir as present in mock_options, possibly null
+        # resultdir as present in mock_options, or None
         self.resultdir = None
+        # uniqueext as present in resultdir w leading '-', or None
+        self.uniqueext = None
         if self.mock_options:
-            rx=re.compile('--resultdir=([^ ]+)')
-            m = rx.search(self.mock_options)
+            m = re.search( '--uniqueext=([^ ]+)', self.mock_options)
+            self.uniqueext = '-' + m.groups()[0] if m else None
+            m = re.search('--resultdir=([^ ]+)', self.mock_options)
             self.resultdir = m.groups()[0] if m else None
             if not 'no-cleanup-after' in self.mock_options:
                 self.mock_options += ' --no-cleanup-after'

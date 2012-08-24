@@ -59,6 +59,8 @@ class _Mock(Helpers):
                       line.find("config_opts['root']") >= 0]
         exec config[0]
         self.mock_root = config_opts['root']
+        if Settings.uniqueext:
+            self.mock_root += Settings.uniqueext
 
     def _get_dir(self, subdir=None):
         if not hasattr(self, 'mock_root'):
@@ -183,7 +185,7 @@ class _Mock(Helpers):
         cmd.append('rpmbuild --nodeps -bp /builddir/build/SPECS/*spec')
         errmsg = self._run_cmd(cmd)
         if  errmsg:
-             self.log.warning("Cannot run mock --shell rpmbuild -bp: " 
+             self.log.warning("Cannot run mock --shell rpmbuild -bp: "
                               + errmsg)
              return errmsg
         return None
@@ -219,7 +221,16 @@ class _Mock(Helpers):
 
     def init(self):
         """ Run a mock --init command. """
-        self._run_cmd(["mock", "--init"], 'Init')
+        cmd = ["mock"]
+        if hasattr(Settings, 'mock_config'):
+             cmd.extend(['-r', Settings.mock_config])
+        for option in self.get_mock_options().split():
+            if option.startswith('--uniqueext'):
+                 cmd.append(option)
+            if option.startswith('--configdir'):
+                 cmd.append(option)
+        cmd.append('--init')
+        self._run_cmd(cmd, 'Init')
 
     def rpmlint_rpms(self, rpms):
         """ Install and run rpmlint on  packages,
