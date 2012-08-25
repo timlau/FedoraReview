@@ -28,6 +28,8 @@ import logging
 import os.path
 import unittest
 
+from glob import glob
+
 from FedoraReview import Checks, Settings, ReviewDirs
 from FedoraReview.helpers import Helpers
 
@@ -40,6 +42,12 @@ class TestChecks(unittest.TestCase):
         self.startdir = os.getcwd()
         if not os.path.exists(TEST_WORK_DIR):
             os.makedirs(TEST_WORK_DIR)
+        else:
+            crap = glob(os.path.join(TEST_WORK_DIR, 'results', '*.*'))
+            for f in crap:
+                os.unlink(f)
+
+
         sys.argv = ['test-checks','-b','1234']
         Settings.init(True)
         self.checks = None

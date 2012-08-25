@@ -140,7 +140,7 @@ class TestOptions(unittest.TestCase):
     def test_git_source(self):
         ''' test use of local source0 tarball '''
 
-        skipped = 'CheckBuild,CheckRpmlint,CheckRpmlintInstalled' 
+        skipped = 'CheckBuild,CheckRpmlint,CheckRpmlintInstalled'
         argv = ['fedora-review', '-rpn', 'get-flash-videos']
         argv.extend(['--mock-config', 'fedora-16-i386-rpmfusion_free'])
         argv.extend(['-x', skipped])
@@ -148,6 +148,10 @@ class TestOptions(unittest.TestCase):
         os.chdir('git-source')
         if os.path.exists('get-flash-videos'):
             shutil.rmtree('get-flash-videos')
+        crap = glob(os.path.join(os.getcwd(), 'results', '*.*'))
+        for f in crap:
+            os.unlink(f)
+
         ReviewDirs.reset()
         ReviewDirs.startdir = os.getcwd()
         Settings.init(True)
@@ -211,6 +215,9 @@ class TestOptions(unittest.TestCase):
         d = os.path.join(os.getcwd(), 'results')
         if os.path.exists(d):
             shutil.rmtree(d)
+        crap = glob(os.path.join(d, 'results', '*.*'))
+        for f in crap:
+            os.unlink(f)
         os.mkdir(d)
         cmd = 'fedora-review -n python-test -m fedora-%s-i386' \
               ' -o=--resultdir=%s --no-report' % (v, d)
@@ -285,7 +292,7 @@ class TestOptions(unittest.TestCase):
         checks = Checks(bug.spec_file, bug.srpm_file)
         self.assertEqual(len(checks.checkdict), 1)
         check = checks.checkdict['CheckRequires']
-        self.assertEqual(check.name, 'CheckRequires') 
+        self.assertEqual(check.name, 'CheckRequires')
 
     def test_exclude(self):
         ''' test --exclude/-x option. '''

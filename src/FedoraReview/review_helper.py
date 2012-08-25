@@ -27,8 +27,8 @@ import os.path
 
 from FedoraReview import BugException, BugzillaBug, Checks, \
           ChecksLister, CleanExitError, FedoraReviewError, Mock, \
-          NameBug, ReviewDirs, ReviewDirExistsError, Settings, \
-          SettingsError, UrlBug, Sources
+          NameBug, ReviewDirs, ResultDirNotEmptyError, \
+          ReviewDirExistsError, Settings, SettingsError, Sources, UrlBug
 
 from FedoraReview import __version__, build_full
 
@@ -170,6 +170,9 @@ class ReviewHelper(object):
         except ReviewDirExistsError as err:
             print("The directory %s is in the way, please remove." %
                   err.value)
+            return 4
+        except ResultDirNotEmptyError:
+            print("The resultdir is not empty, I cannot handle this.")
             return 4
         except CleanExitError as err:
             self.log.debug('Processing CleanExit')
