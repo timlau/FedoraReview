@@ -27,8 +27,8 @@ import re
 from glob import glob
 from subprocess import Popen, PIPE, check_output
 
-from FedoraReview import AbstractRegistry, Attachment, CheckBase
-from FedoraReview import GenericCheck, ReviewDirs, Settings, XdgDirs
+from FedoraReview import AbstractRegistry, GenericCheck
+from FedoraReview import ReviewDirs, Settings, XdgDirs
 
 
 ENVIRON_TEMPLATE = """

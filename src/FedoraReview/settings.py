@@ -148,6 +148,10 @@ class _Settings(object):
         optional.add_argument('-c','--cache', action='store_true', dest='cache',
                     help = 'Do not redownload files from bugzilla,'
                            ' use the ones in the cache.')
+        optional.add_argument('-L','--local-repo',metavar='<rpm directory>',
+                    dest='repo',
+                    help = 'directory with rpms to install together with'
+                    ' reviewed package during build and install phases.')
         optional.add_argument('-m','--mock-config', metavar='<config>',
                     dest='mock_config',
                     help='Configuration to use for the mock build,'
@@ -160,9 +164,10 @@ class _Settings(object):
                     help = 'Do not rebuild the srpm, use currently'
                            ' built in mock.')
         optional.add_argument('-o','--mock-options', metavar='<mock options>',
-                    default = '--no-cleanup-after', dest='mock_options',
+                    default = '--no-cleanup-after --no-clean',
+                    dest='mock_options',
                     help='Options to specify to mock for the build,'
-                         ' defaults to --no-cleanup-after')
+                         ' defaults to --no-cleanup-after --no-clean')
         optional.add_argument('--other-bz', default=None,
                     metavar='<bugzilla url>', dest='other_bz',
                     help='Alternative bugzilla URL')
@@ -195,7 +200,7 @@ class _Settings(object):
             _check_mock_grp()
         # resultdir as present in mock_options, or None
         self.resultdir = None
-        # uniqueext as present in resultdir w leading '-', or None
+        # uniqueext as present in mock_options, w leading '-', or None
         self.uniqueext = None
         # configdir as present in mock_options, or None
         self.configdir = None
@@ -208,6 +213,10 @@ class _Settings(object):
             self.configdir = m.groups()[0] if m else None
             if not 'no-cleanup-after' in self.mock_options:
                 self.mock_options += ' --no-cleanup-after'
+            if not 'no-cleanup-after' in self.mock_options:
+                self.mock_options += ' --no-cleanup-after'
+            if not re.search('clean($|[ ])',self.mock_options):
+                self.mock_options += ' --no-clean'
 
         self.init_done = True
 

@@ -28,7 +28,7 @@ import re
 from subprocess import Popen, PIPE, check_output
 
 from FedoraReview import CheckBase, Attachment, ReviewDirs, Mock, Settings
-from FedoraReview import RegistryBase
+from FedoraReview import RegistryBase, FedoraReviewError
 
 class Registry(RegistryBase):
     group = 'Generic'
@@ -42,6 +42,22 @@ class GenericCheckBase(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base, __file__)
 
+def _mock_root_setup(while_what):
+
+    class DependencyInstallError(FedoraReviewError):
+        pass
+
+    Mock.init()
+    if Settings.repo:
+        repodir = Settings.repo
+        if not repodir.startswith('/'):
+            repodir = os.path.join(ReviewDirs.startdir, repodir)
+        rpms = glob.glob(os.path.join( repodir, '*.rpm'))
+        error = Mock.install(rpms)
+        if error:
+             raise DependencyInstallError(while_what + ': ' + error)
+
+
 ## Startup sequence, up to CheckBuildCompleted
 
 class CheckBuild(GenericCheckBase):
@@ -50,6 +66,7 @@ class CheckBuild(GenericCheckBase):
     rpms on at least one primary architecture.
     http://fedoraproject.org/wiki/Packaging/Guidelines#Architecture_Support
     '''
+
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
@@ -61,6 +78,8 @@ class CheckBuild(GenericCheckBase):
         self.needs = []
 
     def run(self):
+
+        _mock_root_setup("While building")
         rc = self.srpm.build()
         if not os.path.exists('BUILD'):
             os.symlink(Mock.get_builddir('BUILD'), 'BUILD')
@@ -109,13 +128,12 @@ class CheckPackageInstalls(GenericCheckBase):
         self.needs = ['CheckRpmlint']
 
     def run(self):
-        if Settings.prebuilt:
-            self.set_passed('inconclusive', 'Using prebuilt rpms')
-            return
-        if Settings.nobuild:
+        if Settings.nobuild and not Settings.prebuilt:
             self.set_passed('inconclusive',
-                            'Will not install using --no-build')
+                            'Will not install using --no-build'
+                            ' unless also --prebuilt.')
             return
+        _mock_root_setup('While installing built packages')
         rpms = self.srpm.get_used_rpms('.src.rpm')
         output = Mock.install(rpms)
         if output == None:
