@@ -47,7 +47,6 @@ class TestExt(unittest.TestCase):
         bug.download_files()
         checks = Checks(bug.spec_file, bug.srpm_file).get_checks()
         checks.set_single_check(check_name)
-        self.assertEqual(len(checks), 1)
         check = checks[check_name]
         check.run()
         return check
@@ -57,18 +56,18 @@ class TestExt(unittest.TestCase):
         del os.environ['REVIEW_EXT_DIRS']
 
     def test_display(self):
-        check_call('../fedora-review -d | grep test1 >/dev/null', 
+        check_call('../fedora-review -d | grep test1 >/dev/null',
                    shell=True)
 
     @unittest.skipIf(no_net, 'No network available')
     def test_single(self):
-        check_call('../fedora-review -n python-test  -s test1 '  
-                   ' >/dev/null', 
+        check_call('../fedora-review -n python-test  -s test1 '
+                   ' >/dev/null',
                    shell=True)
 
     @unittest.skipIf(no_net, 'No network available')
     def test_exclude(self):
-        check_call('../fedora-review -n python-test  -x test1' 
+        check_call('../fedora-review -n python-test  -x test1'
                    ' >/dev/null',
                    shell=True)
 

@@ -70,7 +70,7 @@ class TestMisc(unittest.TestCase):
         bug.download_files()
         checks = Checks(bug.spec_file, bug.srpm_file).get_checks()
         checks.set_single_check(check_name)
-        self.assertEqual(len(checks), 1)
+        checks['CheckBuild'].run()
         check = checks[check_name]
         check.run()
         return check
@@ -114,7 +114,6 @@ class TestMisc(unittest.TestCase):
         bug.download_files()
         checks = Checks(bug.spec_file, bug.srpm_file).get_checks()
         checks.set_single_check('CheckSourceMD5')
-        self.assertEqual(len(checks), 1)
         check = checks['CheckSourceMD5']
         check.run()
         result = check.result
@@ -275,7 +274,7 @@ class TestMisc(unittest.TestCase):
         os.chdir(self.startdir)
 
     @unittest.skipIf(no_net, 'No network available')
-    
+
     def test_jsonapi(self):
         if os.path.exists('python-test'):
             shutil.rmtree('python-test')
@@ -294,17 +293,17 @@ class TestMisc(unittest.TestCase):
         self.assertEqual( test1.group, 'Generic')
         self.assertEqual( test1.type, 'EXTRA')
         self.assertEqual( test1.text, 'A check solely for test purposes.')
-        
+
         self.assertEqual( test2.group, 'Generic')
         self.assertEqual( test2.type, 'EXTRA')
-        self.assertEqual( test2.text,  
+        self.assertEqual( test2.text,
                           'A second check solely for test purposes.')
         os.chdir(self.startdir)
         ReviewDirs.reset(self.startdir)
 
 
     @unittest.skipIf(no_net, 'No network available')
-    def test_md5sum_diff_ok(self):        
+    def test_md5sum_diff_ok(self):
         os.chdir('md5sum-diff-ok')
         if os.path.exists('python-test'):
             shutil.rmtree('python-test')
@@ -317,7 +316,6 @@ class TestMisc(unittest.TestCase):
         bug.download_files()
         checks = Checks(bug.spec_file, bug.srpm_file).get_checks()
         checks.set_single_check('CheckSourceMD5')
-        self.assertEqual(len(checks), 1)
         check = checks['CheckSourceMD5']
         check.run()
         self.assertEqual(check.result.result, 'pass')
@@ -327,7 +325,7 @@ class TestMisc(unittest.TestCase):
         ReviewDirs.startdir = self.startdir
 
     @unittest.skipIf(no_net, 'No network available')
-    def test_md5sum_diff_fail(self):        
+    def test_md5sum_diff_fail(self):
         os.chdir(self.startdir)
         os.chdir('md5sum-diff-fail')
         if os.path.exists('python-test'):
@@ -339,12 +337,11 @@ class TestMisc(unittest.TestCase):
         bug.find_urls()
         checks = Checks(bug.spec_file, bug.srpm_file).get_checks()
         checks.set_single_check('CheckSourceMD5')
-        self.assertEqual(len(checks), 1)
         check = checks['CheckSourceMD5']
         check.run()
         self.assertEqual(check.result.result, 'fail')
         expected = 'diff -r also reports differences'
-        self.assertTrue(expected in check.result.attachments[0].text) 
+        self.assertTrue(expected in check.result.attachments[0].text)
         os.chdir(self.startdir)
         ReviewDirs.reset(self.startdir)
 
@@ -358,7 +355,7 @@ class TestMisc(unittest.TestCase):
         ReviewDirs.workdir_setup('.', True)
         bug = NameBug('python-test')
         check = self.run_single_check(bug,'CheckSpecAsInSRPM')
-        self.assertEqual(check.result.result, 'fail')
+        self.assertTrue(check.is_failed)
         self.assertTrue('#TestTag' in check.result.attachments[0].text)
         os.chdir(self.startdir)
 
@@ -396,7 +393,7 @@ class TestMisc(unittest.TestCase):
         l.set_single_check('test1')
         self.assertEqual(len(l), 1)
         self.assertEqual(l['test1'], c1)
-  
+
 
     def test_unversioned_so(self):
         os.chdir('unversioned-so')
