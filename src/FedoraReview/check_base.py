@@ -101,6 +101,11 @@ class AbstractCheck(object):
       - Tests are considered equal if they have the same name.
     """
 
+    PASS    = 'pass'
+    FAIL    = 'fail'
+    NA      = 'na'
+    PENDING = 'pending'
+
     version        = '0.1'
     implementation = 'python'
 
@@ -128,7 +133,23 @@ class AbstractCheck(object):
     def run(self):
         raise AbstractCallError('AbstractCheck')
 
+    @property
+    def state(self):
+        # None for (not is_run or is_na)
+        assert self != None
+        if hasattr(self, 'result'):
+            return self.result.result if self.result else None
+        return None
+
+    is_run     = property(lambda self: hasattr(self, 'result'))
+    is_failed  = property(lambda self: self.state == self.FAIL)
+    is_passed  = property(lambda self: self.state == self.PASS)
+    is_pending = property(lambda self: self.state == self.PENDING)
+    is_na      = property(
+                     lambda self: self.is_run and self.state == None)
+
 class GenericCheck(AbstractCheck, FileChecks):
+
     """
     Common interface inherited by all Check implementations.
 
@@ -151,10 +172,10 @@ class GenericCheck(AbstractCheck, FileChecks):
         self.type = 'MUST'
         self.needs = ['CheckBuildCompleted']
 
-    spec = property(lambda self: self.checks.spec)
-    srpm = property(lambda self: self.checks.srpm)
-    sources = property(lambda self: self.checks.sources)
-    name = property(lambda self: self.__class__.__name__)
+    spec       = property(lambda self: self.checks.spec)
+    srpm       = property(lambda self: self.checks.srpm)
+    sources    = property(lambda self: self.checks.sources)
+    name       = property(lambda self: self.__class__.__name__)
 
     def set_passed(self, result, output_extra=None, attachments=[]):
         '''
@@ -164,16 +185,17 @@ class GenericCheck(AbstractCheck, FileChecks):
         if result == 'not_applicable':
             self.result = None
             return
-        if result == None or result == 'na':
-            state = 'na'
-        elif result == True or result == 'pass':
-            state = 'pass'
-        elif result == False or result == 'fail':
-            state = 'fail'
-        elif result == 'inconclusive' or result == 'pending':
-            state = 'pending'
+        if result == None or result == self.NA:
+            state = self.NA
+        elif result == True or result == self.PASS:
+            state = self.PASS
+        elif result == False or result == self.FAIL:
+            state = self.FAIL
+        elif result == 'inconclusive' or result == self.PENDING:
+            state = self.PENDING
         else:
-            state = 'fail'
+            state = self.FAIL
+            log.warning('Illegal return code: ' + str(result))
         r = TestResult(self, state, output_extra, attachments)
         self.result = r
 
@@ -193,7 +215,7 @@ class CheckBase(GenericCheck, Helpers):
         return True
 
     def run_if_applicable(self):
-        self.set_passed('inconclusive')
+        self.set_passed(self.PENDING)
 
     def run(self):
         ''' By default, a manual test returning 'inconclusive'.'''
@@ -279,9 +301,19 @@ class CheckDict(dict):
             self.add(c)
 
     def set_single_check(self, check_name):
-        c = self[check_name]
+
+        def reap_needed(node):
+             needed.append(node)
+             node.result = None
+             for n in node.needs:
+                  reap_needed(self[n])
+
+
+        needed = []
+        reap_needed(self[check_name])
         self.clear()
-        self[check_name] = c
+        self.extend(needed)
+        delattr(self[check_name], 'result')
 
 
 class TestResult(object):
@@ -302,6 +334,8 @@ class TestResult(object):
             self.output_extra = re.sub("\s+", " ", self.output_extra)
         self.wrapper = TextWrapper(width=78, subsequent_indent=" " * 5,
                                    break_long_words=False, )
+
+    state = property(lambda self: self.result)
 
     def get_text(self):
         strbuf = StringIO.StringIO()
