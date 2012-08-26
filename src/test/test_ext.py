@@ -29,55 +29,44 @@ import shutil
 
 from glob import glob
 from subprocess import check_call
-from test_env import no_net
 
 from FedoraReview import Checks, Settings, ReviewDirs, NameBug
 
-class TestExt(unittest.TestCase):
+from fr_testcase import FR_TestCase, NO_NET
+
+class TestExt(FR_TestCase):
 
     def setUp(self):
+        FR_TestCase.setUp(self)
         os.environ['REVIEW_EXT_DIRS'] = os.getcwd() + '/api'
         os.environ['REVIEW_SCRIPT_DIRS'] = os.getcwd() + '/sh-api'
-        if os.path.exists('python-test'):
-            shutil.rmtree('python-test')
-        self.startdir = os.getcwd()
-
-    def run_single_check(self, bug, check_name):
-        bug.find_urls()
-        bug.download_files()
-        checks = Checks(bug.spec_file, bug.srpm_file).get_checks()
-        checks.set_single_check(check_name)
-        check = checks[check_name]
-        check.run()
-        return check
-
 
     def tearDown(self):
+        FR_TestCase.tearDown(self)
         del os.environ['REVIEW_EXT_DIRS']
 
     def test_display(self):
-        check_call('../fedora-review -d | grep test1 >/dev/null',
+        os.chdir('test_ext')
+        check_call('../../fedora-review -d | grep test1 >/dev/null',
                    shell=True)
 
-    @unittest.skipIf(no_net, 'No network available')
+    @unittest.skipIf(NO_NET, 'No network available')
     def test_single(self):
-        check_call('../fedora-review -n python-test  -s test1 '
+        os.chdir('test_ext')
+        check_call('../../fedora-review -n python-test  -s test1 '
                    ' >/dev/null',
                    shell=True)
 
-    @unittest.skipIf(no_net, 'No network available')
+    @unittest.skipIf(NO_NET, 'No network available')
     def test_exclude(self):
-        check_call('../fedora-review -n python-test  -x test1'
+        self.init_test('test_ext',argv=['-b', '1'], wd='python-test')
+        check_call('../../fedora-review -n python-test  -x test1'
                    ' >/dev/null',
                    shell=True)
 
     def test_sh_api(self):
-        if os.path.exists('python-test'):
-            shutil.rmtree('python-test')
-        sys.argv = ['fedora-review','-pn','python-test']
-        Settings.init(True)
-        ReviewDirs.reset()
-        ReviewDirs.workdir_setup('.', True)
+        self.init_test('test_ext',
+                       argv=['-pn','python-test'], wd='python-test')
         bug = NameBug('python-test')
         check = self.run_single_check(bug,'check-large-docs.sh')
         self.assertEqual(check.result.result, 'pending')

@@ -16,7 +16,7 @@ BuildArch:      noarch
 BuildRequires:  python-devel python-setuptools
 
 %description
-A test package containing a test python module 
+A test package containing a test python module
 for review testing
 
 %prep
@@ -31,7 +31,7 @@ for review testing
 rm -rf $RPM_BUILD_ROOT
 %{__python} setup.py install -O1 --skip-build --root $RPM_BUILD_ROOT
 
- 
+
 %clean
 rm -rf $RPM_BUILD_ROOT
 
@@ -45,4 +45,3 @@ rm -rf $RPM_BUILD_ROOT
 %changelog
 * Wed Jan 26 2011 Tim Lauridsen <timlau@fedoraproject.org> 1.0-1
 - initial fedora package
-

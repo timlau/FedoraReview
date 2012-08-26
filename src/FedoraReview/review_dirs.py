@@ -38,7 +38,8 @@ RESULTS           = 'results'
 
 
 class ReviewDirExistsError(FedoraReviewError):
-    pass
+    def __init__(self, path):
+        FedoraReviewError.__init__(os.path.abspath(path))
 
 
 class ReviewDirChangeError(FedoraReviewError):

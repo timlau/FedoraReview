@@ -20,35 +20,26 @@ Unit checks for automatic test of fedora R review guidelines
 '''
 
 
-import sys
-import os.path
-sys.path.insert(0,os.path.abspath('../'))
-
 import os
+import os.path
 import shutil
+import sys
 import unittest
 
-
+sys.path.insert(0,os.path.abspath('../'))
 from FedoraReview import Settings, Checks, ReviewDirs, NameBug
 from FedoraReview.checks import R
 
-from test_env import no_net
+from fr_testcase import FR_TestCase, NO_NET
 
+class TestRChecks(FR_TestCase):
 
-class TestRChecks(unittest.TestCase):
-
-    def setUp(self):
-        os.chdir('test-R')
-        if os.path.exists('R-Rdummypkg'):
-             shutil.rmtree('R-Rdummypkg')
-        ReviewDirs.reset()
-        ReviewDirs.startdir = os.getcwd()
-        sys.argv = ['fedora-review','-rpn','R-Rdummypkg']
-        Settings.init(True)
-
-    @unittest.skipIf(no_net, 'No network available')
+    @unittest.skipIf(NO_NET, 'No network available')
     def test_all_checks(self):
         ''' Run all automated review checks'''
+        self.init_test('test-R',
+                        argv=['-rpn','R-Rdummypkg'], wd='R-Rdummypkg')
+        ReviewDirs.reset()
         self.bug = NameBug('R-Rdummypkg')
         self.bug.find_urls()
         self.bug.download_files()
@@ -60,7 +51,6 @@ class TestRChecks(unittest.TestCase):
                                 check.group == 'R')
                 self.assertIn(check.result.result,
                               ['pass','pending','fail'])
-        os.chdir('..')
 
 
 if __name__ == '__main__':

@@ -38,11 +38,11 @@ from test_R_checks import TestRChecks
 from test_options  import TestOptions
 from test_ext      import TestExt
 
-from test_env      import no_net
-
 VERBOSITY = 2
 
-if no_net:
+from fr_testcase import NO_NET
+
+if NO_NET:
     print "Warning:  No network available, only some tests run"
 if not 'REVIEW_LOGLEVEL' in os.environ:
     print "Warning:  REVIEW_LOGLEVEL not set, lot's of output ahead."
@@ -50,7 +50,7 @@ if not 'REVIEW_LOGLEVEL' in os.environ:
 Mock.init()
 
 testFail = 0
-for t in 'Misc', 'Bugzilla', 'Checks', 'RChecks', 'Options', 'Ext':
+for t in 'Misc', 'Bugzilla', 'Ext', 'Options','Checks', 'RChecks':
    test = eval( 'unittest.TestLoader().loadTestsFromTestCase(Test%s)' % t)
    result = unittest.TextTestRunner(verbosity=VERBOSITY).run(test)
    testFail = testFail + len(result.errors) + len(result.failures)

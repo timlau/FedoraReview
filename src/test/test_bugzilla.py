@@ -30,19 +30,16 @@ import unittest
 
 from FedoraReview import BugzillaBug, Settings, ReviewDirs
 from FedoraReview.abstract_bug import SettingsError
-from base import *
-from test_env import no_net
 
-class TestBugzilla(unittest.TestCase):
+from fr_testcase import FR_TestCase, NO_NET
 
-    def setUp(self):
-        sys.argv = ['test-bugzilla','-b',TEST_BUG ]
-        Settings.init(TEST_BUG )
-        ReviewDirs.workdir_setup('.', True)
-        self.bug = BugzillaBug(TEST_BUG)
+class TestBugzilla(FR_TestCase):
 
-    @unittest.skipIf(no_net, 'No network available')
+    @unittest.skipIf(NO_NET, 'No network available')
     def test_find_urls(self):
+        self.init_test('bugzilla',
+                       argv=['-b', self.TEST_BUG], wd='python-test')
+        self.bug = BugzillaBug(self.TEST_BUG)
         ''' Test that we can get the urls from a bugzilla report'''
         rc = self.bug.find_urls()
         self.assertTrue(rc)
@@ -52,10 +49,14 @@ class TestBugzilla(unittest.TestCase):
                                       'python-test-1.0-1.fc14.src.rpm'))
         self.assertEqual(self.bug.spec_url,
                          os.path.join(home, 'python-test.spec'))
+        os.chdir(self.startdir)
 
 
-    @unittest.skipIf(no_net, 'No network available')
+    @unittest.skipIf(NO_NET, 'No network available')
     def test_download_files(self):
+        self.init_test('bugzilla',
+                       argv=['-b', self.TEST_BUG], wd='python-test')
+        self.bug = BugzillaBug(self.TEST_BUG)
         '''
         Test that we can download the spec and srpm from a bugzilla report
         '''
@@ -76,6 +77,7 @@ class TestBugzilla(unittest.TestCase):
         self.assertEqual(self.bug.spec_file, spec)
         self.assertTrue(os.path.exists(srpm))
         self.assertTrue(os.path.exists(spec))
+        os.chdir(self.startdir)
 
 if __name__ == '__main__':
     suite = unittest.TestLoader().loadTestsFromTestCase(TestBugzilla)

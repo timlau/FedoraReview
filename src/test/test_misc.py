@@ -36,63 +36,44 @@ from FedoraReview import AbstractCheck, CheckDict, Checks,  NameBug, \
      Sources, Source, ReviewDirs, SRPMFile, SpecFile, Mock, Settings
 from FedoraReview import BugzillaBug, NameBug
 
-from base import *
-from test_env import no_net
+from fr_testcase import FR_TestCase, NO_NET
 
-class TestMisc(unittest.TestCase):
+class TestMisc(FR_TestCase):
 
     def setUp(self):
-        sys.argv = ['fedora-review','-n','python-test','--prebuilt']
+        sys.argv = ['fedora-review', '-b', '1']
         Settings.init(True)
-        ReviewDirs.reset()
-        ReviewDirs.workdir_setup('.', True)
         self.log = Settings.get_logger()
         self.helpers = Helpers()
         self.srpm_file = os.path.join(os.path.abspath('.'),
-                                      os.path.basename(TEST_SRPM))
+                                      'test_misc',
+                                      os.path.basename(self.TEST_SRPM))
         self.spec_file = os.path.join(Mock.get_builddir('SOURCES'),
-                                        os.path.basename(TEST_SPEC))
+                                      os.path.basename(self.TEST_SPEC))
         self.source_file = os.path.join(Mock.get_builddir('SOURCES'),
-                                        os.path.basename(TEST_SRC))
-        if not os.path.exists(TEST_WORK_DIR):
-            os.makedirs(TEST_WORK_DIR)
-        if not no_net:
-            self.helpers._get_file(TEST_SRPM, TEST_WORK_DIR)
+                                        os.path.basename(self.TEST_SRC))
+        if not os.path.exists(self.TEST_WORK_DIR):
+            os.makedirs(self.TEST_WORK_DIR)
+        if not NO_NET:
+            self.helpers._get_file(self.TEST_SRPM, self.TEST_WORK_DIR)
         self.startdir = os.getcwd()
-        for tree in ['python-test', 'results']:
-            if os.path.exists(tree):
-                shutil.rmtree(tree)
         Mock.reset()
 
-
-    def run_single_check(self, bug, check_name):
-        bug.find_urls()
-        bug.download_files()
-        checks = Checks(bug.spec_file, bug.srpm_file).get_checks()
-        checks.set_single_check(check_name)
-        checks['CheckBuild'].run()
-        check = checks[check_name]
-        check.run()
-        return check
-
-    @unittest.skipIf(no_net, 'No network available')
+    @unittest.skipIf(NO_NET, 'No network available')
     def test_source_file(self):
         """ Test the SourceFile class """
-        if os.path.exists('python-test'):
-            shutil.rmtree('python-test')
-        sys.argv = ['fedora-review','-n','python-test']
-        Settings.init(True)
-        ReviewDirs.reset()
-        ReviewDirs.workdir_setup('.', True)
+        self.init_test('test_misc',
+                       argv=['-n','python-test'],
+                       wd='python-test')
         bug = NameBug('python-test')
         bug.find_urls()
         bug.download_files()
 
         spec = SpecFile(bug.spec_file)
         sources = Sources(spec)
-        source = Source(sources, 'Source0', TEST_SRC)
+        source = Source(sources, 'Source0', self.TEST_SRC)
         # check that source exists and source.filename point to the right location
-        expected = os.path.abspath('./upstream/python-test-1.0.tar.gz')
+        expected = os.path.abspath('upstream/python-test-1.0.tar.gz')
         self.assertEqual(source.filename, expected)
         self.assertEqual(source.is_archive(), True)
         self.assertTrue(os.path.exists(source.filename))
@@ -101,14 +82,11 @@ class TestMisc(unittest.TestCase):
                          "b4e8b11f51f5bf60d3")
         os.chdir(self.startdir)
 
-    @unittest.skipIf(no_net, 'No network available')
+    @unittest.skipIf(NO_NET, 'No network available')
     def test_sources(self):
-        if os.path.exists('python-test'):
-            shutil.rmtree('python-test')
-        sys.argv = ['fedora-review','-n','python-test']
-        Settings.init(True)
-        ReviewDirs.reset()
-        ReviewDirs.workdir_setup('.', True)
+        self.init_test('test_misc',
+                       argv=['-n','python-test'],
+                       wd='python-test')
         bug = NameBug('python-test')
         bug.find_urls()
         bug.download_files()
@@ -123,16 +101,18 @@ class TestMisc(unittest.TestCase):
         self.assertEqual( result.result, 'pass')
         os.chdir(self.startdir)
 
-    @unittest.skipIf(no_net, 'No network available')
+    @unittest.skipIf(NO_NET, 'No network available')
     def test_spec_file(self):
         ''' Test the SpecFile class'''
-        ReviewDirs.reset()
-        ReviewDirs.workdir_setup('.', True)
+        self.init_test('test_misc',
+                       argv=['-n','python-test'],
+                       wd='python-test')
         dest = Mock.get_builddir('SOURCES')
         if not os.path.exists(dest):
             os.makedirs(dest)
-        self.helpers._get_file(TEST_SPEC, Mock.get_builddir('SOURCES'))
-        spec = SpecFile(self.spec_file)
+        self.helpers._get_file(self.TEST_SPEC,
+                               Mock.get_builddir('SOURCES'))
+        spec = SpecFile(os.path.join(os.getcwd(), 'python-test.spec'))
         # Test misc rpm values (Macro resolved)
         self.assertEqual(spec.name,'python-test')
         self.assertEqual(spec.version,'1.0')
@@ -152,7 +132,7 @@ class TestMisc(unittest.TestCase):
         self.assertEqual(spec.get_section('%build'), expected)
         expected = {'%install': ['rm -rf $RPM_BUILD_ROOT',
                     '%{__python} setup.py install -O1 --skip-build'
-                    ' --root $RPM_BUILD_ROOT','']}
+                    ' --root $RPM_BUILD_ROOT']}
         self.assertEqual(spec.get_section('%install'),expected)
         expected = {'%files': ['%defattr(-,root,root,-)',
                     '%doc COPYING', '%{python_sitelib}/*']}
@@ -170,14 +150,13 @@ class TestMisc(unittest.TestCase):
             self.assertTrue(False)
         os.chdir(self.startdir)
 
-    @unittest.skipIf(no_net, 'No network available')
+    @unittest.skipIf(NO_NET, 'No network available')
     def test_srpm_mockbuild(self):
         """ Test the SRPMFile class """
-        ReviewDirs.reset()
-        ReviewDirs.workdir_setup('.', True)
-        sys.argv = ['fedora-review','-b','817268', '-m', 'fedora-16-i386']
-        Settings.init(True)
-        self.helpers._get_file(TEST_SRPM, os.path.abspath('.'))
+        self.init_test('test_misc',
+                       argv=['-b','817268'],
+                       wd='python-test')
+        self.helpers._get_file(self.TEST_SRPM, os.path.abspath('.'))
         srpm = SRPMFile(self.srpm_file)
         # install the srpm
         srpm.unpack()
@@ -240,12 +219,11 @@ class TestMisc(unittest.TestCase):
         checksum = helpers._checksum('scantailor.desktop')
         self.assertEqual(checksum, '77a138fbd918610d55d9fd22868901bd189d987f17701498164badea88dd6f5612c118fc9e66d7b57f802bf0cddadc1cec54674ee1c3df2ddfaf1cac4007ac26')
 
-    @unittest.skipIf(no_net, 'No network available')
+    @unittest.skipIf(NO_NET, 'No network available')
     def test_bugzilla_bug(self):
-        sys.argv = ['fedora-review','-b','817268']
-        Settings.init(True)
-        ReviewDirs.reset()
-        ReviewDirs.workdir_setup('.', True)
+        self.init_test('test_misc',
+                       argv=['-b','817268'],
+                       wd='python-test')
         bug = BugzillaBug('817268')
         bug.find_urls()
         expected ='http://dl.dropbox.com/u/17870887/python-faces-0.11.7-2' \
@@ -258,31 +236,28 @@ class TestMisc(unittest.TestCase):
         self.assertEqual(None, bug.srpm_file)
         os.chdir(self.startdir)
 
-    @unittest.skipIf(no_net, 'No network available')
+    @unittest.skipIf(NO_NET, 'No network available')
     def test_rpm_spec(self):
-        sys.argv = ['fedora-review','-rn','python-test']
-        Settings.init(True)
+        self.init_test('test_misc',
+                       argv=['-rn','python-test'],
+                       wd='python-test')
         ReviewDirs.reset()
-        if os.path.exists('python-test'):
-            shutil.rmtree('python-test')
         bug = NameBug('python-test')
         bug.find_urls()
-        expected = 'src/test/python-test-1.0-1.fc16.src.rpm'
+        expected = 'src/test/test_misc/python-test-1.0-1.fc16.src.rpm'
         self.assertTrue(bug.srpm_url.endswith(expected))
-        expected = 'src/test/python-test/srpm-unpacked/python-test.spec'
+        expected = 'src/test/test_misc/python-test/srpm-unpacked/python-test.spec'
         self.assertTrue(bug.spec_url.endswith(expected))
         os.chdir(self.startdir)
 
-    @unittest.skipIf(no_net, 'No network available')
+    @unittest.skipIf(NO_NET, 'No network available')
 
     def test_jsonapi(self):
-        if os.path.exists('python-test'):
-            shutil.rmtree('python-test')
-        os.environ['REVIEW_EXT_DIRS'] = os.getcwd() + '/api'
-        self.startdir = os.getcwd()
-        sys.argv = ['fedora-review','-n','python-test','-rp']
-        Settings.init(True)
-        ReviewDirs.reset()
+        self.init_test('test_misc',
+                       argv=['-rpn','python-test' ],
+                       wd='python-test')
+        ReviewDirs.reset(os.getcwd())
+        os.environ['REVIEW_EXT_DIRS'] = os.path.normpath(os.getcwd() + '/../api')
 
         bug = NameBug('python-test')
         bug.find_urls()
@@ -302,15 +277,12 @@ class TestMisc(unittest.TestCase):
         ReviewDirs.reset(self.startdir)
 
 
-    @unittest.skipIf(no_net, 'No network available')
+    @unittest.skipIf(NO_NET, 'No network available')
     def test_md5sum_diff_ok(self):
-        os.chdir('md5sum-diff-ok')
-        if os.path.exists('python-test'):
-            shutil.rmtree('python-test')
+        self.init_test('md5sum-diff-ok',
+                       argv=['-n','python-test', '-rp'],
+                       wd='python-test')
         ReviewDirs.reset(os.getcwd())
-        sys.argv = ['fedora-review','-n','python-test','-rp']
-        Settings.init(True)
-
         bug = NameBug('python-test')
         bug.find_urls()
         bug.download_files()
@@ -322,17 +294,13 @@ class TestMisc(unittest.TestCase):
         expected = 'diff -r shows no differences'
         self.assertTrue(expected in check.result.attachments[0].text)
         os.chdir(self.startdir)
-        ReviewDirs.startdir = self.startdir
 
-    @unittest.skipIf(no_net, 'No network available')
+    @unittest.skipIf(NO_NET, 'No network available')
     def test_md5sum_diff_fail(self):
-        os.chdir(self.startdir)
-        os.chdir('md5sum-diff-fail')
-        if os.path.exists('python-test'):
-            shutil.rmtree('python-test')
+        self.init_test('md5sum-diff-fail',
+                       argv=['-n','python-test', '-rp'],
+                       wd='python-test')
         ReviewDirs.reset(os.getcwd())
-        sys.argv = ['fedora-review','-rpn','python-test']
-        Settings.init(True)
         bug = NameBug('python-test')
         bug.find_urls()
         checks = Checks(bug.spec_file, bug.srpm_file).get_checks()
@@ -343,16 +311,11 @@ class TestMisc(unittest.TestCase):
         expected = 'diff -r also reports differences'
         self.assertTrue(expected in check.result.attachments[0].text)
         os.chdir(self.startdir)
-        ReviewDirs.reset(self.startdir)
 
     def test_bad_specfile(self):
-        os.chdir('bad-spec')
-        if os.path.exists('python-test'):
-            shutil.rmtree('python-test')
-        sys.argv = ['fedora-review','-pn','python-test']
-        Settings.init(True)
-        ReviewDirs.reset()
-        ReviewDirs.workdir_setup('.', True)
+        self.init_test('bad-spec',
+                       argv=['-n','python-test', '-p'],
+                       wd='python-test')
         bug = NameBug('python-test')
         check = self.run_single_check(bug,'CheckSpecAsInSRPM')
         self.assertTrue(check.is_failed)
@@ -360,13 +323,10 @@ class TestMisc(unittest.TestCase):
         os.chdir(self.startdir)
 
     def test_desktop_file_bug(self):
-        os.chdir('desktop-file')
-        if os.path.exists('python-test'):
-            shutil.rmtree('python-test')
-        ReviewDirs.reset()
-        ReviewDirs.startdir = os.getcwd()
-        sys.argv = ['fedora-review','-rpn','python-test']
-        Settings.init(True)
+        self.init_test('desktop-file',
+                       argv=['-rpn','python-test'],
+                       wd='python-test')
+        ReviewDirs.reset(os.getcwd())
         bug = NameBug('python-test')
         check = self.run_single_check(bug,'CheckDesktopFileInstall')
         self.assertEqual(check.result.result, 'pass')
@@ -396,26 +356,20 @@ class TestMisc(unittest.TestCase):
 
 
     def test_unversioned_so(self):
-        os.chdir('unversioned-so')
-        if os.path.exists('python-test'):
-            shutil.rmtree('python-test')
-        sys.argv = ['fedora-review','-rpn','python-test']
-        Settings.init(True)
-        ReviewDirs.reset()
-        ReviewDirs.startdir = os.getcwd()
+        self.init_test('unversioned-so',
+                       argv=['-rpn','python-test'],
+                       wd='python-test')
+        ReviewDirs.reset(os.getcwd())
         bug = NameBug('python-test')
         check = self.run_single_check(bug,'CheckSoFiles')
         os.chdir(self.startdir)
         self.assertEqual(check.result.result,'fail')
 
     def test_unversioned_so_private(self):
-        os.chdir('unversioned-so-private')
-        if os.path.exists('python-test'):
-            shutil.rmtree('python-test')
-        sys.argv = ['fedora-review','-rpn','python-test']
-        Settings.init(True)
-        ReviewDirs.reset()
-        ReviewDirs.startdir = os.getcwd()
+        self.init_test('unversioned-so-private',
+                       argv=['-rpn','python-test'],
+                       wd='python-test')
+        ReviewDirs.reset(os.getcwd())
         bug = NameBug('python-test')
         check = self.run_single_check(bug,'CheckSoFiles')
         os.chdir(self.startdir)

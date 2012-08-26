@@ -33,48 +33,38 @@ from glob import glob
 from FedoraReview import Checks, Settings, ReviewDirs
 from FedoraReview.helpers import Helpers
 
-from base import *
-from test_env import no_net
+from fr_testcase import FR_TestCase, NO_NET
 
-class TestChecks(unittest.TestCase):
+class TestChecks(FR_TestCase):
 
     def setUp(self):
-        self.startdir = os.getcwd()
-        if not os.path.exists(TEST_WORK_DIR):
-            os.makedirs(TEST_WORK_DIR)
-        else:
-            crap = glob(os.path.join(TEST_WORK_DIR, 'results', '*.*'))
-            for f in crap:
-                os.unlink(f)
+        FR_TestCase.setUp(self)
+        self.init_test('test-checks', argv=['-b','1234'])
+        for crap in glob(os.path.join(os.getcwd(), 'results', '*.*')):
+              os.unlink(crap)
 
-
-        sys.argv = ['test-checks','-b','1234']
-        Settings.init(True)
         self.checks = None
-        self.srpm = TEST_WORK_DIR + os.path.basename(TEST_SRPM)
-        self.spec = TEST_WORK_DIR + os.path.basename(TEST_SPEC)
-        self.source = TEST_WORK_DIR + os.path.basename(TEST_SRC)
+        self.srpm = os.path.join(os.getcwd(),
+                                 os.path.basename(self.TEST_SRPM))
+        self.spec = os.path.join(os.getcwd(),
+                                 os.path.basename(self.TEST_SPEC))
+        self.source = os.path.join(os.getcwd(),
+                                   os.path.basename(self.TEST_SRC))
         helper = Helpers()
-        helper._get_file(TEST_SRPM, TEST_WORK_DIR)
-        helper._get_file(TEST_SRC, TEST_WORK_DIR)
-        helper._get_file(TEST_SPEC, TEST_WORK_DIR)
+        helper._get_file(self.TEST_SRPM, os.getcwd())
+        helper._get_file(self.TEST_SRC, os.getcwd())
+        helper._get_file(self.TEST_SPEC, os.getcwd())
         del helper
-        os.chdir(TEST_WORK_DIR)
-        ReviewDirs.reset()
-        ReviewDirs.workdir_setup('.', True)
-        ReviewDirs.startdir = os.getcwd()
 
 
-    @unittest.skipIf(no_net, 'No network available')
+    @unittest.skipIf(NO_NET, 'No network available')
     def test_all_checks(self):
         ''' Run all automated review checks'''
         checks = Checks(self.spec, self.srpm)
         checks.run_checks(writedown=False)
-        # Automatic Checks
         checkdict = checks.get_checks()
         for check in checkdict.itervalues():
-            self.assertTrue(hasattr(check, 'result'))
-        os.chdir(self.startdir)
+            self.assertTrue(check.is_run)
 
 
 if __name__ == '__main__':
