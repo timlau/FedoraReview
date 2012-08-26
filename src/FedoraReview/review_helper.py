@@ -176,7 +176,8 @@ class ReviewHelper(object):
             return 2
         except:
             self.log.debug("Exception down the road...", exc_info=True)
-            self.log.error("Exception down the road...")
+            self.log.error('Exception down the road...'
+                           '(logs in ~/.cache/fedora-review.log)')
             return 1
         return 0
 
