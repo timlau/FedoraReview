@@ -224,7 +224,7 @@ class _Mock(Helpers):
     def init(self):
         """ Run a mock --init command. """
         cmd = ["mock"]
-        if hasattr(Settings, 'mock_config'):
+        if hasattr(Settings, 'mock_config') and Settings.mock_config:
              cmd.extend(['-r', Settings.mock_config])
         for option in self.get_mock_options().split():
             if option.startswith('--uniqueext'):

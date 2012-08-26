@@ -96,18 +96,28 @@ class CheckBuild(GenericCheckBase):
         self.needs = ['CheckResultdir']
 
     def run(self):
-
+        if Settings.nobuild:
+            self.set_passed(self.PENDING, 'No build with --no-build')
+            return
+        if Settings.prebuilt:
+            self.set_passed(self.PENDING, 'Using prebuilt packages')
+            return
+        if Settings.cache:
+            if Mock.have_cache_for(self.spec.name):
+                self.log.debug('Using already built rpms.')
+                self.set_passed(self.PASSED, 'Using cached build')
+                return
+            else:
+                self.log.info(
+                     'No valid cache, building despite --no-build.')
         _mock_root_setup("While building")
         rc = self.srpm.build()
         if not os.path.exists('BUILD'):
             os.symlink(Mock.get_builddir('BUILD'), 'BUILD')
-
-        if rc == 0:
-            self.set_passed(True)
-        elif rc == -2:
-             self.set_passed('inconclusive', 'Using prebuilt rpms')
-        else :
-             self.set_passed(False)
+        if rc == '0':
+            self.set_passed(self.PASS)
+        else:
+            self.set_passed(self.FAIL, "Build errors: " + rc)
 
 
 class CheckRpmlint(GenericCheckBase):
@@ -125,7 +135,7 @@ class CheckRpmlint(GenericCheckBase):
         self.needs = ['CheckBuild']
 
     def run(self):
-        if self.srpm.build() != -1:
+        if self.checks.checkdict['CheckBuild'].is_passed:
             no_errors, rc = self.srpm.rpmlint_rpms()
             text = 'No rpmlint messages.' if no_errors else \
                         'There are rpmlint messages (see attachment).'
@@ -179,7 +189,7 @@ class CheckRpmlintInstalled(GenericCheckBase):
         self.needs = ['CheckPackageInstalls']
 
     def run(self):
-        if self.srpm.build() != -1:
+        if self.checks.checkdict['CheckBuild'].is_passed:
             rpms = self.srpm.get_used_rpms('.src.rpm')
             no_errors, rc = Mock.rpmlint_rpms(rpms)
             text = 'No rpmlint messages.' if no_errors else \
@@ -272,8 +282,7 @@ class CheckBuildInMock(GenericCheckBase):
         self.type = 'SHOULD'
 
     def run(self):
-        rc = self.srpm.build()
-        self.set_passed(rc == 0)
+        self.set_passed(self.checks.checkdict['CheckBuild'].is_passed)
 
 
 class CheckBuildroot(GenericCheckBase):
@@ -330,9 +339,9 @@ class CheckBuildRequires(GenericCheckBase):
 
     def run(self):
 
-        if  self.srpm.build() == -2:
-           self.set_passed('inconclusive', 'Using prebuilt rpms.')
-        elif self.srpm.is_build and not self.srpm.build_failed:
+        if  self.checks.checkdict['CheckBuild'].is_pending:
+           self.set_passed('pending', 'Using prebuilt rpms.')
+        elif self.checks.checkdict['CheckBuild'].is_passed:
             brequires = self.spec.find_tag('BuildRequires')
             pkg_by_default = ['bash', 'bzip2', 'coreutils', 'cpio', 'diffutils',
                 'fedora-release', 'findutils', 'gawk', 'gcc', 'gcc-c++',
@@ -933,14 +942,14 @@ class CheckLicenseField(GenericCheckBase):
         source = self.sources.get('Source0')
         try:
             msg = ''
-            if self.srpm.build() != 0:
-                source.extract()
-                source_dir = source.extract_dir
-                msg += 'Checking original sources for licenses'
-            else:
+            if self.checks.checkdict['CheckBuild'].is_passed:
                 s = Mock.get_builddir('BUILD') + '/*'
                 source_dir = glob.glob(s)[0]
                 msg += 'Checking patched sources after %prep for licenses.'
+            else:
+                source.extract()
+                source_dir = source.extract_dir
+                msg += 'Checking original sources for licenses'
             self.log.debug( "Scanning sources in " + source_dir)
             licenses = []
             if os.path.exists(source_dir):
@@ -1693,9 +1702,6 @@ class CheckSpecAsInSRPM(GenericCheckBase):
     def run(self):
         if Settings.rpm_spec:
             self.set_passed('not_applicable')
-            return
-        if self.srpm.build() == -1:
-            self.set_passed(False, 'Mock build failed')
             return
         self.srpm.unpack()
         pattern = os.path.join(ReviewDirs.srpm_unpacked, '*.spec')
