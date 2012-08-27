@@ -70,9 +70,9 @@ function get_used_rpms()
 # returns (stdout) list of used rpms if found, else returns 1
 {
     cd $FR_REVIEWDIR
-    if test  "${FR_SETTINGS['prebuilt']}" = 'True'
+    if test  "${FR_SETTINGS[prebuilt]}" = True
     then
-        files=( $(ls *.rpm 2>/dev/null | grep -v .src.rpm) ) \
+        files=( $(ls ../*.rpm 2>/dev/null | grep -v .src.rpm) ) \
                || files=( '@@' )
     else
         files=( $(ls results/*.rpm 2>/dev/null | grep -v .src.rpm) ) \
