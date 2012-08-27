@@ -59,12 +59,12 @@ class TestMisc(FR_TestCase):
         self.startdir = os.getcwd()
         Mock.reset()
 
-    @unittest.skipIf(NO_NET, 'No network available')
     def test_source_file(self):
         """ Test the SourceFile class """
         self.init_test('test_misc',
-                       argv=['-n','python-test'],
-                       wd='python-test')
+                       argv=['-n','python-test', '--cache',
+                             '--no-build'])
+
         bug = NameBug('python-test')
         bug.find_urls()
         bug.download_files()
@@ -82,11 +82,10 @@ class TestMisc(FR_TestCase):
                          "b4e8b11f51f5bf60d3")
         os.chdir(self.startdir)
 
-    @unittest.skipIf(NO_NET, 'No network available')
     def test_sources(self):
         self.init_test('test_misc',
-                       argv=['-n','python-test'],
-                       wd='python-test')
+                       argv=['-n','python-test', '--cache',
+                             '--no-build'])
         bug = NameBug('python-test')
         bug.find_urls()
         bug.download_files()
@@ -101,17 +100,14 @@ class TestMisc(FR_TestCase):
         self.assertEqual( result.result, 'pass')
         os.chdir(self.startdir)
 
-    @unittest.skipIf(NO_NET, 'No network available')
     def test_spec_file(self):
         ''' Test the SpecFile class'''
         self.init_test('test_misc',
-                       argv=['-n','python-test'],
-                       wd='python-test')
+                       argv=['-n','python-test', '--cache',
+                             '--no-build'])
         dest = Mock.get_builddir('SOURCES')
         if not os.path.exists(dest):
             os.makedirs(dest)
-        self.helpers._get_file(self.TEST_SPEC,
-                               Mock.get_builddir('SOURCES'))
         spec = SpecFile(os.path.join(os.getcwd(), 'python-test.spec'))
         # Test misc rpm values (Macro resolved)
         self.assertEqual(spec.name,'python-test')
@@ -150,12 +146,11 @@ class TestMisc(FR_TestCase):
             self.assertTrue(False)
         os.chdir(self.startdir)
 
-    @unittest.skipIf(NO_NET, 'No network available')
     def test_srpm_mockbuild(self):
         """ Test the SRPMFile class """
         self.init_test('test_misc',
-                       argv=['-b','817268'],
-                       wd='python-test')
+                       argv=['-n','python-test', '--cache',
+                             '--no-build'])
         self.helpers._get_file(self.TEST_SRPM, os.path.abspath('.'))
         srpm = SRPMFile(self.srpm_file)
         # install the srpm
@@ -174,8 +169,7 @@ class TestMisc(FR_TestCase):
         os.chdir(self.startdir)
 
     def test_checksum_command_line(self):
-        sys.argv = ['fedora-review','-n','python-test','--prebuilt',
-                    '-k','sha1']
+        sys.argv = ['fedora-review','-b','1', '-k', 'sha1']
         Settings.init(True)
         helpers = Helpers()
         checksum = helpers._checksum('scantailor.desktop')
@@ -183,6 +177,8 @@ class TestMisc(FR_TestCase):
         os.chdir(self.startdir)
 
     def test_md5(self):
+        sys.argv = ['fedora-review','-b','1']
+        Settings.init(True)
         os.chdir(self.startdir)
         Settings.checksum = 'md5'
         helpers = Helpers()
@@ -190,30 +186,40 @@ class TestMisc(FR_TestCase):
         self.assertEqual(checksum, '4a1c937e62192753c550221876613f86')
 
     def test_sha1(self):
+        sys.argv = ['fedora-review','-b','1']
+        Settings.init(True)
         Settings.checksum = 'sha1'
         helpers = Helpers()
         checksum = helpers._checksum('scantailor.desktop')
         self.assertEqual(checksum, '5315b33321883c15c19445871cd335f7f698a2aa')
 
     def test_sha224(self):
+        sys.argv = ['fedora-review','-b','1']
+        Settings.init(True)
         Settings.checksum = 'sha224'
         helpers = Helpers()
         checksum = helpers._checksum('scantailor.desktop')
         self.assertEqual(checksum, '01959559db8ef8d596ff824fe207fc0345be67df6b8a51942214adb7')
 
     def test_sha256(self):
+        sys.argv = ['fedora-review','-b','1']
+        Settings.init(True)
         Settings.checksum = 'sha256'
         helpers = Helpers()
         checksum = helpers._checksum('scantailor.desktop')
         self.assertEqual(checksum, 'd8669d49c8557ac47681f9b85e322849fa84186a8683c93959a590d6e7b9ae29')
 
     def test_sha384(self):
+        sys.argv = ['fedora-review','-b','1']
+        Settings.init(True)
         Settings.checksum = 'sha384'
         helpers = Helpers()
         checksum = helpers._checksum('scantailor.desktop')
         self.assertEqual(checksum, '3d6a580100b1e8a40dc41892f6b289ff13c0b489b8079d8b7c01a17c67b88bf77283f784b4e8dacac6572050df8c948e')
 
     def test_sha512(self):
+        sys.argv = ['fedora-review','-b','1']
+        Settings.init(True)
         Settings.checksum = 'sha512'
         helpers = Helpers()
         checksum = helpers._checksum('scantailor.desktop')
@@ -236,11 +242,10 @@ class TestMisc(FR_TestCase):
         self.assertEqual(None, bug.srpm_file)
         os.chdir(self.startdir)
 
-    @unittest.skipIf(NO_NET, 'No network available')
     def test_rpm_spec(self):
         self.init_test('test_misc',
-                       argv=['-rn','python-test'],
-                       wd='python-test')
+                       argv=['-rn','python-test', '--cache',
+                             '--no-build'])
         ReviewDirs.reset()
         bug = NameBug('python-test')
         bug.find_urls()
@@ -250,12 +255,10 @@ class TestMisc(FR_TestCase):
         self.assertTrue(bug.spec_url.endswith(expected))
         os.chdir(self.startdir)
 
-    @unittest.skipIf(NO_NET, 'No network available')
-
     def test_jsonapi(self):
         self.init_test('test_misc',
-                       argv=['-rpn','python-test' ],
-                       wd='python-test')
+                       argv=['-rpn','python-test', '--cache',
+                             '--no-build'])
         ReviewDirs.reset(os.getcwd())
         os.environ['REVIEW_EXT_DIRS'] = os.path.normpath(os.getcwd() + '/../api')
 
@@ -277,11 +280,10 @@ class TestMisc(FR_TestCase):
         ReviewDirs.reset(self.startdir)
 
 
-    @unittest.skipIf(NO_NET, 'No network available')
     def test_md5sum_diff_ok(self):
         self.init_test('md5sum-diff-ok',
-                       argv=['-n','python-test', '-rp'],
-                       wd='python-test')
+                       argv=['-rpn','python-test', '--cache',
+                             '--no-build'])
         ReviewDirs.reset(os.getcwd())
         bug = NameBug('python-test')
         bug.find_urls()
@@ -295,11 +297,10 @@ class TestMisc(FR_TestCase):
         self.assertTrue(expected in check.result.attachments[0].text)
         os.chdir(self.startdir)
 
-    @unittest.skipIf(NO_NET, 'No network available')
     def test_md5sum_diff_fail(self):
         self.init_test('md5sum-diff-fail',
-                       argv=['-n','python-test', '-rp'],
-                       wd='python-test')
+                       argv=['-rpn','python-test', '--cache',
+                             '--no-build'])
         ReviewDirs.reset(os.getcwd())
         bug = NameBug('python-test')
         bug.find_urls()
@@ -314,8 +315,8 @@ class TestMisc(FR_TestCase):
 
     def test_bad_specfile(self):
         self.init_test('bad-spec',
-                       argv=['-n','python-test', '-p'],
-                       wd='python-test')
+                       argv=['-n','python-test', '-p', '--cache',
+                             '--no-build'])
         bug = NameBug('python-test')
         check = self.run_single_check(bug,'CheckSpecAsInSRPM')
         self.assertTrue(check.is_failed)
@@ -324,14 +325,11 @@ class TestMisc(FR_TestCase):
 
     def test_desktop_file_bug(self):
         self.init_test('desktop-file',
-                       argv=['-rpn','python-test'],
-                       wd='python-test')
-        ReviewDirs.reset(os.getcwd())
+                       argv=['-n','python-test', '--cache',
+                             '--no-build'])
         bug = NameBug('python-test')
-        check = self.run_single_check(bug,'CheckDesktopFileInstall')
-        self.assertEqual(check.result.result, 'pass')
-        os.chdir(self.startdir)
-        ReviewDirs.startdir = self.startdir
+        check = self.run_single_check(bug,'CheckDesktopFileInstall', True)
+        self.assertTrue(check.is_passed)
 
     def test_check_dict(self):
         c = AbstractCheck('a-sourcefile')

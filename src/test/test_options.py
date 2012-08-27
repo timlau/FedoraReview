@@ -50,10 +50,9 @@ class TestOptions(FR_TestCase):
         wd = wd if wd else 'python-test'
         FR_TestCase.init_test(self, cd, argv, wd, buildroot=root)
 
-    @unittest.skipIf(NO_NET, 'No network available')
     def test_name(self):
         """ Test -name option """
-        self.init__test(['-n','python-test'])
+        self.init_opt_test(['-n','python-test', '--cache'])
         bug = NameBug(Settings.name)
 
         bug.find_urls()
@@ -182,10 +181,9 @@ class TestOptions(FR_TestCase):
         self.assertEqual(upstream_org_time, upstream_new_time, 'upstream')
         self.assertEqual(srpm_org_time, srpm_new_time, 'srpm')
 
-    @unittest.skipIf(NO_NET, 'No network available')
     def test_mock_options(self):
         ''' test -o/--mock-options and -m/mock-config '''
-        cmd = '-n python-test -o=--resultdir=results'
+        cmd = '-n python-test -o=--resultdir=results --cache'
         v = '16' if '17' in self.BUILDROOT else '17'
         buildroot = 'fedora-%s-i386' % v
         self.init_opt_test(cmd.split(), 'options', 'python-test', buildroot)
@@ -225,10 +223,9 @@ class TestOptions(FR_TestCase):
             log = '\n'.join(f.readlines())
         self.assertIn('Using prebuilt rpms', log)
 
-    @unittest.skipIf(NO_NET, 'No network available')
     def test_rpm_spec(self):
         """ Test --rpm-spec/-r option """
-        self.init_opt_test(['-rn','python-test'], 'desktop-file')
+        self.init_opt_test(['-rn','python-test', '--cache'], 'desktop-file')
         ReviewDirs.reset()
         bug = NameBug(Settings.name)
         bug.find_urls()
@@ -246,7 +243,8 @@ class TestOptions(FR_TestCase):
 
     def test_single(self):
         ''' test --single/-s option '''
-        self.init_opt_test([ '-n','python-test', '-s', 'CheckRequires'])
+        self.init_opt_test([ '-n','python-test', '-s', 'CheckRequires',
+                         '--cache'])
 
         bug = NameBug(Settings.name)
         bug.find_urls()
@@ -257,9 +255,8 @@ class TestOptions(FR_TestCase):
 
     def test_exclude(self):
         ''' test --exclude/-x option. '''
-        self.init_opt_test([
-                        '-n','python-test',
-                        '-x', 'CheckRequires'])
+        self.init_opt_test([ '-n','python-test', '-x', 'CheckRequires',
+                         '--cache'])
 
         bug = NameBug(Settings.name)
         bug.find_urls()

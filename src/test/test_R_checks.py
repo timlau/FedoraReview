@@ -34,11 +34,10 @@ from fr_testcase import FR_TestCase, NO_NET
 
 class TestRChecks(FR_TestCase):
 
-    @unittest.skipIf(NO_NET, 'No network available')
     def test_all_checks(self):
         ''' Run all automated review checks'''
         self.init_test('test-R',
-                        argv=['-rpn','R-Rdummypkg'], wd='R-Rdummypkg')
+                        argv=['-rpn','R-Rdummypkg', '--cache'])
         ReviewDirs.reset()
         self.bug = NameBug('R-Rdummypkg')
         self.bug.find_urls()

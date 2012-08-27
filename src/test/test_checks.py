@@ -39,9 +39,10 @@ class TestChecks(FR_TestCase):
 
     def setUp(self):
         FR_TestCase.setUp(self)
-        self.init_test('test-checks', argv=['-b','1234'])
-        for crap in glob(os.path.join(os.getcwd(), 'results', '*.*')):
-              os.unlink(crap)
+        self.init_test('test-checks',
+                        argv=['-b','1234', '--cache', '--no-build'])
+        #for crap in glob(os.path.join(os.getcwd(), 'results', '*.*')):
+        #      os.unlink(crap)
 
         self.checks = None
         self.srpm = os.path.join(os.getcwd(),
@@ -50,14 +51,9 @@ class TestChecks(FR_TestCase):
                                  os.path.basename(self.TEST_SPEC))
         self.source = os.path.join(os.getcwd(),
                                    os.path.basename(self.TEST_SRC))
-        helper = Helpers()
-        helper._get_file(self.TEST_SRPM, os.getcwd())
-        helper._get_file(self.TEST_SRC, os.getcwd())
-        helper._get_file(self.TEST_SPEC, os.getcwd())
-        del helper
 
 
-    @unittest.skipIf(NO_NET, 'No network available')
+    #@unittest.skipIf(NO_NET, 'No network available')
     def test_all_checks(self):
         ''' Run all automated review checks'''
         checks = Checks(self.spec, self.srpm)
