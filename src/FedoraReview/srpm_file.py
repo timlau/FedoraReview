@@ -221,10 +221,11 @@ class SRPMFile(Helpers):
 
     def get_used_rpms(self, exclude_pattern=None):
         """ Return list of mock built or prebuilt rpms. """
+        rpm_pattern = self.spec.name + '*.rpm'
         if Settings.prebuilt:
-            rpms = glob(os.path.join(ReviewDirs.startdir, '*.rpm'))
+            rpms = glob(os.path.join(ReviewDirs.startdir, rpm_pattern))
         else:
-            rpms = glob(os.path.join(Mock.resultdir, '*.rpm'))
+            rpms = glob(os.path.join(Mock.resultdir, rpm_pattern))
         if not exclude_pattern:
             return rpms
         return filter(lambda s: not exclude_pattern in s, rpms)
