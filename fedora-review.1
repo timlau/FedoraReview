@@ -41,7 +41,10 @@ in current directory instead of building using mock.
 You will need to have mock installed and be member of the mock group
 for the build to work. Run as root:
 .IP "" 4
-# usermod -a -G mock [your user name] && newgrp mock
+# usermod -a -G mock [your user name]
+.PP
+After this, you will need to logout and login again (or use newgrp(1)) - the
+changes in user's group list is not read until a new login.
 .SH MODE OPTIONS - one is required
 .TP 4
 .B -b, --bug <bug nr>
@@ -71,8 +74,8 @@ Show version info
 .TP 4
 .B -c, --cache
 Do not redownload the files from bugzilla, use the local one.
-.TP 4 
-.B -k, --checksum <md5|sha1|sha224|sha256|sha384|sha512> 
+.TP 4
+.B -k, --checksum <md5|sha1|sha224|sha256|sha384|sha512>
 Algorithm used for checksum.
 .TP 4
 .B -m, --mock-config <configuration>
@@ -92,7 +95,7 @@ Do not generate the review report.
 Do not rebuild the source rpm, use the one currently built in mock.
 .TP 4
 .B --other_bz
-Url of alternative bugzilla, instead of using default 
+Url of alternative bugzilla, instead of using default
 https://bugzilla.redhat.com
 .TP 4
 .B -p, --prebuilt
@@ -112,36 +115,36 @@ Provides a more detailed output of what's going on.
 Comma-separated list of test(s) to exclude, as listed by --display-checks.
 A test which depends on an excluded test, will run.
 .SH THE REVIEW DIRECTORY
-The report template create by fedora-review lives in a review directory. 
+The report template create by fedora-review lives in a review directory.
 Besides the report, here is:
 .TP 4
 srpm directory
-Holds whats downloaded, normally a src.rpm and a 
+Holds whats downloaded, normally a src.rpm and a
 spec file. When using --rpm-spec, here is no .spec file.
 .TP 4
 srpm-unpacked directory
 Holds the unpacked content of the src.rpm
 file.
 .TP 4
-upstream directory 
+upstream directory
 contains sources downloaded from the Source: url in the spec file.
 .TP 4
-upstream-unpacked directory 
+upstream-unpacked directory
 Occasionally contains the unpacked sources, but is normally empty.
-.TP 4 
-BUILD link 
-Points to the mock directory containing the sources used in 
+.TP 4
+BUILD link
+Points to the mock directory containing the sources used in
 the build. These sources have been created and modifified by the %prep
-stuff in the spec file. The link is only valid direct after the run, 
+stuff in the spec file. The link is only valid direct after the run,
 it's overwritten next time mock executes.
 .TP 4
-result link 
+result link
 Points to the mock result dir, containing logs and rpms.
-This is also overwritten as soon as mock is run again e. g., by 
+This is also overwritten as soon as mock is run again e. g., by
 fedora-review.
 .SH LOCAL SOURCES (GIT-BASED OR SIMILAR)
 Normally, the Source0 (or others SourceX) in the specfile contains an URL
-to the upstream source. fedora-review uses this url to download the 
+to the upstream source. fedora-review uses this url to download the
 upstream source and then compare md5sum with source in rpm.
 
 However, in some cases the Source0: is just a filename e. g., when sources
@@ -158,31 +161,31 @@ uses the --prebuilt option, and has some limitations on checks performed
 since fedora-review cannot access the build directories.
 .PP
 The workflow:
-.IP \(bu 3 
-Invoke koji, note the task number: 
+.IP \(bu 3
+Invoke koji, note the task number:
 .IP "" 8
 koji build --scratch my-package.src.rpm
-.IP \(bu 3 
-Download the results: 
+.IP \(bu 3
+Download the results:
 .IP "" 8
 koji-download-scratch <task number>
-.IP \(bu 3 
+.IP \(bu 3
 Invoke fedora-review using --prebuilt, --name options and --rpmspec:
 .IP "" 8
 fedora-review --rpm-spec --prebuilt --name my-package
 
 .SH URL limitations
-fedora-review handles two types of URL: the spec and srpm url found in 
+fedora-review handles two types of URL: the spec and srpm url found in
 e. g. the bugzilla page, and the source url(s) found in the spec file.
 
 For the srpm and spec file url:
-.IP \(bu 3 
-The parameters (i. e., the ? and everything beyond) is removed. 
+.IP \(bu 3
+The parameters (i. e., the ? and everything beyond) is removed.
 .IP \(bu 3
 The rest must end with /*.spec or /*.src.rpm
 
 .P
-For the source url, possible parameters are 
+For the source url, possible parameters are
 .B not
 removed. It must end with /filename, typically something like
 /package-2.0.1.tar.gz
