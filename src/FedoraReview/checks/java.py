@@ -9,7 +9,7 @@ class Registry(RegistryBase):
     group = 'Java'
 
     def is_applicable(self):
-        return self._has_files("*.jar") or self._has_files("*.pom")
+        return self.has_files("*.jar") or self.has_files("*.pom")
 
 
 class JavaCheckBase(LangCheckBase):

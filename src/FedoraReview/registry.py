@@ -23,14 +23,15 @@ import inspect
 import fnmatch
 import re
 
+from check_base import FileChecks
 from helpers import Helpers
 from settings import Settings
 from review_error import FedoraReviewError
 
 
 class AbstractRegistry(object):
-    """ 
-    The overall interface for a plugin module is that it must 
+    """
+    The overall interface for a plugin module is that it must
     contain a class Registry. This has a single function register()
     which return a list of checks defined by the module.
 
@@ -46,53 +47,35 @@ class AbstractRegistry(object):
         """
         Return list of checks in current module
         Returns:   CheckDict instance.
-          
+
         """
         raise FedoraReviewError('Abstract register() called')
 
     def __init__(self, checks):
         """
         Parameters:
-           - plugin: loaded module object
            - checks: Checks instance.
         """
         self._group = None
         self.checks = checks
-  
+
     def is_applicable(self):
-        """ 
+        """
         Return True if these tests are applicable for current srpm.
         """
         raise FedoraReviewError(
              'abstract Registry.is_applicable() called')
 
-        
 
-class RegistryBase(AbstractRegistry):
+
+class RegistryBase(AbstractRegistry, FileChecks):
     """
     Register all classes containing 'Check' and not ending with 'Base'
     """
 
-    def _has_files(self, pattern):
-        ''' Check if rpms has file matching a pattern'''
-        rpm_files = self.checks.srpm.get_files_rpms()
-        for rpm in rpm_files:
-            for fn in rpm_files[rpm]:
-                if fnmatch.fnmatch(fn, pattern):
-                    return True
-        return False
-
-    def _has_files_re(self, pattern_re):
-        ''' Check if rpms has file matching a pattern'''
-        fn_pat = re.compile(pattern_re)
-        rpm_files = self.checks.srpm.get_files_rpms()
-        for rpm in rpm_files:
-            for fn in rpm_files[rpm]:
-                if fn_pat.search(fn):
-                    return True
-
     def __init__(self, checks, path=None):
         AbstractRegistry.__init__(self, checks)
+        FileChecks.__init__(self, checks)
 
     def is_applicable(self):
         return self.registry.is_applicable()

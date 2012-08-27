@@ -21,9 +21,9 @@ This module contains automatic test for Fedora Packaging guidelines
 '''
 
 import re
-import fnmatch
 import StringIO
 
+from fnmatch import fnmatch
 from textwrap import TextWrapper
 
 from helpers import Helpers
@@ -35,6 +35,44 @@ class AbstractCallError(Exception):
     pass
 
 
+class FileChecks(object):
+    """ Add file-checking capabilities to self. """
+
+    def __init__(self, checks):
+        """ Build an instance from a Checks instance. """
+        class FileCheckData:
+            pass
+
+        self._filechecks = FileCheckData()
+        self._filechecks.srpm = checks.srpm
+        self._filechecks.spec = checks.spec
+        self._filechecks.sources = checks.sources
+
+    def sources_have_files(self, pattern):
+        ''' Check if sources have file matching a glob pattern'''
+        for source in self._filechecks.sources.get_files_sources():
+            if fnmatch(source, pattern):
+                return True
+        return False
+
+    def _match_rpmfiles(self, matcher):
+        files_by_rpm = self._filechecks.srpm.get_files_rpms()
+        for rpm in files_by_rpm.iterkeys():
+            for fn in files_by_rpm[rpm]:
+                if matcher(fn):
+                    return True
+        return False
+
+    def has_files(self, pattern):
+        ''' Check if rpms have file matching a glob pattern'''
+        return self._match_rpmfiles(lambda f: fnmatch(f, pattern))
+
+    def has_files_re(self, pattern_re):
+        ''' Check if rpms have file matching a regex pattern'''
+        regex = re.compile(pattern_re)
+        return self._match_rpmfiles(regex.search)
+
+
 class AbstractCheck(object):
     """
     The basic interface for a test (a. k a. check) as seen from
@@ -44,7 +82,7 @@ class AbstractCheck(object):
       - version version of api, defaults to 0.1
       - group: 'Generic', 'C/C++', 'PHP': name of the registry
                 which instantiated this check.
-      - implementation: 'json'|'python'|'shell', defaults to 
+      - implementation: 'json'|'python'|'shell', defaults to
         'python'.
 
     Properties:
@@ -90,7 +128,7 @@ class AbstractCheck(object):
     def run(self):
         raise AbstractCallError('AbstractCheck')
 
-class GenericCheck(AbstractCheck):
+class GenericCheck(AbstractCheck, FileChecks):
     """
     Common interface inherited by all Check implementations.
 
@@ -105,6 +143,7 @@ class GenericCheck(AbstractCheck):
 
     def __init__(self, checks, defined_in):
         AbstractCheck.__init__(self, defined_in)
+        FileChecks.__init__(self, checks)
         self.checks = checks
         self.url = '(this test has no URL)'
         self.text = 'No description'
@@ -138,33 +177,6 @@ class GenericCheck(AbstractCheck):
         r = TestResult(self, state, output_extra, attachments)
         self.result = r
 
-    def sources_have_files(self, pattern):
-        ''' Check if rpms has file matching a pattern'''
-        sources_files = self.sources.get_files_sources()
-        for source in sources_files:
-            if fnmatch.fnmatch(source, pattern):
-                return True
-        return False
-
-    def has_files(self, pattern):
-        ''' Check if rpms has file matching a pattern'''
-        rpm_files = self.srpm.get_files_rpms()
-        for rpm in rpm_files:
-            for fn in rpm_files[rpm]:
-                if fnmatch.fnmatch(fn, pattern):
-                    return True
-        return False
-
-    def has_files_re(self, pattern_re):
-        ''' Check if rpms has file matching a pattern'''
-        fn_pat = re.compile(pattern_re)
-        rpm_files = self.srpm.get_files_rpms()
-        for rpm in rpm_files:
-            for fn in rpm_files[rpm]:
-                if fn_pat.search(fn):
-                    return True
-        return False
-
 
 class CheckBase(GenericCheck, Helpers):
     """ Base class for "regular" python checks. """
@@ -196,7 +208,7 @@ class CheckBase(GenericCheck, Helpers):
         for rpm in rpm_files:
             result[rpm] = []
             for fn in rpm_files[rpm]:
-                if fnmatch.fnmatch(fn, pattern):
+                if fnmatch(fn, pattern):
                     result[rpm].append(fn)
         return result
 
@@ -229,14 +241,14 @@ class CheckDict(dict):
 
         def log_kill(victim, killer):
             self.log.info("Removing %s in %s, deprecated by %s in %s" %
-                              (victim.name, victim.defined_in, 
+                              (victim.name, victim.defined_in,
                                killer.name, killer.defined_in))
 
         def log_duplicate(first, second):
             self.log.warning( "Duplicate checks %s in %s, %s in %s" %
-                              (first.name, first.defined_in, 
+                              (first.name, first.defined_in,
                               second.name, second.defined_in))
-            
+
 
         if key in self.iterkeys() and key in value.deprecates:
             log_kill(self[key], value)

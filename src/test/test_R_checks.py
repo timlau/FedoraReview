@@ -56,9 +56,9 @@ class TestRChecks(unittest.TestCase):
         self.checks.run_checks(writedown=False)
         for check in self.checks.checkdict.itervalues():
             if check.result:
-                self.assertTrue(check.group == 'Generic' or 
+                self.assertTrue(check.group == 'Generic' or
                                 check.group == 'R')
-                self.assertIn(check.result.result, 
+                self.assertIn(check.result.result,
                               ['pass','pending','fail'])
         os.chdir('..')
 
