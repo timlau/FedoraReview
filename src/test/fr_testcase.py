@@ -91,6 +91,7 @@ class  FR_TestCase(unittest.TestCase):
             argv.append('--mock-options=' +  ' '.join(opts))
         sys.argv = argv
         Settings.init(True)
+        Mock.reset()
 
     def run_single_check(self, bug, check_name, run_build=False):
         # Run a single check, return check.

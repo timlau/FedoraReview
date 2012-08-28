@@ -95,6 +95,15 @@ class TestMisc(FR_TestCase):
            self.log.debug("Result extra text: " + result.output_extra)
         self.assertEqual( result.result, 'pass')
 
+    def test_mock_configdir(self):
+        self.init_test('test_misc',
+                       argv=['-n','python-test'],
+                       buildroot='default',
+                       options='--configdir=mock-config')
+        Mock.reset()
+        Mock._get_root()
+        self.assertEqual(Mock.mock_root, 'fedora-12-i786')
+
     @unittest.skipIf(FAST_TEST, 'slow test disabled by REVIEW_FAST_TEST')
     def test_mock_uniqueext(self):
         self.init_test('test_misc',
