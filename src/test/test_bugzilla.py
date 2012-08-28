@@ -50,7 +50,6 @@ class TestBugzilla(FR_TestCase):
                                       'python-test-1.0-1.fc14.src.rpm'))
         self.assertEqual(self.bug.spec_url,
                          os.path.join(home, 'python-test.spec'))
-        os.chdir(self.startdir)
 
 
     @unittest.skipIf(NO_NET, 'No network available')
@@ -78,7 +77,6 @@ class TestBugzilla(FR_TestCase):
         self.assertEqual(self.bug.spec_file, spec)
         self.assertTrue(os.path.exists(srpm))
         self.assertTrue(os.path.exists(spec))
-        os.chdir(self.startdir)
 
 if __name__ == '__main__':
     suite = unittest.TestLoader().loadTestsFromTestCase(TestBugzilla)

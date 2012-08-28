@@ -75,7 +75,6 @@ class TestMisc(FR_TestCase):
         self.assertEqual(source.check_source_checksum(),
                          "7ef644ee4eafa62cfa773cad4056cdcea592e27dacd5ae"
                          "b4e8b11f51f5bf60d3")
-        os.chdir(self.startdir)
 
     def test_sources(self):
         self.init_test('test_misc',
@@ -93,7 +92,6 @@ class TestMisc(FR_TestCase):
         if result.output_extra:
            self.log.debug("Result extra text: " + result.output_extra)
         self.assertEqual( result.result, 'pass')
-        os.chdir(self.startdir)
 
     def test_spec_file(self):
         ''' Test the SpecFile class'''
@@ -139,7 +137,6 @@ class TestMisc(FR_TestCase):
             self.assertEqual(res.groups(), ('1%{?dist}',))
         else:
             self.assertTrue(False)
-        os.chdir(self.startdir)
 
     def test_srpm_mockbuild(self):
         """ Test the SRPMFile class """
@@ -160,7 +157,6 @@ class TestMisc(FR_TestCase):
         rpms = glob.glob(os.path.join(Mock.resultdir,
                                       'python-test-1.0-1*noarch.rpm'))
         self.assertEqual(1, len(rpms))
-        os.chdir(self.startdir)
 
     def test_checksum_command_line(self):
         sys.argv = ['fedora-review','-b','1', '-k', 'sha1']
@@ -168,12 +164,10 @@ class TestMisc(FR_TestCase):
         helpers = Helpers()
         checksum = helpers._checksum('scantailor.desktop')
         self.assertEqual(checksum, '5315b33321883c15c19445871cd335f7f698a2aa')
-        os.chdir(self.startdir)
 
     def test_md5(self):
         sys.argv = ['fedora-review','-b','1']
         Settings.init(True)
-        os.chdir(self.startdir)
         Settings.checksum = 'md5'
         helpers = Helpers()
         checksum = helpers._checksum('scantailor.desktop')
@@ -234,7 +228,6 @@ class TestMisc(FR_TestCase):
         self.assertEqual(expected, bug.spec_url)
         self.assertEqual(None, bug.spec_file)
         self.assertEqual(None, bug.srpm_file)
-        os.chdir(self.startdir)
 
     def test_rpm_spec(self):
         self.init_test('test_misc',
@@ -247,7 +240,6 @@ class TestMisc(FR_TestCase):
         self.assertTrue(bug.srpm_url.endswith(expected))
         expected = 'src/test/test_misc/python-test/srpm-unpacked/python-test.spec'
         self.assertTrue(bug.spec_url.endswith(expected))
-        os.chdir(self.startdir)
 
     def test_jsonapi(self):
         self.init_test('test_misc',
@@ -270,8 +262,6 @@ class TestMisc(FR_TestCase):
         self.assertEqual( test2.type, 'EXTRA')
         self.assertEqual( test2.text,
                           'A second check solely for test purposes.')
-        os.chdir(self.startdir)
-        ReviewDirs.reset(self.startdir)
 
 
     def test_md5sum_diff_ok(self):
@@ -289,7 +279,6 @@ class TestMisc(FR_TestCase):
         self.assertEqual(check.result.result, 'pass')
         expected = 'diff -r shows no differences'
         self.assertTrue(expected in check.result.attachments[0].text)
-        os.chdir(self.startdir)
 
     def test_md5sum_diff_fail(self):
         self.init_test('md5sum-diff-fail',
@@ -305,7 +294,6 @@ class TestMisc(FR_TestCase):
         self.assertEqual(check.result.result, 'fail')
         expected = 'diff -r also reports differences'
         self.assertTrue(expected in check.result.attachments[0].text)
-        os.chdir(self.startdir)
 
     def test_bad_specfile(self):
         self.init_test('bad-spec',
@@ -315,7 +303,6 @@ class TestMisc(FR_TestCase):
         check = self.run_single_check(bug,'CheckSpecAsInSRPM')
         self.assertTrue(check.is_failed)
         self.assertTrue('#TestTag' in check.result.attachments[0].text)
-        os.chdir(self.startdir)
 
     def test_desktop_file_bug(self):
         self.init_test('desktop-file',
@@ -354,7 +341,6 @@ class TestMisc(FR_TestCase):
         ReviewDirs.reset(os.getcwd())
         bug = NameBug('python-test')
         check = self.run_single_check(bug,'CheckSoFiles')
-        os.chdir(self.startdir)
         self.assertEqual(check.result.result,'fail')
 
     def test_unversioned_so_private(self):
@@ -364,7 +350,6 @@ class TestMisc(FR_TestCase):
         ReviewDirs.reset(os.getcwd())
         bug = NameBug('python-test')
         check = self.run_single_check(bug,'CheckSoFiles')
-        os.chdir(self.startdir)
         self.assertEqual(check.result.result, 'pending')
 
 if __name__ == '__main__':
