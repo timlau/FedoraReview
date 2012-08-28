@@ -95,6 +95,27 @@ class TestMisc(FR_TestCase):
            self.log.debug("Result extra text: " + result.output_extra)
         self.assertEqual( result.result, 'pass')
 
+    @unittest.skipIf(FAST_TEST, 'slow test disabled by REVIEW_FAST_TEST')
+    def test_mock_uniqueext(self):
+        self.init_test('test_misc',
+                       argv=['-n','python-test'],
+                       options='--uniqueext=hugo')
+        bug = NameBug('python-test')
+        bug.find_urls()
+        bug.download_files()
+        checks = Checks(bug.spec_file, bug.srpm_file)
+        Mock.init()
+        for dirt in glob.glob('results/*.*'):
+            os.unlink(dirt)
+        check = checks.checkdict['CheckBuild']
+        check.run()
+        self.assertTrue(check.is_passed)
+        results = glob.glob('results/*.rpm')
+        self.assertEqual(len(results), 2)
+        for dirt in glob.glob('results/*.*'):
+            os.unlink(dirt)
+
+
     def test_spec_file(self):
         ''' Test the SpecFile class'''
         self.init_test('test_misc',
