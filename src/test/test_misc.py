@@ -30,11 +30,13 @@ import unittest
 import os
 import re
 import shutil
+import subprocess
 
 from FedoraReview.helpers import Helpers
 from FedoraReview import AbstractCheck, CheckDict, Checks,  NameBug, \
      Sources, Source, ReviewDirs, SRPMFile, SpecFile, Mock, Settings
 from FedoraReview import BugzillaBug, NameBug
+from FedoraReview import FedoraReviewError, ResultDirNotEmptyError
 
 from fr_testcase import FR_TestCase, NO_NET
 
@@ -294,6 +296,29 @@ class TestMisc(FR_TestCase):
         self.assertEqual(check.result.result, 'fail')
         expected = 'diff -r also reports differences'
         self.assertTrue(expected in check.result.attachments[0].text)
+
+    def test_dirty_resultdir(self):
+        self.init_test('test_misc',
+                       argv=['-n','python-test', '--cache'])
+        bug = NameBug('python-test')
+        bug.find_urls()
+        bug.download_files()
+        checks = Checks(bug.spec_file, bug.srpm_file).get_checks()
+        checks.set_single_check('CheckResultdir')
+        check = checks['CheckResultdir']
+
+        for dirt in glob.glob('results/*.*'):
+            os.unlink(dirt)
+        check.run()
+        self.assertTrue(check.is_passed)
+
+        subprocess.check_call('touch results/orvar.rpm', shell=True)
+        self.assertRaises(ResultDirNotEmptyError, check.run)
+        Settings.nobuild = True
+        check.run()
+        self.assertTrue(check.is_passed)
+        os.unlink('results/orvar.rpm')
+
 
     def test_bad_specfile(self):
         self.init_test('bad-spec',

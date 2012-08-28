@@ -147,6 +147,8 @@ class _Mock(Helpers):
     def get_mock_options(self):
         """ --mock-config option, with a guaranteed ---'resultdir' part
         """
+        if not hasattr(Settings, 'mock_options'):
+            return ''
         opt = Settings.mock_options
         if not opt:
             opt = ''
