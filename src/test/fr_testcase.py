@@ -64,12 +64,14 @@ class  FR_TestCase(unittest.TestCase):
     def tearDown(self):
         os.chdir(self.startdir)
 
-    def init_test(self, cd, argv=[], wd=None, buildroot=None):
+    def init_test(self, cd, argv=[], wd=None,
+                  buildroot=None, options=None):
         # Initiate a test which runs in directory cd
         # kwargs:
         #    argv: fed to sys.argv and eventually to Settings
         #          fedora-review is prepended and mock_root appended.
         #    wd:   review directory, cleared.
+        #    options: mock-options
         os.chdir(cd)
         if wd:
             if os.path.exists(wd):
@@ -80,6 +82,13 @@ class  FR_TestCase(unittest.TestCase):
         args.insert(0, 'fedora-review')
         br = buildroot if buildroot else self.BUILDROOT
         args.append("--mock-config=" + br)
+        opts = []
+        if NO_NET:
+            opts.append('--offline')
+        if options:
+            opts.append(options)
+        if opts:
+            argv.append('--mock-options=' +  ' '.join(opts))
         sys.argv = argv
         Settings.init(True)
 
