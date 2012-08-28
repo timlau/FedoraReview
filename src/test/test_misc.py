@@ -47,15 +47,9 @@ class TestMisc(FR_TestCase):
         self.helpers = Helpers()
         self.srpm_file = os.path.join(os.path.abspath('.'),
                                       'test_misc',
-                                      os.path.basename(self.TEST_SRPM))
+                                      'python-test-1.0-1.fc16.src.rpm')
         self.spec_file = os.path.join(Mock.get_builddir('SOURCES'),
-                                      os.path.basename(self.TEST_SPEC))
-        self.source_file = os.path.join(Mock.get_builddir('SOURCES'),
-                                        os.path.basename(self.TEST_SRC))
-        if not os.path.exists(self.TEST_WORK_DIR):
-            os.makedirs(self.TEST_WORK_DIR)
-        if not NO_NET:
-            self.helpers._get_file(self.TEST_SRPM, self.TEST_WORK_DIR)
+                                      'python-test.spec')
         self.startdir = os.getcwd()
         Mock.reset()
 
@@ -71,7 +65,8 @@ class TestMisc(FR_TestCase):
 
         spec = SpecFile(bug.spec_file)
         sources = Sources(spec)
-        source = Source(sources, 'Source0', self.TEST_SRC)
+        source = Source(sources, 'Source0',
+                        self.BASE_URL +  'python-test-1.0.tar.gz')
         # check that source exists and source.filename point to the right location
         expected = os.path.abspath('upstream/python-test-1.0.tar.gz')
         self.assertEqual(source.filename, expected)
@@ -151,7 +146,6 @@ class TestMisc(FR_TestCase):
         self.init_test('test_misc',
                        argv=['-n','python-test', '--cache',
                              '--no-build'])
-        self.helpers._get_file(self.TEST_SRPM, os.path.abspath('.'))
         srpm = SRPMFile(self.srpm_file)
         # install the srpm
         srpm.unpack()

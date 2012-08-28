@@ -34,6 +34,7 @@ from FedoraReview.abstract_bug import SettingsError
 from fr_testcase import FR_TestCase, NO_NET
 
 class TestBugzilla(FR_TestCase):
+    TEST_BUG = '672280'
 
     @unittest.skipIf(NO_NET, 'No network available')
     def test_find_urls(self):

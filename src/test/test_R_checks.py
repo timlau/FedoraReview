@@ -34,6 +34,11 @@ from fr_testcase import FR_TestCase, NO_NET
 
 class TestRChecks(FR_TestCase):
 
+    R_TEST_SRPM =            'https://fedorahosted.org/releases/F/e' \
+                             '/FedoraReview/R-Rdummypkg-1.0-2.fc15.src.rpm'
+    R_TEST_SPEC = FR_TestCase.BASE_URL + 'R-Rdummypkg.spec'
+    R_TEST_SRC  = FR_TestCase.BASE_URL + 'Rdummypkg_1.0.tar.gz'
+
     def test_all_checks(self):
         ''' Run all automated review checks'''
         self.init_test('test-R',
