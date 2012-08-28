@@ -319,6 +319,24 @@ class TestMisc(FR_TestCase):
         self.assertTrue(check.is_passed)
         os.unlink('results/orvar.rpm')
 
+    def test_prebuilt_sources(self):
+        self.init_test('test_misc',
+                       argv=['-n','python-test', '--prebuilt'])
+        ReviewDirs.startdir = os.getcwd()
+        bug = NameBug('python-test')
+        bug.find_urls()
+        bug.download_files()
+        checks = Checks(bug.spec_file, bug.srpm_file)
+        subprocess.check_call('touch orvar.rpm', shell=True)
+        rpms = checks.srpm.get_used_rpms()
+        self.assertEqual(len(rpms), 2)
+        rpms = checks.srpm.get_used_rpms('.src.rpm')
+        self.assertEqual(len(rpms), 1)
+        os.unlink('orvar.rpm')
+
+
+
+
 
     def test_bad_specfile(self):
         self.init_test('bad-spec',
