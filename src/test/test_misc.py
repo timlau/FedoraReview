@@ -38,7 +38,7 @@ from FedoraReview import AbstractCheck, CheckDict, Checks,  NameBug, \
 from FedoraReview import BugzillaBug, NameBug
 from FedoraReview import FedoraReviewError, ResultDirNotEmptyError
 
-from fr_testcase import FR_TestCase, NO_NET
+from fr_testcase import FR_TestCase, NO_NET, FAST_TEST
 
 class TestMisc(FR_TestCase):
 
@@ -170,6 +170,7 @@ class TestMisc(FR_TestCase):
         else:
             self.assertTrue(False)
 
+    @unittest.skipIf(FAST_TEST, 'slow test disabled by REVIEW_FAST_TEST')
     def test_srpm_mockbuild(self):
         """ Test the SRPMFile class """
         self.init_test('test_misc',

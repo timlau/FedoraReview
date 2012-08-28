@@ -30,7 +30,7 @@ sys.path.insert(0,os.path.abspath('../'))
 from FedoraReview import Settings, Checks, ReviewDirs, NameBug
 from FedoraReview.checks import R
 
-from fr_testcase import FR_TestCase, NO_NET
+from fr_testcase import FR_TestCase, NO_NET, FAST_TEST
 
 class TestRChecks(FR_TestCase):
 
@@ -39,6 +39,7 @@ class TestRChecks(FR_TestCase):
     R_TEST_SPEC = FR_TestCase.BASE_URL + 'R-Rdummypkg.spec'
     R_TEST_SRC  = FR_TestCase.BASE_URL + 'Rdummypkg_1.0.tar.gz'
 
+    @unittest.skipIf(FAST_TEST, 'slow test disabled by REVIEW_FAST_TEST')
     def test_all_checks(self):
         ''' Run all automated review checks'''
         self.init_test('test-R',

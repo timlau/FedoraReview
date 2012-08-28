@@ -42,6 +42,7 @@ from fr_testcase import FR_TestCase, NO_NET
 
 VERSION = '0.2.2'
 
+from fr_testcase import FR_TestCase, NO_NET, FAST_TEST
 
 class TestOptions(FR_TestCase):
 
@@ -152,6 +153,7 @@ class TestOptions(FR_TestCase):
         self.assertIn(VERSION, output)
 
     @unittest.skipIf(NO_NET, 'No network available')
+    @unittest.skipIf(FAST_TEST, 'slow test disabled by REVIEW_FAST_TEST')
     def test_cache(self):
         def get_mtime(pattern):
             pattern = os.path.join(os.getcwd(), pattern)
@@ -181,6 +183,7 @@ class TestOptions(FR_TestCase):
         self.assertEqual(upstream_org_time, upstream_new_time, 'upstream')
         self.assertEqual(srpm_org_time, srpm_new_time, 'srpm')
 
+    @unittest.skipIf(FAST_TEST, 'slow test disabled by REVIEW_FAST_TEST')
     def test_mock_options(self):
         ''' test -o/--mock-options and -m/mock-config '''
         cmd = '-n python-test -o=--resultdir=results --cache'
@@ -200,6 +203,7 @@ class TestOptions(FR_TestCase):
         rpms = glob(os.path.join('results', '*fc%s*.rpm' % v))
         self.assertTrue(len(rpms) > 0)
 
+    @unittest.skipIf(FAST_TEST, 'slow test disabled by REVIEW_FAST_TEST')
     @unittest.skipIf(NO_NET, 'No network available')
     def test_prebuilt(self):
         ''' test --name --prebuilt '''

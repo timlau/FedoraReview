@@ -48,6 +48,8 @@ try:
 except:
     NO_NET = True
 
+FAST_TEST = 'REVIEW_FAST_TEST' in os.environ
+
 
 class  FR_TestCase(unittest.TestCase):
 

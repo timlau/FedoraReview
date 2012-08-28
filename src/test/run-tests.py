@@ -16,6 +16,10 @@
 #     $ export REVIEW_LOGLEVEL=debug
 #     $ ./run-tests.py
 #
+# To disable slow tests:
+#     $ export REVIEW_FAST_TEST=1
+#     $ ./run-tests.py
+#
 # Running a single test file:
 #     $ python -m unittest test_misc
 #
@@ -40,12 +44,15 @@ from test_ext      import TestExt
 
 VERBOSITY = 2
 
-from fr_testcase import NO_NET
+import fr_testcase
 
-if NO_NET:
+if fr_testcase.NO_NET:
     print "Warning:  No network available, only some tests run"
 if not 'REVIEW_LOGLEVEL' in os.environ:
     print "Warning:  REVIEW_LOGLEVEL not set, lot's of output ahead."
+if fr_testcase.FAST_TEST:
+    print "Warning: slow tests skipped"
+
 
 Mock.init()
 
