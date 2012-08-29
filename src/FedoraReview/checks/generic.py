@@ -95,9 +95,15 @@ class CheckBuild(GenericCheckBase):
         self.automatic = True
         self.needs = ['CheckResultdir']
 
+    def make_buildlink(self):
+        if not os.path.exists('BUILD'):
+            os.symlink(Mock.get_builddir('BUILD'), 'BUILD')
+
     def run(self):
         if Settings.nobuild:
-            self.set_passed(self.PENDING, 'No build with --no-build')
+            self.make_buildlink()
+            self.set_passed(self.PASS,
+                            'Cached build in mock) --no-build)')
             return
         if Settings.prebuilt:
             self.set_passed(self.PENDING, 'Using prebuilt packages')
@@ -112,9 +118,8 @@ class CheckBuild(GenericCheckBase):
                      'No valid cache, building despite --no-build.')
         _mock_root_setup("While building")
         rc = self.srpm.build()
-        if not os.path.exists('BUILD'):
-            os.symlink(Mock.get_builddir('BUILD'), 'BUILD')
         if rc == '0':
+            self.make_buildlink()
             self.set_passed(self.PASS)
         else:
             self.set_passed(self.FAIL, "Build errors: " + rc)

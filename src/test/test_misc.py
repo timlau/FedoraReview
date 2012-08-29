@@ -422,6 +422,7 @@ class TestMisc(FR_TestCase):
         check = self.run_single_check(bug,'CheckSoFiles')
         self.assertTrue(check.is_pending)
 
+    @unittest.skipIf(FAST_TEST, 'slow test disabled by REVIEW_FAST_TEST')
     def test_local_repo(self):
         self.init_test('test_misc',
                        argv=['-rn','python-test', '--local-repo',

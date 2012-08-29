@@ -30,7 +30,6 @@ import logging
 from FedoraReview.review_error import FedoraReviewError
 from FedoraReview.settings     import Settings
 
-BUILD             = 'BUILD'
 SRPM              = 'srpm'
 SRPM_UNPACKED     = 'srpm-unpacked'
 UPSTREAM          = 'upstream'
@@ -49,8 +48,7 @@ class ReviewDirChangeError(FedoraReviewError):
 
 class _ReviewDirs(object):
 
-    WD_DIRS = [BUILD,UPSTREAM, UPSTREAM_UNPACKED, SRPM, SRPM_UNPACKED,
-               RESULTS]
+    WD_DIRS = [UPSTREAM, UPSTREAM_UNPACKED, SRPM, SRPM_UNPACKED, RESULTS]
 
     def __init__(self):
         self.startdir = os.getcwd()

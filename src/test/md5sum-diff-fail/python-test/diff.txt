@@ -1,9 +1,0 @@
-diff -U2 -r /home/leamas/fedorahosted/tmp/FedoraReview/src/test/md5sum-diff-fail/python-test/upstream-unpacked/Source0/python-test-1.0/setup.py /home/leamas/fedorahosted/tmp/FedoraReview/src/test/md5sum-diff-fail/python-test/srpm-unpacked/python-test-1.0.tar.gz-extract/python-test-1.0/setup.py
---- /home/leamas/fedorahosted/tmp/FedoraReview/src/test/md5sum-diff-fail/python-test/upstream-unpacked/Source0/python-test-1.0/setup.py	2011-01-30 10:49:27.000000000 +0100
-+++ /home/leamas/fedorahosted/tmp/FedoraReview/src/test/md5sum-diff-fail/python-test/srpm-unpacked/python-test-1.0.tar.gz-extract/python-test-1.0/setup.py	2012-06-04 11:29:21.000000000 +0200
-@@ -1,4 +1,5 @@
- #!/usr/bin/python -tt
- # -*- coding: utf-8 -*-
-+# Line added to make diff -r fail
- 	
- from setuptools import find_packages, setup
