@@ -1700,17 +1700,23 @@ class CheckSpecAsInSRPM(GenericCheckBase):
         self.type = 'EXTRA'
 
     def run(self):
-        if Settings.rpm_spec:
-            self.set_passed('not_applicable')
-            return
         self.srpm.unpack()
         pattern = os.path.join(ReviewDirs.srpm_unpacked, '*.spec')
         spec_files = glob.glob(pattern)
         if len(spec_files) != 1:
-            self.set_passed(False,
+            self.set_passed(self.FAIL,
                             '0 or more than one spec file in srpm(!)')
             return
         srpm_spec_file = spec_files[0]
+        pkg_name = \
+             os.path.basename(self.srpm.filename).rsplit('-', 2)[0]
+        if os.path.basename(srpm_spec_file) != pkg_name + '.spec':
+            self.set_passed(self.FAIL,
+                            "Bad spec filename: " + srpm_spec_file)
+            return
+        if Settings.rpm_spec:
+            self.set_passed(self.NA)
+            return
         url_spec_file = self.spec.filename
         cmd = ["diff", '-U2', url_spec_file, srpm_spec_file]
         try:
@@ -1718,7 +1724,7 @@ class CheckSpecAsInSRPM(GenericCheckBase):
             output, error = p.communicate()
         except OSError:
             self.log.error("Cannot run diff", exc_info=True)
-            self.set_passed(False, "OS error runnning diff")
+            self.set_passed(self.FAIL, "OS error runnning diff")
             return
         if output and len(output) > 0:
             a = Attachment("Diff spec file in url and in SRPM",
@@ -1726,9 +1732,9 @@ class CheckSpecAsInSRPM(GenericCheckBase):
                            8)
             text = ('Spec file as given by url is not the same as in '
                     'SRPM (see attached diff).')
-            self.set_passed(False, text, [a])
+            self.set_passed(self.FAIL, text, [a])
         else:
-            self.set_passed(True)
+            self.set_passed(self.PASS)
         return
 
 

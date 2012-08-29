@@ -437,6 +437,20 @@ class TestMisc(FR_TestCase):
         self.assertTrue(check.is_passed)
         self.assertTrue(Mock.is_installed('dummy'))
 
+    def test_bad_specname(self):
+        self.init_test('bad-specname',
+                       argv=['-rn','python-test', '--cache'])
+        ReviewDirs.reset(os.getcwd())
+        bug = NameBug('python-test')
+        bug.find_urls()
+        bug.download_files()
+        checks = Checks(bug.spec_file, bug.srpm_file)
+        check = checks.checkdict['CheckSpecAsInSRPM']
+        check.run()
+        self.assertTrue(check.is_failed)
+        self.assertIn('Bad spec filename:', check.result.output_extra)
+
+
 
 if __name__ == '__main__':
     suite = unittest.TestLoader().loadTestsFromTestCase(TestMisc)
