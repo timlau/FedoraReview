@@ -15,7 +15,7 @@ class Registry(RegistryBase):
         """ Check is the tests are applicable, here it checks whether
         it is a R package (spec starts with 'R-') or not.
         """
-        return self.spec.name.startswith("R-")
+        return self.checks.spec.name.startswith("R-")
 
 
 class RCheckBase(LangCheckBase):
@@ -185,7 +185,7 @@ class RCheckDir(RCheckBase):
         self.type = 'MUST'
 
     def dont_run_on_applicable(self):
-        # Disabled, does not call set_passed -> errors. 
+        # Disabled, does not call set_passed -> errors.
         """ Run the check """
         dirs = self.spec.find_tag('%dir')
         #print dirs

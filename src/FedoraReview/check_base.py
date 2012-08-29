@@ -214,13 +214,13 @@ class CheckBase(GenericCheck, Helpers):
         '''
         return True
 
-    def run_if_applicable(self):
+    def run_on_applicable(self):
         self.set_passed(self.PENDING)
 
     def run(self):
         ''' By default, a manual test returning 'inconclusive'.'''
         if self.is_applicable():
-             self.run_if_applicable()
+             self.run_on_applicable()
         else:
              self.set_passed('not_applicable')
 
@@ -241,8 +241,11 @@ class LangCheckBase(CheckBase):
     """ Base class for language specific class. """
 
     def is_applicable(self):
-        """ By default, language specific check are disabled. """
-        return False
+        """
+        By default, language specific checks uses the registry's
+        is_applicable()
+        """
+        return self.registry.is_applicable()
 
 
 class CheckDict(dict):

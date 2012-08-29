@@ -16,7 +16,7 @@ class Registry(RegistryBase):
         """ Check is the tests are applicable, here it checks whether
         it is a PHP package (spec starts with 'php-') or not.
         """
-        return self.spec.name.startswith("php-")
+        return self.checks.spec.name.startswith("php-")
 
 
 class PhpCheckBase(LangCheckBase):
