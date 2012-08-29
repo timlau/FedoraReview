@@ -32,13 +32,9 @@ import subprocess
 
 from glob import glob
 
-from FedoraReview.helpers import Helpers
-from FedoraReview import Checks, NameBug, ReviewDirs, \
+from FedoraReview import Checks, ReviewDirs, \
      SRPMFile, SpecFile, Mock, Settings, Sources, Source
 from FedoraReview import BugzillaBug, NameBug, UrlBug
-from FedoraReview.review_helper import ReviewHelper
-
-from fr_testcase import FR_TestCase, NO_NET
 
 VERSION = '0.2.2'
 
@@ -121,28 +117,23 @@ class TestOptions(FR_TestCase):
     def test_git_source(self):
         ''' test use of local source0 tarball '''
 
-        skipped = 'CheckBuild,CheckRpmlint,CheckRpmlintInstalled' \
-                  ',CheckPackageInstalls'
-        argv = ['-rpn', 'get-flash-videos']
-        argv.extend(['--mock-config', 'fedora-16-i386-rpmfusion_free'])
-        argv.extend(['-x', skipped])
-        self.init_opt_test(argv, 'git-source', 'get-flash-videos')
-        crap = glob(os.path.join(os.getcwd(), 'results', '*.*'))
-        for f in crap:
-            os.unlink(f)
-
+        self.init_test('git-source',
+                       argv= ['-rpn', 'get-flash-videos', '--cache'],
+                       buildroot='fedora-16-i386-rpmfusion_free')
         ReviewDirs.reset()
         ReviewDirs.startdir = os.getcwd()
-        Settings.init(True)
 
-        rh = ReviewHelper()
-        sys.stdout = open( '/dev/null', 'w')
-        rh.run()
-        sys.stdout = sys.__stdout__
-        rv = 'get-flash-videos-review.txt'
-        with open(os.path.abspath(rv)) as f:
-            log = f.read()
-        self.assertIn('Using local file' , log)
+        bug = NameBug('get-flash-videos')
+        bug.find_urls()
+        bug.download_files()
+        checks = Checks(bug.spec_file, bug.srpm_file)
+        check = checks.checkdict['CheckBuildCompleted']
+        check.run()
+        check = checks.checkdict['CheckSourceMD5']
+        check.run()
+        self.assertTrue(check.is_passed)
+        self.assertIn('Using local file',
+                      check.result.attachments[0].text)
 
     def test_version(self):
         """ test --version option. """
@@ -186,50 +177,48 @@ class TestOptions(FR_TestCase):
     @unittest.skipIf(FAST_TEST, 'slow test disabled by REVIEW_FAST_TEST')
     def test_mock_options(self):
         ''' test -o/--mock-options and -m/mock-config '''
-        cmd = '-n python-test -o=--resultdir=results --cache'
         v = '16' if '17' in self.BUILDROOT else '17'
-        buildroot = 'fedora-%s-i386' % v
-        self.init_opt_test(cmd.split(), 'options', 'python-test', buildroot)
+        self.init_test('test_misc',
+                       argv=['-n','python-test','--cache'],
+                       options='--resultdir=results',
+                       buildroot='fedora-%s-i386' % v)
         d = os.path.join(os.getcwd(), 'results')
         if os.path.exists(d):
             for crap in glob(os.path.join('results', '*.*')):
                 os.unlink(crap)
         else:
             os.mkdir(d)
-
-        sys.stdout = open( '/dev/null', 'w')
-        ReviewHelper().run()
-        sys.stdout = sys.__stdout__
+        bug = NameBug('python-test')
+        bug.find_urls()
+        bug.download_files()
+        checks = Checks(bug.spec_file, bug.srpm_file)
+        check = checks.checkdict['CheckBuild']
+        check.run()
+        self.assertTrue(check.is_passed)
         rpms = glob(os.path.join('results', '*fc%s*.rpm' % v))
         self.assertTrue(len(rpms) > 0)
 
-    @unittest.skipIf(FAST_TEST, 'slow test disabled by REVIEW_FAST_TEST')
-    @unittest.skipIf(NO_NET, 'No network available')
     def test_prebuilt(self):
         ''' test --name --prebuilt '''
 
-        argv = [ '-rpn', 'python-spiffgtkwidgets']
-        argv.extend(['--mock-config', 'fedora-16-i386'])
-        self.init_opt_test(argv, 'prebuilt', 'python-spiffgtkwidgets')
+        argv = ['-rpn', 'python-spiffgtkwidgets', '--cache']
+        self.init_test('prebuilt', argv=argv)
         ReviewDirs.reset()
 
-        rpms = glob('/var/lib/mock/%s/*.rpm' % self.BUILDROOT)
-        for r in rpms:
-            os.unlink(r)
-
-        rh = ReviewHelper()
-        sys.stdout = open( '/dev/null', 'w')
-        rh.run()
-        sys.stdout = sys.__stdout__
-        self.assertEqual(len(rpms), 0)
-        rv = 'python-spiffgtkwidgets-review.txt'
-        with open(os.path.abspath(rv)) as f:
-            log = '\n'.join(f.readlines())
-        self.assertIn('Using prebuilt rpms', log)
+        bug = NameBug('python-spiffgtkwidgets')
+        bug.find_urls()
+        bug.download_files()
+        checks = Checks(bug.spec_file, bug.srpm_file)
+        check = checks.checkdict['CheckBuild']
+        check.run()
+        self.assertTrue(check.is_pending)
+        self.assertIn('Using prebuilt packages',
+                       check.result.output_extra)
 
     def test_rpm_spec(self):
         """ Test --rpm-spec/-r option """
-        self.init_opt_test(['-rn','python-test', '--cache'], 'desktop-file')
+        self.init_opt_test(['-rn','python-test', '--cache'],
+                           'desktop-file')
         ReviewDirs.reset()
         bug = NameBug(Settings.name)
         bug.find_urls()
@@ -247,9 +236,8 @@ class TestOptions(FR_TestCase):
 
     def test_single(self):
         ''' test --single/-s option '''
-        self.init_opt_test([ '-n','python-test', '-s', 'CheckRequires',
-                         '--cache'])
-
+        self.init_opt_test(['-n','python-test', '-s', 'CheckRequires',
+                            '--cache'])
         bug = NameBug(Settings.name)
         bug.find_urls()
         bug.download_files()
@@ -259,9 +247,8 @@ class TestOptions(FR_TestCase):
 
     def test_exclude(self):
         ''' test --exclude/-x option. '''
-        self.init_opt_test([ '-n','python-test', '-x', 'CheckRequires',
-                         '--cache'])
-
+        self.init_opt_test(['-n','python-test', '-x', 'CheckRequires',
+                            '--cache'])
         bug = NameBug(Settings.name)
         bug.find_urls()
         bug.download_files()

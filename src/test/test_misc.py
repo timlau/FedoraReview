@@ -93,7 +93,7 @@ class TestMisc(FR_TestCase):
         self.log.debug('test_source, result : ' + result.result)
         if result.output_extra:
            self.log.debug("Result extra text: " + result.output_extra)
-        self.assertEqual( result.result, 'pass')
+        self.assertTrue(check.is_passed)
 
     def test_mock_configdir(self):
         self.init_test('test_misc',
@@ -309,7 +309,7 @@ class TestMisc(FR_TestCase):
         checks.set_single_check('CheckSourceMD5')
         check = checks['CheckSourceMD5']
         check.run()
-        self.assertEqual(check.result.result, 'pass')
+        self.assertTrue(check.is_passed)
         expected = 'diff -r shows no differences'
         self.assertTrue(expected in check.result.attachments[0].text)
 
@@ -324,7 +324,7 @@ class TestMisc(FR_TestCase):
         checks.set_single_check('CheckSourceMD5')
         check = checks['CheckSourceMD5']
         check.run()
-        self.assertEqual(check.result.result, 'fail')
+        self.assertTrue(check.is_failed)
         expected = 'diff -r also reports differences'
         self.assertTrue(expected in check.result.attachments[0].text)
 
@@ -362,12 +362,8 @@ class TestMisc(FR_TestCase):
         rpms = checks.srpm.get_used_rpms()
         self.assertEqual(len(rpms), 2)
         rpms = checks.srpm.get_used_rpms('.src.rpm')
-        self.assertEqual(len(rpms), 1)
         os.unlink('orvar.rpm')
-
-
-
-
+        self.assertEqual(len(rpms), 1)
 
     def test_bad_specfile(self):
         self.init_test('bad-spec',
@@ -415,7 +411,7 @@ class TestMisc(FR_TestCase):
         ReviewDirs.reset(os.getcwd())
         bug = NameBug('python-test')
         check = self.run_single_check(bug,'CheckSoFiles')
-        self.assertEqual(check.result.result,'fail')
+        self.assertTrue(check.is_failed)
 
     def test_unversioned_so_private(self):
         self.init_test('unversioned-so-private',
@@ -424,7 +420,7 @@ class TestMisc(FR_TestCase):
         ReviewDirs.reset(os.getcwd())
         bug = NameBug('python-test')
         check = self.run_single_check(bug,'CheckSoFiles')
-        self.assertEqual(check.result.result, 'pending')
+        self.assertTrue(check.is_pending)
 
     def test_local_repo(self):
         self.init_test('test_misc',
