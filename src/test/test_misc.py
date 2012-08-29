@@ -425,6 +425,22 @@ class TestMisc(FR_TestCase):
         check = self.run_single_check(bug,'CheckSoFiles')
         self.assertEqual(check.result.result, 'pending')
 
+    def test_local_repo(self):
+        self.init_test('test_misc',
+                       argv=['-rn','python-test', '--local-repo',
+                             'repo'],
+                        wd='python-test')
+        ReviewDirs.reset(os.getcwd())
+        bug = NameBug('python-test')
+        bug.find_urls()
+        bug.download_files()
+        checks = Checks(bug.spec_file, bug.srpm_file)
+        check = checks.checkdict['CheckPackageInstalls']
+        check.run()
+        self.assertTrue(check.is_passed)
+        self.assertTrue(Mock.is_installed('dummy'))
+
+
 if __name__ == '__main__':
     suite = unittest.TestLoader().loadTestsFromTestCase(TestMisc)
     unittest.TextTestRunner(verbosity=2).run(suite)
