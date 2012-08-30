@@ -88,7 +88,9 @@ class Checks(object):
         self.checkdict = CheckDict()
         self.groups = {}
 
-        plugins = load('FedoraReview.checks')
+        appdir = os.path.abspath(os.path.join(__file__, '../../..'))
+        sys.path.insert(0, appdir)
+        plugins = load('plugins')
         for plugin in plugins:
             registry = plugin.Registry(self)
             tests = registry.register(plugin)

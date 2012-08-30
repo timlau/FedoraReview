@@ -234,7 +234,7 @@ class Registry(AbstractRegistry):
     def _get_plugin_dirs(self):
         plugins = []
         plugindir = os.path.dirname(__file__)
-        plugindir = os.path.join(plugindir, '../../../scripts')
+        plugindir = os.path.join(plugindir, '../scripts')
         plugindir = os.path.normpath(plugindir)
         path = plugindir + ':' + os.path.join(XdgDirs.app_datadir, 
                                               'scripts')
