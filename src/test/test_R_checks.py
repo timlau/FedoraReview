@@ -28,7 +28,6 @@ import unittest
 
 sys.path.insert(0,os.path.abspath('../'))
 from FedoraReview import Settings, Checks, ReviewDirs, NameBug
-from FedoraReview.checks import R
 
 from fr_testcase import FR_TestCase, NO_NET, FAST_TEST
 

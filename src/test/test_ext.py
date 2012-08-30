@@ -70,6 +70,6 @@ class TestExt(FR_TestCase):
                        argv=['-pn','python-test', '--cache',
                               '--no-build'])
         bug = NameBug('python-test')
-        check = self.run_single_check(bug,'check-large-docs.sh')
-        self.assertEqual(check.result.result, 'pending')
+        check = self.run_single_check(bug,'unittest-test2')
+        self.assertTrue(check.is_pending)
 
