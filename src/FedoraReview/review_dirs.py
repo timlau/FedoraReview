@@ -77,12 +77,18 @@ class _ReviewDirs(object):
                 cache = tempfile.mkdtemp(dir='.')
                 for d in self.WD_DIRS:
                     shutil.move(os.path.join(wd, d), cache)
+                try:
+                    buildlink = os.readlink('BUILD')
+                except:
+                    buildlink = None
             logging.info("Clearing old review directory: " + wd)
             shutil.rmtree(wd)
             os.mkdir(wd)
             if Settings.cache:
                 for d in self.WD_DIRS:
                     shutil.move(os.path.join(cache,d), wd)
+                    if buildlink:
+                         shutil.symlink(buildlink, 'BUILD')
                 shutil.rmtree(cache)
         if not os.path.exists(wd):
             os.mkdir(wd)
