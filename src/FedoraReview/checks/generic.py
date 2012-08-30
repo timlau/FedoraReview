@@ -108,11 +108,8 @@ class CheckBuild(GenericCheckBase):
                 self.log.info(
                      'No valid cache, building despite --no-build.')
         _mock_root_setup("While building")
-        rc = self.srpm.build()
-        if rc == '0':
-            self.set_passed(self.PASS)
-        else:
-            self.set_passed(self.FAIL, "Build errors: " + rc)
+        Mock.build(self.srpm.filename)
+        self.set_passed(self.PASS)
 
 
 class CheckRpmlint(GenericCheckBase):
@@ -150,20 +147,27 @@ class CheckPackageInstalls(GenericCheckBase):
         self.type = 'MUST'
         self.needs = ['CheckRpmlint']
 
+    def check_build_installed(self):
+        rpms = self.srpm.get_used_rpms()
+        rpms = [os.path.basename(r).rsplit('-',2)[0] for r in rpms]
+        bad_rpms = filter(lambda r: not Mock.is_installed(r), rpms)
+        return bad_rpms
+
     def run(self):
         if Settings.nobuild:
-            if Mock.is_installed(self.srpm.name):
+            bad_ones = self.check_build_installed()
+            if bad_ones == []:
                 self.set_passed(self.PASS)
             else:
+                bad_ones = list(set(bad_ones))
                 self.set_passed(self.FAIL,
-                                '--no-build: package not installed')
-                self.log.warning(self.FAIL,
-                                 'Package %s required by --no-build'
-                                     ' is not installed' %
-                                         self.srpm.name)
+                                '--no-build: package(s) not installed')
+                self.log.info('Packages required by --no-build are'
+                              ' not installed: ' + ', '.join(bad_ones))
             return
         _mock_root_setup('While installing built packages')
         rpms = self.srpm.get_used_rpms('.src.rpm')
+        self.log.info('Installing built package(s)')
         output = Mock.install(rpms)
         if output == None:
             self.set_passed(self.PASS)

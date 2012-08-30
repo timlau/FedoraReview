@@ -194,6 +194,41 @@ class _Mock(Helpers):
              return errmsg
         return None
 
+    def build(self, filename):
+        """
+        Run a mock build against the srpm filename.
+        Raises FedoraReviewError on build errors, return
+        nothing.
+        """
+        info = 'Rebuilding ' + filename
+        cmd = ' '.join(self._mock_cmd())
+        if Settings.log_level > logging.INFO:
+            cmd += ' -q'
+        cmd += ' --rebuild'
+        cmd += ' ' + filename + ' 2>&1 | tee build.log'
+        if not Settings.verbose and not ' -q' in cmd:
+            cmd += ' | egrep "Results and/or logs|ERROR" '
+        self.log.debug('Build command: %s' % cmd)
+        rc = call(cmd, shell=True)
+        self.builddir_cleanup()
+        rc = str(rc)
+        try:
+            with open('build.log') as f:
+                log  = '\n'.join(f.readlines())
+                if 'ERROR' in log:
+                    rc = 'Build error(s)'
+        except:
+            rc = "Can't open logfile"
+        if rc == '0':
+            self.is_build = True
+            self.log.info('Build completed')
+            return None
+        else:
+            self.log.info('Build failed rc = ' + rc)
+            self.build_failed = True
+            raise FedoraReviewError('Mock build failed.')
+
+
     def install(self, packages):
         """
         Run  'mock install' on a list of files or packages,

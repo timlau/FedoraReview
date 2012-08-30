@@ -94,72 +94,6 @@ class SRPMFile(Helpers):
             shutil.copy(os.path.join(self.unpacked_src, self.filename), extract_dir)
         return extract_dir
 
-    def build(self, force=False):
-        """ Returns the build status, -1 is the build failed, -2
-         reflects prebuilt rpms output code from mock otherwise.
-
-        :kwarg force, boolean to force the mock build even if the
-            package was already built.
-        :kwarg silence, boolean to set/remove the output from the mock
-            build.
-        """
-        if Settings.prebuilt:
-            return SRPMFile.BUILD_PREBUILT
-        if self.build_failed:
-            return SRPMFile.BUILD_FAIL
-        if force:
-            return self.mockbuild(True)
-        if self.is_build or Settings.nobuild:
-            if Mock.have_cache_for(self.spec.name):
-                self.log.debug('Using already built rpms.')
-                return SRPMFile.BUILD_OK
-            else:
-                self.log.info(
-                     'No valid cache, building despite --no-build.')
-        return self.mockbuild(force)
-
-    def mockbuild(self, force=False):
-        """ Run a mock build against the package.
-
-        :kwarg force, boolean to force the mock build even if the
-            package was already built.
-        :kwarg silence, boolean to set/remove the output from the mock
-            build.
-        """
-        info = 'Rebuilding ' + self.filename + ' using '
-        if Settings.mock_config:
-             self.log.info(info + 'mock root ' + Settings.mock_config)
-        else:
-             self.log.info(info + 'default root')
-        cmd = 'mock'
-        if Settings.mock_config:
-            cmd += ' -r ' + Settings.mock_config
-        if Settings.log_level > logging.INFO:
-            cmd += ' -q'
-        cmd += ' --rebuild'
-        cmd +=  ' ' + Mock.get_mock_options()
-        cmd += ' ' + self.filename + ' 2>&1 | tee build.log'
-        if not Settings.verbose and not ' -q' in cmd:
-            cmd += ' | egrep "Results and/or logs|ERROR" '
-        self.log.debug('Mock command: %s' % cmd)
-        rc = call(cmd, shell=True)
-        Mock.builddir_cleanup()
-        rc = str(rc)
-        try:
-            with open('build.log') as f:
-                log  = '\n'.join(f.readlines())
-                if 'ERROR' in log:
-                    rc = 'Build error(s)'
-        except:
-            rc = "Can't open logfile"
-        if rc == '0':
-            self.is_build = True
-            self.log.info('Build completed')
-        else:
-            self.log.info('Build failed rc = ' + rc)
-            self.build_failed = True
-            raise FedoraReviewError('Mock build failed.')
-        return rc
 
     def get_build_dir(self):
         """ Return the BUILD directory from the mock environment.
@@ -244,7 +178,6 @@ class SRPMFile(Helpers):
             self.log.info(hdr + sep.join(rpms))
             self.prebuilt_info = True
         else:
-            self.build()
             rpms = glob(os.path.join(Mock.resultdir, '*.rpm'))
         rpm_files = {}
         for rpm in rpms:

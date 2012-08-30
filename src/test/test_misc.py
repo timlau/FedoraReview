@@ -171,7 +171,7 @@ class TestMisc(FR_TestCase):
             self.assertTrue(False)
 
     @unittest.skipIf(FAST_TEST, 'slow test disabled by REVIEW_FAST_TEST')
-    def test_srpm_mockbuild(self):
+    def test_mockbuild(self):
         """ Test the SRPMFile class """
         self.init_test('test_misc',
                        argv=['-n','python-test', '--cache',
@@ -185,8 +185,7 @@ class TestMisc(FR_TestCase):
         src_files = [os.path.basename(f) for f in  src_files]
         self.assertTrue('python-test-1.0.tar.gz' in src_files)
         self.log.info("Starting mock build (patience...)")
-        srpm.mockbuild()
-        self.assertTrue(srpm.is_build)
+        Mock.build(srpm.filename)
         rpms = glob.glob(os.path.join(Mock.resultdir,
                                       'python-test-1.0-1*noarch.rpm'))
         self.assertEqual(1, len(rpms))
