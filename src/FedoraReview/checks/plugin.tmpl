@@ -36,8 +36,8 @@ class  RCheckBuildRequires(RCheckBase):
         Overriding run_on_applicable means that this code will run
         if is_applicable() is True.
         """
-          
-        br = self.spec.find_tag('BuildRequires')
+
+        br = self.checks.spec.find_tag('BuildRequires')
         passed = 'R-devel' in br and 'tex(latex)' in br
         self.set_passed('pass' if passed else 'fail')
 
