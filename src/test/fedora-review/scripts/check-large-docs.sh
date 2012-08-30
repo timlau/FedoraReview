@@ -1,6 +1,7 @@
 #!/bin/bash
 # @deprecates: CheckLargeDocs
 # @group: Generic
+# @name: unittest-test2
 # @url: http://fedoraproject.org/wiki/Packaging/Guidelines#PackageDocumentation
 # @text: Large documentation must go in a -doc subpackage.
 

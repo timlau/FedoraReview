@@ -55,7 +55,7 @@ class TestRChecks(FR_TestCase):
                 self.assertTrue(check.group == 'Generic' or
                                 check.group == 'R')
                 self.assertIn(check.result.result,
-                              ['pass','pending','fail'])
+                              ['na','pass','pending','fail'])
 
 
 if __name__ == '__main__':

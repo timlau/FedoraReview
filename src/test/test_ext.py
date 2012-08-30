@@ -39,11 +39,11 @@ class TestExt(FR_TestCase):
     def setUp(self):
         FR_TestCase.setUp(self)
         os.environ['REVIEW_EXT_DIRS'] = os.getcwd() + '/api'
-        os.environ['REVIEW_SCRIPT_DIRS'] = os.getcwd() + '/sh-api'
+        os.environ['XDG_DATA_HOME'] = os.getcwd()
 
     def tearDown(self):
+        del os.environ['XDG_DATA_HOME']
         del os.environ['REVIEW_EXT_DIRS']
-        del os.environ['REVIEW_SCRIPT_DIRS']
         FR_TestCase.tearDown(self)
 
     def test_display(self):
@@ -53,13 +53,15 @@ class TestExt(FR_TestCase):
 
     def test_single(self):
         os.chdir('test_ext')
-        check_call('../../fedora-review -n python-test  -s test1'
+        check_call('../../fedora-review -n python-test'
+                   ' -s unittest-test1'
                    ' --cache --no-build >/dev/null',
                    shell=True)
 
     def test_exclude(self):
         self.init_test('test_ext',argv=['-b', '1'])
-        check_call('../../fedora-review -n python-test  -x test1'
+        check_call('../../fedora-review -n python-test'
+                   '  -x unittest-test1'
                    ' --cache --no-build  >/dev/null',
                    shell=True)
 
