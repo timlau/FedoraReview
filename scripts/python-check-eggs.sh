@@ -3,11 +3,6 @@
 # @url: http://fedoraproject.org/wiki/Packaging:Python#Packaging_eggs_and_setuptools_concerns
 # @text: Binary eggs must be removed in %prep
 
-env > /tmp/python.env
-exec 2> /tmp/python.log
-set -x
-
-
 if [ ! -d BUILD/${FR_NAME}-*  ]; then
     echo "Cannot find sources under BUILD (using prebuilt sources?)"
     exit $FR_PENDING
