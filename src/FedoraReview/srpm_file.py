@@ -44,6 +44,7 @@ class SRPMFile(Helpers):
     def __init__(self, filename, spec=None):
         Helpers.__init__(self)
         self.filename = filename
+        self.name = os.path.basename(filename).rsplit('-', 2)[0]
         self.spec = spec
         self.is_build = False
         self.build_failed = False

@@ -96,24 +96,19 @@ class CheckBuild(GenericCheckBase):
         self.needs = ['CheckResultdir']
 
     def run(self):
-        if Settings.nobuild:
-            self.set_passed(self.PENDING, 'No build with --no-build')
-            return
         if Settings.prebuilt:
             self.set_passed(self.PENDING, 'Using prebuilt packages')
             return
-        if Settings.cache:
+        if Settings.nobuild:
             if Mock.have_cache_for(self.spec.name):
-                self.log.debug('Using already built rpms.')
-                self.set_passed(self.PASSED, 'Using cached build')
+                self.set_passed(self.PENDING,
+                                'Re-using old build in mock')
                 return
             else:
                 self.log.info(
                      'No valid cache, building despite --no-build.')
         _mock_root_setup("While building")
         rc = self.srpm.build()
-        if not os.path.exists('BUILD'):
-            os.symlink(Mock.get_builddir('BUILD'), 'BUILD')
         if rc == '0':
             self.set_passed(self.PASS)
         else:
@@ -135,7 +130,7 @@ class CheckRpmlint(GenericCheckBase):
         self.needs = ['CheckBuild']
 
     def run(self):
-        if self.checks.checkdict['CheckBuild'].is_passed:
+        if not self.checks.checkdict['CheckBuild'].is_failed:
             no_errors, rc = self.srpm.rpmlint_rpms()
             text = 'No rpmlint messages.' if no_errors else \
                         'There are rpmlint messages (see attachment).'
@@ -156,19 +151,25 @@ class CheckPackageInstalls(GenericCheckBase):
         self.needs = ['CheckRpmlint']
 
     def run(self):
-        if Settings.nobuild and not Settings.prebuilt:
-            self.set_passed('inconclusive',
-                            'Will not install using --no-build'
-                            ' unless also --prebuilt.')
+        if Settings.nobuild:
+            if Mock.is_installed(self.srpm.name):
+                self.set_passed(self.PASS)
+            else:
+                self.set_passed(self.FAIL,
+                                '--no-build: package not installed')
+                self.log.warning(self.FAIL,
+                                 'Package %s required by --no-build'
+                                     ' is not installed' %
+                                         self.srpm.name)
             return
         _mock_root_setup('While installing built packages')
         rpms = self.srpm.get_used_rpms('.src.rpm')
         output = Mock.install(rpms)
         if output == None:
-            self.set_passed(True, None)
+            self.set_passed(self.PASS)
         else:
             attachments = [Attachment('Installation errors', output, 3)]
-            self.set_passed(False,
+            self.set_passed(self.FAIL,
                            "Installation errors (see attachment)",
                             attachments)
 
@@ -189,7 +190,7 @@ class CheckRpmlintInstalled(GenericCheckBase):
         self.needs = ['CheckPackageInstalls']
 
     def run(self):
-        if self.checks.checkdict['CheckBuild'].is_passed:
+        if self.checks.checkdict['CheckPackageInstalls'].is_passed:
             rpms = self.srpm.get_used_rpms('.src.rpm')
             no_errors, rc = Mock.rpmlint_rpms(rpms)
             text = 'No rpmlint messages.' if no_errors else \
@@ -217,6 +218,8 @@ class CheckBuildCompleted(GenericCheckBase):
 
     def run(self):
         Mock.rpmbuild_bp(self.srpm.filename)
+        if not os.path.exists('BUILD'):
+            os.symlink(Mock.get_builddir('BUILD'), 'BUILD')
         self.set_passed('not_applicable')
 
 ## End of startup sequence

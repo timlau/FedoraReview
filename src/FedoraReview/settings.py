@@ -161,8 +161,8 @@ class _Settings(object):
                     help='Do not print review report.')
         optional.add_argument('--no-build', action='store_true',
                     dest='nobuild',
-                    help = 'Do not rebuild the srpm, use currently'
-                           ' built in mock.')
+                    help = 'Do not rebuild or install the srpm, use last '
+                           ' built one in mock. Implies --cache')
         optional.add_argument('-o','--mock-options', metavar='<mock options>',
                     default = '--no-cleanup-after --no-clean',
                     dest='mock_options',
@@ -196,6 +196,8 @@ class _Settings(object):
 
         self.add_args(args)
         self.do_logger_setup(logging.DEBUG if args.verbose else None)
+        if self.nobuild:
+            self.cache = True
         if not self.prebuilt:
             _check_mock_grp()
         # resultdir as present in mock_options, or None
