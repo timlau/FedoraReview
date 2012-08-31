@@ -233,32 +233,45 @@ as given to -n (my-package in this example). The filenames must also end
 with \.spec and \.src.rpm
 
 .SH FILES
-.I $HOME/.cache/fedora-review.log
+.I ~/.cache/fedora-review.log
 .RS
 Debug logging from last session.
 .RE
 .I /usr/share/fedora-review/plugins
 .RS
-System-wide external plugins directory
+System-wide python plugins directory
 .RE
-.I $HOME/.config/fedora-review/plugins/
+.I /usr/share/fedora-review/scripts
 .RS
-User supplied external plugins directory
+System-wide scripts directory
+.RE
+.I ~/.local/share/fedora-review/plugins/
+.RS
+User supplied directory for full-featured python plugins
+.RE
+.I ~/.local/share/fedora-review/scripts/
+.RS
+User supplied directory with shell-based plugins
 .RE
 
 .SH ENVIRONMENT
 .TP
 .B  REVIEW_EXT_DIRS
-If REVIEW_EXT_DIRS is set, it specifies additional directories that will be searched for external plugins
+If REVIEW_EXT_DIRS is set, it specifies additional directories that will be searched for external
+json plugins
 .TP
 .B REVIEW_LOGLEVEL
 loglevel used when not using -v/--verbose. A logging.* value like 'DEBUG', 'Info', or 'warning'. Setting
 REVIEW_LOGLEVEL to 'debug' is the same as providing the -v/--verbose option.
 .TP
-.B REVIEW_SCRIPT_DIRS
-The directories searched for scripts, see README.scripts. It's a ':'-separated
-search path which replaces the standard path. Defaults to
-$PACKAGE_DIR/scripts:~/.config/fedora-review/scripts
+.B XDG_DATA_HOME
+fedora-review respects XDG_DATA_HOME which defaults to ~/.local/share. Eg g.,
+the personal data directory with plugins is by default ~/.local/share/fedora-review/plugins,
+but is $XDG_DATA_HOME/fedora-review/plugins if XDG_DATA_HOME is set. See FILES.
+.TP
+.B XDG_CACHE_HOME
+If set, defines the directory where the logfile fedora-review.log is written.
+Defaults to ~ /.cache.
 
 .SH SEE ALSO
 bugzilla(1) - CLI tool to create and modify bugzilla bug tickets.

@@ -236,12 +236,9 @@ class Registry(AbstractRegistry):
         plugindir = os.path.dirname(__file__)
         plugindir = os.path.join(plugindir, '../../../scripts')
         plugindir = os.path.normpath(plugindir)
-        std_path = plugindir + ':' + XdgDirs.app_configdir
-        path = std_path
-        if 'REVIEW_SCRIPT_DIRS' in os.environ:
-            path = os.environ['REVIEW_SCRIPT_DIRS']
-            path = path.replace('$REVIEW_SCRIPT_DIRS', std_path)
-        return [os.path.expanduser(p) for p in path.split(':')]
+        path = plugindir + ':' + os.path.join(XdgDirs.app_datadir, 
+                                              'scripts')
+        return path.split(':')
 
     def register(self, plugin):
         self.log = Settings.get_logger()
