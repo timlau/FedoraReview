@@ -77,3 +77,18 @@ class TestExt(FR_TestCase):
         self.assertTrue(checks.checkdict['unittest-test2'].is_pending)
         self.assertNotIn('CheckLargeDocs', checks.checkdict)
 
+    def test_srv_opt(self):
+        self.init_test('srv-opt',
+                       argv=['-rn','python-test', '--cache',
+                              '--no-build'])
+        ReviewDirs.reset(os.getcwd())
+        bug = NameBug('dummy')
+        bug.find_urls()
+        bug.download_files()
+        checks = Checks(bug.spec_file, bug.srpm_file)
+        check = checks.checkdict['check-srv-opt-local']
+        check.run()
+        self.assertTrue( '/srv' in check.result.output_extra)
+        self.assertTrue( '/opt' in check.result.output_extra)
+        self.assertTrue( '/usr/local' in check.result.output_extra)
+
