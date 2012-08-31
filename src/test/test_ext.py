@@ -70,6 +70,10 @@ class TestExt(FR_TestCase):
                        argv=['-pn','python-test', '--cache',
                               '--no-build'])
         bug = NameBug('python-test')
-        check = self.run_single_check(bug,'unittest-test2')
-        self.assertTrue(check.is_pending)
+        bug.find_urls()
+        bug.download_files()
+        checks = Checks(bug.spec_file, bug.srpm_file)
+        checks.checkdict['unittest-test2'].run()
+        self.assertTrue(checks.checkdict['unittest-test2'].is_pending)
+        self.assertNotIn('CheckLargeDocs', checks.checkdict)
 

@@ -265,7 +265,7 @@ class CheckDict(dict):
     def __setitem__(self, key, value):
 
         def log_kill(victim, killer):
-            self.log.info("Removing %s in %s, deprecated by %s in %s" %
+            self.log.info("Skipping %s in %s, deprecated by %s in %s" %
                               (victim.name, victim.defined_in,
                                killer.name, killer.defined_in))
 
