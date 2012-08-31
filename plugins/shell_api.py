@@ -236,7 +236,7 @@ class Registry(AbstractRegistry):
         plugindir = os.path.dirname(__file__)
         plugindir = os.path.join(plugindir, '../scripts')
         plugindir = os.path.normpath(plugindir)
-        path = plugindir + ':' + os.path.join(XdgDirs.app_datadir, 
+        path = plugindir + ':' + os.path.join(XdgDirs.app_datadir,
                                               'scripts')
         return path.split(':')
 
@@ -278,11 +278,17 @@ class ShellCheck(GenericCheck):
     def _parse_attributes(self, lines):
         self.type = self.DEFAULT_TYPE
         self.group = self.DEFAULT_GROUP
+        self.text = ''
         for line in lines:
-            for attr in ['group', 'url', 'text', 'type']:
+            for attr in ['group', 'url', 'type']:
                 value = self._find_value(line, attr)
                 if value:
                     setattr(self, attr, value)
+            text = self._find_value(line, 'text')
+            if text:
+                if self.text:
+                   self.text += ' '
+                self.text +=  text
             list = self._find_value(line, 'deprecates')
             if list:
                 self.deprecates = list.replace(',', ' ').split()
@@ -297,6 +303,7 @@ class ShellCheck(GenericCheck):
         @group: java # generic, C/C++ etc
         @type: MUST|SHOULD|EXTRA
         @text :"User info, visible in listings"
+        @test: "More text, appended to previous, w blank separator"
         @url: Guidelines URL, optional
         @deprecates: test1, test2, ...
         @needs: test4, test5, ...
@@ -309,7 +316,7 @@ class ShellCheck(GenericCheck):
             if name:
                 break
         if not name:
-            name = os.path.basename(path)
+            name = os.path.splitext(os.path.basename(path))[0]
         self._name = name
         self._parse_attributes(lines)
 
