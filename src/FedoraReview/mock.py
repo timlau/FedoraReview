@@ -30,6 +30,7 @@ from subprocess import call, Popen, PIPE, STDOUT
 from helpers import Helpers
 from review_dirs import ReviewDirs
 from settings import Settings
+from review_error import FedoraReviewError
 
 
 _RPMLINT_SCRIPT="""
