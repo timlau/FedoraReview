@@ -1,25 +1,29 @@
 #-*- coding: utf-8 -*-
+""" Test module for C/C++  based packages. """
 
 import re
 
 from FedoraReview import LangCheckBase, RegistryBase, Attachment
 
 class Registry(RegistryBase):
-    group='C/C++'
+    """ Register all checks in this file. """
+
+    group = 'C/C++'
 
     def is_applicable(self):
         """Need more comprehensive check and return True in valid cases"""
         if self.has_files_re('/usr/(lib|lib64)/[\w\-]*\.so\.[0-9]') or \
-           self.has_files('*.h') or \
-           self.has_files('*.a') or \
-           self.sources_have_files('*.c') or \
-           self.sources_have_files('*.C') or \
-           self.sources_have_files('*.cpp') :
-           return True
+            self.has_files('*.h') or \
+            self.has_files('*.a') or \
+            self.sources_have_files('*.c') or \
+            self.sources_have_files('*.C') or \
+            self.sources_have_files('*.cpp') :
+            return True
         return False
 
 
 class CCppCheckBase(LangCheckBase):
+    ''' Common base class for module tests (a. k. a. checks). '''
 
     def __init__(self, base):
         LangCheckBase.__init__(self, base, __file__)
@@ -27,26 +31,27 @@ class CCppCheckBase(LangCheckBase):
 
 class CheckLDConfig(CCppCheckBase):
     '''
-    MUST: Every binary RPM package (or subpackage) which stores shared library files (not just symlinks)
-    in any of the dynamic linker's default paths, must call ldconfig in %post and %postun.
-    http://fedoraproject.org/wiki/Packaging/Guidelines#Shared_Libraries
+    MUST: Every binary RPM package (or subpackage) which stores shared
+    library files (not just symlinks) in any of the dynamic linker's
+    default paths, must call ldconfig in %post and %postun.
     '''
     def __init__(self, base):
         CCppCheckBase.__init__(self, base)
-        self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#Shared_Libraries'
+        self.url = 'http://fedoraproject.org/wiki/Packaging' \
+                   '/Guidelines#Shared_Libraries'
         self.text = 'ldconfig called in %post and %postun if required.'
         self.automatic = True
         self.type = 'MUST'
 
 
     def is_applicable(self):
-        '''
-        check if this test is applicable
-        '''
+        ''' check if this test is applicable '''
         return self.has_files_re('/usr/(lib|lib64)/[\w\-]*\.so\.[0-9]')
 
 
     def run_on_applicable(self):
+        ''' Run the test, called if is_applicable() is True. '''
+
         sources = ['%post','%postun']
         for source in sources:
             passed = False
@@ -63,7 +68,8 @@ class CheckLDConfig(CCppCheckBase):
                             passed = True
                             break
             if not passed:
-                self.set_passed(False, '/sbin/ldconfig not called in %s' % source)
+                self.set_passed(False,
+                                '/sbin/ldconfig not called in %s' % source)
                 return
         self.set_passed(True)
 
@@ -74,30 +80,31 @@ class CheckHeaderFiles(CCppCheckBase):
     '''
     def __init__(self, base):
         CCppCheckBase.__init__(self, base)
-        self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#DevelPackages'
+        self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines' \
+                   '#DevelPackages'
         self.text = 'Header files in -devel subpackage, if present.'
         self.automatic = True
         self.type = 'MUST'
 
     def is_applicable(self):
-        '''
-        check if this test is applicable
-        '''
+        ''' check if this test is applicable '''
         return self.has_files('*.h')
 
     def run_on_applicable(self):
+        ''' Run the test, called if is_applicable() is True. '''
         files = self.get_files_by_pattern('*.h')
         passed = True
         extra = ""
         for rpm in files:
-            for fn in files[rpm]:
-                # header files (.h) under /usr/src/debug/* will be in the -debuginfo package.
-                if  fn.startswith('/usr/src/debug/') and '-debuginfo' in rpm:
+            for path in files[rpm]:
+                # header files (.h) under /usr/src/debug/* will be in
+                #  the -debuginfo package.
+                if  path.startswith('/usr/src/debug/') and '-debuginfo' in rpm:
                     continue
                 # All other .h files should be in a -devel package.
                 if not '-devel' in rpm:
                     passed = False
-                    extra += "%s : %s\n" % (rpm, fn)
+                    extra += "%s : %s\n" % (rpm, path)
         self.set_passed(passed, extra)
 
 
@@ -109,38 +116,38 @@ class CheckStaticLibs(CCppCheckBase):
     '''
     def __init__(self, base):
         CCppCheckBase.__init__(self, base)
-        self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#StaticLibraries'
+        self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines' \
+                   '#StaticLibraries'
         self.text = 'Static libraries in -static subpackage, if present.'
         self.automatic = False
         self.type = 'MUST'
 
     def is_applicable(self):
-        '''
-        check if this test is applicable
-        '''
+        ''' check if this test is applicable '''
         return self.has_files('*.a')
 
     def run_on_applicable(self):
+        ''' Run the test, called if is_applicable() is True. '''
         files = self.get_files_by_pattern('*.a')
         passed = True
         extra = ""
         for rpm in files:
-            for fn in files[rpm]:
+            for path in files[rpm]:
                 if not '-static' in rpm:
                     passed = False
-                    extra += "%s : %s\n" % (rpm, fn)
+                    extra += "%s : %s\n" % (rpm, path)
         self.set_passed(passed, extra)
 
 
 
 
 class CheckNoStaticExecutables(CCppCheckBase):
-    '''
-    http://fedoraproject.org/wiki/Packaging/Guidelines#Staticly_Linking_Executables
-    '''
+    ''' We do not packaga static executables, do we? '''
+
     def __init__(self, base):
         CCppCheckBase.__init__(self, base)
-        self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#Staticly_Linking_Executables'
+        self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines' \
+                   '#Staticly_Linking_Executables'
         self.text = 'Package contains no static executables.'
         self.automatic = False
         self.type = 'MUST'
@@ -153,30 +160,33 @@ class CheckSoFiles(CCppCheckBase):
     '''
     def __init__(self, base):
         CCppCheckBase.__init__(self, base)
-        self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#DevelPackages'
-        self.text = 'Development (unversioned) .so files in -devel subpackage, if present.'
+        self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines' \
+                   '#DevelPackages'
+        self.text = 'Development (unversioned) .so files ' \
+                    'in -devel subpackage, if present.'
         self.automatic = True
         self.type = 'MUST'
         # we ignore .so files in private directories
         self.bad_re = re.compile('/usr/(lib|lib64)/[\w\-]*\.so$')
 
     def run(self):
+        ''' Run the test, always called '''
         if not self.has_files('*.so'):
             self.set_passed('not_applicable')
             return
         passed = 'pass'
         in_libdir = False
         in_private = False
-        bad_list=[]
+        bad_list = []
         attachments = []
         extra = None
         files_by_rpm = self.get_files_by_pattern('*.so')
         non_devel_rpms = filter(lambda r: not '-devel' in r,
                                 files_by_rpm.iterkeys())
         for rpm in non_devel_rpms:
-            for fn in files_by_rpm[rpm]:
-                bad_list.append("%s: %s" % (rpm, fn))
-                if self.bad_re.search(fn):
+            for path in files_by_rpm[rpm]:
+                bad_list.append("%s: %s" % (rpm, path))
+                if self.bad_re.search(path):
                     in_libdir = True
                 else:
                     in_private = True
@@ -205,20 +215,22 @@ class CheckLibToolArchives(CCppCheckBase):
     '''
     def __init__(self, base):
         CCppCheckBase.__init__(self, base)
-        self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#StaticLibraries'
+        self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines' \
+                   '#StaticLibraries'
         self.text = 'Package does not contain any libtool archives (.la)'
         self.automatic = True
         self.type = 'MUST'
 
     def run_on_applicable(self):
+        ''' Run the test, called if is_applicable() is True. '''
         if not self.has_files('*.la'):
             self.set_passed(True)
         else:
             extra = ""
             files = self.get_files_by_pattern('*.la')
             for rpm in files:
-                for fn in files:
-                    extra += "%s : %s\n" % (rpm, fn)
+                for path in files:
+                    extra += "%s : %s\n" % (rpm, path)
             self.set_passed(False, extra)
 
 
@@ -228,12 +240,14 @@ class CheckRPATH(CCppCheckBase):
     '''
     def __init__(self, base):
         CCppCheckBase.__init__(self, base)
-        self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#Beware_of_Rpath'
+        self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines' \
+                   '#Beware_of_Rpath'
         self.text = 'Rpath absent or only used for internal libs.'
         self.automatic = True
         self.type = 'MUST'
 
     def run_on_applicable(self):
+        ''' Run the test, called if is_applicable() is True. '''
         for line in self.srpm.rpmlint_output:
             if 'binary-or-shlib-defines-rpath' in line:
                 self.set_passed(False, 'See rpmlint output')
@@ -244,14 +258,14 @@ class CheckRPATH(CCppCheckBase):
 
 class CheckNoKernelModules(CCppCheckBase):
     '''
-    At one point (pre Fedora 8), packages containing "addon" kernel modules were permitted.
-    This is no longer the case. Fedora strongly encourages kernel module packagers to
-    submit their code into the upstream kernel tree.
-    http://fedoraproject.org/wiki/Packaging/Guidelines#No_External_Kernel_Modules
+    At one point (pre Fedora 8), packages containing "addon" kernel modules
+    were permitted.  This is no longer the case. Fedora strongly encourages
+    kernel module packagers to submit their code into the upstream kernel tree.
     '''
     def __init__(self, base):
         CCppCheckBase.__init__(self, base)
-        self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines#No_External_Kernel_Modules'
+        self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines' \
+                   '#No_External_Kernel_Modules'
         self.text = 'Package does not contain kernel modules.'
         self.automatic = False
         self.type = 'MUST'

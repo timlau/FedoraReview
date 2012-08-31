@@ -27,7 +27,7 @@ import re
 from glob import glob
 from subprocess import Popen, PIPE
 
-from FedoraReview import AbstractRegistry, GenericCheck
+from FedoraReview import AbstractRegistry, AbstractCheck, GenericCheck
 from FedoraReview import ReviewDirs, Settings, XdgDirs
 
 
@@ -123,7 +123,7 @@ export -f unpack_rpms get_used_rpms unpack_sources
 
 ENV_PATH = 'review-env.sh'
 
-_TAGS= ['name', 'version', 'release', 'group', 'license', 'url']
+_TAGS = ['name', 'version', 'release', 'group', 'license', 'url']
 _SECTIONS = [ 'prep', 'build', 'install', 'pre', 'post',
              'preun', 'postun', 'posttrans']
 
@@ -132,26 +132,38 @@ _FAIL = 81
 _PENDING = 82
 _NOT_APPLICABLE = 83
 
+def _find_value(line, key):
+    ''' Locate tag like @tag:, return value or None. '''
+    key = '@' + key + ':'
+    if key in line:
+        return re.sub('.*' + key, '', line).strip()
+    return None
+
 
 class Registry(AbstractRegistry):
+    ''' Registers all scripts plugins. '''
 
     def _create_env(self, spec, srpm):
+        ''' Create the review-env.sh file. '''
 
         def quote(s):
+            ''' Fix string to be included within '' '''
             return s.replace("'", "'\\''")
 
         def settings_generator():
-            body='declare -A FR_SETTINGS \n'
+            ''' Bash code defining FR_SETTINGS, reflecting Settings. '''
+            body = 'declare -A FR_SETTINGS \n'
             for key in Settings.__dict__.iterkeys():
                 if key.startswith('_'):
                     continue
                 value = Settings.__dict__[key]
                 if not value:
-                    value=''
+                    value = ''
                 body += 'FR_SETTINGS[%s]="%s"\n' %  (key, value)
             return body
 
         def source_generator():
+            ''' Bash code defining the %sourceX items. '''
             body = ''
             sources = spec.get_sources()
             for tag, path in sources.iteritems():
@@ -159,6 +171,7 @@ class Registry(AbstractRegistry):
             return body
 
         def patch_generator():
+            ''' Bash code defining the %patchX items. '''
             body = ''
             patches = spec.get_sources('Patch')
             for tag, path in patches.iteritems():
@@ -166,43 +179,48 @@ class Registry(AbstractRegistry):
             return body
 
         def files_generator():
+            ''' Bash code defining FR_FILES,reflecting %files. '''
             body = 'declare -A FR_FILES\n'
             files = spec.get_section('%files')
             for section, lines in files.iteritems():
-               item = ''
-               for line in lines:
+                item = ''
+                for line in lines:
                     item += quote(line) + '\n'
-               body += """FR_FILES[%s]='%s'\n""" % (section, item)
+                body += """FR_FILES[%s]='%s'\n""" % (section, item)
             return body
 
         def description_generator():
+            '''
+            Bash code defining FR_DESCRIPTION,reflecting %description.
+            '''
             body = 'declare -A FR_DESCRIPTION\n'
             descriptions = spec.get_section('%description')
             for section, lines in descriptions.iteritems():
-               item = ''
-               for line in lines:
+                item = ''
+                for line in lines:
                     item += quote(line) + '\n'
-               body += """FR_DESCRIPTION[%s]='%s'\n""" % (section, item)
+                body += """FR_DESCRIPTION[%s]='%s'\n""" % (section, item)
             return body
 
         def package_generator():
+            ''' Bash code defining FR_PACKAGE,reflecting %package. '''
             body = 'declare -A FR_PACKAGE\n'
             packages = spec.get_section('%package')
             for section, lines in packages.iteritems():
-               item = ''
-               for line in lines:
+                item = ''
+                for line in lines:
                     item += quote(line) + '\n'
-               body += """FR_PACKAGE[%s]='%s'\n""" % (section, item)
+                body += """FR_PACKAGE[%s]='%s'\n""" % (section, item)
             return body
 
         env = ENVIRON_TEMPLATE
         env = env.replace('FR_SETTINGS_generator', settings_generator())
         env = env.replace('@review_dir@', ReviewDirs.root)
         for tag in _TAGS:
-            try:
-                value = spec.get_from_spec(tag.upper())
+            value = spec.get_from_spec(tag.upper())
+            if value:
                 env = env.replace('@' + tag  + '@', value)
-            except:
+            else:
                 self.log.debug('Cannot get value for: ' + tag)
                 env = env.replace('@' + tag  + '@','""')
         env = env.replace('FR_SOURCE_generator', source_generator())
@@ -212,7 +230,7 @@ class Registry(AbstractRegistry):
             section = '%' + s.strip()
             try:
                 lines = spec.get_section(section)[section]
-            except:
+            except KeyError:
                 lines = []
             for line in lines:
                 body += quote(line) + '\n'
@@ -225,29 +243,32 @@ class Registry(AbstractRegistry):
         env = env.replace('FR_DESCRIPTION_generator',
                           description_generator())
         with open(ENV_PATH, 'w') as f:
-             f.write(env)
+            f.write(env)
 
     def __init__(self, base):
         AbstractRegistry.__init__(self, base)
         self.groups = base.groups
-
-    def _get_plugin_dirs(self):
-        plugindir = os.path.dirname(__file__)
-        plugindir = os.path.join(plugindir, '../scripts')
-        plugindir = os.path.normpath(plugindir)
-        path = plugindir + ':' + os.path.join(XdgDirs.app_datadir,
-                                              'scripts')
-        return path.split(':')
+        self.log = Settings.get_logger()
 
     def register(self, plugin):
-        self.log = Settings.get_logger()
-        dirs = self._get_plugin_dirs()
+        ''' Return all available scripts as ShellCheck instances. '''
+
+        def _get_plugin_dirs():
+            ''' Return list of dirs to scan for scripts. '''
+            plugindir = os.path.dirname(__file__)
+            plugindir = os.path.join(plugindir, '../scripts')
+            plugindir = os.path.normpath(plugindir)
+            path = plugindir + ':' + os.path.join(XdgDirs.app_datadir,
+                                                  'scripts')
+            return path.split(':')
+
+        dirs = _get_plugin_dirs()
         checks = []
         if not Settings.list_checks:
             self._create_env(self.checks.spec, self.checks.srpm)
-        for dir in dirs:
-            dir = os.path.expanduser(dir)
-            for f in glob(os.path.join(dir, '*.sh')):
+        for d in dirs:
+            d = os.path.expanduser(d)
+            for f in glob(os.path.join(d, '*.sh')):
                 checks.append(ShellCheck(self.checks, f))
         return checks
 
@@ -258,42 +279,39 @@ class ShellCheck(GenericCheck):
 
     def __init__(self, checks, path):
         for tag in _TAGS:
-           try:
-               setattr(self, tag, tag + ' : undefined')
-           except:
-               pass
+            try:
+                setattr(self, tag, tag + ' : undefined')
+            except AttributeError:
+                pass
         GenericCheck.__init__(self, checks, path)
-        self.implementation='shell'
+        self.implementation = 'shell'
         self.groups = checks.groups
         self.log = Settings.get_logger()
-        self._parse(path)
-
-    def _find_value(self, line, key):
-        key = '@' + key + ':'
-        if key in line:
-            return re.sub('.*' + key, '', line).strip()
-        return None
-
-    def _parse_attributes(self, lines):
         self.type = self.DEFAULT_TYPE
         self.group = self.DEFAULT_GROUP
         self.text = ''
+        self._parse(path)
+
+    def _parse_attributes(self, lines):
+        ''' Parse all tags and populate attributes. '''
+
+
         for line in lines:
             for attr in ['group', 'url', 'type']:
-                value = self._find_value(line, attr)
+                value = _find_value(line, attr)
                 if value:
                     setattr(self, attr, value)
-            text = self._find_value(line, 'text')
+            text = _find_value(line, 'text')
             if text:
                 if self.text:
-                   self.text += ' '
+                    self.text += ' '
                 self.text +=  text
-            list = self._find_value(line, 'deprecates')
-            if list:
-                self.deprecates = list.replace(',', ' ').split()
-            list = self._find_value(line, 'needs')
-            if list:
-                self.needs = list.replace(',', ' ').split()
+            victims = _find_value(line, 'deprecates')
+            if victims:
+                self.deprecates = victims.replace(',', ' ').split()
+            needed = _find_value(line, 'needs')
+            if needed:
+                self.needs = needed.replace(',', ' ').split()
 
     def _parse(self, path):
         """
@@ -311,7 +329,7 @@ class ShellCheck(GenericCheck):
         with open(path) as f:
             lines = f.readlines()
         for line in lines:
-            name = self._find_value(line, 'name')
+            name = _find_value(line, 'name')
             if name:
                 break
         if not name:
@@ -320,10 +338,14 @@ class ShellCheck(GenericCheck):
         self._parse_attributes(lines)
 
     def _do_run(self, cmd):
+        '''
+        Actually invoke the external script, returning
+        (retcode, stdout, stderr)
+        '''
         p = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
         try:
-            stdout,stderr = p.communicate()
-        except:
+            stdout, stderr = p.communicate()
+        except OSError:
             self.log.warning("Cannot execute " + cmd)
             self.log.debug("Cannot execute " + cmd, exc_info=True)
             return -1, None, None
@@ -335,7 +357,7 @@ class ShellCheck(GenericCheck):
 
     def run(self):
         if hasattr(self, 'result'):
-             return
+            return
         if not self.group in self.groups:
             self.set_passed("pending", "test run failed: illegal group")
             self.log.warning('Illegal group %s in %s' %

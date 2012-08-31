@@ -32,6 +32,7 @@ from FedoraReview import RegistryBase
 from FedoraReview import FedoraReviewError, ResultDirNotEmptyError
 
 class Registry(RegistryBase):
+    ''' Module registration, register all checks. '''
     group = 'Generic'
 
     def is_applicable(self):
@@ -39,13 +40,16 @@ class Registry(RegistryBase):
 
 
 class GenericCheckBase(CheckBase):
+    ''' Base class for all generic tests. '''
 
     def __init__(self, base):
         CheckBase.__init__(self, base, __file__)
 
 def _mock_root_setup(while_what):
+    ''' Wrap mock --init. '''
 
     class DependencyInstallError(FedoraReviewError):
+        ''' Raised when a package in local repo can't be installed. '''
         pass
 
     Mock.init()
@@ -56,7 +60,7 @@ def _mock_root_setup(while_what):
         rpms = glob.glob(os.path.join( repodir, '*.rpm'))
         error = Mock.install(rpms)
         if error:
-             raise DependencyInstallError(while_what + ': ' + error)
+            raise DependencyInstallError(while_what + ': ' + error)
 
 
 ## Startup sequence, up to CheckBuildCompleted
@@ -74,7 +78,7 @@ class CheckResultdir(GenericCheckBase):
     def run(self):
         if len(glob.glob(os.path.join(Mock.resultdir, '*.*'))) != 0 \
             and not  (Settings.nobuild or Settings.prebuilt):
-                    raise ResultDirNotEmptyError()
+                raise ResultDirNotEmptyError()
         self.set_passed(True)
 
 
@@ -128,16 +132,17 @@ class CheckRpmlint(GenericCheckBase):
 
     def run(self):
         if not self.checks.checkdict['CheckBuild'].is_failed:
-            no_errors, rc = self.srpm.rpmlint_rpms()
+            no_errors, retval = self.srpm.rpmlint_rpms()
             text = 'No rpmlint messages.' if no_errors else \
                         'There are rpmlint messages (see attachment).'
-            attachments = [ Attachment('Rpmlint', rc, 5) ]
+            attachments = [ Attachment('Rpmlint', retval, 5) ]
             self.set_passed(True, text, attachments)
         else:
             self.set_passed(False, 'Mock build failed')
 
 
 class CheckPackageInstalls(GenericCheckBase):
+    ''' Install package in mock. '''
 
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
@@ -148,8 +153,9 @@ class CheckPackageInstalls(GenericCheckBase):
         self.needs = ['CheckRpmlint']
 
     def check_build_installed(self):
+        ''' Return list of used rpms which are not installed'''
         rpms = self.srpm.get_used_rpms()
-        rpms = [os.path.basename(r).rsplit('-',2)[0] for r in rpms]
+        rpms = [os.path.basename(r).rsplit('-', 2)[0] for r in rpms]
         bad_rpms = filter(lambda r: not Mock.is_installed(r), rpms)
         return bad_rpms
 
@@ -196,11 +202,12 @@ class CheckRpmlintInstalled(GenericCheckBase):
     def run(self):
         if self.checks.checkdict['CheckPackageInstalls'].is_passed:
             rpms = self.srpm.get_used_rpms('.src.rpm')
-            no_errors, rc = Mock.rpmlint_rpms(rpms)
+            no_errors, retcode = Mock.rpmlint_rpms(rpms)
             text = 'No rpmlint messages.' if no_errors else \
                              'There are rpmlint messages (see attachment).'
             attachments = \
-                [Attachment('Rpmlint (installed packages)', rc+'\n', 5)]
+                [Attachment('Rpmlint (installed packages)',
+                             retcode + '\n', 5)]
             self.set_passed(True, text, attachments)
         else:
             self.set_passed(False, 'Mock build failed')
@@ -347,14 +354,14 @@ class CheckBuildRequires(GenericCheckBase):
     def run(self):
 
         if  self.checks.checkdict['CheckBuild'].is_pending:
-           self.set_passed('pending', 'Using prebuilt rpms.')
+            self.set_passed('pending', 'Using prebuilt rpms.')
         elif self.checks.checkdict['CheckBuild'].is_passed:
             brequires = self.spec.find_tag('BuildRequires')
             pkg_by_default = ['bash', 'bzip2', 'coreutils', 'cpio', 'diffutils',
                 'fedora-release', 'findutils', 'gawk', 'gcc', 'gcc-c++',
                 'grep', 'gzip', 'info', 'make', 'patch', 'redhat-rpm-config',
-                'rpm-build', 'sed', 'shadow-utils', 'tar', 'unzip', 'util-linux-ng',
-                'which', 'xz']
+                'rpm-build', 'sed', 'shadow-utils', 'tar', 'unzip',
+                'util-linux-ng', 'which', 'xz']
             intersec = list(set(brequires).intersection(set(pkg_by_default)))
             if intersec:
                 self.set_passed(False, 'These BR are not needed: %s' % (
@@ -585,7 +592,7 @@ class CheckDesktopFile(GenericCheckBase):
                    'Packaging/Guidelines#desktop'
         self.text = 'Package contains desktop file if it is a GUI' \
                     ' application.'
-        self.automatic =True
+        self.automatic = True
         self.type = 'MUST'
 
     def run(self):
@@ -616,8 +623,8 @@ class CheckDesktopFileInstall(GenericCheckBase):
             return
         pattern = r'(desktop-file-install|desktop-file-validate)' \
                    '.*(desktop|SOURCE)'
-        input = '\n'.join(self.spec.lines)
-        m = re.compile(pattern, re.DOTALL).search(input)
+        spec_lines = '\n'.join(self.spec.lines)
+        m = re.compile(pattern, re.DOTALL).search(spec_lines)
         self.set_passed(m != None)
 
 
@@ -756,12 +763,15 @@ class CheckFileRequires(GenericCheckBase):
     def run(self):
 
         def is_acceptable(req):
-            for acceptable in ['/usr/bin/', '/etc/','/bin/','/sbin/','/usr/sbin/']:
+            ''' Is a requiremetn acceptable? '''
+            for acceptable in ['/usr/bin/', '/etc/', '/bin/', '/sbin/',
+                               '/usr/sbin/']:
                 if req.startswith(acceptable):
                     return True
             return not req.startswith('/')
 
         def get_requires(rpm, requires):
+            ''' Return printable requirements for a rpm. '''
             requires = filter(lambda s: not 'rpmlib' in s, requires)
             requires = filter(lambda s: not 'GLIBC' in s, requires)
             requires = sorted(list(set(requires)))
@@ -770,6 +780,7 @@ class CheckFileRequires(GenericCheckBase):
             return '\n    '.join(requires) + '\n'
 
         def get_provides(rpm, provides):
+            ''' Return printable Provides:  for a rpm. '''
             provides = sorted(list(set(provides)))
             provides.insert(0, os.path.basename(rpm) + ':')
             return '\n    '.join(provides) + '\n'
@@ -793,11 +804,13 @@ class CheckFileRequires(GenericCheckBase):
         if len(wrong_req) == 0:
             self.set_passed(True, None, attachments)
         else:
-            text= "Incorrect Requires : %s " % (', '.join(wrong_req))
+            text = "Incorrect Requires : %s " % (', '.join(wrong_req))
             self.set_passed(False, text, attachments)
 
 
 class CheckFinalRequiresProvides(GenericCheckBase):
+    ''' Final Requires: and Provides: should be sane. '''
+
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
@@ -812,7 +825,6 @@ class CheckFullVerReqSub(GenericCheckBase):
     MUST: In the vast majority of cases, devel packages must require the base
     package using a fully versioned dependency:
     Requires: %{name}%{?_isa} = %{version}-%{release}
-    http://fedoraproject.org/wiki/Packaging/Guidelines#RequiringBasePackage
     '''
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
@@ -916,6 +928,8 @@ class CheckLargeDocs(GenericCheckBase):
 
 
 class CheckLatestVersionIsPackaged(GenericCheckBase):
+    ''' We package latest version, don't we? '''
+
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
@@ -942,9 +956,10 @@ class CheckLicenseField(GenericCheckBase):
 
     def run(self):
 
-        def license_valid(license):
-           return not 'UNKNOWN'  in license and \
-                  not 'GENERATED' in license
+        def license_valid(_license):
+            ''' Test that license from licencecheck is parsed OK. '''
+            return not 'UNKNOWN'  in _license and \
+                  not 'GENERATED' in _license
 
         source = self.sources.get('Source0')
         try:
@@ -1097,7 +1112,8 @@ class CheckLicenseUpstream(GenericCheckBase):
         GenericCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
                    'Packaging/LicensingGuidelines#License_Text'
-        self.text = 'Package does not include license text files separate from upstream.'
+        self.text = 'Package does not include license text files' \
+                    ' separate from upstream.'
         self.automatic = False
         self.type = 'SHOULD'
 
@@ -1172,9 +1188,8 @@ class CheckManPages(GenericCheckBase):
 
 
 class CheckMultipleLicenses(GenericCheckBase):
-    '''
-    http://fedoraproject.org/wiki/Packaging:LicensingGuidelines#Multiple_Licensing_Scenarios
-    '''
+    ''' If multiple licenses, we should provide a break-down. '''
+
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
@@ -1185,8 +1200,7 @@ class CheckMultipleLicenses(GenericCheckBase):
         self.type = 'MUST'
 
     def is_applicable(self):
-        license = self.spec.get_from_spec('License')
-        return 'and' in license.lower().split()
+        return 'and' in self.spec.get_from_spec('License').lower().split()
 
 
 class CheckNameCharset(GenericCheckBase):
@@ -1311,6 +1325,8 @@ class CheckObeysFHS(GenericCheckBase):
 
 
 class CheckObsoletesForRename(GenericCheckBase):
+    ''' If package is a rename, we should provide Obsoletes: etc. '''
+
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines' \
@@ -1360,6 +1376,8 @@ class CheckOwnOther(GenericCheckBase):
 
 
 class CheckParallelMake(GenericCheckBase):
+    ''' Thou shall use parallell make. '''
+
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
@@ -1393,6 +1411,8 @@ class CheckParallelMake(GenericCheckBase):
 
 
 class CheckPatchComments(GenericCheckBase):
+    ''' Patches should have comments. '''
+
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/' \
@@ -1541,7 +1561,7 @@ class CheckSourceComment(GenericCheckBase):
             self.set_passed(True)
         else:
             self.set_passed('inconclusive',
-                            'Package contains tarball without URL, check comments')
+                'Package contains tarball without URL, check comments')
 
 
 class CheckSourceMD5(GenericCheckBase):
@@ -1571,14 +1591,14 @@ class CheckSourceMD5(GenericCheckBase):
             upstream = s.extract_dir
             local = self.srpm.extract(s.filename)
             if not local:
-                 self.log.warn(
-                     "Cannot extract local source: " + s.filename)
-                 return(False, None)
+                self.log.warn(
+                    "Cannot extract local source: " + s.filename)
+                return(False, None)
             cmd = '/usr/bin/diff -U2 -r %s %s'  % (upstream, local)
             self.log.debug(' Diff cmd: ' + cmd)
             try:
                 p = Popen(cmd.split(), stdout=PIPE, stderr=PIPE)
-                output, error = p.communicate()
+                output = p.communicate()[0]
             except OSError:
                 self.log.error("Cannot run diff", exc_info=True)
                 return (False, None)
@@ -1619,21 +1639,21 @@ class CheckSourceMD5(GenericCheckBase):
             if not passed:
                 passed, diff = self.make_diff(sources)
                 if passed:
-                   text += 'However, diff -r shows no differences\n'
-                   msg = 'checksum differs but diff -r is OK'
+                    text += 'However, diff -r shows no differences\n'
+                    msg = 'checksum differs but diff -r is OK'
                 elif not diff:
                     msg += 'checksum differs and there are problems '\
                            'running diff. Please verify manually.\n'
                 else:
-                   p = os.path.join(ReviewDirs.root, 'diff.txt')
-                   with open(p, 'w') as f:
-                       f.write(diff)
-                   text += 'diff -r also reports differences\n'
-                   msg = 'Upstream MD5sum check error, diff is in ' + p
+                    p = os.path.join(ReviewDirs.root, 'diff.txt')
+                    with open(p, 'w') as f:
+                        f.write(diff)
+                    text += 'diff -r also reports differences\n'
+                    msg = 'Upstream MD5sum check error, diff is in ' + p
         except AttributeError as e:
             self.log.debug( "CheckSourceMD5(): Attribute error " + str(e))
             msg = 'Internal Error!'
-            passed = False;
+            passed = False
         finally:
             if passed:
                 msg = None
@@ -1660,11 +1680,11 @@ class CheckSourcePatchPrefix(GenericCheckBase):
         if len(sources) == 0:
             passed = False
             extra = 'No SourceX/PatchX tags found'
-        for tag,path in sources.iteritems():
-            file = os.path.basename(path)
-            if not file.startswith(self.spec.name):
+        for tag, path in sources.iteritems():
+            basename = os.path.basename(path)
+            if not path.startswith(self.spec.name):
                 passed = False
-                extra += '%s (%s)\n' % (tag, file)
+                extra += '%s (%s)\n' % (tag, basename)
         self.set_passed(passed, extra if extra != '' else None)
 
 
@@ -1728,7 +1748,7 @@ class CheckSpecAsInSRPM(GenericCheckBase):
         cmd = ["diff", '-U2', url_spec_file, srpm_spec_file]
         try:
             p = Popen(cmd, stdout=PIPE, stderr=PIPE)
-            output, error = p.communicate()
+            output = p.communicate()[0]
         except OSError:
             self.log.error("Cannot run diff", exc_info=True)
             self.set_passed(self.FAIL, "OS error runnning diff")

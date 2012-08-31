@@ -6,6 +6,8 @@ from FedoraReview import LangCheckBase, Settings, RegistryBase
 
 
 class Registry(RegistryBase):
+    ''' Register all checks in this file in group 'PHP' '''
+
     group = 'PHP'
 
     def is_applicable(self):

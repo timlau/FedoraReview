@@ -1,22 +1,23 @@
 #-*- coding: utf-8 -*-
-
-# Python package tests
+''' Python package tests '''
 
 
 from FedoraReview import LangCheckBase, RegistryBase
 
 
 class Registry(RegistryBase):
+    ''' Register all checks in this file in group 'Python' '''
 
     group = 'Python'
 
     def is_applicable(self):
+        ''' Return true if this is a python package. '''
         return self.checks.spec.name.startswith("python") or \
            self.has_files('*.pyc')
 
 
 class PythonCheckBase(LangCheckBase):
-    """ Base class for all R specific checks. """
+    """ Base class for all python  checks. """
 
     def __init__(self, base):
         LangCheckBase.__init__(self, base, __file__)
@@ -27,7 +28,8 @@ class  CheckPythonBuildRequires(PythonCheckBase):
 
     def __init__(self, checks):
         PythonCheckBase.__init__(self, checks)
-        self.url = 'http://fedoraproject.org/wiki/Packaging:Python#BuildRequires'
+        self.url = 'http://fedoraproject.org/wiki/Packaging:Python' \
+                   '#BuildRequires'
         self.text = 'Package contains BR: python2-devel or python3-devel'
         self.automatic = True
 
