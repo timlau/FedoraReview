@@ -124,13 +124,14 @@ export -f unpack_rpms get_used_rpms unpack_sources
 ENV_PATH = 'review-env.sh'
 
 _TAGS = ['name', 'version', 'release', 'group', 'license', 'url']
-_SECTIONS = [ 'prep', 'build', 'install', 'pre', 'post',
+_SECTIONS = ['prep', 'build', 'install', 'pre', 'post',
              'preun', 'postun', 'posttrans']
 
 _PASS = 80
 _FAIL = 81
 _PENDING = 82
 _NOT_APPLICABLE = 83
+
 
 def _find_value(line, key):
     ''' Locate tag like @tag:, return value or None. '''
@@ -159,7 +160,7 @@ class Registry(AbstractRegistry):
                 value = Settings.__dict__[key]
                 if not value:
                     value = ''
-                body += 'FR_SETTINGS[%s]="%s"\n' %  (key, value)
+                body += 'FR_SETTINGS[%s]="%s"\n' % (key, value)
             return body
 
         def source_generator():
@@ -219,10 +220,10 @@ class Registry(AbstractRegistry):
         for tag in _TAGS:
             value = spec.get_from_spec(tag.upper())
             if value:
-                env = env.replace('@' + tag  + '@', value)
+                env = env.replace('@' + tag + '@', value)
             else:
                 self.log.debug('Cannot get value for: ' + tag)
-                env = env.replace('@' + tag  + '@','""')
+                env = env.replace('@' + tag + '@', '""')
         env = env.replace('FR_SOURCE_generator', source_generator())
         env = env.replace('FR_PATCH_generator', patch_generator())
         for s in _SECTIONS:
@@ -235,7 +236,7 @@ class Registry(AbstractRegistry):
             for line in lines:
                 body += quote(line) + '\n'
             body = "'" + body + "'"
-            if len(body) <  5:
+            if len(body) < 5:
                 body = ''
             env = env.replace('@' + s + '@', body)
         env = env.replace('FR_FILES_generator', files_generator())
@@ -272,6 +273,7 @@ class Registry(AbstractRegistry):
                 checks.append(ShellCheck(self.checks, f))
         return checks
 
+
 class ShellCheck(GenericCheck):
     """ A single test  defined by a shell plugin. """
     DEFAULT_GROUP = 'Generic'
@@ -295,7 +297,6 @@ class ShellCheck(GenericCheck):
     def _parse_attributes(self, lines):
         ''' Parse all tags and populate attributes. '''
 
-
         for line in lines:
             for attr in ['group', 'url', 'type']:
                 value = _find_value(line, attr)
@@ -305,7 +306,7 @@ class ShellCheck(GenericCheck):
             if text:
                 if self.text:
                     self.text += ' '
-                self.text +=  text
+                self.text += text
             victims = _find_value(line, 'deprecates')
             if victims:
                 self.deprecates = victims.replace(',', ' ').split()

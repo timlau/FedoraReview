@@ -31,6 +31,7 @@ from FedoraReview import CheckBase, Attachment, ReviewDirs, Mock, Settings
 from FedoraReview import RegistryBase
 from FedoraReview import FedoraReviewError, ResultDirNotEmptyError
 
+
 class Registry(RegistryBase):
     ''' Module registration, register all checks. '''
     group = 'Generic'
@@ -45,6 +46,7 @@ class GenericCheckBase(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base, __file__)
 
+
 def _mock_root_setup(while_what):
     ''' Wrap mock --init. '''
 
@@ -57,7 +59,7 @@ def _mock_root_setup(while_what):
         repodir = Settings.repo
         if not repodir.startswith('/'):
             repodir = os.path.join(ReviewDirs.startdir, repodir)
-        rpms = glob.glob(os.path.join( repodir, '*.rpm'))
+        rpms = glob.glob(os.path.join(repodir, '*.rpm'))
         error = Mock.install(rpms)
         if error:
             raise DependencyInstallError(while_what + ': ' + error)
@@ -135,7 +137,7 @@ class CheckRpmlint(GenericCheckBase):
             no_errors, retval = self.srpm.rpmlint_rpms()
             text = 'No rpmlint messages.' if no_errors else \
                         'There are rpmlint messages (see attachment).'
-            attachments = [ Attachment('Rpmlint', retval, 5) ]
+            attachments = [Attachment('Rpmlint', retval, 5)]
             self.set_passed(True, text, attachments)
         else:
             self.set_passed(False, 'Mock build failed')
@@ -257,7 +259,6 @@ class CheckApprovedLicense(GenericCheckBase):
 class CheckBundledLibs(GenericCheckBase):
     '''
     MUST: Packages must NOT bundle copies of system libraries.
-    http://fedoraproject.org/wiki/Packaging:Guidelines#Duplication_of_system_libraries
     '''
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
@@ -357,11 +358,12 @@ class CheckBuildRequires(GenericCheckBase):
             self.set_passed('pending', 'Using prebuilt rpms.')
         elif self.checks.checkdict['CheckBuild'].is_passed:
             brequires = self.spec.find_tag('BuildRequires')
-            pkg_by_default = ['bash', 'bzip2', 'coreutils', 'cpio', 'diffutils',
-                'fedora-release', 'findutils', 'gawk', 'gcc', 'gcc-c++',
-                'grep', 'gzip', 'info', 'make', 'patch', 'redhat-rpm-config',
-                'rpm-build', 'sed', 'shadow-utils', 'tar', 'unzip',
-                'util-linux-ng', 'which', 'xz']
+            pkg_by_default = ['bash', 'bzip2', 'coreutils', 'cpio',
+                'diffutils', 'fedora-release', 'findutils', 'gawk',
+                'gcc', 'gcc-c++', 'grep', 'gzip', 'info', 'make',
+                'patch', 'redhat-rpm-config', 'rpm-build', 'sed',
+                'shadow-utils', 'tar', 'unzip', 'util-linux-ng',
+                'which', 'xz']
             intersec = list(set(brequires).intersection(set(pkg_by_default)))
             if intersec:
                 self.set_passed(False, 'These BR are not needed: %s' % (
@@ -489,9 +491,7 @@ class CheckConfigNoReplace(GenericCheckBase):
 
 
 class CheckContainsLicenseText(GenericCheckBase):
-    '''
-    http://fedoraproject.org/wiki/Packaging/LicensingGuidelines#License_Text
-    '''
+    ''' Handle missing license info.  '''
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
@@ -504,9 +504,7 @@ class CheckContainsLicenseText(GenericCheckBase):
 
 
 class CheckCleanBuildroot(GenericCheckBase):
-    '''
-    http://fedoraproject.org/wiki/EPEL/GuidelinesAndPolicies#Prepping_BuildRoot_For_.25install
-    '''
+    ''' Check that buildroot is cleaned as appropriate. '''
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
         self.text = 'Package does not run rm -rf %{buildroot}' \
@@ -565,9 +563,7 @@ class CheckDefattr(GenericCheckBase):
 
 
 class CheckDescMacros(GenericCheckBase):
-    '''
-    http://fedoraproject.org/wiki/Packaging/Guidelines#Source_RPM_Buildtime_Macros
-    '''
+    ''' Macros is description etc. should be expandable. '''
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
@@ -642,11 +638,8 @@ class CheckDevelFilesInDevel(GenericCheckBase):
         self.type = 'MUST'
 
 
-
 class CheckDirectoryRequire(GenericCheckBase):
-    '''
-    http://fedoraproject.org/wiki/Packaging/Guidelines#The_directory_is_also_owned_by_a_package_implementing_required_functionality_of_your_package
-    '''
+    ''' Package should require directories it uses. '''
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
@@ -680,7 +673,6 @@ class CheckExcludeArch(GenericCheckBase):
     package does not compile/build/work on that architecture.  The bug
     number MUST be placed in a comment, next to the corresponding
     ExcludeArch line.
-    http://fedoraproject.org/wiki/Packaging/Guidelines#Architecture_Build_Failures
     '''
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
@@ -720,6 +712,7 @@ class CheckFileDuplicates(GenericCheckBase):
                 self.set_passed(False, line)
                 return
         self.set_passed(True)
+
 
 class CheckFilePermissions(GenericCheckBase):
     '''
@@ -799,8 +792,8 @@ class CheckFileRequires(GenericCheckBase):
             cmd = 'rpm -qp --provides ' + rpm
             provides = self._run_cmd(cmd).split('\n')
             prov_txt += get_provides(rpm, provides) + '\n'
-        attachments = [ Attachment( 'Requires', req_txt, 10),
-                        Attachment( 'Provides', prov_txt, 10)]
+        attachments = [Attachment('Requires', req_txt, 10),
+                       Attachment('Provides', prov_txt, 10)]
         if len(wrong_req) == 0:
             self.set_passed(True, None, attachments)
         else:
@@ -943,7 +936,6 @@ class CheckLicenseField(GenericCheckBase):
     '''
     MUST: The License field in the package spec file must match the
     actual license.
-    http://fedoraproject.org/wiki/Packaging/LicensingGuidelines#ValidLicenseShortNames
     '''
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
@@ -972,7 +964,7 @@ class CheckLicenseField(GenericCheckBase):
                 source.extract()
                 source_dir = source.extract_dir
                 msg += 'Checking original sources for licenses'
-            self.log.debug( "Scanning sources in " + source_dir)
+            self.log.debug("Scanning sources in " + source_dir)
             licenses = []
             if os.path.exists(source_dir):
                 cmd = 'licensecheck -r %s' % source_dir
@@ -993,13 +985,13 @@ class CheckLicenseField(GenericCheckBase):
                                 source_dir)
 
             if not licenses:
-                msg +=  ' No licenses found.'
-                msg +=  ' Please check the source files for licenses manually.'
+                msg += ' No licenses found.'
+                msg += ' Please check the source files for licenses manually.'
                 self.set_passed(False, msg)
             else:
-                msg += ' Licenses found: "'+ '", "'.join(licenses) + '"'
+                msg += ' Licenses found: "' + '", "'.join(licenses) + '"'
                 msg += ' For detailed output of licensecheck'
-                msg += ' see file: ' +  filename
+                msg += ' see file: ' + filename
                 self.set_passed('inconclusive', msg)
         except OSError, e:
             self.log.error('OSError: %s' % str(e))
@@ -1037,7 +1029,7 @@ class CheckLicensInDoc(GenericCheckBase):
             rpm_files = self.get_files_by_pattern(pattern)
             for files in rpm_files.itervalues():
                 licenses.extend(files)
-        licenses = map(lambda f:f.split('/')[-1], licenses)
+        licenses = map(lambda f: f.split('/')[-1], licenses)
         if licenses == []:
             self.set_passed('inconclusive')
             return
@@ -1048,22 +1040,20 @@ class CheckLicensInDoc(GenericCheckBase):
             cmd = 'rpm -qldp ' + rpm
             doclist = check_output(cmd.split())
             docs.extend(doclist.split())
-        docs = map(lambda f:f.split('/')[-1], docs)
+        docs = map(lambda f: f.split('/')[-1], docs)
 
         for license in licenses:
             if not license in docs:
-                self.log.debug( "Cannot find " + license +
-                                " in doclist")
-                self.set_passed( False,
-                                 "Cannot find %s in rpm(s)" % license)
+                self.log.debug("Cannot find " + license +
+                               " in doclist")
+                self.set_passed(False,
+                                "Cannot find %s in rpm(s)" % license)
                 return
         self.set_passed(True)
 
 
 class CheckLicenseInSubpackages(GenericCheckBase):
-    '''
-    http://fedoraproject.org/wiki/Packaging/LicensingGuidelines#Subpackage_Licensing
-    '''
+    ''' License should always be installed when subpackages.'''
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
@@ -1087,7 +1077,6 @@ class CheckLocale(GenericCheckBase):
     MUST: The spec file MUST handle locales properly.  This is done by
     using the %find_lang macro. Using %{_datadir}/locale/* is strictly
     forbidden.
-    http://fedoraproject.org/wiki/Packaging/Guidelines#Handling_Locale_Files
     '''
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
@@ -1106,7 +1095,6 @@ class CheckLicenseUpstream(GenericCheckBase):
     SHOULD: If the source package does not include license text(s)
     as a separate file from upstream, the packager SHOULD query upstream
     to include it.
-    http://fedoraproject.org/wiki/Packaging/LicensingGuidelines#License_Text
     '''
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
@@ -1146,9 +1134,7 @@ class CheckMacros(GenericCheckBase):
 
 
 class CheckMakeinstall(GenericCheckBase):
-    '''
-    http://fedoraproject.org/wiki/Packaging/Guidelines#Why_the_.25makeinstall_macro_should_not_be_used
-    '''
+    ''' Thou shall not use %makeinstall. '''
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines' \
@@ -1194,7 +1180,7 @@ class CheckMultipleLicenses(GenericCheckBase):
         GenericCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
                    'Packaging/LicensingGuidelines#Multiple_Licensing_Scenarios'
-        self.text = 'If the package is under multiple licenses, the licensing' \
+        self.text = 'If the package is under multiple licenses, the licensing'\
                     ' breakdown must be documented in the spec.'
         self.automatic = False
         self.type = 'MUST'
@@ -1276,7 +1262,7 @@ class CheckNoConfigInUsr(GenericCheckBase):
                 if line.startswith('%config'):
                     l = line.replace("%config", "")
                     l = l.replace("(noreplace)", "").strip()
-                    stdout = check_output( ['rpm', '--eval', l])
+                    stdout = check_output(['rpm', '--eval', l])
                     output = stdout.decode('utf-8').strip()
                     if output.startswith('/usr'):
                         passed = False
@@ -1336,12 +1322,12 @@ class CheckObsoletesForRename(GenericCheckBase):
         self.automatic = False
         self.type = 'MUST'
 
+
 class CheckOwnDirs(GenericCheckBase):
     '''
     MUST: A package must own all directories that it creates.  If it
     does not create a directory that it uses, then it should require a
     package which does create that directory.
-    http://fedoraproject.org/wiki/Packaging/Guidelines#FileAndDirectoryOwnership
     '''
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
@@ -1363,7 +1349,6 @@ class CheckOwnOther(GenericCheckBase):
     that you have a good reason to own a file or directory that
     another package owns, then please present that at package review
     time.
-    http://fedoraproject.org/wiki/Packaging/Guidelines#FileAndDirectoryOwnership
     '''
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
@@ -1540,10 +1525,7 @@ class CheckScriptletSanity(GenericCheckBase):
 
 
 class CheckSourceComment(GenericCheckBase):
-    '''
-    https://fedoraproject.org/wiki/Packaging:SourceURL#Troublesome_URLs
-    and https://fedoraproject.org/wiki/Packaging:SourceURL#Using_Revision_Control
-    '''
+    ''' Source tarballs shoud have comment on how to generate it. '''
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging:SourceURL'
@@ -1594,7 +1576,7 @@ class CheckSourceMD5(GenericCheckBase):
                 self.log.warn(
                     "Cannot extract local source: " + s.filename)
                 return(False, None)
-            cmd = '/usr/bin/diff -U2 -r %s %s'  % (upstream, local)
+            cmd = '/usr/bin/diff -U2 -r %s %s' % (upstream, local)
             self.log.debug(' Diff cmd: ' + cmd)
             try:
                 p = Popen(cmd.split(), stdout=PIPE, stderr=PIPE)
@@ -1614,7 +1596,7 @@ class CheckSourceMD5(GenericCheckBase):
                             ' are generated by developer')
             return
         passed = False
-        msg  = 'Check did not complete'
+        msg = 'Check did not complete'
         try:
             text = ''
             all_sources_passed = True
@@ -1624,7 +1606,7 @@ class CheckSourceMD5(GenericCheckBase):
                                     + source.filename)
                     continue
                 if hasattr(source, 'local_src'):
-                    text += "Using local file " +  source.local_src + \
+                    text += "Using local file " + source.local_src + \
                             " as upstream\n"
                 local = self.srpm.check_source_checksum(source.filename)
                 upstream = source.check_source_checksum()
@@ -1651,7 +1633,7 @@ class CheckSourceMD5(GenericCheckBase):
                     text += 'diff -r also reports differences\n'
                     msg = 'Upstream MD5sum check error, diff is in ' + p
         except AttributeError as e:
-            self.log.debug( "CheckSourceMD5(): Attribute error " + str(e))
+            self.log.debug("CheckSourceMD5(): Attribute error " + str(e))
             msg = 'Internal Error!'
             passed = False
         finally:
@@ -1863,6 +1845,7 @@ class CheckTestSuites(GenericCheckBase):
         self.automatic = False
         self.type = 'SHOULD'
 
+
 class CheckTimeStamps(GenericCheckBase):
     '''
     http://fedoraproject.org/wiki/Packaging/Guidelines#Timestamps
@@ -1927,9 +1910,7 @@ class CheckUsefulDebuginfo(GenericCheckBase):
 
 
 class CheckUseGlobal(GenericCheckBase):
-    '''
-    http://fedoraproject.org/wiki/Packaging/Guidelines#.25global_preferred_over_.25define
-    '''
+    ''' Thou shall not use %define. '''
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/' \
