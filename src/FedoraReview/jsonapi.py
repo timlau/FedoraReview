@@ -19,12 +19,14 @@
 '''
 JSON API for FedoraReview plugins
 '''
+import os
 import re
 import subprocess
+
 from json import JSONEncoder, JSONDecoder
 
 from helpers import Helpers
-from check_base import TestResult, AbstractCheck, GenericCheck
+from check_base import TestResult, GenericCheck
 from mock import Mock
 from review_error import FedoraReviewError
 
@@ -92,14 +94,14 @@ class JSON_check(GenericCheck):
         if not hasattr( self.plugin, 'results'):
            self.plugin.run()
         self.result = self.plugin.get_result_by_name(self.name)
-        
-     
+
+
 class PluginTestParser(object):
     """
     Parse registration info for plugin with just one test, like:
     @name: test-name
     @group: java # generic, C/C++ etc
-    @type: MUST|SHOULD|EXTRA     
+    @type: MUST|SHOULD|EXTRA
     @text :"User info, visible in listings"
     @url: Guidelines URL, optional
     @deprecates: test1, test2, ...
@@ -126,7 +128,7 @@ class PluginTestParser(object):
             list = self.find_value(line, name, 'needs')
             if list:
                 check.needs = list.replace(',', ' ').split()
- 
+
     def parse(self, plugin, checks ):
         """ Parse a path, return a JSON_check object. """
 
@@ -137,7 +139,7 @@ class PluginTestParser(object):
             if name:
                 break
         if not name:
-            name = os.path.basename(plugin_path)
+            name = os.path.basename(plugin.plugin_path)
         test = JSON_check(name, checks, plugin)
         self.parse_attributes(test, lines)
         return test
@@ -206,7 +208,7 @@ class JSONPlugin(Helpers):
             try:
                 self.tests = [PluginTestParser().parse(self, self.checks)]
             except:
-                self.log.warning("Can't parse test metadata in " + 
+                self.log.warning("Can't parse test metadata in " +
                                   self.plugin_path)
         return self.tests
 

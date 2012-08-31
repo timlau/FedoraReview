@@ -25,20 +25,18 @@ import os.path
 sys.path.insert(0,os.path.abspath('../'))
 
 import glob
-import logging
 import unittest
 import os
 import re
-import shutil
 import subprocess
 
 from FedoraReview.helpers import Helpers
-from FedoraReview import AbstractCheck, CheckDict, Checks,  NameBug, \
+from FedoraReview import AbstractCheck, CheckDict, Checks, \
      Sources, Source, ReviewDirs, SRPMFile, SpecFile, Mock, Settings
 from FedoraReview import BugzillaBug, NameBug
-from FedoraReview import FedoraReviewError, ResultDirNotEmptyError
+from FedoraReview import ResultDirNotEmptyError
 
-from fr_testcase import FR_TestCase, NO_NET, FAST_TEST
+from fr_testcase import FR_TestCase, FAST_TEST, NO_NET
 
 class TestMisc(FR_TestCase):
 

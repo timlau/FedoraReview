@@ -2,10 +2,6 @@
 
 """ PHP specifics checks """
 
-import re
-import os
-import urllib
-
 from FedoraReview import LangCheckBase, Settings, RegistryBase
 
 

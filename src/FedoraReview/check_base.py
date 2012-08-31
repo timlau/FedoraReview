@@ -28,7 +28,6 @@ from textwrap import TextWrapper
 
 from helpers import Helpers
 from settings import Settings
-from mock import Mock
 
 
 class AbstractCallError(Exception):
@@ -195,7 +194,7 @@ class GenericCheck(AbstractCheck, FileChecks):
             state = self.PENDING
         else:
             state = self.FAIL
-            log.warning('Illegal return code: ' + str(result))
+            self.log.warning('Illegal return code: ' + str(result))
         r = TestResult(self, state, output_extra, attachments)
         self.result = r
 

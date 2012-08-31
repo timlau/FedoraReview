@@ -95,7 +95,7 @@ class _Mock(Helpers):
     resultdir = property(get_resultdir)
 
     """ Mock's %_topdir seen from the outside. """
-    topdir = property(lambda self: get_builddir(self))
+    topdir = property(lambda self: self.get_builddir())
 
     def _mock_cmd(self):
         cmd = ["mock"]
@@ -193,7 +193,6 @@ class _Mock(Helpers):
         Raises FedoraReviewError on build errors, return
         nothing.
         """
-        info = 'Rebuilding ' + filename
         cmd = ' '.join(self._mock_cmd())
         if Settings.log_level > logging.INFO:
             cmd += ' -q'

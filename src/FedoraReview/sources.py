@@ -20,9 +20,7 @@
 Tools for helping Fedora package reviewers
 '''
 
-import logging
 import os.path
-import glob
 
 from source import Source
 from settings import Settings

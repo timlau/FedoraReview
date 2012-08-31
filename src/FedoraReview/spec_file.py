@@ -24,7 +24,7 @@ import re
 import rpm
 import subprocess
 
-from subprocess import call, Popen, PIPE, STDOUT
+from subprocess import Popen, PIPE
 
 from settings import Settings
 

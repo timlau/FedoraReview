@@ -23,20 +23,13 @@ import sys
 import os.path
 sys.path.insert(0,os.path.abspath('../'))
 
-import logging
 import unittest
 import os
 import shutil
-import subprocess
 
-from glob import glob
 from urllib import urlopen
 
-from FedoraReview.helpers import Helpers
-from FedoraReview import Checks, ReviewDirs, \
-     SRPMFile, SpecFile, Mock, Settings, Sources, Source
-from FedoraReview import BugzillaBug, NameBug, UrlBug
-from FedoraReview.review_helper import ReviewHelper
+from FedoraReview import Checks, ReviewDirs,  Mock, Settings
 
 STARTDIR = os.getcwd()
 

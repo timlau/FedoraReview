@@ -24,16 +24,13 @@ import sys
 import os.path
 sys.path.insert(0,os.path.abspath('../'))
 
-import logging
 import unittest
 import os
-import shutil
 import subprocess
 
 from glob import glob
 
-from FedoraReview import Checks, ReviewDirs, \
-     SRPMFile, SpecFile, Mock, Settings, Sources, Source
+from FedoraReview import Checks, ReviewDirs, SpecFile, Settings, Sources
 from FedoraReview import BugzillaBug, NameBug, UrlBug
 
 VERSION = '0.2.2'

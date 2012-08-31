@@ -17,18 +17,12 @@
 Tools handling resources identified with an url (download only).
 No xmlrpc involved, for better or worse.
 '''
-import logging
 import os.path
-import re
-import shutil
-import urllib2
 import urllib
 
 from BeautifulSoup import BeautifulSoup
 
-from helpers import Helpers
-from settings import Settings
-from abstract_bug import AbstractBug, SettingsError
+from abstract_bug import AbstractBug
 
 
 class UrlBugException(Exception):

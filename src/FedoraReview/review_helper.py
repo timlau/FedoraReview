@@ -20,15 +20,13 @@
 Tools for helping Fedora package reviewers
 '''
 
-import logging
-import shutil
 import sys
 import os.path
 
 from FedoraReview import BugException, BugzillaBug, Checks, \
-          ChecksLister, CleanExitError, FedoraReviewError, Mock, \
+          ChecksLister, CleanExitError, FedoraReviewError, \
           NameBug, ReviewDirs, ResultDirNotEmptyError, \
-          ReviewDirExistsError, Settings, SettingsError, Sources, UrlBug
+          ReviewDirExistsError, Settings, SettingsError, UrlBug
 
 from FedoraReview import __version__, build_full
 
@@ -54,8 +52,7 @@ class ReviewHelper(object):
         self.prebuilt = False
 
     def __download_sources(self):
-        sources = self.checks.spec.get_sources('Source')
-        self.sources = Sources(self.checks.spec)
+        #self.sources = Sources(self.checks.spec)
         self.sources.extract_all()
         return True
 

@@ -25,7 +25,6 @@ import os
 
 from glob import glob
 from operator import attrgetter
-from sets import Set
 from straight.plugin import load
 
 from check_base import CheckDict

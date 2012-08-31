@@ -22,14 +22,13 @@ Unit checks for automatic test of fedora R review guidelines
 
 import os
 import os.path
-import shutil
 import sys
 import unittest
 
 sys.path.insert(0,os.path.abspath('../'))
-from FedoraReview import Settings, Checks, ReviewDirs, NameBug
+from FedoraReview import  Checks, ReviewDirs, NameBug
 
-from fr_testcase import FR_TestCase, NO_NET, FAST_TEST
+from fr_testcase import FR_TestCase, FAST_TEST
 
 class TestRChecks(FR_TestCase):
 

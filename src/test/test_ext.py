@@ -23,16 +23,13 @@ import sys
 import os.path
 sys.path.insert(0,os.path.abspath('../'))
 
-import unittest
 import os
-import shutil
 
-from glob import glob
 from subprocess import check_call
 
-from FedoraReview import Checks, Settings, ReviewDirs, NameBug
+from FedoraReview import Checks, ReviewDirs, NameBug
 
-from fr_testcase import FR_TestCase, NO_NET
+from fr_testcase import FR_TestCase
 
 class TestExt(FR_TestCase):
 

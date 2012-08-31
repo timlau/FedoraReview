@@ -4,11 +4,9 @@
 # In any case, exec this file, providing symbols defined
 # there on module level.
 
-import logging
 import os.path
 import os
 import socket
-import sys
 
 from subprocess import check_output
 from review_error import FedoraReviewError

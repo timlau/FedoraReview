@@ -24,16 +24,13 @@ import os
 import sys
 sys.path.insert(0,os.path.abspath('../'))
 
-import logging
 import os.path
 import unittest
 
-from glob import glob
 
-from FedoraReview import Checks, Settings, ReviewDirs
-from FedoraReview.helpers import Helpers
+from FedoraReview import Checks
 
-from fr_testcase import FR_TestCase, NO_NET
+from fr_testcase import FR_TestCase
 
 class TestChecks(FR_TestCase):
 

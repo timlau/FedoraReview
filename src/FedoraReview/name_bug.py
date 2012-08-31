@@ -23,11 +23,7 @@ import os.path
 from glob import glob
 from urlparse import urlparse
 
-from abstract_bug import AbstractBug, SettingsError
-from mock import Mock
-from review_dirs import ReviewDirs
-from settings import Settings
-from srpm_file import SRPMFile
+from abstract_bug import AbstractBug
 
 class NameBugException(Exception):
     pass

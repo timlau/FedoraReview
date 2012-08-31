@@ -28,8 +28,7 @@ sys.path.insert(0,os.path.abspath('../'))
 import os
 import unittest
 
-from FedoraReview import BugzillaBug, Settings, ReviewDirs
-from FedoraReview.abstract_bug import SettingsError
+from FedoraReview import BugzillaBug
 
 from fr_testcase import FR_TestCase, NO_NET
 

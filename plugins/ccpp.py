@@ -1,6 +1,5 @@
 #-*- coding: utf-8 -*-
 
-import operator
 import re
 
 from FedoraReview import LangCheckBase, RegistryBase, Attachment

@@ -25,7 +25,6 @@ import os
 import os.path
 import shutil
 import tempfile
-import logging
 
 from FedoraReview.review_error import FedoraReviewError
 from FedoraReview.settings     import Settings

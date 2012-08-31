@@ -16,18 +16,13 @@
 '''
 Tools for helping Fedora package reviewers
 '''
-import getpass
-import logging
 import os.path
 import re
-import xmlrpclib
-
-from urlparse import urlparse
 
 from bugzilla import Bugzilla
 
 from settings import Settings
-from abstract_bug import AbstractBug, SettingsError, BugException
+from abstract_bug import AbstractBug, BugException
 
 
 class BugzillaBug(AbstractBug):

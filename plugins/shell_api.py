@@ -25,7 +25,7 @@ import os.path
 import re
 
 from glob import glob
-from subprocess import Popen, PIPE, check_output
+from subprocess import Popen, PIPE
 
 from FedoraReview import AbstractRegistry, GenericCheck
 from FedoraReview import ReviewDirs, Settings, XdgDirs
@@ -203,7 +203,7 @@ class Registry(AbstractRegistry):
                 value = spec.get_from_spec(tag.upper())
                 env = env.replace('@' + tag  + '@', value)
             except:
-                log.debug('Cannot get value for: ' + tag)
+                self.log.debug('Cannot get value for: ' + tag)
                 env = env.replace('@' + tag  + '@','""')
         env = env.replace('FR_SOURCE_generator', source_generator())
         env = env.replace('FR_PATCH_generator', patch_generator())
@@ -232,7 +232,6 @@ class Registry(AbstractRegistry):
         self.groups = base.groups
 
     def _get_plugin_dirs(self):
-        plugins = []
         plugindir = os.path.dirname(__file__)
         plugindir = os.path.join(plugindir, '../scripts')
         plugindir = os.path.normpath(plugindir)

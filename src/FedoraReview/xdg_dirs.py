@@ -21,7 +21,6 @@ python interface to XDG directories, implemented as-needed.
 
 import os
 import os.path
-import logging
 
 class _XdgDirs(object):
     APPNAME = 'fedora-review'

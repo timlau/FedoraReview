@@ -20,7 +20,6 @@
 Tools for helping Fedora package reviewers
 '''
 
-import logging
 import os.path
 import shutil
 
@@ -30,7 +29,6 @@ from subprocess import call
 from helpers import Helpers
 from mock import Mock
 from review_dirs import ReviewDirs
-from review_error import FedoraReviewError
 from settings import Settings
 
 

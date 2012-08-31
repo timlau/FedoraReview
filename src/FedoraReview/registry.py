@@ -20,12 +20,8 @@ Test module registration support
 '''
 
 import inspect
-import fnmatch
-import re
 
 from check_base import FileChecks
-from helpers import Helpers
-from settings import Settings
 from review_error import FedoraReviewError
 
 
