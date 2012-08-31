@@ -8,6 +8,7 @@ import koji
 import urlgrabber
 import urlgrabber.progress
 import optparse
+import sys
 
 BASEURL = 'http://kojipkgs.fedoraproject.org/work/'
 
@@ -54,16 +55,15 @@ for task_id in args:
 
         base_path = koji.pathinfo.taskrelpath(task['id'])
         output = session.listTaskOutput(task['id'])
+        if output == []:
+            print "This build is empty, no files to download"
+            sys.exit(1)
         for filename in output:
-            download = False
-            if opts.arches:
-                for arch in opts.arches:
-                    if filename.endswith('.%s.rpm' % arch):
-                        download = True
-                        break
+            if filename.endswith('.rpm') and opts.arches:
+                arch = filename.rsplit('.', 3)[1]
+                download = arch in opts.arches
             else:
-                if filename.endswith('.rpm'):
-                    download = True
+                download = True
             if download:
                 urlgrabber.grabber.urlgrab(BASEURL + base_path + '/' + filename,
                                            progress_obj=prog_meter)
