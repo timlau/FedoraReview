@@ -30,69 +30,74 @@ import hashlib
 from settings import Settings
 from review_error import FedoraReviewError
 
+
 class DownloadError(FedoraReviewError):
+    ''' Error in urlretrieve(). '''
     def __init__(self, code, url):
         FedoraReviewError.__init__(
            self, "Error %s downloading %s" % (code, url))
 
 
 class Helpers(object):
+    ''' Miscellaneous  library support. '''
 
     def __init__(self):
         self.log = Settings.get_logger()
 
     def _run_cmd(self, cmd):
+        ''' Run a command using using subprocess, return output. '''
         self.log.debug('Run command: %s' % cmd)
         cmd = cmd.split(' ')
         try:
             proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
             output, error = proc.communicate()
         except OSError, e:
-            self.log.debug("OS error", exc_info=True)
+            self.log.debug("OS error, stderr: " + error, exc_info=True)
             self.log.error("OS error running " + cmd, str(e))
         return output
 
-    def _checksum(self, file):
-        ''' get the checksum for a file using algorithm set by configuration
+    def _checksum(self, path):
+        ''' get the checksum for a path using algorithm set by configuration
         (default: md5)
 
-        :arg file: the file to get the the checksum for
+        :arg path: the path to get the the checksum for
         :return: checksum
         '''
         ck = hashlib.new(Settings.checksum)
-        with open(file, 'rb') as f:
+        with open(path, 'rb') as f:
             [ck.update(chunk) for chunk in iter(lambda: f.read(8192), '')]
         return ck.hexdigest()
 
     def urlretrieve(self, url, path):
+        ''' Similar to urllib.urlretrieve, raises DownloadError. '''
         try:
             # we need to timeout eventually if there are problems
             import socket
             socket.setdefaulttimeout(30)
 
-            istream =  urllib.FancyURLopener().open(url)
+            istream = urllib.FancyURLopener().open(url)
             if istream.getcode() and istream.getcode() != 200:
                 raise DownloadError(istream.getcode(), url)
             with open(path, 'w') as ostream:
-                bytes = istream.read(32767)
-                while bytes != '':
-                    ostream.write(bytes)
-                    bytes = istream.read(32767)
+                octets = istream.read(32767)
+                while octets != '':
+                    ostream.write(octets)
+                    octets = istream.read(32767)
         except IOError as err:
             raise DownloadError(str(err), url)
 
-
     def _get_file(self, link, directory, logger=None):
+        ''' Download a file in link to directory. '''
         fname = link.rsplit('/', 1)[1]
         path = os.path.join(directory, fname)
         if os.path.exists(path) and Settings.cache:
-             if logger:
-                 logger(True)
-             logging.debug('Using cached source: ' + fname)
-             return  path
+            if logger:
+                logger(True)
+            logging.debug('Using cached source: ' + fname)
+            return  path
         self.log.debug("  --> %s : %s" % (directory, link))
         if logger:
-           logger(False)
+            logger(False)
         self.urlretrieve(link, path)
         return path
 
@@ -106,7 +111,7 @@ class Helpers(object):
         cmd += ' &>/dev/null'
         rc = call(cmd, shell=True)
         if rc != 0:
-            Settings.get_logger().debug("Cannot unpack "  + archive)
+            Settings.get_logger().debug("Cannot unpack " + archive)
         return rc == 0
 
     @staticmethod
@@ -119,8 +124,8 @@ class Helpers(object):
 
         problems = re.compile('(\d+)\serrors\,\s(\d+)\swarnings')
         lines = out.split('\n')[:-1]
-        err_lines = filter( lambda l: l.lower().find('error') != -1,
-                            lines)
+        err_lines = filter(lambda l: l.lower().find('error') != -1,
+                           lines)
         if len(err_lines) == 0:
             Settings.get_logger().debug('Cannot parse rpmlint output: '
                                          + out)
@@ -134,7 +139,7 @@ class Helpers(object):
             else:
                 return False, None
         else:
-            log.debug('Cannot parse rpmlint output: ' + out )
+            log.debug('Cannot parse rpmlint output: ' + out)
             return False, 'Cannot parse rpmlint output:'
 
 

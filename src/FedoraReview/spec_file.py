@@ -78,12 +78,14 @@ class SpecFile(object):
 
     # FIXME: dead code, not referenced?!
     def get_macros(self):
+        ''' Dump macros on stdout. '''
         for lin in self.lines:
             res = MACROS.search(lin)
             if res:
                 print "macro: %s = %s" % (res.group(2), res.group(3))
 
     def process_sections(self):
+        ''' Scan lines and build self._sections, self.section_list. '''
         section_lines = []
         cur_sec = 'main'
         for l in self.lines:
@@ -108,6 +110,7 @@ class SpecFile(object):
 
     # FIXME: this is dead code, only referenced line above?!
     def dump_sections(self, section=None):
+        ''' Dump sections on stdout. '''
         if section:
             sections = self.get_section(section)
             lst = sorted(sections)
@@ -127,12 +130,12 @@ class SpecFile(object):
                 # Run the command
         try:
             proc = \
-                Popen(cmd, stdout=PIPE, stderr=PIPE, env={'LC_ALL':'C'})
+                Popen(cmd, stdout=PIPE, stderr=PIPE, env={'LC_ALL': 'C'})
             output, error = proc.communicate()
             #print "output : [%s], error : [%s]" % (output, error)
         except OSError, e:
-            self.log.error( "OSError : %s" % str(e))
-            self.log.debug( "OSError : %s" % str(e), exc_info=True)
+            self.log.error("OSError : %s" % str(e))
+            self.log.debug("OSError : %s" % str(e), exc_info=True)
             return False
         if output:
             rc = output.split("\n")[0]
@@ -152,7 +155,8 @@ class SpecFile(object):
                 return False
 
     # FIXME: This is dead code, not referenced?!
-    def get_rpm_eval(self, filter):
+    def get_rpm_eval(self):
+        ''' Return arg after processing with rpm --eval. '''
         lines = "\n".join(self.get_section('main')['main'])
         #print lines
         args = ['rpm', '--eval', lines]
@@ -168,17 +172,19 @@ class SpecFile(object):
         return output
 
     def get_expanded(self):
+        ''' Return expanded spec, as provided by rpmspec -P. '''
         cmd = ['rpmspec', '-P', self.filename]
         try:
-            proc = Popen(cmd, stdin = subprocess.PIPE, stdout = subprocess.PIPE,
-                         stderr = subprocess.PIPE)
+            proc = Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE)
             output, error = proc.communicate()
             if proc.wait() != 0:
                 return None
             return output
         except OSError, e:
             self.log.error("OSError: %s" % str(e))
-            self.log.debug("OSError: %s" % str(e), exc_info=True)
+            self.log.debug("OSError: %s stderr: %s " % (str(e), error),
+                           exc_info=True)
             return None
 
     def find_tag(self, tag, section = None, split_tag = True):
@@ -191,7 +197,7 @@ class SpecFile(object):
         # Maybe we can merge the last two regex in one but using
         # (define|global) leads to problem with the res.group(1)
         # so for the time being let's go with 2 regex
-        keys = [ re.compile(r"^%s\d*\s*:\s*(.*)" % tag, re.I),
+        keys = [re.compile(r"^%s\d*\s*:\s*(.*)" % tag, re.I),
                  re.compile(r"^.define\s*%s\s*(.*)" % tag, re.I),
                  re.compile(r"^.global\s*%s\s*(.*)" % tag, re.I)
                ]
@@ -227,6 +233,7 @@ class SpecFile(object):
         return results
 
     def find(self, regex):
+        ''' Return first line matching regex or None. '''
         for line in self.lines:
             res = regex.search(line)
             if res:
@@ -234,11 +241,12 @@ class SpecFile(object):
         return None
 
     def find_all(self, regex, skip_changelog=False):
+        ''' Find all non-changelog lines matching regex. '''
         my_lines = list(self.lines)
         if skip_changelog:
-           line = my_lines.pop()
-           while not '%changelog' in line.lower():
-               line = my_lines.pop()
+            line = my_lines.pop()
+            while not '%changelog' in line.lower():
+                line = my_lines.pop()
         result = []
         for line in my_lines:
             res = regex.search(line)

@@ -31,10 +31,12 @@ from review_dirs import ReviewDirs
 
 
 class BugException(FedoraReviewError):
+    ''' Generic error thrown in bugs. '''
     pass
 
 
 class SettingsError(BugException):
+    ''' Thrown for invalid settings combinations. '''
     pass
 
 
@@ -60,20 +62,22 @@ class AbstractBug(Helpers):
 
     def find_spec_url(self):
         """ Grab the spec url, update self.spec_url.  """
-        self.log.error( "Calling abstract method find_spec_url")
+        self.log.error("Calling abstract method find_spec_url")
 
     def find_srpm_url(self):
         """ Grab the srpm url, update self.srpm_url.  """
-        self.log.error( "Calling abstract method find_srpm_url")
+        self.log.error("Calling abstract method find_srpm_url")
 
     def get_location(self):
         """ Return visible label for source of srpm/spec """
-        self.log.error( "Calling abstract method get_location")
+        self.log.error("Calling abstract method get_location")
 
     def do_download_spec(self):
-        """ Download the spec file and srpm extracted from the page.
         """
-        if not hasattr( self, 'dir'):
+        Download the spec file and srpm extracted from the page.
+        Raises IOError.
+        """
+        if not hasattr(self, 'dir'):
             self.dir = ReviewDirs.srpm
 
         spec_name = os.path.basename(self.spec_url)
@@ -81,25 +85,30 @@ class AbstractBug(Helpers):
         self.urlretrieve(self.spec_url, self.spec_file)
 
     def do_download_srpm(self):
-        """ Download the spec file and srpm extracted from the page.
+        """
+        Download the spec file and srpm extracted from the page.
+        Raises IOError.
         """
 
         def has_srpm():
-           return hasattr(self,'srpm_file')  and self.srpm_file and  \
+            ''' Return true iff self.srpmfile is a valid path. '''
+            return hasattr(self, 'srpm_file')  and self.srpm_file and  \
                    os.path.exists(self.srpm_file)
 
-        if not hasattr( self, 'dir'):
+        if not hasattr(self, 'dir'):
             self.dir = ReviewDirs.srpm
 
         if has_srpm() and Settings.cache:
-            self.log.debug( "Using cached source: " + self.srpm_file)
+            self.log.debug("Using cached source: " + self.srpm_file)
             return
         srpm_name = os.path.basename(self.srpm_url)
         self.srpm_file = os.path.join(self.dir, srpm_name)
         self.urlretrieve(self.srpm_url, self.srpm_file)
 
     def do_download_files(self):
-        """ Download the spec file and srpm extracted from the page.
+        """
+        Download the spec file and srpm extracted from the page.
+        Raises IOError.
         """
         if not self.srpm_file:
             self.do_download_srpm()
@@ -108,12 +117,14 @@ class AbstractBug(Helpers):
         return True
 
     def is_downloaded(self):
+        ''' Return true iff self.{specfile, srpmfile} are valid. '''
         ok = (self.spec_file and os.path.exists(self.spec_file)
                 and self.srpm_file and
                 os.path.exists(self.srpm_file))
         return ok
 
     def _check_cache(self):
+        ''' return True iff srpm and spec are in srpm dir . '''
         try:
             name = self.get_name()
             assert(name != '?')
@@ -144,23 +155,24 @@ class AbstractBug(Helpers):
         try:
             self.log.info('Downloading .spec and .srpm files')
             self.do_download_files()
-        except Exception as ex:
+        except IOError as ex:
             self.log.debug('bug download error', exc_info=True)
             self.log.error('Cannot download file(s): ' + str(ex))
             return False
         return True
 
     def _get_spec_from_srpm(self):
+        ''' Extract spec from srpm and update self.spec_url. '''
         path = urlparse(self.srpm_url).path
-        name = os.path.basename(path).rsplit('-',2)[0]
+        name = os.path.basename(path).rsplit('-', 2)[0]
         ReviewDirs.workdir_setup(name)
         self.do_download_srpm()
 
         SRPMFile(self.srpm_file).unpack()
-        file = glob(os.path.join(ReviewDirs.srpm_unpacked,
+        path = glob(os.path.join(ReviewDirs.srpm_unpacked,
                                  name + '*.spec'))[0]
-        self.spec_file = file
-        self.spec_url = 'file://' + file
+        self.spec_file = path
+        self.spec_url = 'file://' + path
 
     def find_urls(self):
         """ Retrieve the page and parse for srpm and spec url. """
@@ -181,19 +193,19 @@ class AbstractBug(Helpers):
         return True
 
     def get_name(self):
-       ''' Return name of bug. '''
-       if self.spec_file:
-           return os.path.basename(self.spec_file).rsplit('.',1)[0]
-       elif self.spec_url:
-           basename = os.path.basename(urlparse(self.spec_url).path)
-           return basename.rsplit('.',1)[0]
-       elif self.srpm_file:
-           return  os.path.basename(self.srpm_file).rsplit('-',2)[0]
-       elif self.srpm_url:
-           basename = os.path.basename(urlparse(self.srpm_url).path)
-           return basename.rsplit('-',2)[0]
-       else:
-           return '?'
+        ''' Return name of bug. '''
+        if self.spec_file:
+            return os.path.basename(self.spec_file).rsplit('.', 1)[0]
+        elif self.spec_url:
+            basename = os.path.basename(urlparse(self.spec_url).path)
+            return basename.rsplit('.', 1)[0]
+        elif self.srpm_file:
+            return  os.path.basename(self.srpm_file).rsplit('-', 2)[0]
+        elif self.srpm_url:
+            basename = os.path.basename(urlparse(self.srpm_url).path)
+            return basename.rsplit('-', 2)[0]
+        else:
+            return '?'
 
     def get_dirname(self, prefix=''):
         ''' Return dirname to be used for this bug. '''
@@ -204,10 +216,14 @@ class AbstractBug(Helpers):
                                              dir=os.getcwd())
 
     def do_check_options(self, mode, bad_opts):
-       for opt in bad_opts:
-           if hasattr(Settings, opt) and getattr(Settings, opt):
+        '''
+        Verify that Settings don't have bad options, raise
+        SettingsError if so.
+        '''
+        for opt in bad_opts:
+            if hasattr(Settings, opt) and getattr(Settings, opt):
                 raise SettingsError(
-                    '--' + opt + ' can not be used with ' +  mode)
+                    '--' + opt + ' can not be used with ' + mode)
 
 
 # vim: set expandtab: ts=4:sw=4:

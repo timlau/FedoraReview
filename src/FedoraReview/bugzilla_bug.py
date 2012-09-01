@@ -30,11 +30,9 @@ class BugzillaBug(AbstractBug):
     xmlrpc.
     """
 
-    def __init__(self, bug, user=None, password=None):
+    def __init__(self, bug):
         """ Constructor.
         :arg bug, the bug number on bugzilla
-        :kwarg user, the username with which to log in in bugzilla.
-        :kwarg password, the password associated with this account.
         """
         AbstractBug.__init__(self)
         self.check_options()
@@ -43,7 +41,6 @@ class BugzillaBug(AbstractBug):
         self.bugzilla = Bugzilla(url=bz_url)
 
         self.log.info("Trying bugzilla cookies for authentication")
-        self.user = user
         self.bug = self.bugzilla.getbug(self.bug_num)
 
     def _find_urls(self):
@@ -68,7 +65,7 @@ class BugzillaBug(AbstractBug):
         urls = self._find_urls()
         urls = filter(lambda u: '.spec' in u, urls)
         if len(urls) == 0:
-            raise BugException (
+            raise BugException(
                  'No spec file URL found in bug #%s' % self.bug_num)
         url = urls[-1]
         self.spec_url = url
@@ -77,7 +74,7 @@ class BugzillaBug(AbstractBug):
         urls = self._find_urls()
         urls = filter(lambda u: '.src.rpm' in u, urls)
         if len(urls) == 0:
-            raise BugException (
+            raise BugException(
                  'No srpm file URL found in bug #%s' % self.bug_num)
         url = urls[-1]
         self.srpm_url = url
@@ -85,7 +82,7 @@ class BugzillaBug(AbstractBug):
     def get_location(self):
         return Settings.bug
 
-    def get_dirname(self):
+    def get_dirname(self, prefix=''):
         ''' Return dirname to be used for this bug. '''
         if self.get_name() != '?':
             return self.bug_num + '-' + self.get_name()
@@ -93,9 +90,11 @@ class BugzillaBug(AbstractBug):
             return self.bug_num
 
     def check_options(self):
+        ''' Raise SettingsError if Settings combinations is invalid. '''
         AbstractBug.do_check_options(self, '--bug', ['prebuilt'])
 
     def handle_xmlrpc_err(self, exception):
+        ''' Log a xmlrpc error.'''
         self.log.error("Server error: %s" % str(exception))
 
 

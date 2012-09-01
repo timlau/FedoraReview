@@ -37,15 +37,18 @@ RESULTS           = 'results'
 
 
 class ReviewDirExistsError(FedoraReviewError):
+    ''' The review dir is already in place. '''
     def __init__(self, path):
         FedoraReviewError.__init__(self, os.path.abspath(path))
 
 
 class ReviewDirChangeError(FedoraReviewError):
+    ''' Attempt to change directory already set. '''
     pass
 
 
 class _ReviewDirs(object):
+    ''' Wraps the review directory and it's paths. '''
 
     WD_DIRS = [UPSTREAM, UPSTREAM_UNPACKED, SRPM, SRPM_UNPACKED, RESULTS]
 
@@ -53,15 +56,18 @@ class _ReviewDirs(object):
         self.startdir = os.getcwd()
 
     def reset(self, startdir=None):
+        ''' Clear persistent state (test tool). '''
         if hasattr(self, 'wd'):
             delattr(self, 'wd')
         if startdir:
             self.startdir = startdir
 
     def report_path(self, name):
+        ''' return path for report. '''
         return os.path.abspath('./%s-review.txt' % name)
 
     def workdir_setup(self, wd, reuse_old=False):
+        ''' Initiate a new review directory, or re-use an old one. '''
         reuse = reuse_old or Settings.cache
         if not reuse and os.path.exists(wd):
             d = ''.join(wd.split(os.getcwd(), 1))
@@ -69,7 +75,7 @@ class _ReviewDirs(object):
         wd = os.path.abspath(wd)
         if hasattr(self, 'wd'):
             if self.wd != wd and not reuse_old:
-               raise ReviewDirChangeError('Old dir ' + self.wd +
+                raise ReviewDirChangeError('Old dir ' + self.wd +
                                            ' new dir: ' + wd)
         if os.path.exists(wd) and not reuse_old:
             if Settings.cache:
@@ -78,16 +84,16 @@ class _ReviewDirs(object):
                     shutil.move(os.path.join(wd, d), cache)
                 try:
                     buildlink = os.readlink('BUILD')
-                except:
+                except  OSError:
                     buildlink = None
             logging.info("Clearing old review directory: " + wd)
             shutil.rmtree(wd)
             os.mkdir(wd)
             if Settings.cache:
                 for d in self.WD_DIRS:
-                    shutil.move(os.path.join(cache,d), wd)
+                    shutil.move(os.path.join(cache, d), wd)
                     if buildlink:
-                         shutil.symlink(buildlink, 'BUILD')
+                        shutil.symlink(buildlink, 'BUILD')
                 shutil.rmtree(cache)
         if not os.path.exists(wd):
             os.mkdir(wd)

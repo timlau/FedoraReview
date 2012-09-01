@@ -46,7 +46,9 @@ LOG_ROOT = 'FedoraReview'
 
 SESSION_LOG = os.path.join(XdgDirs.cachedir, 'fedora-review.log')
 
+
 class ConfigError(FedoraReviewError):
+    ''' Illegal options from user. '''
     def __init__(self, what):
         FedoraReviewError.__init__(self, 'Configuration error: ' + what)
 
@@ -70,7 +72,7 @@ class _Settings(object):
         This instanciate the Settings object and load into the _dict
         attributes the default configuration which each available option.
         '''
-        for key,value in self.defaults.iteritems():
+        for key, value in self.defaults.iteritems():
             setattr(self, key, value)
         self._dict = self.defaults
 
@@ -101,6 +103,7 @@ class _Settings(object):
         ''' Delayed setup, to be called when sys.argv is ok...'''
 
         def _check_mock_grp():
+            ''' Raise ConfigError unless mock installation is OK. '''
             try:
                 mock_gid = grp.getgrnam('mock')[2]
                 if not mock_gid in os.getgroups():
@@ -113,7 +116,7 @@ class _Settings(object):
                 raise e
 
         if hasattr(self, 'init_done') and not force:
-             return
+            return
 
         self.do_logger_setup()
         for opt in ['--assign', '--login', '--user',  '-a', '-i', '-l']:
@@ -125,9 +128,9 @@ class _Settings(object):
                     description='Review a package using Fedora Guidelines',
                     add_help=False)
 
-        mode =  parser.add_argument_group('Operation mode - one is required')
-        modes =  mode.add_mutually_exclusive_group(required=True)
-        optional =  parser.add_argument_group('General options')
+        mode = parser.add_argument_group('Operation mode - one is required')
+        modes = mode.add_mutually_exclusive_group(required=True)
+        optional = parser.add_argument_group('General options')
         modes.add_argument('-b', '--bug', metavar='<bug>',
                     help='Operate on fedora bugzilla using its bug number.')
         modes.add_argument('-n', '--name', metavar='<name>',
@@ -137,33 +140,34 @@ class _Settings(object):
                     metavar='<url>',
                      help='Use another bugzilla, using complete'
                           ' url to bug page.')
-        modes.add_argument('-d','--display-checks', default = False,
-                    action='store_true',dest='list_checks',
+        modes.add_argument('-d', '--display-checks', default = False,
+                    action='store_true', dest='list_checks',
                     help='List all available checks.')
         modes.add_argument('-V', '--version', default = False,
                     action='store_true',
                     help='Display version information and exit.')
-        modes.add_argument('-h','--help', action='help',
+        modes.add_argument('-h', '--help', action='help',
                     help = 'Display this help message')
-        optional.add_argument('-c','--cache', action='store_true', dest='cache',
+        optional.add_argument('-c', '--cache', action='store_true',
+                    dest='cache',
                     help = 'Do not redownload files from bugzilla,'
                            ' use the ones in the cache.')
-        optional.add_argument('-L','--local-repo',metavar='<rpm directory>',
+        optional.add_argument('-L', '--local-repo', metavar='<rpm directory>',
                     dest='repo',
                     help = 'directory with rpms to install together with'
                     ' reviewed package during build and install phases.')
-        optional.add_argument('-m','--mock-config', metavar='<config>',
+        optional.add_argument('-m', '--mock-config', metavar='<config>',
                     dest='mock_config',
                     help='Configuration to use for the mock build,'
                          " defaults to 'default' i. e.,"
                          ' /etc/mock/default.cfg')
-        optional.add_argument('--no-report',  action='store_true',
+        optional.add_argument('--no-report', action='store_true',
                     help='Do not print review report.')
         optional.add_argument('--no-build', action='store_true',
                     dest='nobuild',
                     help = 'Do not rebuild or install the srpm, use last '
                            ' built one in mock. Implies --cache')
-        optional.add_argument('-o','--mock-options', metavar='<mock options>',
+        optional.add_argument('-o', '--mock-options', metavar='<mock options>',
                     default = '--no-cleanup-after --no-clean',
                     dest='mock_options',
                     help='Options to specify to mock for the build,'
@@ -207,7 +211,7 @@ class _Settings(object):
         # configdir as present in mock_options, or None
         self.configdir = None
         if self.mock_options:
-            m = re.search( '--uniqueext=([^ ]+)', self.mock_options)
+            m = re.search('--uniqueext=([^ ]+)', self.mock_options)
             self.uniqueext = '-' + m.groups()[0] if m else None
             m = re.search('--resultdir=([^ ]+)', self.mock_options)
             self.resultdir = m.groups()[0] if m else None
@@ -217,7 +221,7 @@ class _Settings(object):
                 self.mock_options += ' --no-cleanup-after'
             if not 'no-cleanup-after' in self.mock_options:
                 self.mock_options += ' --no-cleanup-after'
-            if not re.search('clean($|[ ])',self.mock_options):
+            if not re.search('clean($|[ ])', self.mock_options):
                 self.mock_options += ' --no-clean'
 
         self.init_done = True
@@ -230,17 +234,19 @@ class _Settings(object):
 
     @property
     def current_bz_url(self):
+        ''' Effective value of --bz-url, not empty. '''
         return  self.other_bz if self.other_bz else self.bz_url
 
     def dump(self):
+        ''' Debug output of all settings. '''
         self.log.debug("Active settings after processing options")
-        for k,v in vars(self).iteritems():
-             if k in [ '_dict', 'mock_config_options','log' ]:
-                 continue
-             try:
-                 self.log.debug("    " + k + ": " + v.__str__())
-             except:
-                 pass
+        for k, v in vars(self).iteritems():
+            if k in ['_dict', 'mock_config_options', 'log']:
+                continue
+            try:
+                self.log.debug("    " + k + ": " + v.__str__())
+            except:
+                pass
 
     def do_logger_setup(self, lvl=None):
         ''' Setup Python logging. lvl is a logging.* thing like
@@ -273,7 +279,7 @@ class _Settings(object):
         if lvl == logging.DEBUG:
             self.verbose = True
         self.log = logging.getLogger('')
-        # define a Handler which writes INFO messages or higher to the sys.stderr
+        # define a Handler which writes INFO  or higher to sys.stderr
         console = logging.StreamHandler()
         console.setLevel(lvl)
         formatter = logging.Formatter('%(message)s', "%H:%M:%S")
@@ -288,17 +294,21 @@ class _Settings(object):
         return True
 
     def get_logger(self):
+        ''' Return the application logger instance. '''
         if not hasattr(self, 'log'):
             self.do_logger_setup()
         return self.log
 
     def _make_log_dir(self):
+        ''' Create the log dir, unless it's already there. '''
         try:
             os.makedirs(os.path.dirname(SESSION_LOG))
         except OSError as exc:
             if exc.errno == errno.EEXIST:
                 pass
-            else: raise
+            else:
+                raise FedoraReviewError(
+                          'Cannot create log directory: ' + SESSION_LOG)
 
 
 Settings = _Settings()

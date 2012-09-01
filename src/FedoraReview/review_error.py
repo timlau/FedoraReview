@@ -20,16 +20,18 @@
 Tools for helping Fedora package reviewers
 '''
 
+
 class FedoraReviewError(Exception):
     """ General Error class for fedora-review. """
 
     def __init__(self, value):
-        """ Instanciante the error. """
+        Exception.__init__(self, value)
         self.value = value
 
     def __str__(self):
         """ Represent the error. """
         return repr(self.value)
+
 
 class CleanExitError(FedoraReviewError):
     ''' Request a clean exit, no printouts. '''

@@ -63,7 +63,6 @@ class AbstractRegistry(object):
              'abstract Registry.is_applicable() called')
 
 
-
 class RegistryBase(AbstractRegistry, FileChecks):
     """
     Register all classes containing 'Check' and not ending with 'Base'

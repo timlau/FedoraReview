@@ -33,6 +33,7 @@ from settings import Settings
 
 
 class SRPMFile(Helpers):
+    ''' Models the srpm and it's methods. '''
 
     # Codes > 0 as returned by mock(1)
     BUILD_OK       = 0
@@ -53,7 +54,7 @@ class SRPMFile(Helpers):
     def unpack(self, src=None):
         """ Local unpack using rpm2cpio. """
         if hasattr(self, 'unpacked_src'):
-            return;
+            return
 
         wdir = ReviewDirs.srpm_unpacked
         oldpwd = os.getcwd()
@@ -72,13 +73,13 @@ class SRPMFile(Helpers):
         """ Extract a named source and return containing directory. """
         self.filename = os.path.basename(path)
         self.unpack(path)
-        files = glob( os.path.join(self.unpacked_src, '*'))
+        files = glob(os.path.join(self.unpacked_src, '*'))
         if not self.filename in [os.path.basename(f) for f in files]:
             self.log.error(
                'Trying to unpack non-existing source: ' + path)
             return None
         extract_dir = os.path.join(self.unpacked_src,
-                                   self.filename  + '-extract')
+                                   self.filename + '-extract')
         if os.path.exists(extract_dir):
             return extract_dir
         else:
@@ -88,10 +89,10 @@ class SRPMFile(Helpers):
                                  extract_dir)
         if not rv:
             self.log.debug("Cannot unpack %s, so probably not an "
-                    "archive. Copying instead" %  self.filename )
-            shutil.copy(os.path.join(self.unpacked_src, self.filename), extract_dir)
+                    "archive. Copying instead" % self.filename)
+            shutil.copy(os.path.join(self.unpacked_src, self.filename),
+                        extract_dir)
         return extract_dir
-
 
     def get_build_dir(self):
         """ Return the BUILD directory from the mock environment.
@@ -103,6 +104,7 @@ class SRPMFile(Helpers):
         return None
 
     def check_source_checksum(self, path):
+        '''Return checksum for archive. '''
         filename = os.path.basename(path)
         self.unpack(self.filename)
         if not hasattr(self, 'unpacked_src'):
@@ -117,15 +119,14 @@ class SRPMFile(Helpers):
             return "ERROR"
         path = os.path.join(self.unpacked_src, filename)
         self.log.debug("Checking {0} for {1}".format(Settings.checksum, path))
-        sum = self._checksum(path)
-        return sum
+        return self._checksum(path)
 
     def run_rpmlint(self, filenames):
         """ Runs rpmlint against the provided files.
 
         arg: filenames, list of filenames  to run rpmlint on
         """
-        cmd = 'rpmlint -f .rpmlint ' + ' '.join( filenames )
+        cmd = 'rpmlint -f .rpmlint ' + ' '.join(filenames)
         out = 'Checking: '
         sep = '\n' + ' ' * len( out )
         out += sep.join([os.path.basename(f) for f in filenames])

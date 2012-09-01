@@ -32,16 +32,19 @@ from FedoraReview import __version__, build_full
 
 
 class ConfigError(FedoraReviewError):
+    ''' Illegal settings combination. '''
     def __init__(self, what):
         FedoraReviewError.__init__(self, 'Configuration error: ' + what)
 
 
 class HandledError(FedoraReviewError):
+    ''' An error completely handled, no action required. '''
     def __init__(self, msg='Errors encountered, goodbye'):
         FedoraReviewError.__init__(self, msg)
 
 
 class ReviewHelper(object):
+    ''' Make most of the actual work doing the review. '''
 
     def __init__(self):
         self.bug = None
@@ -52,7 +55,8 @@ class ReviewHelper(object):
         self.prebuilt = False
 
     def __download_sources(self):
-        #self.sources = Sources(self.checks.spec)
+        ''' Download and extract all upstream sources. '''
+        #self.sources = Sources(self.checks.spec) FIXME
         self.sources.extract_all()
         return True
 
@@ -63,7 +67,7 @@ class ReviewHelper(object):
 
         Settings.dump()
         if not self.bug.find_urls():
-            self.log.error( 'Cannot find .spec or .srpm URL(s)')
+            self.log.error('Cannot find .spec or .srpm URL(s)')
             raise HandledError()
 
         if not ReviewDirs.is_inited:
@@ -78,11 +82,11 @@ class ReviewHelper(object):
         self.__run_checks(self.bug.spec_file, self.bug.srpm_file)
 
     def __list_checks(self):
-        """ List all the checks available.
-        """
+        """ List all the checks available.  """
 
         def check_match(check):
-           return check.group == group and check.defined_in == f
+            ''' check in correct group and file? '''
+            return check.group == group and check.defined_in == f
 
         checks_list = list(ChecksLister().get_checks().itervalues())
         files = list(set([c.defined_in for c in checks_list]))
@@ -97,16 +101,16 @@ class ReviewHelper(object):
                     continue
                 print 'Group: ' + group
                 for c in sorted(checks):
-                      print '    ' + c.name
+                    print '    ' + c.name
         deps_list = filter(lambda c: c.needs != [] and
                                c.needs != ['CheckBuildCompleted'],
                            checks_list)
         for dep in deps_list:
-            print'Dependencies: ' +  dep.name + ': ' + \
+            print'Dependencies: ' + dep.name + ': ' + \
                 os.path.basename(dep.defined_in)
             for needed in dep.needs:
                 print '     ' + needed
-        deprecators =  filter(lambda c: c.deprecates != [], checks_list)
+        deprecators = filter(lambda c: c.deprecates != [], checks_list)
         for dep in deprecators:
             print 'Deprecations: ' + dep.name + ': ' + \
                 os.path.basename(dep.defined_in)
@@ -114,15 +118,17 @@ class ReviewHelper(object):
                 print '    ' + victim
 
     def __print_version(self):
+        ''' Handle --version option. '''
         print('fedora-review version ' + __version__ + ' ' + build_full)
 
     def __run_checks(self, spec, srpm):
-        self.checks = Checks(spec, srpm )
+        ''' Register and run all checks. '''
+        self.checks = Checks(spec, srpm)
         if Settings.no_report:
             self.outfile = '/dev/null'
         else:
             self.outfile = ReviewDirs.report_path(self.checks.spec.name)
-        with open(self.outfile,"w") as output:
+        with open(self.outfile, "w") as output:
             if Settings.nobuild:
                 self.checks.srpm.is_build = True
             self.log.info('Running checks and generate report\n')
@@ -133,7 +139,8 @@ class ReviewHelper(object):
             print "Review in: " + self.outfile
 
     def run(self):
-        self.log.debug( "Command  line: " + ' '.join(sys.argv))
+        ''' Load urls, run checks and make report, '''
+        self.log.debug("Command  line: " + ' '.join(sys.argv))
         try:
             Settings.init()
             make_report = True
@@ -144,25 +151,25 @@ class ReviewHelper(object):
                 self.__print_version()
                 make_report = False
             elif Settings.url:
-                self.log.info("Processing bug on url: " + Settings.url )
+                self.log.info("Processing bug on url: " + Settings.url)
                 self.bug = UrlBug(Settings.url)
             elif Settings.bug:
-                self.log.info("Processing bugzilla bug: " + Settings.bug )
-                self.bug = BugzillaBug(Settings.bug, user=Settings.user)
+                self.log.info("Processing bugzilla bug: " + Settings.bug)
+                self.bug = BugzillaBug(Settings.bug)
             elif Settings.name:
-                self.log.info("Processing local files: " + Settings.name )
+                self.log.info("Processing local files: " + Settings.name)
                 self.bug = NameBug(Settings.name)
             if make_report:
                 self.__do_report()
             return 0
+        except SettingsError as err:
+            self.log.error("Incompatible settings: " + str(err))
+            return 2
         except BugException as err:
             print str(err)
             return 2
         except HandledError as err:
             print str(err)
-            return 2
-        except SettingsError as err:
-            self.log.error("Incompatible settings: " + str(err))
             return 2
         except ReviewDirExistsError as err:
             print("The directory %s is in the way, please remove." %
@@ -183,7 +190,6 @@ class ReviewHelper(object):
 
 
 if __name__ == "__main__":
-    review = ReviewHelper()
-    review.run()
+    ReviewHelper().run()
 
 # vim: set expandtab: ts=4:sw=4:

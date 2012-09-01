@@ -35,9 +35,9 @@ class Sources(object):
         self.log = Settings.get_logger()
         self._sources_files = None
         self._sources = {}
+
         for tag, url in spec.get_sources('Source').iteritems():
             self.add(tag, url)
-
 
     def add(self, tag, url):
         """Add a new Source Object based on spec tag and URL to source"""
@@ -69,7 +69,7 @@ class Sources(object):
         in the spec.
         """
         if source_url is None and source_filename is None:
-            self.log.info( 'No source set to extract')
+            self.log.info('No source set to extract')
         for source in self._sources:
             if source_url and source.URL == source_url:
                 source.extract()
@@ -83,9 +83,9 @@ class Sources(object):
         try:
             self.extract_all()
         except  OSError as e:
-            self.log.error( "OS error extracting ",  + str(e))
-            self.log.debug( "Extract error ",  + str(e), exc_info=True)
-            self._source_files = []
+            self.log.error("OS error extracting ", + str(e))
+            self.log.debug("Extract error ", + str(e), exc_info=True)
+            self._sources_files = []
             return []
         sources_files = []
         for source in self._sources.values():
@@ -96,12 +96,14 @@ class Sources(object):
                 sources_files.append(source.filename)
             else:
                 try:
-                    self.log.debug('Adding files found in %s' % source.filename)
-                    for root, subFolders, files in os.walk(source.extract_dir):
+                    self.log.debug(
+                               'Adding files found in %s' % source.filename)
+                    for root, folders, files in os.walk(source.extract_dir):
                         for filename in files:
                             sources_files.append(os.path.join(root, filename))
                 except AttributeError as e:
-                    self.log.debug( "get_files_sources(): Attribute error " + str(e))
+                    self.log.debug("get_files_sources(): Attribute error "
+                                   + str(e))
         self._sources_files = sources_files
         return sources_files
 

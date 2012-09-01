@@ -26,7 +26,9 @@ from abstract_bug import AbstractBug
 
 
 class UrlBugException(Exception):
+    ''' When url:s cannot be parsed in user link. '''
     pass
+
 
 class UrlBug(AbstractBug):
     """ This class handles interaction html web pages, by url.
@@ -45,10 +47,9 @@ class UrlBug(AbstractBug):
     def _find_urls_by_ending(self, pattern):
         """ Locate url based on links ending in .src.rpm and .spec.
         """
-        tmpfile, properties = urllib.urlretrieve(self.bug_url)
-        soup=BeautifulSoup(open(tmpfile))
-        links=soup.findAll('a')
-        links = filter(lambda l: l.has_key('href'), links)
+        tmpfile = urllib.urlretrieve(self.bug_url)[0]
+        soup = BeautifulSoup(open(tmpfile))
+        links = soup.findAll('a')
         hrefs = map(lambda l: l['href'],  links)
         found = []
         for href in reversed(hrefs):
@@ -62,19 +63,20 @@ class UrlBug(AbstractBug):
     def find_srpm_url(self):
         urls = self._find_urls_by_ending('.src.rpm')
         if len(urls) == 0:
-           raise UrlBugException('Cannot find source rpm URL')
+            raise UrlBugException('Cannot find source rpm URL')
         self.srpm_url = urls[0]
 
     def find_spec_url(self):
         urls = self._find_urls_by_ending('.spec')
         if len(urls) == 0:
-           raise UrlBugException('Cannot find spec file URL')
+            raise UrlBugException('Cannot find spec file URL')
         self.spec_url = urls[0]
 
     def get_location(self):
         return self.bug_url
 
     def check_options(self):
+        ''' Raise error if Settings  combination is invalid. '''
         AbstractBug.do_check_options(self, '--url',
                                      ['prebuilt', 'other_bz'])
 

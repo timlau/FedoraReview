@@ -64,10 +64,12 @@ class Checks(object):
         '''
         self._results = {'PASSED': [], 'FAILED': [], 'NA': [], 'USER': []}
         self.log = Settings.get_logger()
+        self.checkdict = None
+        self.groups = None
         if hasattr(self, 'sources'):
             # This is  a listing instance
             self.srpm = None
-            self.spec=None
+            self.spec = None
         else:
             self.spec = SpecFile(spec_file)
             self.sources = Sources(self.spec)
@@ -112,6 +114,7 @@ class Checks(object):
                     self.checkdict.extend(tests)
 
     def show_file(self, filename, output=sys.stdout):
+        ''' Print file on output. '''
         fd = open(filename, "r")
         lines = fd.readlines()
         fd.close()
@@ -119,6 +122,7 @@ class Checks(object):
             output.write(line)
 
     def exclude_checks(self, exclude_arg):
+        ''' Mark all checks in exclude_arg (string) as already done. '''
         for c in [l.strip() for l in exclude_arg.split(',')]:
             if  c in self.checkdict:
                 # Mark check as run, don't delete it. We want
@@ -128,13 +132,16 @@ class Checks(object):
                 self.log.warn("I can't remove check: " + c)
 
     def set_single_check(self, check):
+        ''' Remove all checks but arg and it's deps. '''
         self.checkdict.set_single_check(check)
         self.checkdict[check].needs = []
 
     def get_checks(self):
+        ''' Return the Checkdict instance holding all checks. '''
         return self.checkdict
 
     def run_checks(self, output=sys.stdout, writedown=True):
+        ''' Run all checks. '''
 
         def ready_to_run(name):
             """
@@ -161,7 +168,7 @@ class Checks(object):
             check = self.checkdict[name]
             if hasattr(check, 'result'):
                 return
-            self.log.debug('Running check: ' + name )
+            self.log.debug('Running check: ' + name)
             check.run()
             result = check.result
             if not result:
@@ -191,25 +198,28 @@ class Checks(object):
                                attachments)
 
     def __show_output(self, output, results, issues, attachments):
+        ''' Print test results on output. '''
 
         def write_sections(results):
+            ''' Print a {SHOULD,MUST, EXTRA} section. '''
             groups = sorted(list(set([test.group for test in results])))
             for group in groups:
-                 res = filter(lambda t: t.group == group, results)
-                 if res == []:
+                res = filter(lambda t: t.group == group, results)
+                if res == []:
                     continue
-                 output.write('\n' + group + ':\n')
-                 for r in res:
-                     output.write(r.get_text() + '\n')
+                output.write('\n' + group + ':\n')
+                for r in res:
+                    output.write(r.get_text() + '\n')
 
         def dump_local_repo():
+            ''' print info on --local-repo rpms used. '''
             repodir = Settings.repo
             if not repodir.startswith('/'):
                 repodir = os.path.join(ReviewDirs.startdir, repodir)
             rpms = glob(os.path.join( repodir, '*.rpm'))
             output.write("\nBuilt with local dependencies:\n")
             for rpm in rpms:
-                 output.write("    " + rpm +'\n')
+                output.write("    " + rpm + '\n')
 
 
         output.write(HEADER)
@@ -249,6 +259,6 @@ class ChecksLister(Checks):
     """ A Checks instance only capable of get_checks. """
     def __init__(self):
         self.sources = None
-        Checks.__init__(self,None, None)
+        Checks.__init__(self, None, None)
 
 # vim: set expandtab: ts=4:sw=4:

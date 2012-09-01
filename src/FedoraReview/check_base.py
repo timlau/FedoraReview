@@ -31,6 +31,7 @@ from settings import Settings
 
 
 class AbstractCallError(Exception):
+    ''' When calling an abstract method. '''
     pass
 
 
@@ -39,8 +40,11 @@ class FileChecks(object):
 
     def __init__(self, checks):
         """ Build an instance from a Checks instance. """
+
         class FileCheckData:
+            ''' Container for class private data. '''
             pass
+
 
         self._filechecks = FileCheckData()
         self._filechecks.srpm = checks.srpm
@@ -55,6 +59,7 @@ class FileChecks(object):
         return False
 
     def _match_rpmfiles(self, matcher):
+        ''' Run matcher on all files in rpms, return match or not. '''
         files_by_rpm = self._filechecks.srpm.get_files_rpms()
         for rpm in files_by_rpm.iterkeys():
             for fn in files_by_rpm[rpm]:
@@ -115,13 +120,13 @@ class AbstractCheck(object):
         self._name = 'Undefined'
 
     name = property(lambda self: self._name,
-                    lambda self,n: setattr(self, '_name', n))
+                    lambda self, n: setattr(self, '_name', n))
 
     def __eq__(self, other):
-       return self.name.__eq__(other)
+        return self.name.__eq__(other)
 
     def __ne__(self, other):
-       return self.name.__ne__(other)
+        return self.name.__ne__(other)
 
     def __hash__(self):
         return self.name.__hash__()
@@ -130,11 +135,12 @@ class AbstractCheck(object):
         return self.name
 
     def run(self):
+        ''' Perform the check, update result. '''
         raise AbstractCallError('AbstractCheck')
 
     @property
     def state(self):
-        # None for (not is_run or is_na)
+        ''' None for (not is_run or is_na), result.result '''
         assert self != None
         if hasattr(self, 'result'):
             return self.result.result if self.result else None
@@ -146,6 +152,7 @@ class AbstractCheck(object):
     is_pending = property(lambda self: self.state == self.PENDING)
     is_na      = property(
                      lambda self: self.is_run and self.state == None)
+
 
 class GenericCheck(AbstractCheck, FileChecks):
 
@@ -214,16 +221,18 @@ class CheckBase(GenericCheck, Helpers):
         return True
 
     def run_on_applicable(self):
+        ''' Called by run() if is_applicable is true(). '''
         self.set_passed(self.PENDING)
 
     def run(self):
         ''' By default, a manual test returning 'inconclusive'.'''
         if self.is_applicable():
-             self.run_on_applicable()
+            self.run_on_applicable()
         else:
-             self.set_passed('not_applicable')
+            self.set_passed('not_applicable')
 
     def get_files_by_pattern(self, pattern):
+        ''' Return plain list of files in rpms matching glob pattern. '''
         result = {}
         rpm_files = self.srpm.get_files_rpms()
         for rpm in rpm_files:
@@ -257,6 +266,7 @@ class CheckDict(dict):
     """
 
     def __init__(self, *args, **kwargs):
+        dict.__init__(self)
         self.update(*args, **kwargs)
         self.log = Settings.get_logger()
         self.deprecations = {}
@@ -264,19 +274,21 @@ class CheckDict(dict):
     def __setitem__(self, key, value):
 
         def log_kill(victim, killer):
+            ''' Log test skipped due to deprecation. '''
             self.log.info("Skipping %s in %s, deprecated by %s in %s" %
                               (victim.name, victim.defined_in,
                                killer.name, killer.defined_in))
 
         def log_duplicate(first, second):
-            self.log.warning( "Duplicate checks %s in %s, %s in %s" %
+            ''' Log warning for duplicate test. '''
+            self.log.warning("Duplicate checks %s in %s, %s in %s" %
                               (first.name, first.defined_in,
                               second.name, second.defined_in))
 
-
-        if key in self.iterkeys() and key in value.deprecates:
-            log_kill(self[key], value)
-            del(self[key])
+        for victim in value.deprecates:
+            if victim in self.iterkeys():
+                log_kill(self[victim], value)
+                del(self[victim])
         if key in self.deprecations.iterkeys():
             log_kill(value, self.deprecations[key])
             return
@@ -296,19 +308,23 @@ class CheckDict(dict):
             self[key] = other[key]
 
     def add(self, check):
+        ''' As list.add(). '''
         self[check.name] = check
 
     def extend(self, checks):
+        ''' As list.extend() '''
         for c in checks:
             self.add(c)
 
     def set_single_check(self, check_name):
+        ''' Remove all checks besides check_name and it's deps. '''
 
         def reap_needed(node):
-             needed.append(node)
-             node.result = None
-             for n in node.needs:
-                  reap_needed(self[n])
+            ''' Collect all deps into needed. '''
+            needed.append(node)
+            node.result = None
+            for n in node.needs:
+                reap_needed(self[n])
 
 
         needed = []
@@ -319,16 +335,14 @@ class CheckDict(dict):
 
 
 class TestResult(object):
+    ''' The outcome of a test, stored in check.result. '''
+
     TEST_STATES = {
          'pending': '[ ]', 'pass': '[x]', 'fail': '[!]', 'na': '[-]'}
 
     def __init__(self, check, result, output_extra, attachments=[]):
-        self.name = check.name
-        self.url = check.url
-        self.group = check.group
-        self.deprecates = check.deprecates
+        self.check = check
         self.text = re.sub("\s+", " ", check.text) if check.text else ''
-        self.type = check.type
         self.result = result
         self.output_extra = output_extra
         self.attachments = attachments
@@ -337,9 +351,16 @@ class TestResult(object):
         self.wrapper = TextWrapper(width=78, subsequent_indent=" " * 5,
                                    break_long_words=False, )
 
+    url = property(lambda self: self.check.url)
+    name = property(lambda self: self.check.name)
+    type = property(lambda self: self.check.type)
+    group = property(lambda self: self.check.group)
+    deprecates = property(lambda self: self.check.deprecates)
+
     state = property(lambda self: self.result)
 
     def get_text(self):
+        ''' Return printable representation of test. '''
         strbuf = StringIO.StringIO()
         main_lines = self.wrapper.wrap(
             "%s: %s" % (self.TEST_STATES[self.result], self.text))
@@ -374,8 +395,8 @@ class Attachment(object):
 
     def __str__(self):
         s = self.header + '\n'
-        s +=  '-' * len(self.header) + '\n'
-        s +=  self.text
+        s += '-' * len(self.header) + '\n'
+        s += self.text
         return s
 
     def __cmp__(self, other):

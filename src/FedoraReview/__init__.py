@@ -20,7 +20,7 @@
 Tools for helping Fedora package reviewers
 '''
 
-from abstract_bug import SettingsError,BugException
+from abstract_bug import SettingsError, BugException
 from bugzilla_bug import BugzillaBug
 from check_base   import AbstractCheck, GenericCheck, CheckBase
 from check_base   import LangCheckBase, Attachment, CheckDict
@@ -39,8 +39,10 @@ from url_bug      import UrlBug
 from version      import __version__, build_id, build_date, build_full
 from xdg_dirs     import XdgDirs
 
+
 class ResultDirNotEmptyError(FedoraReviewError):
+    ''' Thrown when trying to reuse old review dir without --cache. '''
     def __init__(self):
-          FedoraReviewError.__init__(self, 'resultdir not empty')
+        FedoraReviewError.__init__(self, 'resultdir not empty')
 
 # vim: set expandtab: ts=4:sw=4:

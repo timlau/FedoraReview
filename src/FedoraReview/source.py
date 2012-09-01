@@ -30,6 +30,7 @@ from review_dirs import ReviewDirs
 from review_error import FedoraReviewError
 from settings import Settings
 
+
 class Source(Helpers):
     ''' A source defined in the specfile.
     Attributes:
@@ -43,13 +44,13 @@ class Source(Helpers):
     def __init__(self, sources, tag, url):
 
         def my_logger(cache):
-             if cache:
-                 path = urlparse(url).path
-                 self.log.info("Using cached data for (%s): %s" %
-                               (tag, os.path.basename(path)))
-             else:
-                 self.log.info("Downloading (%s): %s" % (tag, url))
-
+            ''' Default logger logs info messages. '''
+            if cache:
+                path = urlparse(url).path
+                self.log.info("Using cached data for (%s): %s" %
+                              (tag, os.path.basename(path)))
+            else:
+                self.log.info("Downloading (%s): %s" % (tag, url))
 
         Helpers.__init__(self)
         self.sources = sources
@@ -71,7 +72,7 @@ class Source(Helpers):
                 # get the filename
                 url = urlparse(url)[2].split('/')[-1]
 
-        if not is_url or not self.downloaded:  # this is a local file in the SRPM
+        if not is_url or not self.downloaded:  # A local file in the SRPM
             local_src = os.path.join(ReviewDirs.startdir, url)
             if os.path.isfile(local_src):
                 self.log.info(
@@ -87,6 +88,7 @@ class Source(Helpers):
             self.url = 'file://' + self.filename
 
     def check_source_checksum(self):
+        ''' Check source with upstream source using checksumming. '''
         self.log.debug("Checking source {0} : {1}".format(Settings.checksum,
                                                           self.filename))
         if self.downloaded:
@@ -97,13 +99,15 @@ class Source(Helpers):
                                     ": upstream source not found")
 
     def is_archive(self):
+        ''' Return true id source can be assumed to be an archive file. '''
         filename = self.filename.split('/')[-1]
-        for i in ('.tar.gz','.tar.bz2','.tar.lzma','.tar.xz','.zip', '.7z'):
+        for i in ('.tar.gz',
+                  '.tar.bz2', '.tar.lzma', '.tar.xz', '.zip', '.7z'):
             if filename.endswith(i):
                 return True
         return False
 
-    def extract(self ):
+    def extract(self):
         ''' Extract the source into a directory under upstream-unpacked,
             available in the extract_dir property. Sources which not
             could be extracted e. g., plain files are copied to the
