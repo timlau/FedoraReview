@@ -8,7 +8,6 @@ import koji
 import urlgrabber
 import urlgrabber.progress
 import optparse
-import sys
 
 BASEURL = 'http://kojipkgs.fedoraproject.org/work/'
 
