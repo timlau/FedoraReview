@@ -1929,5 +1929,27 @@ class CheckUseGlobal(GenericCheckBase):
         else:
             self.set_passed(True)
 
+class CheckNoNameConflict(GenericCheckBase):
+    '''
+    https://fedoraproject.org/wiki/Packaging/NamingGuidelines#Conflicting_Package_Names
+    '''
+    def __init__(self, base):
+        GenericCheckBase.__init__(self, base)
+        self.url = "https://fedoraproject.org/wiki/Packaging/NamingGuidelines#Conflicting_Package_Names"
+        self.text = 'Package do not use a name that already exist'
+        self.automatic = True
+        self.type = 'MUST'
+
+    def run(self):
+        import fedora.client, pycurl
+        p = fedora.client.PackageDB()
+        name = self.spec.name.lower()
+        try:
+            p.get_package_info(name)
+            self.set_passed(False, 'A package already exist with this name, please check https://admin.fedoraproject.org/pkgdb/acls/name/%s' % name )
+        except fedora.client.AppError:
+            self.set_passed(True)
+        except pycurl.error:
+            self.set_passed('inconclusive', "Couldn't connect to PackageDB, check manually" )
 
 # vim: set expandtab: ts=4:sw=4:

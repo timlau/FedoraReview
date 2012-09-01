@@ -36,7 +36,7 @@ Install dependencies:
 
     # yum install python-straight-plugin python-BeautifulSoup \
           python-bugzilla  python-requests python-kitchen \
-          fedora-packager rpmdevtools mock git
+          fedora-packager rpmdevtools mock git python-fedora
 
 The mock requirement is not hard, it's possible to use fedora-review
 without mock when always using the --prebuilt/-p option. This means
