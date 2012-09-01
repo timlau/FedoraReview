@@ -166,7 +166,7 @@ class GenericCheck(AbstractCheck, FileChecks):
         FileChecks.__init__(self, checks)
         self.checks = checks
         self.url = '(this test has no URL)'
-        self.text = 'No description'
+        self.text = 'No description for test named ' + str(self)
         self.description = 'This test has no description'
         self.type = 'MUST'
         self.needs = ['CheckBuildCompleted']
