@@ -214,6 +214,12 @@ class Checks(object):
 
         output.write(HEADER)
 
+        if issues:
+            output.write("\nIssues:\n=======\n")
+            for fail in issues:
+                output.write(fail.get_text() + "\n")
+                output.write("See: %s\n" % fail.url)
+
         output.write("\n\n===== MUST items =====\n")
         musts = filter( lambda r: r.type == 'MUST', results)
         write_sections(musts)
@@ -225,12 +231,6 @@ class Checks(object):
         output.write("\n===== EXTRA items =====\n")
         extras = filter( lambda r: r.type == 'EXTRA', results)
         write_sections(extras)
-
-        if issues:
-            output.write("\nIssues:\n=======\n")
-            for fail in issues:
-                output.write(fail.get_text() + "\n")
-                output.write("See: %s\n" % fail.url)
 
         for a in sorted(attachments):
             output.write('\n\n')
