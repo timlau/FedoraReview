@@ -36,6 +36,12 @@ UPSTREAM_UNPACKED = 'upstream-unpacked'
 RESULTS           = 'results'
 
 
+class ResultDirNotEmptyError(FedoraReviewError):
+    ''' Thrown when trying to reuse old review dir without --cache. '''
+    def __init__(self):
+        FedoraReviewError.__init__(self, 'resultdir not empty')
+
+
 class ReviewDirExistsError(FedoraReviewError):
     ''' The review dir is already in place. '''
     def __init__(self, path):
@@ -54,29 +60,21 @@ class _ReviewDirs(object):
 
     def __init__(self):
         self.startdir = os.getcwd()
+        self.wdir = None
 
     def reset(self, startdir=None):
         ''' Clear persistent state (test tool). '''
-        if hasattr(self, 'wd'):
-            delattr(self, 'wd')
+        self.wdir = None
         if startdir:
             self.startdir = startdir
 
-    def report_path(self, name):
-        ''' return path for report. '''
+    @staticmethod
+    def report_path(name):
+        ''' Return path for report. '''
         return os.path.abspath('./%s-review.txt' % name)
 
-    def workdir_setup(self, wd, reuse_old=False):
-        ''' Initiate a new review directory, or re-use an old one. '''
-        reuse = reuse_old or Settings.cache
-        if not reuse and os.path.exists(wd):
-            d = ''.join(wd.split(os.getcwd(), 1))
-            raise ReviewDirExistsError(d)
-        wd = os.path.abspath(wd)
-        if hasattr(self, 'wd'):
-            if self.wd != wd and not reuse_old:
-                raise ReviewDirChangeError('Old dir ' + self.wd +
-                                           ' new dir: ' + wd)
+    def _create_and_copy_wd(self, wd, reuse_old):
+        ''' Create wd, possibly filled with cached data. '''
         if os.path.exists(wd) and not reuse_old:
             if Settings.cache:
                 cache = tempfile.mkdtemp(dir='.')
@@ -97,24 +95,38 @@ class _ReviewDirs(object):
                 shutil.rmtree(cache)
         if not os.path.exists(wd):
             os.mkdir(wd)
+
+
+    def workdir_setup(self, wd, reuse_old=False):
+        ''' Initiate a new review directory, or re-use an old one. '''
+        reuse = reuse_old or Settings.cache
+        if not reuse and os.path.exists(wd):
+            d = ''.join(wd.split(os.getcwd(), 1))
+            raise ReviewDirExistsError(d)
+        wd = os.path.abspath(wd)
+        if self.wdir:
+            if self.wdir != wd and not reuse_old:
+                raise ReviewDirChangeError('Old dir ' + self.wdir +
+                                           ' new dir: ' + wd)
+        self._create_and_copy_wd(wd, reuse_old)
         os.chdir(wd)
         logging.info("Using review directory: " + wd)
-        self.wd = wd
+        self.wdir = wd
         for d in self.WD_DIRS:
             if not os.path.exists(d):
                 os.mkdir(d)
 
-    is_inited = property(lambda self: hasattr(self, 'wd'))
-    root = property(lambda self: self.wd)
+    is_inited = property(lambda self: bool(self.wdir))
+    root = property(lambda self: self.wdir)
 
-    srpm = property(lambda self: os.path.join(self.wd, SRPM))
-    srpm_unpacked = property(lambda self: os.path.join(self.wd,
+    srpm = property(lambda self: os.path.join(self.wdir, SRPM))
+    srpm_unpacked = property(lambda self: os.path.join(self.wdir,
                                                        SRPM_UNPACKED))
-    upstream = property(lambda self: os.path.join(self.wd, UPSTREAM))
+    upstream = property(lambda self: os.path.join(self.wdir, UPSTREAM))
     upstream_unpacked = property(lambda self:
-                                     os.path.join(self.wd,
+                                     os.path.join(self.wdir,
                                                   UPSTREAM_UNPACKED))
-    results = property(lambda self: os.path.join(self.wd, RESULTS))
+    results = property(lambda self: os.path.join(self.wdir, RESULTS))
 
 ReviewDirs = _ReviewDirs()
 
