@@ -42,18 +42,18 @@ class SRPMFile(Helpers):
 
     def __init__(self, filename, spec=None):
         Helpers.__init__(self)
+        self._rpm_files = None
+        self._prebuilt_info = None
+        self._unpacked_src = None
         self.filename = filename
         self.name = os.path.basename(filename).rsplit('-', 2)[0]
         self.spec = spec
-        self.is_build = False
-        self.build_failed = False
-        self._rpm_files = None
         self.rpmlint_output = []
         self.unpack()
 
     def unpack(self, src=None):
         """ Local unpack using rpm2cpio. """
-        if hasattr(self, 'unpacked_src'):
+        if self._unpacked_src:
             return
 
         wdir = ReviewDirs.srpm_unpacked
@@ -66,35 +66,36 @@ class SRPMFile(Helpers):
             self.log.warn(
                   "Cannot unpack %s into %s" % (self.filename, wdir))
         else:
-            self.unpacked_src = wdir
+            self._unpacked_src = wdir
         os.chdir(oldpwd)
 
     def extract(self, path):
         """ Extract a named source and return containing directory. """
         self.filename = os.path.basename(path)
         self.unpack(path)
-        files = glob(os.path.join(self.unpacked_src, '*'))
+        files = glob(os.path.join(self._unpacked_src, '*'))
         if not self.filename in [os.path.basename(f) for f in files]:
             self.log.error(
                'Trying to unpack non-existing source: ' + path)
             return None
-        extract_dir = os.path.join(self.unpacked_src,
+        extract_dir = os.path.join(self._unpacked_src,
                                    self.filename + '-extract')
         if os.path.exists(extract_dir):
             return extract_dir
         else:
             os.mkdir(extract_dir)
-        rv = self.rpmdev_extract(os.path.join(self.unpacked_src,
+        rv = self.rpmdev_extract(os.path.join(self._unpacked_src,
                                               self.filename),
                                  extract_dir)
         if not rv:
             self.log.debug("Cannot unpack %s, so probably not an "
                     "archive. Copying instead" % self.filename)
-            shutil.copy(os.path.join(self.unpacked_src, self.filename),
+            shutil.copy(os.path.join(self._unpacked_src, self.filename),
                         extract_dir)
         return extract_dir
 
-    def get_build_dir(self):
+    @staticmethod
+    def get_build_dir():
         """ Return the BUILD directory from the mock environment.
         """
         bdir_root = Mock.get_builddir('BUILD')
@@ -107,17 +108,17 @@ class SRPMFile(Helpers):
         '''Return checksum for archive. '''
         filename = os.path.basename(path)
         self.unpack(self.filename)
-        if not hasattr(self, 'unpacked_src'):
+        if not self._unpacked_src:
             self.log.warn("check_source_checksum: Cannot unpack (?)")
             return "ERROR"
-        src_files = glob(self.unpacked_src + '/*')
+        src_files = glob(self._unpacked_src + '/*')
         if not src_files:
             self.log.warn('No unpacked sources found (!)')
             return "ERROR"
         if not filename in [os.path.basename(f) for f in src_files]:
             self.log.warn('Cannot find source: ' + filename)
             return "ERROR"
-        path = os.path.join(self.unpacked_src, filename)
+        path = os.path.join(self._unpacked_src, filename)
         self.log.debug("Checking {0} for {1}".format(Settings.checksum, path))
         return self._checksum(path)
 
@@ -170,12 +171,12 @@ class SRPMFile(Helpers):
         """
         if self._rpm_files:
             return self._rpm_files
-        if Settings.prebuilt and not hasattr(self, 'prebuilt_info'):
+        if Settings.prebuilt and not self._prebuilt_info:
             rpms = self.get_used_rpms()
             hdr = "Using local rpms: "
             sep = '\n' + ' ' * len(hdr)
             self.log.info(hdr + sep.join(rpms))
-            self.prebuilt_info = True
+            self._prebuilt_info = True
         else:
             rpms = glob(os.path.join(Mock.resultdir, '*.rpm'))
         rpm_files = {}
