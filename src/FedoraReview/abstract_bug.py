@@ -20,6 +20,7 @@ srpm and spec file given some kind of key when created.
 import os.path
 import tempfile
 
+from abc import ABCMeta, abstractmethod
 from glob import glob
 from urlparse import urlparse
 
@@ -53,6 +54,8 @@ class AbstractBug(Helpers):
     set the urls, this base class handles the rest.
     """
 
+    __metaclass__ = ABCMeta
+
     def __init__(self):
         Helpers.__init__(self)
         self.log = Settings.get_logger()
@@ -62,17 +65,20 @@ class AbstractBug(Helpers):
         self.srpm_file = None
         self.dir = None
 
+    @abstractmethod
     def find_spec_url(self):
         """ Grab the spec url, update self.spec_url.  """
-        self.log.error("Calling abstract method find_spec_url")
+        assert False
 
+    @abstractmethod
     def find_srpm_url(self):
         """ Grab the srpm url, update self.srpm_url.  """
-        self.log.error("Calling abstract method find_srpm_url")
+        assert False
 
+    @abstractmethod
     def get_location(self):
         """ Return visible label for source of srpm/spec """
-        self.log.error("Calling abstract method get_location")
+        assert False
 
     def do_download_spec(self):
         """

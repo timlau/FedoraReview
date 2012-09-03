@@ -373,14 +373,20 @@ class TestMisc(FR_TestCase):
         self.assertTrue(check.is_passed)
 
     def test_check_dict(self):
-        c = AbstractCheck('a-sourcefile')
+
+        class TestCheck(AbstractCheck):
+
+             def run(self):
+                pass
+
+        c = TestCheck('a-sourcefile')
         l = CheckDict()
         l.add(c)
         self.assertEqual(len(l), 1)
         self.assertEqual(c.checkdict, l)
-        c1 = AbstractCheck('sourcefile-1')
+        c1 = TestCheck('sourcefile-1')
         c1.name = 'test1'
-        c2 = AbstractCheck('sourcefile-2')
+        c2 = TestCheck('sourcefile-2')
         c2.name = 'test2'
         l.extend([c1, c2])
         self.assertEqual(len(l), 3)

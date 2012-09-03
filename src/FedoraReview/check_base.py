@@ -23,6 +23,7 @@ This module contains automatic test for Fedora Packaging guidelines
 import re
 import StringIO
 
+from abc import ABCMeta, abstractmethod
 from fnmatch import fnmatch
 from textwrap import TextWrapper
 
@@ -106,6 +107,8 @@ class AbstractCheck(object):
       - Tests are considered equal if they have the same name.
     """
 
+    __metaclass__ = ABCMeta
+
     PASS    = 'pass'
     FAIL    = 'fail'
     NA      = 'na'
@@ -135,6 +138,7 @@ class AbstractCheck(object):
     def __str__(self):
         return self.name
 
+    @abstractmethod
     def run(self):
         ''' Perform the check, update result. '''
         raise AbstractCallError('AbstractCheck')
