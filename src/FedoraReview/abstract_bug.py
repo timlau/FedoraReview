@@ -55,10 +55,12 @@ class AbstractBug(Helpers):
 
     def __init__(self):
         Helpers.__init__(self)
+        self.log = Settings.get_logger()
         self.spec_url = None
         self.srpm_url = None
         self.spec_file = None
         self.srpm_file = None
+        self.dir = None
 
     def find_spec_url(self):
         """ Grab the spec url, update self.spec_url.  """
@@ -77,7 +79,7 @@ class AbstractBug(Helpers):
         Download the spec file and srpm extracted from the page.
         Raises IOError.
         """
-        if not hasattr(self, 'dir'):
+        if not self.dir:
             self.dir = ReviewDirs.srpm
 
         spec_name = os.path.basename(self.spec_url)
@@ -95,7 +97,7 @@ class AbstractBug(Helpers):
             return hasattr(self, 'srpm_file')  and self.srpm_file and  \
                    os.path.exists(self.srpm_file)
 
-        if not hasattr(self, 'dir'):
+        if not self.dir:
             self.dir = ReviewDirs.srpm
 
         if has_srpm() and Settings.cache:
@@ -125,24 +127,21 @@ class AbstractBug(Helpers):
 
     def _check_cache(self):
         ''' return True iff srpm and spec are in srpm dir . '''
-        try:
-            name = self.get_name()
-            assert(name != '?')
-            specs = glob(os.path.join(ReviewDirs.srpm,
-                         name + '*.spec'))
-            found = len(specs)
-            srpms = glob(os.path.join(ReviewDirs.srpm,
-                         name + '*.src.rpm'))
-            found += len(srpms)
-            if found == 2:
-                self.spec_file = specs[0]
-                self.srpm_file = srpms[0]
-                self.spec_url = 'file://' + specs[0]
-                self.srpm_url = 'file://' + srpms[0]
-                return True
-            else:
-                return False
-        except:
+        name = self.get_name()
+        assert(name != '?')
+        specs = glob(os.path.join(ReviewDirs.srpm,
+                                  name + '*.spec'))
+        found = len(specs)
+        srpms = glob(os.path.join(ReviewDirs.srpm,
+                     name + '*.src.rpm'))
+        found += len(srpms)
+        if found == 2:
+            self.spec_file = specs[0]
+            self.srpm_file = srpms[0]
+            self.spec_url = 'file://' + specs[0]
+            self.srpm_url = 'file://' + srpms[0]
+            return True
+        else:
             return False
 
     def download_files(self):
@@ -215,7 +214,8 @@ class AbstractBug(Helpers):
             return prefix + tempfile.mkdtemp(prefix='review-',
                                              dir=os.getcwd())
 
-    def do_check_options(self, mode, bad_opts):
+    @staticmethod
+    def do_check_options(mode, bad_opts):
         '''
         Verify that Settings don't have bad options, raise
         SettingsError if so.
