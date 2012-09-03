@@ -46,6 +46,99 @@ LOG_ROOT = 'FedoraReview'
 
 SESSION_LOG = os.path.join(XdgDirs.cachedir, 'fedora-review.log')
 
+def _check_mock_grp(log):
+    ''' Raise ConfigError unless mock installation is OK. '''
+    try:
+        mock_gid = grp.getgrnam('mock')[2]
+        if not mock_gid in os.getgroups():
+            raise ConfigError('No mock group - mock not installed or '
+                'mock not in effective groups. Try running  '
+                '"newgrp mock" or logging out from all your local '
+                'sessions and logging back in.')
+    except ConfigError, e:
+        log.error(e)
+        raise e
+
+def _add_modes(modes):
+    ''' Add all mode arguments to the option parser group. '''
+    modes.add_argument('-b', '--bug', metavar='<bug>',
+                help='Operate on fedora bugzilla using its bug number.')
+    modes.add_argument('-n', '--name', metavar='<name>',
+                help='Use local files <name>.spec and'
+                     ' <name>*.src.rpm in current dir.')
+    modes.add_argument('-u', '--url', default = None, dest='url',
+                metavar='<url>',
+                 help='Use another bugzilla, using complete'
+                      ' url to bug page.')
+    modes.add_argument('-d', '--display-checks', default = False,
+                action='store_true', dest='list_checks',
+                help='List all available checks.')
+    modes.add_argument('-V', '--version', default = False,
+                action='store_true',
+                help='Display version information and exit.')
+    modes.add_argument('-h', '--help', action='help',
+                help = 'Display this help message')
+
+def _add_optionals(optional):
+    ''' Add all optional arguments to the option parser group. '''
+    optional.add_argument('-c', '--cache', action='store_true',
+                dest='cache',
+                help = 'Do not redownload files from bugzilla,'
+                       ' use the ones in the cache.')
+    optional.add_argument('-L', '--local-repo', metavar='<rpm directory>',
+                dest='repo',
+                help = 'directory with rpms to install together with'
+                ' reviewed package during build and install phases.')
+    optional.add_argument('-m', '--mock-config', metavar='<config>',
+                dest='mock_config',
+                help='Configuration to use for the mock build,'
+                     " defaults to 'default' i. e.,"
+                     ' /etc/mock/default.cfg')
+    optional.add_argument('--no-report', action='store_true',
+                help='Do not print review report.')
+    optional.add_argument('--no-build', action='store_true',
+                dest='nobuild',
+                help = 'Do not rebuild or install the srpm, use last '
+                       ' built one in mock. Implies --cache')
+    optional.add_argument('-o', '--mock-options', metavar='<mock options>',
+                default = '--no-cleanup-after --no-clean',
+                dest='mock_options',
+                help='Options to specify to mock for the build,'
+                     ' defaults to --no-cleanup-after --no-clean')
+    optional.add_argument('--other-bz', default=None,
+                metavar='<bugzilla url>', dest='other_bz',
+                help='Alternative bugzilla URL')
+    optional.add_argument('-p', '--prebuilt',  action='store_true',
+                dest='prebuilt', help='When using -n <name>, use'
+                ' prebuilt rpms in current directory.')
+    optional.add_argument('-s', '--single', metavar='<test>',
+                help='Single test to run, as named by --display-checks.')
+    optional.add_argument('-r', '--rpm-spec', action='store_true',
+                dest='rpm_spec', default=False,
+                help='Take spec file from srpm instead of separate url.')
+    optional.add_argument('-v', '--verbose',  action='store_true',
+                help='Show more output.', default=False, dest='verbose')
+    optional.add_argument('-x', '--exclude',
+                dest='exclude', metavar='"test,..."',
+                help='Comma-separated list of tests to exclude.')
+    optional.add_argument('-k', '--checksum', dest='checksum',
+                default='sha256',
+                choices=['md5', 'sha1', 'sha224', 'sha256',
+                         'sha384', 'sha512'],
+                help='Algorithm used for checksum')
+
+def _make_log_dir():
+    ''' Create the log dir, unless it's already there. '''
+    try:
+        os.makedirs(os.path.dirname(SESSION_LOG))
+    except OSError as exc:
+        if exc.errno == errno.EEXIST:
+            pass
+        else:
+            raise FedoraReviewError(
+                      'Cannot create log directory: ' + SESSION_LOG)
+
+
 
 class ConfigError(FedoraReviewError):
     ''' Illegal options from user. '''
@@ -63,7 +156,6 @@ class _Settings(object):
         'ext_dirs':     ':'.join([os.path.expanduser(MY_PLUGIN_DIR),
                                                      SYS_PLUGIN_DIR]),
         'bz_url':       'https://bugzilla.redhat.com',
-        'user':         None,
         'verbose':      False
     }
 
@@ -75,12 +167,21 @@ class _Settings(object):
         for key, value in self.defaults.iteritems():
             setattr(self, key, value)
         self._dict = self.defaults
+        self.log = None
+        self._con_handler = None
+        self._log_config_done = None
+        self.resultdir = None
+        self.init_done = None
+        self.cache = None
+        self.uniqueext = None
+        self.configdir = None
+        self.log_level = None
 
     def __getitem__(self, key):
-        hash = self._get_hash(key)
-        if not hash:
+        my_key = self._get_hash(key)
+        if not my_key:
             raise KeyError(key)
-        return self._dict.get(hash)
+        return self._dict.get(my_key)
 
     def _populate(self):
         '''Set option values from INI file section.
@@ -99,23 +200,32 @@ class _Settings(object):
             else:
                 self.parser.set(PARSER_SECTION, name, self._dict[name])
 
+    def _fix_mock_options(self):
+        '''
+        Update resultdir, uniqueext and configdir from mock_options.
+        '''
+        self.resultdir = None
+        self.uniqueext = None
+        self.configdir = None
+        if not self.mock_options:
+            return
+        m = re.search('--uniqueext=([^ ]+)', self.mock_options)
+        self.uniqueext = '-' + m.groups()[0] if m else None
+        m = re.search('--resultdir=([^ ]+)', self.mock_options)
+        self.resultdir = m.groups()[0] if m else None
+        m = re.search('--configdir=([^ ]+)', self.mock_options)
+        self.configdir = m.groups()[0] if m else None
+        if not 'no-cleanup-after' in self.mock_options:
+            self.mock_options += ' --no-cleanup-after'
+        if not 'no-cleanup-after' in self.mock_options:
+            self.mock_options += ' --no-cleanup-after'
+        if not re.search('clean($|[ ])', self.mock_options):
+            self.mock_options += ' --no-clean'
+
     def init(self, force=False):
         ''' Delayed setup, to be called when sys.argv is ok...'''
 
-        def _check_mock_grp():
-            ''' Raise ConfigError unless mock installation is OK. '''
-            try:
-                mock_gid = grp.getgrnam('mock')[2]
-                if not mock_gid in os.getgroups():
-                    raise ConfigError('No mock group - mock not installed or '
-                        'mock not in effective groups. Try running  '
-                        '"newgrp mock" or logging out from all your local '
-                        'sessions and logging back in.')
-            except ConfigError, e:
-                self.log.error(e)
-                raise e
-
-        if hasattr(self, 'init_done') and not force:
+        if self.init_done and not force:
             return
 
         self.do_logger_setup()
@@ -130,69 +240,9 @@ class _Settings(object):
 
         mode = parser.add_argument_group('Operation mode - one is required')
         modes = mode.add_mutually_exclusive_group(required=True)
-        optional = parser.add_argument_group('General options')
-        modes.add_argument('-b', '--bug', metavar='<bug>',
-                    help='Operate on fedora bugzilla using its bug number.')
-        modes.add_argument('-n', '--name', metavar='<name>',
-                    help='Use local files <name>.spec and'
-                         ' <name>*.src.rpm in current dir.')
-        modes.add_argument('-u', '--url', default = None, dest='url',
-                    metavar='<url>',
-                     help='Use another bugzilla, using complete'
-                          ' url to bug page.')
-        modes.add_argument('-d', '--display-checks', default = False,
-                    action='store_true', dest='list_checks',
-                    help='List all available checks.')
-        modes.add_argument('-V', '--version', default = False,
-                    action='store_true',
-                    help='Display version information and exit.')
-        modes.add_argument('-h', '--help', action='help',
-                    help = 'Display this help message')
-        optional.add_argument('-c', '--cache', action='store_true',
-                    dest='cache',
-                    help = 'Do not redownload files from bugzilla,'
-                           ' use the ones in the cache.')
-        optional.add_argument('-L', '--local-repo', metavar='<rpm directory>',
-                    dest='repo',
-                    help = 'directory with rpms to install together with'
-                    ' reviewed package during build and install phases.')
-        optional.add_argument('-m', '--mock-config', metavar='<config>',
-                    dest='mock_config',
-                    help='Configuration to use for the mock build,'
-                         " defaults to 'default' i. e.,"
-                         ' /etc/mock/default.cfg')
-        optional.add_argument('--no-report', action='store_true',
-                    help='Do not print review report.')
-        optional.add_argument('--no-build', action='store_true',
-                    dest='nobuild',
-                    help = 'Do not rebuild or install the srpm, use last '
-                           ' built one in mock. Implies --cache')
-        optional.add_argument('-o', '--mock-options', metavar='<mock options>',
-                    default = '--no-cleanup-after --no-clean',
-                    dest='mock_options',
-                    help='Options to specify to mock for the build,'
-                         ' defaults to --no-cleanup-after --no-clean')
-        optional.add_argument('--other-bz', default=None,
-                    metavar='<bugzilla url>', dest='other_bz',
-                    help='Alternative bugzilla URL')
-        optional.add_argument('-p', '--prebuilt',  action='store_true',
-                    dest='prebuilt', help='When using -n <name>, use'
-                    ' prebuilt rpms in current directory.')
-        optional.add_argument('-s', '--single', metavar='<test>',
-                    help='Single test to run, as named by --display-checks.')
-        optional.add_argument('-r', '--rpm-spec', action='store_true',
-                    dest='rpm_spec', default=False,
-                    help='Take spec file from srpm instead of separate url.')
-        optional.add_argument('-v', '--verbose',  action='store_true',
-                    help='Show more output.', default=False, dest='verbose')
-        optional.add_argument('-x', '--exclude',
-                    dest='exclude', metavar='"test,..."',
-                    help='Comma-separated list of tests to exclude.')
-        optional.add_argument('-k', '--checksum', dest='checksum',
-                    default='sha256',
-                    choices=['md5', 'sha1', 'sha224', 'sha256',
-                             'sha384', 'sha512'],
-                    help='Algorithm used for checksum')
+        optionals = parser.add_argument_group('General options')
+        _add_modes(modes)
+        _add_optionals(optionals)
         try:
             args = parser.parse_args()
         except:
@@ -203,33 +253,14 @@ class _Settings(object):
         if self.nobuild:
             self.cache = True
         if not self.prebuilt:
-            _check_mock_grp()
-        # resultdir as present in mock_options, or None
-        self.resultdir = None
-        # uniqueext as present in mock_options, w leading '-', or None
-        self.uniqueext = None
-        # configdir as present in mock_options, or None
-        self.configdir = None
-        if self.mock_options:
-            m = re.search('--uniqueext=([^ ]+)', self.mock_options)
-            self.uniqueext = '-' + m.groups()[0] if m else None
-            m = re.search('--resultdir=([^ ]+)', self.mock_options)
-            self.resultdir = m.groups()[0] if m else None
-            m = re.search('--configdir=([^ ]+)', self.mock_options)
-            self.configdir = m.groups()[0] if m else None
-            if not 'no-cleanup-after' in self.mock_options:
-                self.mock_options += ' --no-cleanup-after'
-            if not 'no-cleanup-after' in self.mock_options:
-                self.mock_options += ' --no-cleanup-after'
-            if not re.search('clean($|[ ])', self.mock_options):
-                self.mock_options += ' --no-clean'
-
+            _check_mock_grp(self.log)
+        self._fix_mock_options()
         self.init_done = True
 
     def add_args(self, args):
         """ Load all command line options in args. """
-        dict = vars(args)
-        for key, value in dict.iteritems():
+        var_dict = vars(args)
+        for key, value in var_dict.iteritems():
             setattr(self, key, value)
 
     @property
@@ -239,14 +270,13 @@ class _Settings(object):
 
     def dump(self):
         ''' Debug output of all settings. '''
+        if not self.log:
+            return
         self.log.debug("Active settings after processing options")
         for k, v in vars(self).iteritems():
             if k in ['_dict', 'mock_config_options', 'log']:
                 continue
-            try:
-                self.log.debug("    " + k + ": " + v.__str__())
-            except:
-                pass
+            self.log.debug("    " + k + ": " + v.__str__())
 
     def do_logger_setup(self, lvl=None):
         ''' Setup Python logging. lvl is a logging.* thing like
@@ -259,14 +289,14 @@ class _Settings(object):
                 try:
                     lvl = eval('logging.' +
                                os.environ['REVIEW_LOGLEVEL'].upper())
-                except:
+                except (ValueError, SyntaxError):
                     msg = "Cannot set loglevel from REVIEW_LOGLEVEL"
                     lvl = logging.INFO
             else:
                 lvl = logging.INFO
 
-        if not hasattr(self, '_log_config_done'):
-            self._make_log_dir()
+        if not self._log_config_done:
+            _make_log_dir()
             logging.basicConfig(level=logging.DEBUG,
                                 format='%(asctime)s %(name)-12s'
                                        ' %(levelname)-8s %(message)s',
@@ -284,7 +314,7 @@ class _Settings(object):
         console.setLevel(lvl)
         formatter = logging.Formatter('%(message)s', "%H:%M:%S")
         console.setFormatter(formatter)
-        if hasattr(self, '_con_handler'):
+        if self._con_handler:
             self.log.removeHandler(self._con_handler)
         self.log.addHandler(console)
         self._con_handler = console
@@ -295,20 +325,9 @@ class _Settings(object):
 
     def get_logger(self):
         ''' Return the application logger instance. '''
-        if not hasattr(self, 'log'):
+        if not self.log:
             self.do_logger_setup()
         return self.log
-
-    def _make_log_dir(self):
-        ''' Create the log dir, unless it's already there. '''
-        try:
-            os.makedirs(os.path.dirname(SESSION_LOG))
-        except OSError as exc:
-            if exc.errno == errno.EEXIST:
-                pass
-            else:
-                raise FedoraReviewError(
-                          'Cannot create log directory: ' + SESSION_LOG)
 
 
 Settings = _Settings()
