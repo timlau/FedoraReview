@@ -71,14 +71,6 @@ class SpecFile(object):
         '''Returns true if source rpm contains patch files'''
         return len(self.get_sources('Patch')) > 0
 
-    # FIXME: dead code, not referenced?!
-    def get_macros(self):
-        ''' Dump macros on stdout. '''
-        for lin in self.lines:
-            res = MACROS.search(lin)
-            if res:
-                print "macro: %s = %s" % (res.group(2), res.group(3))
-
     def process_sections(self):
         ''' Scan lines and build self._sections, self.section_list. '''
         section_lines = []
@@ -101,21 +93,6 @@ class SpecFile(object):
         self._section_list.append(cur_sec)
         self._sections[cur_sec] = section_lines
         cur_sec = this_sec
-        #self.dump_sections()
-
-    # FIXME: this is dead code, only referenced line above?!
-    def dump_sections(self, section=None):
-        ''' Dump sections on stdout. '''
-        if section:
-            sections = self.get_section(section)
-            lst = sorted(sections)
-        else:
-            sections = self._sections
-            lst = self._section_list
-        for sec in lst:
-            print "-->", sec
-            for line in sections[sec]:
-                print "      %s" % line
 
     def get_from_spec(self, macro):
         ''' Use rpm for a value for a given tag (macro is resolved)'''
@@ -148,23 +125,6 @@ class SpecFile(object):
             else:
                 self.log.warning("Error : [%s]" % (error))
                 return False
-
-    # FIXME: This is dead code, not referenced?!
-    def get_rpm_eval(self):
-        ''' Return arg after processing with rpm --eval. '''
-        lines = "\n".join(self.get_section('main')['main'])
-        #print lines
-        args = ['rpm', '--eval', lines]
-        #print len(args), args
-        try:
-            proc = Popen(args, stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE, shell=True)
-            output, error = proc.communicate()
-            print "output : [%s], error : [%s]" % (output, error)
-        except OSError, e:
-            self.log.error("OSError : %s" % str(e))
-            return False
-        return output
 
     def get_expanded(self):
         ''' Return expanded spec, as provided by rpmspec -P. '''
