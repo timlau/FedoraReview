@@ -27,7 +27,7 @@ import re
 from glob import glob
 from subprocess import Popen, PIPE
 
-from FedoraReview import AbstractRegistry, AbstractCheck, GenericCheck
+from FedoraReview import AbstractRegistry, GenericCheck
 from FedoraReview import ReviewDirs, Settings, XdgDirs
 
 
@@ -140,111 +140,121 @@ def _find_value(line, key):
         return re.sub('.*' + key, '', line).strip()
     return None
 
+def _quote(s):
+    ''' Fix string to be included within '' '''
+    return s.replace("'", "'\\''")
+
+def _settings_generator():
+    ''' Bash code defining FR_SETTINGS, reflecting Settings. '''
+    body = 'declare -A FR_SETTINGS \n'
+    for key in Settings.__dict__.iterkeys():
+        if key.startswith('_'):
+            continue
+        value = Settings.__dict__[key]
+        if not value:
+            value = ''
+        body += 'FR_SETTINGS[%s]="%s"\n' % (key, value)
+    return body
+
+def _source_generator(spec):
+    ''' Bash code defining the %sourceX items. '''
+    body = ''
+    sources = spec.get_sources()
+    for tag, path in sources.iteritems():
+        body += 'export ' + tag + '="' + path + '"\n'
+    return body
+
+def _patch_generator(spec):
+    ''' Bash code defining the %patchX items. '''
+    body = ''
+    patches = spec.get_sources('Patch')
+    for tag, path in patches.iteritems():
+        body += 'export ' + tag + '="' + path + '"\n'
+    return body
+
+def _files_generator(spec):
+    ''' Bash code defining FR_FILES,reflecting %files. '''
+    body = 'declare -A FR_FILES\n'
+    files = spec.get_section('%files')
+    for section, lines in files.iteritems():
+        item = ''
+        for line in lines:
+            item += _quote(line) + '\n'
+        body += """FR_FILES[%s]='%s'\n""" % (section, item)
+    return body
+
+def _description_generator(spec):
+    '''
+    Bash code defining FR_DESCRIPTION,reflecting %description.
+    '''
+    body = 'declare -A FR_DESCRIPTION\n'
+    descriptions = spec.get_section('%description')
+    for section, lines in descriptions.iteritems():
+        item = ''
+        for line in lines:
+            item += _quote(line) + '\n'
+        body += """FR_DESCRIPTION[%s]='%s'\n""" % (section, item)
+    return body
+
+def _package_generator(spec):
+    ''' Bash code defining FR_PACKAGE,reflecting %package. '''
+    body = 'declare -A FR_PACKAGE\n'
+    packages = spec.get_section('%package')
+    for section, lines in packages.iteritems():
+        item = ''
+        for line in lines:
+            item += _quote(line) + '\n'
+        body += """FR_PACKAGE[%s]='%s'\n""" % (section, item)
+    return body
+
+def _write_section(spec, env, s):
+    ''' Substitute a spec section into env.'''
+    body = ''
+    section = '%' + s.strip()
+    try:
+        lines = spec.get_section(section)[section]
+    except KeyError:
+        lines = []
+    for line in lines:
+        body += _quote(line) + '\n'
+    body = "'" + body + "'"
+    if len(body) < 5:
+        body = ''
+    env = env.replace('@' + s + '@', body)
+
+def _write_tag(spec, env, tag):
+    ''' Substitute a spec tag into env. '''
+    value = spec.get_from_spec(tag.upper())
+    if value:
+        env = env.replace('@' + tag + '@', value)
+    else:
+        env = env.replace('@' + tag + '@', '""')
+
+def _create_env(spec):
+    ''' Create the review-env.sh file. '''
+
+    env = ENVIRON_TEMPLATE
+    env = env.replace('FR_SETTINGS_generator', _settings_generator())
+    env = env.replace('@review_dir@', ReviewDirs.root)
+    for tag in _TAGS:
+        _write_tag(spec, env, tag)
+    env = env.replace('FR_SOURCE_generator',
+                       _source_generator(spec))
+    env = env.replace('FR_PATCH_generator',
+                       _patch_generator(spec))
+    for s in _SECTIONS:
+        _write_section(spec, env, s)
+    env = env.replace('FR_FILES_generator', _files_generator(spec))
+    env = env.replace('FR_PACKAGE_generator',
+                       _package_generator(spec))
+    env = env.replace('FR_DESCRIPTION_generator',
+                      _description_generator(spec))
+    with open(ENV_PATH, 'w') as f:
+        f.write(env)
+
 
 class Registry(AbstractRegistry):
-    ''' Registers all scripts plugins. '''
-
-    def _create_env(self, spec, srpm):
-        ''' Create the review-env.sh file. '''
-
-        def quote(s):
-            ''' Fix string to be included within '' '''
-            return s.replace("'", "'\\''")
-
-        def settings_generator():
-            ''' Bash code defining FR_SETTINGS, reflecting Settings. '''
-            body = 'declare -A FR_SETTINGS \n'
-            for key in Settings.__dict__.iterkeys():
-                if key.startswith('_'):
-                    continue
-                value = Settings.__dict__[key]
-                if not value:
-                    value = ''
-                body += 'FR_SETTINGS[%s]="%s"\n' % (key, value)
-            return body
-
-        def source_generator():
-            ''' Bash code defining the %sourceX items. '''
-            body = ''
-            sources = spec.get_sources()
-            for tag, path in sources.iteritems():
-                body += 'export ' + tag + '="' + path + '"\n'
-            return body
-
-        def patch_generator():
-            ''' Bash code defining the %patchX items. '''
-            body = ''
-            patches = spec.get_sources('Patch')
-            for tag, path in patches.iteritems():
-                body += 'export ' + tag + '="' + path + '"\n'
-            return body
-
-        def files_generator():
-            ''' Bash code defining FR_FILES,reflecting %files. '''
-            body = 'declare -A FR_FILES\n'
-            files = spec.get_section('%files')
-            for section, lines in files.iteritems():
-                item = ''
-                for line in lines:
-                    item += quote(line) + '\n'
-                body += """FR_FILES[%s]='%s'\n""" % (section, item)
-            return body
-
-        def description_generator():
-            '''
-            Bash code defining FR_DESCRIPTION,reflecting %description.
-            '''
-            body = 'declare -A FR_DESCRIPTION\n'
-            descriptions = spec.get_section('%description')
-            for section, lines in descriptions.iteritems():
-                item = ''
-                for line in lines:
-                    item += quote(line) + '\n'
-                body += """FR_DESCRIPTION[%s]='%s'\n""" % (section, item)
-            return body
-
-        def package_generator():
-            ''' Bash code defining FR_PACKAGE,reflecting %package. '''
-            body = 'declare -A FR_PACKAGE\n'
-            packages = spec.get_section('%package')
-            for section, lines in packages.iteritems():
-                item = ''
-                for line in lines:
-                    item += quote(line) + '\n'
-                body += """FR_PACKAGE[%s]='%s'\n""" % (section, item)
-            return body
-
-        env = ENVIRON_TEMPLATE
-        env = env.replace('FR_SETTINGS_generator', settings_generator())
-        env = env.replace('@review_dir@', ReviewDirs.root)
-        for tag in _TAGS:
-            value = spec.get_from_spec(tag.upper())
-            if value:
-                env = env.replace('@' + tag + '@', value)
-            else:
-                self.log.debug('Cannot get value for: ' + tag)
-                env = env.replace('@' + tag + '@', '""')
-        env = env.replace('FR_SOURCE_generator', source_generator())
-        env = env.replace('FR_PATCH_generator', patch_generator())
-        for s in _SECTIONS:
-            body = ''
-            section = '%' + s.strip()
-            try:
-                lines = spec.get_section(section)[section]
-            except KeyError:
-                lines = []
-            for line in lines:
-                body += quote(line) + '\n'
-            body = "'" + body + "'"
-            if len(body) < 5:
-                body = ''
-            env = env.replace('@' + s + '@', body)
-        env = env.replace('FR_FILES_generator', files_generator())
-        env = env.replace('FR_PACKAGE_generator', package_generator())
-        env = env.replace('FR_DESCRIPTION_generator',
-                          description_generator())
-        with open(ENV_PATH, 'w') as f:
-            f.write(env)
+    ''' Registers all script plugins. '''
 
     def __init__(self, base):
         AbstractRegistry.__init__(self, base)
@@ -266,7 +276,7 @@ class Registry(AbstractRegistry):
         dirs = _get_plugin_dirs()
         checks = []
         if not Settings.list_checks:
-            self._create_env(self.checks.spec, self.checks.srpm)
+            _create_env(self.checks.spec)
         for d in dirs:
             d = os.path.expanduser(d)
             for f in glob(os.path.join(d, '*.sh')):
@@ -276,8 +286,9 @@ class Registry(AbstractRegistry):
 
 class ShellCheck(GenericCheck):
     """ A single test  defined by a shell plugin. """
-    DEFAULT_GROUP = 'Generic'
-    DEFAULT_TYPE  = 'MUST'
+    DEFAULT_GROUP  = 'Generic'
+    DEFAULT_TYPE   = 'MUST'
+    implementation = 'script'
 
     def __init__(self, checks, path):
         for tag in _TAGS:
@@ -286,12 +297,13 @@ class ShellCheck(GenericCheck):
             except AttributeError:
                 pass
         GenericCheck.__init__(self, checks, path)
-        self.implementation = 'shell'
         self.groups = checks.groups
-        self.log = Settings.get_logger()
         self.type = self.DEFAULT_TYPE
         self.group = self.DEFAULT_GROUP
+        self.needs = []
+        self.deprecates = []
         self.text = ''
+        self._name = None
         self._parse(path)
 
     def _parse_attributes(self, lines):
@@ -354,9 +366,13 @@ class ShellCheck(GenericCheck):
         stderr = None if stderr == '' else stderr
         return p.returncode, stdout, stderr
 
-    name = property(lambda self: self._name)
+    @property
+    def name(self):
+        ''' Check's name. '''
+        return self._name
 
     def run(self):
+        ''' Run the check. '''
         if hasattr(self, 'result'):
             return
         if not self.group in self.groups:
