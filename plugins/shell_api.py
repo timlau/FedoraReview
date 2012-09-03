@@ -221,6 +221,7 @@ def _write_section(spec, env, s):
     if len(body) < 5:
         body = ''
     env = env.replace('@' + s + '@', body)
+    return env
 
 def _write_tag(spec, env, tag):
     ''' Substitute a spec tag into env. '''
@@ -229,6 +230,7 @@ def _write_tag(spec, env, tag):
         env = env.replace('@' + tag + '@', value)
     else:
         env = env.replace('@' + tag + '@', '""')
+    return env
 
 def _create_env(spec):
     ''' Create the review-env.sh file. '''
@@ -237,13 +239,13 @@ def _create_env(spec):
     env = env.replace('FR_SETTINGS_generator', _settings_generator())
     env = env.replace('@review_dir@', ReviewDirs.root)
     for tag in _TAGS:
-        _write_tag(spec, env, tag)
+        env = _write_tag(spec, env, tag)
     env = env.replace('FR_SOURCE_generator',
                        _source_generator(spec))
     env = env.replace('FR_PATCH_generator',
                        _patch_generator(spec))
     for s in _SECTIONS:
-        _write_section(spec, env, s)
+        env = _write_section(spec, env, s)
     env = env.replace('FR_FILES_generator', _files_generator(spec))
     env = env.replace('FR_PACKAGE_generator',
                        _package_generator(spec))
@@ -376,31 +378,31 @@ class ShellCheck(GenericCheck):
         if hasattr(self, 'result'):
             return
         if not self.group in self.groups:
-            self.set_passed("pending", "test run failed: illegal group")
+            self.set_passed(self.PENDING, "test run failed: illegal group")
             self.log.warning('Illegal group %s in %s' %
                                    (self.group, self.defined_in))
             return
         if not self.groups[self.group].is_applicable():
-            self.set_passed('not_applicable')
+            self.set_passed(self.NA)
             return
-        cmd = 'source ./review-env.sh; ' + self.defined_in
+        cmd = 'source ./review-env.sh; source ' + self.defined_in
         retval, stdout, stderr = self._do_run(cmd)
         if retval == -1:
-            self.set_passed("pending",
+            self.set_passed(self.PENDING,
                             "Cannot execute shell command" + cmd)
         elif retval == _PASS and not stderr:
-            self.set_passed("pass", stdout)
+            self.set_passed(self.PASS, stdout)
         elif retval == _FAIL and not stderr:
-            self.set_passed("fail", stdout)
+            self.set_passed(self.FAIL, stdout)
         elif retval == _PENDING and not stderr:
-            self.set_passed('pending', stdout)
+            self.set_passed(self.PENDING, stdout)
         elif retval == _NOT_APPLICABLE and not stderr:
-            self.set_passed('not_applicable', stdout)
+            self.set_passed(self.NA, stdout)
         else:
             self.log.warning(
                 'Illegal return from %s, code %d, output: %s' %
                      (self.defined_in, retval,
                      'stdout:' + str(stdout) + ' stderr:' + str(stderr)))
-            self.set_passed('pending', 'Test run failed')
+            self.set_passed(self.PENDING, 'Test run failed')
 
 # vim: set expandtab: ts=4:sw=4:
