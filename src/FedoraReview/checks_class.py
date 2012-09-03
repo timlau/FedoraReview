@@ -113,14 +113,6 @@ class Checks(object):
                     tests = pl.register()
                     self.checkdict.extend(tests)
 
-    def show_file(self, filename, output=sys.stdout):
-        ''' Print file on output. '''
-        fd = open(filename, "r")
-        lines = fd.readlines()
-        fd.close()
-        for line in lines:
-            output.write(line)
-
     def exclude_checks(self, exclude_arg):
         ''' Mark all checks in exclude_arg (string) as already done. '''
         for c in [l.strip() for l in exclude_arg.split(',')]:
@@ -192,12 +184,13 @@ class Checks(object):
 
         if writedown:
             key_getter = attrgetter('group', 'type', 'name')
-            self.__show_output(output,
-                               sorted(results, key=key_getter),
-                               issues,
-                               attachments)
+            self.show_output(output,
+                             sorted(results, key=key_getter),
+                             issues,
+                             attachments)
 
-    def __show_output(self, output, results, issues, attachments):
+    @staticmethod
+    def show_output(output, results, issues, attachments):
         ''' Print test results on output. '''
 
         def write_sections(results):
