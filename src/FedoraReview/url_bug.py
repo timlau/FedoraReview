@@ -77,8 +77,7 @@ class UrlBug(AbstractBug):
 
     def check_options(self):
         ''' Raise error if Settings  combination is invalid. '''
-        AbstractBug.do_check_options(self, '--url',
-                                     ['prebuilt', 'other_bz'])
+        AbstractBug.do_check_options('--url', ['prebuilt', 'other_bz'])
 
 
 # vim: set expandtab: ts=4:sw=4:

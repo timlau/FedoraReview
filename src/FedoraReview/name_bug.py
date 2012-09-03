@@ -65,7 +65,7 @@ class NameBug(AbstractBug):
 
     def check_options(self):
         ''' Raise error if Settings options combination is invalid. '''
-        AbstractBug.do_check_options(self, '--name', ['other_bz'])
+        AbstractBug.do_check_options('--name', ['other_bz'])
 
     def download_files(self):
         self.srpm_file = urlparse(self.srpm_url).path

@@ -25,7 +25,7 @@ import shutil
 
 from urlparse import urlparse
 
-from helpers import Helpers
+from helpers import Helpers, DownloadError
 from review_dirs import ReviewDirs
 from review_error import FedoraReviewError
 from settings import Settings
@@ -40,8 +40,9 @@ class Source(Helpers):
          - sources: container holding this source.
          - local: True if the source is just a file, false
            if it's a downloaded url
+         - local_src: points to local upstream copy, or None.
     '''
-    def __init__(self, sources, tag, url):
+    def __init__(self, tag, url):
 
         def my_logger(cache):
             ''' Default logger logs info messages. '''
@@ -53,7 +54,7 @@ class Source(Helpers):
                 self.log.info("Downloading (%s): %s" % (tag, url))
 
         Helpers.__init__(self)
-        self.sources = sources
+        self.extract_dir = None
         self.tag = tag
         self.downloaded = True
         is_url = urlparse(url)[0] != ''
@@ -64,8 +65,9 @@ class Source(Helpers):
                 self.filename = self._get_file(url,
                                                ReviewDirs.upstream,
                                                my_logger)
-            except:
-                self.log.debug('Download error on ' + url,
+            except DownloadError as ex:
+                self.log.debug('Download error on ' + url
+                                    + ', : ' + str(ex),
                                 exc_info=True)
                 self.log.warning('Cannot download url: ' + url)
                 self.downloaded = False
@@ -92,14 +94,13 @@ class Source(Helpers):
         self.log.debug("Checking source {0} : {1}".format(Settings.checksum,
                                                           self.filename))
         if self.downloaded:
-            sum = self._checksum(self.filename)
-            return sum
+            return self._checksum(self.filename)
         else:
             raise FedoraReviewError(self.tag +
                                     ": upstream source not found")
 
     def is_archive(self):
-        ''' Return true id source can be assumed to be an archive file. '''
+        ''' Return true if source can be assumed to be an archive file. '''
         filename = self.filename.split('/')[-1]
         for i in ('.tar.gz',
                   '.tar.bz2', '.tar.lzma', '.tar.xz', '.zip', '.7z'):
@@ -125,7 +126,7 @@ class Source(Helpers):
         """
         Return the top directory of the unpacked source.
         """
-        if not hasattr(self, 'extract_dir'):
+        if not self.extract_dir:
             self.extract()
         return self.extract_dir
 

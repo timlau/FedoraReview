@@ -42,11 +42,14 @@ class Helpers(object):
     ''' Miscellaneous  library support. '''
 
     def __init__(self):
-        self.log = Settings.get_logger()
+        try:
+            self.log = Settings.get_logger()
+        except AttributeError:
+            pass
 
-    def _run_cmd(self, cmd):
+    def _run_cmd(self, cmd, header='Run command'):
         ''' Run a command using using subprocess, return output. '''
-        self.log.debug('Run command: %s' % cmd)
+        self.log.debug(header + ': ' + cmd)
         cmd = cmd.split(' ')
         try:
             proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
@@ -56,7 +59,8 @@ class Helpers(object):
             self.log.error("OS error running " + cmd, str(e))
         return output
 
-    def _checksum(self, path):
+    @staticmethod
+    def _checksum(path):
         ''' get the checksum for a path using algorithm set by configuration
         (default: md5)
 
@@ -65,10 +69,12 @@ class Helpers(object):
         '''
         ck = hashlib.new(Settings.checksum)
         with open(path, 'rb') as f:
-            [ck.update(chunk) for chunk in iter(lambda: f.read(8192), '')]
+            for chunk in iter(lambda: f.read(8192), ''):
+                ck.update(chunk)
         return ck.hexdigest()
 
-    def urlretrieve(self, url, path):
+    @staticmethod
+    def urlretrieve(url, path):
         ''' Similar to urllib.urlretrieve, raises DownloadError. '''
         try:
             # we need to timeout eventually if there are problems

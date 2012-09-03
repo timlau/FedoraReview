@@ -59,13 +59,7 @@ class TestMisc(FR_TestCase):
                        argv=['-n','python-test', '--cache',
                              '--no-build'])
 
-        bug = NameBug('python-test')
-        bug.find_urls()
-        bug.download_files()
-
-        spec = SpecFile(bug.spec_file)
-        sources = Sources(spec)
-        source = Source(sources, 'Source0',
+        source = Source('Source0',
                         self.BASE_URL +  'python-test-1.0.tar.gz')
         # check that source exists and source.filename point to the right location
         expected = os.path.abspath('upstream/python-test-1.0.tar.gz')
@@ -177,8 +171,8 @@ class TestMisc(FR_TestCase):
         srpm = SRPMFile(self.srpm_file)
         # install the srpm
         srpm.unpack()
-        self.assertTrue(hasattr(srpm, 'unpacked_src'))
-        src_dir = srpm.unpacked_src
+        self.assertTrue(srpm._unpacked_src != None)
+        src_dir = srpm._unpacked_src
         src_files = glob.glob(os.path.expanduser(src_dir) + '/*')
         src_files = [os.path.basename(f) for f in  src_files]
         self.assertTrue('python-test-1.0.tar.gz' in src_files)
@@ -273,8 +267,7 @@ class TestMisc(FR_TestCase):
 
     def test_jsonapi(self):
         self.init_test('test_misc',
-                       argv=['-rpn','python-test', '--cache',
-                             '--no-build'])
+                       argv=['-rpn','python-test', '--no-build'])
         ReviewDirs.reset(os.getcwd())
         os.environ['REVIEW_EXT_DIRS'] = os.path.normpath(os.getcwd() + '/../api')
 
@@ -423,8 +416,7 @@ class TestMisc(FR_TestCase):
     def test_local_repo(self):
         self.init_test('test_misc',
                        argv=['-rn','python-test', '--local-repo',
-                             'repo'],
-                        wd='python-test')
+                             'repo', '--cache'])
         ReviewDirs.reset(os.getcwd())
         bug = NameBug('python-test')
         bug.find_urls()

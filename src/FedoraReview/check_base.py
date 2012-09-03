@@ -83,6 +83,7 @@ class AbstractCheck(object):
     the outside.
 
     Class attributes:
+      - log: logger
       - version version of api, defaults to 0.1
       - group: 'Generic', 'C/C++', 'PHP': name of the registry
                 which instantiated this check.
@@ -117,10 +118,10 @@ class AbstractCheck(object):
         self.defined_in = defined_in
         self.deprecates = []
         self.needs = []
-        self._name = 'Undefined'
-
-    name = property(lambda self: self._name,
-                    lambda self, n: setattr(self, '_name', n))
+        try:
+            self.name = 'Undefined'
+        except AttributeError :
+            pass
 
     def __eq__(self, other):
         return self.name.__eq__(other)
@@ -181,9 +182,14 @@ class GenericCheck(AbstractCheck, FileChecks):
     spec       = property(lambda self: self.checks.spec)
     srpm       = property(lambda self: self.checks.srpm)
     sources    = property(lambda self: self.checks.sources)
-    name       = property(lambda self: self.__class__.__name__)
+    log        = property(lambda self: self.checks.log)
 
-    def set_passed(self, result, output_extra=None, attachments=[]):
+    @property
+    def name(self):
+        ''' The check's name. '''
+        return self.__class__.__name__
+
+    def set_passed(self, result, output_extra=None, attachments=None):
         '''
         Set if the test is passed, failed or N/A
         and set optional extra output to be shown in repost
@@ -340,12 +346,12 @@ class TestResult(object):
     TEST_STATES = {
          'pending': '[ ]', 'pass': '[x]', 'fail': '[!]', 'na': '[-]'}
 
-    def __init__(self, check, result, output_extra, attachments=[]):
+    def __init__(self, check, result, output_extra, attachments=None):
         self.check = check
         self.text = re.sub("\s+", " ", check.text) if check.text else ''
         self.result = result
         self.output_extra = output_extra
-        self.attachments = attachments
+        self.attachments = attachments if attachments else []
         if self.output_extra:
             self.output_extra = re.sub("\s+", " ", self.output_extra)
         self.wrapper = TextWrapper(width=78, subsequent_indent=" " * 5,

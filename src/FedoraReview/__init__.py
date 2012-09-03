@@ -28,7 +28,8 @@ from checks_class import Checks, ChecksLister
 from mock         import Mock
 from name_bug     import NameBug
 from review_error import FedoraReviewError, CleanExitError
-from review_dirs  import ReviewDirs, ReviewDirExistsError
+from review_dirs  import ReviewDirs, ReviewDirExistsError, \
+                         ResultDirNotEmptyError
 from registry     import AbstractRegistry, RegistryBase
 from settings     import Settings
 from source       import Source
@@ -38,11 +39,5 @@ from srpm_file    import SRPMFile
 from url_bug      import UrlBug
 from version      import __version__, build_id, build_date, build_full
 from xdg_dirs     import XdgDirs
-
-
-class ResultDirNotEmptyError(FedoraReviewError):
-    ''' Thrown when trying to reuse old review dir without --cache. '''
-    def __init__(self):
-        FedoraReviewError.__init__(self, 'resultdir not empty')
 
 # vim: set expandtab: ts=4:sw=4:

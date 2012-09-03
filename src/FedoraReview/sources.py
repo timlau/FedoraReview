@@ -41,7 +41,7 @@ class Sources(object):
 
     def add(self, tag, url):
         """Add a new Source Object based on spec tag and URL to source"""
-        source = Source(self, tag, url)
+        source = Source(tag, url)
         self._sources[tag] = source
 
     def get(self, tag):
@@ -98,9 +98,10 @@ class Sources(object):
                 try:
                     self.log.debug(
                                'Adding files found in %s' % source.filename)
-                    for root, folders, files in os.walk(source.extract_dir):
+                    for root, files in os.walk(source.extract_dir[0:3:2]):
                         for filename in files:
-                            sources_files.append(os.path.join(root, filename))
+                            sources_files.append(os.path.join(root,
+                                                              filename))
                 except AttributeError as e:
                     self.log.debug("get_files_sources(): Attribute error "
                                    + str(e))

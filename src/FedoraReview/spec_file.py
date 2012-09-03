@@ -45,13 +45,8 @@ class SpecFile(object):
         self._sections = {}
         self._section_list = []
         self.filename = filename
-        f = None
-        try:
-            f = open(filename, "r")
+        with open(filename, "r") as f:
             self.lines = f.readlines()
-        finally:
-            f and f.close()
-
         ts = rpm.TransactionSet()
         self.spec_obj = ts.parseSpec(self.filename)
 
@@ -60,13 +55,13 @@ class SpecFile(object):
         self.release = self.get_from_spec('release')
         self.process_sections()
 
-    def get_sources(self, type='Source'):
+    def get_sources(self, _type='Source'):
         ''' Get SourceX/PatchX lines with macros resolved '''
         result = {}
         for (url, num, flags) in self.spec_obj.sources:
             # rpmspec.h, rpm.org ticket #123
             srctype = "Source" if flags & 1 else "Patch"
-            if type != srctype:
+            if _type != srctype:
                 continue
             tag = srctype + str(num)
             result[tag] = url

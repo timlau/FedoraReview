@@ -91,7 +91,7 @@ class BugzillaBug(AbstractBug):
 
     def check_options(self):
         ''' Raise SettingsError if Settings combinations is invalid. '''
-        AbstractBug.do_check_options(self, '--bug', ['prebuilt'])
+        AbstractBug.do_check_options('--bug', ['prebuilt'])
 
     def handle_xmlrpc_err(self, exception):
         ''' Log a xmlrpc error.'''
