@@ -41,12 +41,25 @@ echo 'rpmlint-done:'
 EOF
 """
 
+
+def _run_script(script):
+    """ Run a script,  return (ok, output). """
+    try:
+        p = Popen(script, stdout=PIPE, stderr=STDOUT, shell=True)
+        output, error = p.communicate()
+    except OSError as e:
+        return False, e.strerror + ' stderr: ' + error
+    return True, output
+
+
 class _Mock(Helpers):
     """ Some basic operations on the mock chroot env, a singleton. """
 
     def __init__(self):
         Helpers.__init__(self)
+        self.log = Settings.get_logger()
         self.build_failed = None
+        self.mock_root = None
 
     def _get_root(self):
         '''Return mock's root according to Settings. '''
@@ -68,7 +81,7 @@ class _Mock(Helpers):
 
     def _get_dir(self, subdir=None):
         ''' Return a directory under root, create if non-existing. '''
-        if not hasattr(self, 'mock_root'):
+        if not self.mock_root:
             self._get_root()
         p = os.path.join('/var/lib/mock', self.mock_root)
         p = os.path.join(p, subdir) if subdir else p
@@ -78,8 +91,8 @@ class _Mock(Helpers):
 
     def reset(self):
         """ Clear all persistent state. """
-        if hasattr(self, 'mock_root'):
-            delattr(self, 'mock_root')
+        if self.mock_root:
+            self.mock_root = None
 
     def get_resultdir(self):
         ''' Return resultdir used by mock. '''
@@ -112,7 +125,7 @@ class _Mock(Helpers):
     def _run_cmd(self, cmd, header='Mock'):
 
         def log_text(out, err):
-            ''' format stdout + stderr. '''
+            ''' Format stdout + stderr. '''
             return  header + " output: " + str(out) + ' ' + str(err)
 
         self.log.debug(header + ' command: ' + ', '.join(cmd))
@@ -128,22 +141,14 @@ class _Mock(Helpers):
                             p.returncode)
         return None if p.returncode == 0 else str(output)
 
-    def _run_script(self, script):
-        """ Run a script,  return (ok, output). """
-        try:
-            p = Popen(script, stdout=PIPE, stderr=STDOUT, shell=True)
-            output, error = p.communicate()
-        except OSError as e:
-            return False, e.strerror + ' stderr: ' + error
-        return True, output
-
     def _clear_rpm_db(self):
         """ mock install uses host's yum -> bad rpm database. """
         cmd = self._mock_cmd()
         cmd.extend(['--shell', 'rm -f /var/lib/rpm/__db*'])
         self._run_cmd(cmd)
 
-    def get_mock_options(self):
+    @staticmethod
+    def get_mock_options():
         """ --mock-config option, with a guaranteed ---'resultdir' part
         """
         if not hasattr(Settings, 'mock_options'):
@@ -219,12 +224,10 @@ class _Mock(Helpers):
         except IOError:
             rc = "Can't open logfile"
         if rc == '0':
-            self.is_build = True
             self.log.info('Build completed')
             return None
         else:
             self.log.info('Build failed rc = ' + rc)
-            self.build_failed = True
             raise FedoraReviewError('Mock build failed.')
 
     def install(self, packages):
@@ -304,7 +307,7 @@ class _Mock(Helpers):
             config = '-r ' + Settings.mock_config
         script = script.replace('@config@', config)
         script = script.replace('@rpm_names@', rpm_names)
-        ok, output = self._run_script(script)
+        ok, output = _run_script(script)
         self.log.debug("Script output: " + output)
         if not ok:
             return False, output + '\n'
