@@ -129,7 +129,7 @@ class SRPMFile(Helpers):
         """
         cmd = 'rpmlint -f .rpmlint ' + ' '.join(filenames)
         out = 'Checking: '
-        sep = '\n' + ' ' * len( out )
+        sep = '\n' + ' ' * len(out)
         out += sep.join([os.path.basename(f) for f in filenames])
         out += '\n'
         out += self._run_cmd(cmd)

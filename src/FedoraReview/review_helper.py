@@ -30,6 +30,7 @@ from FedoraReview import BugException, BugzillaBug, Checks, \
 
 from FedoraReview import __version__, build_full
 
+
 def _print_version():
     ''' Handle --version option. '''
     print('fedora-review version ' + __version__ + ' ' + build_full)

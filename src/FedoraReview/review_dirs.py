@@ -96,7 +96,6 @@ class _ReviewDirs(object):
         if not os.path.exists(wd):
             os.mkdir(wd)
 
-
     def workdir_setup(self, wd, reuse_old=False):
         ''' Initiate a new review directory, or re-use an old one. '''
         reuse = reuse_old or Settings.cache

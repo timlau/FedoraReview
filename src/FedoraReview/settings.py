@@ -40,6 +40,7 @@ fedora-review in favor of using the bugzilla tool instead. See
 fedora-review(1), section ASSIGN AND LOGIN and bugzilla(1).
 """
 
+
 PARSER_SECTION = 'review'
 
 LOG_ROOT = 'FedoraReview'
@@ -58,6 +59,7 @@ def _check_mock_grp(log):
     except ConfigError, e:
         log.error(e)
         raise e
+
 
 def _add_modes(modes):
     ''' Add all mode arguments to the option parser group. '''
@@ -78,6 +80,7 @@ def _add_modes(modes):
                 help='Display version information and exit.')
     modes.add_argument('-h', '--help', action='help',
                 help = 'Display this help message')
+
 
 def _add_optionals(optional):
     ''' Add all optional arguments to the option parser group. '''
@@ -127,6 +130,7 @@ def _add_optionals(optional):
                          'sha384', 'sha512'],
                 help='Algorithm used for checksum')
 
+
 def _make_log_dir():
     ''' Create the log dir, unless it's already there. '''
     try:
@@ -137,7 +141,6 @@ def _make_log_dir():
         else:
             raise FedoraReviewError(
                       'Cannot create log directory: ' + SESSION_LOG)
-
 
 
 class ConfigError(FedoraReviewError):

@@ -46,7 +46,6 @@ class FileChecks(object):
             ''' Container for class private data. '''
             pass
 
-
         self._filechecks = FileCheckData()
         self._filechecks.srpm = checks.srpm
         self._filechecks.spec = checks.spec
@@ -123,7 +122,7 @@ class AbstractCheck(object):
         self.needs = []
         try:
             self.name = 'Undefined'
-        except AttributeError :
+        except AttributeError:
             pass
 
     def __eq__(self, other):
