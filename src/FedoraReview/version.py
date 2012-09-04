@@ -3,7 +3,7 @@
 '''
 Create the file version if it does not exist.
 In any case, exec this file, providing symbols defined
-there on module level.
+there on module level, redefining he 'unknown' defaults.
 '''
 
 import os.path
@@ -12,6 +12,11 @@ import socket
 
 from subprocess import check_output
 from review_error import FedoraReviewError
+
+__version__ = 'Unknown'
+build_full = 'Unknown (no version file nor git info)'
+build_date = "Unknown"
+build_id = "Unknown"
 
 
 class VersionError(FedoraReviewError):

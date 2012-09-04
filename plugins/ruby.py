@@ -7,6 +7,8 @@ from FedoraReview import LangCheckBase, RegistryBase
 
 
 class Registry(RegistryBase):
+    ''' Register all checks inthis file in group 'Ruby' '''
+
     group = 'Ruby'
 
     def is_applicable(self):

@@ -159,7 +159,6 @@ class _Settings(object):
         'ext_dirs':     ':'.join([os.path.expanduser(MY_PLUGIN_DIR),
                                                      SYS_PLUGIN_DIR]),
         'bz_url':       'https://bugzilla.redhat.com',
-        'verbose':      False
     }
 
     def __init__(self):
@@ -173,12 +172,13 @@ class _Settings(object):
         self.log = None
         self._con_handler = None
         self._log_config_done = None
+        self.cache = None
         self.resultdir = None
         self.init_done = None
-        self.cache = None
         self.uniqueext = None
         self.configdir = None
         self.log_level = None
+        self.verbose = False
 
     def __getitem__(self, key):
         my_key = self._get_hash(key)
