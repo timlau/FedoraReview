@@ -83,4 +83,63 @@ Extending
 
 fedora-review can be extended with small shell-scripts and full-featured
 python plugins. See the wiki (above).
+
+
+
+== Using flags ==
+
+'''The following only applies to the 'flags' branch!'''
+
+fedora-review has a concept of flags. Flags are set by user to affect how testing
+is done. In the background, flags are registered by different Registrys and acted
+upon in checks.
+
+As user, list all flags using -f and set one using -D (or --define):
+{{{
+    $  fedora-review -f
+       EPEL5: review a package for EPEL5
+       ...
+    $  fedora-review -b 787713 -D EPEL5
+}}}
+sets the EPEL5 flag. One could also use EPEL5=foo to assign a string to
+the flag.
+
+For this to work, the flag must be registered. This can be done either in
+python or in a shell script. In python, implement the register_flags
+method in the module Registry:
+{{{
+class Registry(RegistryBase):
+    ...
+    def register_flags(self):
+        epel5 = Flag('EPEL5', 'Review package for EPEL5', __file__)
+        self.checks.flags.add(epel5)
+}}}}
+
+In a shell script, add a @register-flag tag:
+{{{
+    #!/bin/bash
+    # @register-flag: EPEL6  Enable EPEL6 checking
+    # @register-flag: EPEL7  Enable EPEL7 checking
+    exit $FR_NA
+}}}
+
+In a python check, flags are available as self.flags. An example:
+{{{
+    if self.flags['EPEL5']:
+        self.set_passed(self.FAIL,
+                        'Missing buildroot (required for EPEL5)')
+    else:
+        self.set_passed(self.PASS)
+        return
+
+}}}
+
+In a shell check, flags are available as $FR_FLAGS. An example:
+{{{
+    if [ "${FR_FLAGS['EPEL5']}" = '' ]; then
+         whatever
+    else
+         whatever
+    fi
+}}}
 ~
