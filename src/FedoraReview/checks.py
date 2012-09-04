@@ -33,6 +33,7 @@ from spec_file import  SpecFile
 from sources import  Sources
 from review_dirs import ReviewDirs
 from version import  __version__, BUILD_ID, BUILD_DATE
+from review_error import ReviewError
 from jsonapi import JSONPlugin
 
 
@@ -126,6 +127,29 @@ class _CheckDict(dict):
         self.extend(needed)
         delattr(self[check_name], 'result')
 
+class _Flags(dict):
+    ''' A dict storing Flag  entries with some added baheviour. '''
+
+    def __init__(self):
+        dict.__init__(self)
+
+    def add(self, flag):
+        ''' As list.add(). '''
+        self[flag.name] = flag
+
+    def update(self, optarg):
+        '''
+        Try to update a flag with command line setting.
+        Raises KeyError if flag not registered.
+        '''
+        if '=' in optarg:
+            key, value = optarg.split('=')
+            self[key].value = value
+        else:
+            self[optarg].set_active()
+
+
+
 
 class Checks(object):
     '''
@@ -139,9 +163,9 @@ class Checks(object):
         ''' Create a Checks set. srpm_file and spec_file are required,
         unless invoked from ChecksLister.
         '''
-        self._results = {'PASSED': [], 'FAILED': [], 'NA': [], 'USER': []}
         self.log = Settings.get_logger()
         self.checkdict = None
+        self.flags = _Flags()
         self.groups = None
         if hasattr(self, 'sources'):
             # This is  a listing instance
@@ -156,6 +180,20 @@ class Checks(object):
             self.set_single_check(Settings.single)
         elif Settings.exclude:
             self.exclude_checks(Settings.exclude)
+        self.update_flags()
+
+    def update_flags(self):
+        ''' Update registered flags with user -D settings. '''
+        for flag_opt in Settings.flags:
+            try:
+                if not '=' in flag_opt:
+                    key = flag_opt
+                    self.flags[flag_opt].activate()
+                else:
+                    key, value = flag_opt.split('=')
+                    self.flags[key].value = value
+            except KeyError:
+                raise ReviewError(key + ': No such flag')
 
     def add_check_classes(self):
         """

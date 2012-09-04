@@ -31,11 +31,11 @@ from subprocess import Popen, PIPE
 from FedoraReview import AbstractRegistry
 from FedoraReview import GenericCheck, ReviewDirs, Settings, XdgDirs
 
-
 ENVIRON_TEMPLATE = """
 unset $(env | sed 's/=.*//')
 PATH=/bin:/usr/bin:/sbin/:/usr/sbin
 
+FR_FLAGS_generator
 FR_SETTINGS_generator
 export FR_REVIEWDIR='@review_dir@'
 export HOME=$FR_REVIEWDIR
@@ -227,6 +227,14 @@ def _description_generator(spec):
     return body
 
 
+def _flags_generator(flags):
+    ''' Bash code defining FR_FLAGS,reflecting checks.flags. '''
+    body = 'declare -A FR_FLAGS\n'
+    for flag in flags.itervalues():
+        body += """FR_FLAGS[%s]='%s'\n""" % (flag.name, str(flag))
+    return body
+
+
 def _package_generator(spec):
     ''' Bash code defining FR_PACKAGE,reflecting %package. '''
     body = 'declare -A FR_PACKAGE\n'
@@ -266,25 +274,28 @@ def _write_tag(spec, env, tag):
     return env
 
 
-def _create_env(spec):
+def _create_env(checks):
     ''' Create the review-env.sh file. '''
 
     env = ENVIRON_TEMPLATE
     env = env.replace('FR_SETTINGS_generator', _settings_generator())
     env = env.replace('@review_dir@', ReviewDirs.root)
     for tag in _TAGS:
-        env = _write_tag(spec, env, tag)
+        env = _write_tag(checks.spec, env, tag)
     env = env.replace('FR_SOURCE_generator',
-                       _source_generator(spec))
+                       _source_generator(checks.spec))
     env = env.replace('FR_PATCH_generator',
-                       _patch_generator(spec))
+                       _patch_generator(checks.spec))
     for s in _SECTIONS:
-        env = _write_section(spec, env, s)
-    env = env.replace('FR_FILES_generator', _files_generator(spec))
+        env = _write_section(checks.spec, env, s)
+    env = env.replace('FR_FILES_generator',
+                      _files_generator(checks.spec))
+    env = env.replace('FR_FLAGS_generator',
+                      _flags_generator(checks.flags))
     env = env.replace('FR_PACKAGE_generator',
-                       _package_generator(spec))
+                       _package_generator(checks.spec))
     env = env.replace('FR_DESCRIPTION_generator',
-                      _description_generator(spec))
+                      _description_generator(checks.spec))
     with open(ENV_PATH, 'w') as f:
         f.write(env)
     attach_path = os.path.join(ReviewDirs.root, '.attachments')
@@ -296,10 +307,30 @@ def _create_env(spec):
 class Registry(AbstractRegistry):
     ''' Registers all script plugins. '''
 
-    def __init__(self, base):
-        AbstractRegistry.__init__(self, base)
-        self.groups = base.groups
+    group = 'Shell-api'
+
+    class CreateEnvCheck(GenericCheck):
+        ''' Create the review-env.sh file in review dir. No output. '''
+
+        group = 'Generic'
+
+        def __init__(self, checks, registry):
+            GenericCheck.__init__(self, checks, __file__)
+            self.text = 'Create review-env.sh'
+            self.automatic = True
+            self.type = 'EXTRA'
+            self.registry = registry
+
+        def run(self):
+            _create_env(self.checks)
+            self.set_passed(self.NA)
+
+    def __init__(self, checks):
+        AbstractRegistry.__init__(self, checks)
+        self.groups = checks.groups
+        self.checks = checks
         self.log = Settings.get_logger()
+
 
     def register(self, plugin):
         ''' Return all available scripts as ShellCheck instances. '''
@@ -314,14 +345,11 @@ class Registry(AbstractRegistry):
             return path.split(':')
 
         dirs = _get_plugin_dirs()
-        checks = []
-        if not Settings.list_checks:
-            _create_env(self.checks.spec)
+        my_checks = [self.CreateEnvCheck(self.checks, self)]
         for d in dirs:
-            d = os.path.expanduser(d)
             for f in glob(os.path.join(d, '*.sh')):
-                checks.append(ShellCheck(self.checks, f))
-        return checks
+                my_checks.append(ShellCheck(self, f))
+        return my_checks
 
 
 class ShellCheck(GenericCheck):
@@ -330,21 +358,23 @@ class ShellCheck(GenericCheck):
     DEFAULT_TYPE   = 'MUST'
     implementation = 'script'
 
-    def __init__(self, checks, path):
+    def __init__(self, registry, path):
+        GenericCheck.__init__(self, registry.checks, path)
         for tag in _TAGS:
             try:
-                setattr(self, tag, tag + ' : undefined')
+                setattr(self, tag, tag + ': undefined')
             except AttributeError:
                 pass
-        GenericCheck.__init__(self, checks, path)
-        self.groups = checks.groups
         self.type = self.DEFAULT_TYPE
         self.group = self.DEFAULT_GROUP
-        self.needs = []
+        self.needs = ['CreateEnvCheck']
         self.deprecates = []
         self.text = ''
+        self.registry = registry
         self._name = None
         self._parse(path)
+
+    groups = property(lambda self: self.registry.checks.groups)
 
     def _parse_attributes(self, lines):
         ''' Parse all tags and populate attributes. '''
@@ -354,6 +384,15 @@ class ShellCheck(GenericCheck):
                 value = _find_value(line, attr)
                 if value:
                     setattr(self, attr, value)
+            text = _find_value(line, 'register-flag')
+            if text:
+                (name, doc) = text.split(None, 1)
+                self.checks.flags.add(
+                    self.registry.Flag(name, doc, self.defined_in))
+            text = _find_value(line, 'set-flag')
+            if text:
+                (flag, value) = text.split(None, 2)
+                self.checks.flags[flag].value = value
             text = _find_value(line, 'text')
             if text:
                 if self.text:
@@ -364,7 +403,7 @@ class ShellCheck(GenericCheck):
                 self.deprecates = victims.replace(',', ' ').split()
             needed = _find_value(line, 'needs')
             if needed:
-                self.needs = needed.replace(',', ' ').split()
+                self.needs.extend(needed.replace(',', ' ').split())
 
     def _parse(self, path):
         """
@@ -435,7 +474,8 @@ class ShellCheck(GenericCheck):
         if self.is_run:
             return
         if not self.group in self.groups:
-            self.set_passed(self.PENDING, "test run failed: illegal group")
+            self.set_passed(self.PENDING,
+                           "Test run failed: illegal group")
             self.log.warning('Illegal group %s in %s' %
                                    (self.group, self.defined_in))
             return

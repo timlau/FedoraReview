@@ -55,7 +55,7 @@ def _check_mock_grp():
 
 
 def _add_modes(modes):
-    ''' Add all mode arguments to the option parser group. '''
+    ''' Add all mode arguments to the option parser group modes. '''
     modes.add_argument('-b', '--bug', metavar='<bug>',
                 help='Operate on fedora bugzilla using its bug number.')
     modes.add_argument('-n', '--name', metavar='<name>',
@@ -68,6 +68,9 @@ def _add_modes(modes):
     modes.add_argument('-d', '--display-checks', default = False,
                 action='store_true', dest='list_checks',
                 help='List all available checks.')
+    modes.add_argument('-f', '--display-flags', default = False,
+                action='store_true', dest='list_flags',
+                help='List all available flags.')
     modes.add_argument('-V', '--version', default = False,
                 action='store_true',
                 help='Display version information and exit.')
@@ -76,11 +79,16 @@ def _add_modes(modes):
 
 
 def _add_optionals(optional):
-    ''' Add all optional arguments to the option parser group. '''
+    ''' Add all optional arguments to option parser group optionals. '''
+
     optional.add_argument('-c', '--cache', action='store_true',
                 dest='cache',
                 help = 'Do not redownload files from bugzilla,'
                        ' use the ones in the cache.')
+    optional.add_argument('-D', '--define', metavar='<flag>',
+                action='append', dest='flags', default=[],
+                help = 'Define a flag like --define EPEL5 or '
+                       ' -D EPEL5=1')
     optional.add_argument('-L', '--local-repo', metavar='<rpm directory>',
                 dest='repo',
                 help = 'directory with rpms to install together with'

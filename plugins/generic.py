@@ -27,14 +27,17 @@ import re
 
 from subprocess import Popen, PIPE, check_output
 
-from FedoraReview import CheckBase, ReviewDirs, Mock, Settings
-from FedoraReview import RegistryBase
-from FedoraReview import ReviewError
+from FedoraReview import CheckBase, Mock, ReviewDirs, Settings
+from FedoraReview import RegistryBase, ReviewError
 
 
 class Registry(RegistryBase):
     ''' Module registration, register all checks. '''
     group = 'Generic'
+
+    def register_flags(self):
+        epel5 = self.Flag('EPEL5', 'Review package for EPEL5', __file__)
+        self.checks.flags.add(epel5)
 
     def is_applicable(self):
         return True
@@ -43,8 +46,8 @@ class Registry(RegistryBase):
 class GenericCheckBase(CheckBase):
     ''' Base class for all generic tests. '''
 
-    def __init__(self, base):
-        CheckBase.__init__(self, base, __file__)
+    def __init__(self, checks):
+        CheckBase.__init__(self, checks, __file__)
 
 
 def _mock_root_setup(while_what):
@@ -308,9 +311,8 @@ class CheckBuildInMock(GenericCheckBase):
 
 
 class CheckBuildroot(GenericCheckBase):
-    '''
-    http://fedoraproject.org/wiki/Packaging/Guidelines#BuildRoot_tag
-    '''
+    ''' Is buildroot defined as appropriate? '''
+
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
@@ -322,11 +324,15 @@ class CheckBuildroot(GenericCheckBase):
     def run(self):
         br_tags = self.spec.find_tag('BuildRoot')
         if len(br_tags) == 0:
-            self.set_passed(True, 'Unless packager wants to package'
-                            ' for EPEL5 this is fine')
+            if self.flags['EPEL5']:
+                self.set_passed(self.FAIL,
+                                'Missing buildroot (required for EPEL5)')
+            else:
+                self.set_passed(self.PASS)
             return
         elif len(br_tags) > 1:
-            self.set_passed(False, 'Multiple BuildRoot definitions found')
+            self.set_passed(self.FAIL,
+                            'Multiple BuildRoot definitions found')
             return
 
         br = br_tags[0]
@@ -335,10 +341,14 @@ class CheckBuildroot(GenericCheckBase):
         '%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)',
         '%{_tmppath}/%{name}-%{version}-%{release}-root']
         if br in legal_buildroots:
-            self.set_passed(False, 'Buildroot is not needed unless'
-                            ' packager plans to package for EPEL5')
+            if self.flags['EPEL5']:
+                self.set_passed(self.PASS)
+            else:
+                self.set_passed(self.PENDING,
+                               'Buildroot: present but not needed')
         else:
-            self.set_passed(False, 'Invalid buildroot found: %s' % br)
+            self.set_passed(self.FAIL,
+                            'Invalid buildroot found: %s' % br)
 
 
 class CheckBuildRequires(GenericCheckBase):

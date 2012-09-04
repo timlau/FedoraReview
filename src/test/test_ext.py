@@ -88,6 +88,7 @@ class TestExt(FR_TestCase):
         bug.find_urls()
         bug.download_files()
         checks = Checks(bug.spec_file, bug.srpm_file).get_checks()
+        checks['CreateEnvCheck'].run()
         check = checks['test-attachments']
         check.run()
         self.assertEqual(len(check.result.attachments), 2)

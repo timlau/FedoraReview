@@ -61,6 +61,13 @@ class _Attachment(object):
             return 1
         return 0
 
+    def __nonzero__(self):
+        return bool(self.value)
+
+    def activate(self):
+        ''' Turn 'on' flag from default 'off' state. '''
+        self.value = '1'
+
 
 class FileChecks(object):
     """ Add file-checking capabilities to self. """
@@ -218,6 +225,7 @@ class GenericCheck(AbstractCheck, FileChecks):
         self.needs = ['CheckBuildCompleted']
 
     spec       = property(lambda self: self.checks.spec)
+    flags      = property(lambda self: self.checks.flags)
     srpm       = property(lambda self: self.checks.srpm)
     sources    = property(lambda self: self.checks.sources)
     log        = property(lambda self: self.checks.log)

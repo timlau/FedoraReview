@@ -24,25 +24,58 @@ import inspect
 from check_base import FileChecks
 from review_error import ReviewError
 
+class _Flag(object):
+    ''' A flag such as EPEL5, set byuser, handled by checks. '''
+
+    def __init__(self, name, doc, defined_in):
+        '''
+        Create a flag. Parameters:
+          - name: Short name of flag
+          - doc: flag's doc-string.
+        As created, flag is 'off' i. e., False. If user sets flag using
+        -D flag, flag is 'set'i. e., True. If set using -Dflag=value,
+        value is available as str(flag).
+        '''
+        self.name = name
+        self.doc = doc
+        self.defined_in = defined_in
+        self.value = False
+
+    def __nonzero__(self):
+        return bool(self.value)
+
+    def __str__(self):
+        return self.value if self.value else ''
+
+    def activate(self):
+        ''' Turn 'on' flag from default 'off' state. '''
+        self.value = '1'
+
+
 
 class AbstractRegistry(object):
     """
     The overall interface for a plugin module is that it must
     contain a class Registry. This has a single function register()
-    which return a list of checks defined by the module.
+    which return a list of checks defined by the module. It also
+    defines the flags used by the module.
 
     A plugin module serves a specific group such as 'java', 'PHP',
     or 'generic'. The group property reflects that group, and the
-    is_applicable method returns is a given test is valid for current
+    is_applicable method returns if a given test is valid for current
     srpm.
     """
     # pylint: disable=R0201,W0613
 
     group = 'Undefined'
 
+    class Flag(_Flag):
+        ''' A value defined in a check, set by user e. g., EPEL5. '''
+        pass
+
     def register(self, plugin):
         """
-        Return list of checks in current module
+        Define flags and return list of checks in current module.
         Returns:   CheckDict instance.
 
         """
@@ -76,7 +109,12 @@ class RegistryBase(AbstractRegistry, FileChecks):
     def is_applicable(self):
         return self.registry.is_applicable()
 
+    def register_flags(self):
+        ''' Register flags used by this module. '''
+        pass
+
     def register(self, plugin):
+        self.register_flags()
         tests = []
         id_and_classes = inspect.getmembers(plugin, inspect.isclass)
         for c in id_and_classes:

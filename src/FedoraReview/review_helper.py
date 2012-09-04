@@ -92,28 +92,46 @@ class ReviewHelper(object):
             print "Review in: " + self.outfile
 
     @staticmethod
+    def _list_flags():
+        ''' List all flags in simple, user-friendly format. '''
+        checks_lister = ChecksLister()
+        for flag in checks_lister.flags.itervalues():
+            print flag.name + ': ' + flag.doc
+
+
+    @staticmethod
     def _list_checks():
-        """ List all the checks available.  """
+        """ List all the checks and flags available.  """
 
-        checks_list = list(ChecksLister().get_checks().itervalues())
+        def list_data_by_file(files, checks_list):
+            ''' print filename + flags and checks defined in it. '''
+            for f in sorted(files):
+                print 'File:  ' + f
+                flags_by_src = filter(lambda c: c.defined_in == f,
+                                      checks_lister.flags.itervalues())
+                for flag in flags_by_src:
+                    print 'Flag: ' + flag.name
+                files_per_src = filter(lambda c: c.defined_in == f,
+                                       checks_list)
+                groups = list(set([c.group for c in files_per_src]))
+                for group in sorted(groups):
+
+                    def check_match(c):
+                        ''' check in correct group and file? '''
+                        return c.group == group and c.defined_in == f
+
+                    checks = filter(check_match, checks_list)
+                    if checks == []:
+                        continue
+                    print 'Group: ' + group
+                    for c in sorted(checks):
+                        print '    ' + c.name
+                print
+
+        checks_lister = ChecksLister()
+        checks_list = list(checks_lister.get_checks().itervalues())
         files = list(set([c.defined_in for c in checks_list]))
-        for f in sorted(files):
-            print 'File:  ' + f
-            files_per_src = filter(lambda c: c.defined_in == f,
-                                   checks_list)
-            groups = list(set([c.group for c in files_per_src]))
-            for group in sorted(groups):
-
-                def check_match(check):
-                    ''' check in correct group and file? '''
-                    return check.group == group and check.defined_in == f
-
-                checks = filter(check_match, checks_list)
-                if checks == []:
-                    continue
-                print 'Group: ' + group
-                for c in sorted(checks):
-                    print '    ' + c.name
+        list_data_by_file(files, checks_list)
         deps_list = filter(lambda c: c.needs != [] and
                                c.needs != ['CheckBuildCompleted'],
                            checks_list)
@@ -135,6 +153,9 @@ class ReviewHelper(object):
         make_report = True
         if Settings.list_checks:
             self._list_checks()
+            make_report = False
+        elif Settings.list_flags:
+            self._list_flags()
             make_report = False
         elif Settings.version:
             _print_version()

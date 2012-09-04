@@ -68,12 +68,23 @@ be found.
 List all available checks, usable as arguments to --exclude and
 --single
 .TP 4
+.B  -f, --display-flags
+List all available flags, usable as arguments to --define or -D.
+.TP 4
 .B  -V, --version
 Show version info
 .SH GENERAL OPTIONS
 .TP 4
 .B -c, --cache
 Do not redownload the files from bugzilla, use the local one.
+.TP 4
+.B -D, --define <flag>
+Define a flag e. g., EPEL5. A flag can either just be activated
+using
+.I -D flag
+or set to a value using
+.I -D flag=value.
+--display-flags shows available flags.
 .TP 4
 .B -k, --checksum <md5|sha1|sha224|sha256|sha384|sha512>
 Algorithm used for checksum.

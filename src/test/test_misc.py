@@ -55,6 +55,53 @@ class TestMisc(FR_TestCase):
         self.startdir = os.getcwd()
         Mock.reset()
 
+    def test_flags_1(self):
+        ''' test a flag defined in python, set by user' '''
+        self.init_test('test_misc',
+                       argv=['-n','python-test', '--cache',
+                             '--no-build', '-D', 'EPEL5'])
+        bug = NameBug('python-test')
+        bug.find_urls()
+        bug.download_files()
+        checks = Checks(bug.spec_file, bug.srpm_file)
+        self.assertTrue(checks.flags['EPEL5'])
+
+    def test_flags_2(self):
+        ''' Flag defined in python, not set by user' '''
+        self.init_test('test_misc',
+                       argv=['-n','python-test', '--cache',
+                             '--no-build'])
+        bug = NameBug('python-test')
+        bug.find_urls()
+        bug.download_files()
+        checks = Checks(bug.spec_file, bug.srpm_file)
+        self.assertFalse(checks.flags['EPEL5'])
+
+    def test_flags_3(self):
+        ''' Flag not defined , set by user' '''
+
+        self.init_test('test_misc',
+                       argv=['-n','python-test', '--cache',
+                             '--no-build', '-D', 'EPEL8'])
+        bug = NameBug('python-test')
+        bug.find_urls()
+        bug.download_files()
+        with  self.assertRaises(ReviewError):
+            checks = Checks(bug.spec_file, bug.srpm_file)
+
+    def test_flags_4(self):
+        ''' Flag defined in shell script , set by user to value '''
+
+        os.environ['XDG_DATA_HOME'] = os.getcwd()
+        self.init_test('test_misc',
+                       argv=['-n','python-test', '--cache',
+                             '--no-build', '-D', 'EPEL6=foo'])
+        bug = NameBug('python-test')
+        bug.find_urls()
+        bug.download_files()
+        checks = Checks(bug.spec_file, bug.srpm_file)
+        self.assertEqual(str(checks.flags['EPEL6']), 'foo')
+
     def test_source_file(self):
         """ Test the SourceFile class """
         self.init_test('test_misc',
@@ -455,6 +502,7 @@ class TestMisc(FR_TestCase):
         bug.find_urls()
         bug.download_files()
         checks = Checks(bug.spec_file, bug.srpm_file)
+        checks.checkdict['CreateEnvCheck'].run()
         check = checks.checkdict['PerlCheckBuildRequires']
         check.run()
         self.assertTrue(check.is_pending)
