@@ -10,7 +10,7 @@ if [ ! -d BUILD/${FR_NAME}-*  ]; then
     exit $FR_PENDING
 fi
 
-cd BUILD/${FR_NAME}-*
+cd "BUILD/${FR_NAME}-*"
 jars=$( find . -name \*.jar -o -name \*.class)
 
 test -z "$jars" && exit $FR_PASS
