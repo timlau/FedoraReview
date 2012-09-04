@@ -111,6 +111,7 @@ class TestExt(FR_TestCase):
         bug.find_urls()
         bug.download_files()
         checks = Checks(bug.spec_file, bug.srpm_file)
+        check = checks.checkdict['CreateEnvCheck'].run()
         check = checks.checkdict['check-srv-opt-local']
         check.run()
         self.assertTrue( '/srv' in check.result.output_extra)

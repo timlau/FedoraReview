@@ -106,7 +106,7 @@ class TestOptions(FR_TestCase):
 
     def test_display(self):
         """ test -d/--display option. """
-        cmd = '../fedora-review --display'
+        cmd = '../fedora-review --display-checks'
         output = subprocess.check_output(cmd, shell=True)
         output = output.decode('utf-8')
         self.assertTrue(len(output) > 20)
