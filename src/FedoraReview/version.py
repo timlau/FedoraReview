@@ -11,7 +11,7 @@ import os
 import socket
 
 from subprocess import check_output
-from review_error import FedoraReviewError
+from review_error import ReviewError
 
 __version__ = 'Unknown'
 build_full = 'Unknown (no version file nor git info)'
@@ -19,7 +19,7 @@ build_date = "Unknown"
 build_id = "Unknown"
 
 
-class VersionError(FedoraReviewError):
+class VersionError(ReviewError):
     ''' If we cannot deduce the version. '''
     pass
 

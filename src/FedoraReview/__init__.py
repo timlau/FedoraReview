@@ -27,7 +27,7 @@ from check_base   import LangCheckBase, Attachment, CheckDict
 from checks_class import Checks, ChecksLister
 from mock         import Mock
 from name_bug     import NameBug
-from review_error import FedoraReviewError, CleanExitError
+from review_error import ReviewError, CleanExitError
 from review_dirs  import ReviewDirs, ReviewDirExistsError, \
                          ResultDirNotEmptyError
 from registry     import AbstractRegistry, RegistryBase

@@ -30,7 +30,7 @@ from subprocess import call, Popen, PIPE, STDOUT
 from helpers import Helpers
 from review_dirs import ReviewDirs
 from settings import Settings
-from review_error import FedoraReviewError
+from review_error import ReviewError
 
 
 _RPMLINT_SCRIPT = """
@@ -202,7 +202,7 @@ class _Mock(Helpers):
     def build(self, filename):
         """
         Run a mock build against the srpm filename.
-        Raises FedoraReviewError on build errors, return
+        Raises ReviewError on build errors, return
         nothing.
         """
         cmd = ' '.join(self._mock_cmd())
@@ -228,7 +228,7 @@ class _Mock(Helpers):
             return None
         else:
             self.log.info('Build failed rc = ' + rc)
-            raise FedoraReviewError('Mock build failed.')
+            raise ReviewError('Mock build failed.')
 
     def install(self, packages):
         """

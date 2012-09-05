@@ -26,7 +26,7 @@ import os.path
 import shutil
 import tempfile
 
-from FedoraReview.review_error import FedoraReviewError
+from FedoraReview.review_error import ReviewError
 from FedoraReview.settings     import Settings
 
 SRPM              = 'srpm'
@@ -36,19 +36,19 @@ UPSTREAM_UNPACKED = 'upstream-unpacked'
 RESULTS           = 'results'
 
 
-class ResultDirNotEmptyError(FedoraReviewError):
+class ResultDirNotEmptyError(ReviewError):
     ''' Thrown when trying to reuse old review dir without --cache. '''
     def __init__(self):
-        FedoraReviewError.__init__(self, 'resultdir not empty')
+        ReviewError.__init__(self, 'resultdir not empty')
 
 
-class ReviewDirExistsError(FedoraReviewError):
+class ReviewDirExistsError(ReviewError):
     ''' The review dir is already in place. '''
     def __init__(self, path):
-        FedoraReviewError.__init__(self, os.path.abspath(path))
+        ReviewError.__init__(self, os.path.abspath(path))
 
 
-class ReviewDirChangeError(FedoraReviewError):
+class ReviewDirChangeError(ReviewError):
     ''' Attempt to change directory already set. '''
     pass
 

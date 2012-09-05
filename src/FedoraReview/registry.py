@@ -22,7 +22,7 @@ Test module registration support
 import inspect
 
 from check_base import FileChecks
-from review_error import FedoraReviewError
+from review_error import ReviewError
 
 
 class AbstractRegistry(object):
@@ -45,7 +45,7 @@ class AbstractRegistry(object):
         Returns:   CheckDict instance.
 
         """
-        raise FedoraReviewError('Abstract register() called')
+        raise ReviewError('Abstract register() called')
 
     def __init__(self, checks):
         """
@@ -59,7 +59,7 @@ class AbstractRegistry(object):
         """
         Return True if these tests are applicable for current srpm.
         """
-        raise FedoraReviewError(
+        raise ReviewError(
              'abstract Registry.is_applicable() called')
 
 

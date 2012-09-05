@@ -24,7 +24,7 @@ import sys
 import os.path
 
 from FedoraReview import BugException, BugzillaBug, Checks, \
-          ChecksLister, CleanExitError, FedoraReviewError, \
+          ChecksLister, CleanExitError, ReviewError, \
           NameBug, ReviewDirs, ResultDirNotEmptyError, \
           ReviewDirExistsError, Settings, SettingsError, UrlBug
 
@@ -36,16 +36,16 @@ def _print_version():
     print('fedora-review version ' + __version__ + ' ' + build_full)
 
 
-class ConfigError(FedoraReviewError):
+class ConfigError(ReviewError):
     ''' Illegal settings combination. '''
     def __init__(self, what):
-        FedoraReviewError.__init__(self, 'Configuration error: ' + what)
+        ReviewError.__init__(self, 'Configuration error: ' + what)
 
 
-class HandledError(FedoraReviewError):
+class HandledError(ReviewError):
     ''' An error completely handled, no action required. '''
     def __init__(self, msg='Errors encountered, goodbye'):
-        FedoraReviewError.__init__(self, msg)
+        ReviewError.__init__(self, msg)
 
 
 class ReviewHelper(object):

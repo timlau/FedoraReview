@@ -25,13 +25,13 @@ from glob import glob
 from urlparse import urlparse
 
 from helpers import Helpers
-from review_error import FedoraReviewError
+from review_error import ReviewError
 from settings import Settings
 from srpm_file import SRPMFile
 from review_dirs import ReviewDirs
 
 
-class BugException(FedoraReviewError):
+class BugException(ReviewError):
     ''' Generic error thrown in bugs. '''
     pass
 
@@ -189,7 +189,7 @@ class AbstractBug(Helpers):
             else:
                 self.find_spec_url()
             self.log.info("  --> Spec url: " + self.spec_url)
-        except FedoraReviewError as fre:
+        except ReviewError as fre:
             raise fre
         except:
             self.log.debug('url_bug link parse error', exc_info=True)

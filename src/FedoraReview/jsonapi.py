@@ -28,13 +28,13 @@ from json import JSONEncoder, JSONDecoder
 from helpers import Helpers
 from check_base import TestResult, GenericCheck
 from mock import Mock
-from review_error import FedoraReviewError
+from review_error import ReviewError
 
 class ERR_CODE(object):
     ERR_NO_COMMAND = 1
 
 
-class PluginParseError(FedoraReviewError):
+class PluginParseError(ReviewError):
     pass
 
 

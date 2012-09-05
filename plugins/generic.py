@@ -29,7 +29,7 @@ from subprocess import Popen, PIPE, check_output
 
 from FedoraReview import CheckBase, Attachment, ReviewDirs, Mock, Settings
 from FedoraReview import RegistryBase
-from FedoraReview import FedoraReviewError, ResultDirNotEmptyError
+from FedoraReview import ReviewError, ResultDirNotEmptyError
 
 
 class Registry(RegistryBase):
@@ -50,7 +50,7 @@ class GenericCheckBase(CheckBase):
 def _mock_root_setup(while_what):
     ''' Wrap mock --init. '''
 
-    class DependencyInstallError(FedoraReviewError):
+    class DependencyInstallError(ReviewError):
         ''' Raised when a package in local repo can't be installed. '''
         pass
 

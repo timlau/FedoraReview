@@ -28,13 +28,13 @@ from subprocess import call, Popen, PIPE
 import hashlib
 
 from settings import Settings
-from review_error import FedoraReviewError
+from review_error import ReviewError
 
 
-class DownloadError(FedoraReviewError):
+class DownloadError(ReviewError):
     ''' Error in urlretrieve(). '''
     def __init__(self, code, url):
-        FedoraReviewError.__init__(
+        ReviewError.__init__(
            self, "Error %s downloading %s" % (code, url))
 
 

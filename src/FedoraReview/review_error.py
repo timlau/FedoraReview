@@ -21,7 +21,7 @@ Tools for helping Fedora package reviewers
 '''
 
 
-class FedoraReviewError(Exception):
+class ReviewError(Exception):
     """ General Error class for fedora-review. """
 
     def __init__(self, value):
@@ -33,7 +33,7 @@ class FedoraReviewError(Exception):
         return repr(self.value)
 
 
-class CleanExitError(FedoraReviewError):
+class CleanExitError(ReviewError):
     ''' Request a clean exit, no printouts. '''
     pass
 

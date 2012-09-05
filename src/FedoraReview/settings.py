@@ -29,7 +29,7 @@ import os.path
 import re
 import sys
 
-from review_error import FedoraReviewError, CleanExitError
+from review_error import ReviewError, CleanExitError
 from xdg_dirs import XdgDirs
 
 SYS_PLUGIN_DIR  = "/usr/share/fedora-review/plugins:%s"
@@ -139,14 +139,14 @@ def _make_log_dir():
         if exc.errno == errno.EEXIST:
             pass
         else:
-            raise FedoraReviewError(
+            raise ReviewError(
                       'Cannot create log directory: ' + SESSION_LOG)
 
 
-class ConfigError(FedoraReviewError):
+class ConfigError(ReviewError):
     ''' Illegal options from user. '''
     def __init__(self, what):
-        FedoraReviewError.__init__(self, 'Configuration error: ' + what)
+        ReviewError.__init__(self, 'Configuration error: ' + what)
 
 
 class _Settings(object):

@@ -27,7 +27,7 @@ from urlparse import urlparse
 
 from helpers import Helpers, DownloadError
 from review_dirs import ReviewDirs
-from review_error import FedoraReviewError
+from review_error import ReviewError
 from settings import Settings
 
 
@@ -96,7 +96,7 @@ class Source(Helpers):
         if self.downloaded:
             return self._checksum(self.filename)
         else:
-            raise FedoraReviewError(self.tag +
+            raise ReviewError(self.tag +
                                     ": upstream source not found")
 
     def is_archive(self):
