@@ -44,11 +44,13 @@ class TestExt(FR_TestCase):
         FR_TestCase.tearDown(self)
 
     def test_display(self):
+        ''' Test  -d cli option. '''
         os.chdir('test_ext')
         check_call('../../fedora-review -d | grep test1 >/dev/null',
                    shell=True)
 
     def test_single(self):
+        ''' Test  -s test cli option. '''
         os.chdir('test_ext')
         check_call('../../fedora-review -n python-test'
                    ' -s unittest-test1'
@@ -56,6 +58,7 @@ class TestExt(FR_TestCase):
                    shell=True)
 
     def test_exclude(self):
+        ''' Test  -x test cli option. '''
         self.init_test('test_ext',argv=['-b', '1'])
         check_call('../../fedora-review -n python-test'
                    '  -x unittest-test1'
@@ -63,6 +66,7 @@ class TestExt(FR_TestCase):
                    shell=True)
 
     def test_sh_api(self):
+        ''' Basic shell API test. '''
         self.init_test('test_ext',
                        argv=['-pn','python-test', '--cache',
                               '--no-build'])
@@ -74,7 +78,28 @@ class TestExt(FR_TestCase):
         self.assertTrue(checks.checkdict['unittest-test2'].is_pending)
         self.assertNotIn('CheckLargeDocs', checks.checkdict)
 
+    def test_sh_attach(self):
+        ''' Test shell attachments. '''
+
+        self.init_test('test_ext',
+                       argv=['-rn','python-test', '--no-build'])
+        ReviewDirs.reset(os.getcwd())
+        bug = NameBug('python-test')
+        bug.find_urls()
+        bug.download_files()
+        checks = Checks(bug.spec_file, bug.srpm_file).get_checks()
+        check = checks['test-attachments']
+        check.run()
+        self.assertEqual(len(check.result.attachments), 2)
+        self.assertIn('attachment 1', check.result.attachments[1].text)
+        self.assertEqual('Heading 1',  check.result.attachments[1].header)
+        self.assertEqual(8,  check.result.attachments[1].order_hint)
+        self.assertIn('attachment 2', check.result.attachments[0].text)
+        self.assertEqual('Heading 2',  check.result.attachments[0].header)
+        self.assertEqual(9,  check.result.attachments[0].order_hint)
+
     def test_srv_opt(self):
+        ''' Test check of no files in /srv, /opt and /usr/local. '''
         self.init_test('srv-opt',
                        argv=['-rn','python-test', '--cache',
                               '--no-build'])
@@ -88,4 +113,3 @@ class TestExt(FR_TestCase):
         self.assertTrue( '/srv' in check.result.output_extra)
         self.assertTrue( '/opt' in check.result.output_extra)
         self.assertTrue( '/usr/local' in check.result.output_extra)
-

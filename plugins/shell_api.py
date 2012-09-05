@@ -23,17 +23,23 @@ and the regular python plugins.
 import os
 import os.path
 import re
+import shutil
 
 from glob import glob
 from subprocess import Popen, PIPE
 
-from FedoraReview import AbstractRegistry, GenericCheck
-from FedoraReview import ReviewDirs, Settings, XdgDirs
+from FedoraReview import AbstractRegistry, Attachment, CheckBase
+from FedoraReview import GenericCheck, ReviewDirs, Settings, XdgDirs
 
 
 ENVIRON_TEMPLATE = """
+unset $(env | sed 's/=.*//')
+PATH=/bin:/usr/bin:/sbin/:/usr/sbin
+
 FR_SETTINGS_generator
 export FR_REVIEWDIR='@review_dir@'
+export HOME=$FR_REVIEWDIR
+cd $HOME
 
 export FR_NAME='@name@'
 export FR_VERSION='@version@'
@@ -116,8 +122,26 @@ function unpack_sources()
     done
 }
 
-
-export -f unpack_rpms get_used_rpms unpack_sources
+function attach()
+# Usage: attach <sorting hint> <header>
+# Reads attachment from stdin
+{
+    startdir=$(pwd)
+    cd $FR_REVIEWDIR
+    for (( i = 0; i < 10; i++ )); do
+        test -e $FR_REVIEWDIR/.attachments/*$i || break
+    done
+    if [ $i -eq 10 ]; then
+        echo "More than 10 attachments! Giving up" >&2
+        exit 1
+    fi
+    sort_hint=$1
+    shift
+    title=${*//\/ }
+    file="$sort_hint;${title/;/:};$i"
+    cat > .attachments/"$file"
+    cd $startdir
+}
 
 """
 
@@ -253,6 +277,11 @@ def _create_env(spec):
                       _description_generator(spec))
     with open(ENV_PATH, 'w') as f:
         f.write(env)
+    attach_path = os.path.join(ReviewDirs.root, '.attachments')
+    if os.path.exists(attach_path):
+       shutil.rmtree(attach_path)
+    os.makedirs(attach_path)
+
 
 
 class Registry(AbstractRegistry):
@@ -373,6 +402,25 @@ class ShellCheck(GenericCheck):
         ''' Check's name. '''
         return self._name
 
+    def _get_attachments(self):
+        ''' Pick up shell-script attachments from .attachments. '''
+        attachments = []
+        for path in glob(os.path.join(ReviewDirs.root,
+                                      '.attachments', '*;*;*')):
+            with open(path) as f:
+                body = f.read(8192)
+            sort_hint, header, nr = os.path.basename(path).split(';')
+            try:
+                sort_hint = int(sort_hint)
+            except ValueError:
+                self.log.warning('Cannot decode attachment sorting hint: '
+                                  + sort_hint + ', defaulting to 7' )
+                sort_hint = 7
+            a = Attachment(header, body, sort_hint)
+            attachments.append(a)
+            os.unlink(path)
+        return attachments
+
     def run(self):
         ''' Run the check. '''
         if hasattr(self, 'result'):
@@ -387,15 +435,16 @@ class ShellCheck(GenericCheck):
             return
         cmd = 'source ./review-env.sh; source ' + self.defined_in
         retval, stdout, stderr = self._do_run(cmd)
+        attachments = self._get_attachments()
         if retval == -1:
             self.set_passed(self.PENDING,
                             "Cannot execute shell command" + cmd)
         elif retval == _PASS and not stderr:
-            self.set_passed(self.PASS, stdout)
+            self.set_passed(self.PASS, stdout, attachments)
         elif retval == _FAIL and not stderr:
-            self.set_passed(self.FAIL, stdout)
+            self.set_passed(self.FAIL, stdout, attachments)
         elif retval == _PENDING and not stderr:
-            self.set_passed(self.PENDING, stdout)
+            self.set_passed(self.PENDING, stdout, attachments)
         elif retval == _NOT_APPLICABLE and not stderr:
             self.set_passed(self.NA, stdout)
         else:
