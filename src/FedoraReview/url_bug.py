@@ -25,11 +25,6 @@ from BeautifulSoup import BeautifulSoup
 from abstract_bug import AbstractBug
 
 
-class UrlBugException(Exception):
-    ''' When url:s cannot be parsed in user link. '''
-    pass
-
-
 class UrlBug(AbstractBug):
     """ This class handles interaction html web pages, by url.
     """
@@ -63,13 +58,13 @@ class UrlBug(AbstractBug):
     def find_srpm_url(self):
         urls = self._find_urls_by_ending('.src.rpm')
         if len(urls) == 0:
-            raise UrlBugException('Cannot find source rpm URL')
+            raise self.BugError('Cannot find source rpm URL')
         self.srpm_url = urls[0]
 
     def find_spec_url(self):
         urls = self._find_urls_by_ending('.spec')
         if len(urls) == 0:
-            raise UrlBugException('Cannot find spec file URL')
+            raise self.BugError('Cannot find spec file URL')
         self.spec_url = urls[0]
 
     def get_location(self):

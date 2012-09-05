@@ -22,7 +22,7 @@ import re
 from bugzilla import Bugzilla
 
 from settings import Settings
-from abstract_bug import AbstractBug, BugException
+from abstract_bug import AbstractBug
 
 
 class BugzillaBug(AbstractBug):
@@ -65,7 +65,7 @@ class BugzillaBug(AbstractBug):
         urls = self._find_urls()
         urls = filter(lambda u: '.spec' in u, urls)
         if len(urls) == 0:
-            raise BugException(
+            raise self.BugException(
                  'No spec file URL found in bug #%s' % self.bug_num)
         url = urls[-1]
         self.spec_url = url
@@ -74,7 +74,7 @@ class BugzillaBug(AbstractBug):
         urls = self._find_urls()
         urls = filter(lambda u: '.src.rpm' in u, urls)
         if len(urls) == 0:
-            raise BugException(
+            raise self.BugException(
                  'No srpm file URL found in bug #%s' % self.bug_num)
         url = urls[-1]
         self.srpm_url = url

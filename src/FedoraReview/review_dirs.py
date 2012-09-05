@@ -36,25 +36,30 @@ UPSTREAM_UNPACKED = 'upstream-unpacked'
 RESULTS           = 'results'
 
 
-class ResultDirNotEmptyError(ReviewError):
-    ''' Thrown when trying to reuse old review dir without --cache. '''
-    def __init__(self):
-        ReviewError.__init__(self, 'resultdir not empty')
-
-
-class ReviewDirExistsError(ReviewError):
-    ''' The review dir is already in place. '''
-    def __init__(self, path):
-        ReviewError.__init__(self, os.path.abspath(path))
-
-
-class ReviewDirChangeError(ReviewError):
-    ''' Attempt to change directory already set. '''
-    pass
-
-
 class _ReviewDirs(object):
     ''' Wraps the review directory and it's paths. '''
+
+    class ResultDirNotEmptyError(ReviewError):
+        ''' Thrown when trying to reuse old review dir without --cache. '''
+        def __init__(self):
+            ReviewError.__init__(self,
+                 'The resultdir is not empty, I cannot handle this')
+
+
+    class ReviewDirExistsError(ReviewError):
+        ''' The review dir is already in place. '''
+        def __init__(self, path):
+            msg = 'The directory %s is in the way, please remove'% \
+                os.path.abspath(path)
+            ReviewError.__init__(self, msg, 2 )
+            self.show_logs = False
+
+
+    class ReviewDirChangeError(ReviewError):
+        ''' Attempt to change directory already set. '''
+        pass
+
+
 
     WD_DIRS = [UPSTREAM, UPSTREAM_UNPACKED, SRPM, SRPM_UNPACKED, RESULTS]
 
@@ -101,12 +106,12 @@ class _ReviewDirs(object):
         reuse = reuse_old or Settings.cache
         if not reuse and os.path.exists(wd):
             d = ''.join(wd.split(os.getcwd(), 1))
-            raise ReviewDirExistsError(d)
+            raise self.ReviewDirExistsError(d)
         wd = os.path.abspath(wd)
         if self.wdir:
             if self.wdir != wd and not reuse_old:
-                raise ReviewDirChangeError('Old dir ' + self.wdir +
-                                           ' new dir: ' + wd)
+                raise self.ReviewDirChangeError('Old dir ' + self.wdir +
+                                                ' new dir: ' + wd)
         self._create_and_copy_wd(wd, reuse_old)
         os.chdir(wd)
         logging.info("Using review directory: " + wd)

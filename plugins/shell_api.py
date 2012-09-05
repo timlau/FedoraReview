@@ -28,7 +28,7 @@ import shutil
 from glob import glob
 from subprocess import Popen, PIPE
 
-from FedoraReview import AbstractRegistry, Attachment, CheckBase
+from FedoraReview import AbstractRegistry, Attachment
 from FedoraReview import GenericCheck, ReviewDirs, Settings, XdgDirs
 
 
@@ -279,7 +279,7 @@ def _create_env(spec):
         f.write(env)
     attach_path = os.path.join(ReviewDirs.root, '.attachments')
     if os.path.exists(attach_path):
-       shutil.rmtree(attach_path)
+        shutil.rmtree(attach_path)
     os.makedirs(attach_path)
 
 

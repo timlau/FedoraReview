@@ -23,10 +23,8 @@ Tools for helping Fedora package reviewers
 import sys
 import os.path
 
-from FedoraReview import BugException, BugzillaBug, Checks, \
-          ChecksLister, CleanExitError, ReviewError, \
-          NameBug, ReviewDirs, ResultDirNotEmptyError, \
-          ReviewDirExistsError, Settings, SettingsError, UrlBug
+from FedoraReview import  BugzillaBug, Checks, ChecksLister, ReviewDirs, \
+                          ReviewError, NameBug, Settings, UrlBug
 
 from FedoraReview import __version__, build_full
 
@@ -36,20 +34,13 @@ def _print_version():
     print('fedora-review version ' + __version__ + ' ' + build_full)
 
 
-class ConfigError(ReviewError):
-    ''' Illegal settings combination. '''
-    def __init__(self, what):
-        ReviewError.__init__(self, 'Configuration error: ' + what)
-
-
-class HandledError(ReviewError):
-    ''' An error completely handled, no action required. '''
-    def __init__(self, msg='Errors encountered, goodbye'):
-        ReviewError.__init__(self, msg)
-
-
 class ReviewHelper(object):
     ''' Make most of the actual work doing the review. '''
+
+    class HelperError(ReviewError):
+        ''' Error while processing bug. '''
+        def __init__(self, msg):
+            ReviewError.__init__(self, msg)
 
     def __init__(self):
         self.bug = None
@@ -71,16 +62,14 @@ class ReviewHelper(object):
 
         Settings.dump()
         if not self.bug.find_urls():
-            self.log.error('Cannot find .spec or .srpm URL(s)')
-            raise HandledError()
+            raise self.HelperError('Cannot find .spec or .srpm URL(s)')
 
         if not ReviewDirs.is_inited:
             wd = self.bug.get_dirname()
             ReviewDirs.workdir_setup(wd)
 
         if not self.bug.download_files():
-            self.log.error('Cannot download .spec and .srpm')
-            raise HandledError()
+            raise self.HelperError('Cannot download .spec and .srpm')
 
         Settings.name = self.bug.get_name()
         self.__run_checks(self.bug.spec_file, self.bug.srpm_file)
@@ -168,22 +157,14 @@ class ReviewHelper(object):
         try:
             rcode = 0
             self._do_run()
-        except SettingsError as err:
-            self.log.error("Incompatible settings: " + str(err))
-            rcode = 2
-        except (BugException, HandledError) as err:
-            print str(err)
-            rcode = 2
-        except ReviewDirExistsError as err:
-            print("The directory %s is in the way, please remove." %
-                  err.value)
-            rcode = 4
-        except ResultDirNotEmptyError:
-            print("The resultdir is not empty, I cannot handle this.")
-            rcode = 4
-        except CleanExitError as err:
-            self.log.debug('Processing CleanExit')
-            rcode = 2
+        except ReviewError as err:
+            rcode = err.exitcode
+            self.log.debug("ReviewError: " + str(err),  exc_info=True)
+            if not err.silent:
+                msg = 'Error: ' + str(err)
+                if err.show_logs:
+                    msg += ' (logs in ~/.cache/fedora-review.log)'
+                self.log.error(msg)
         except:
             self.log.debug("Exception down the road...", exc_info=True)
             self.log.error('Exception down the road...'

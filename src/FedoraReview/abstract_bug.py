@@ -31,16 +31,6 @@ from srpm_file import SRPMFile
 from review_dirs import ReviewDirs
 
 
-class BugException(ReviewError):
-    ''' Generic error thrown in bugs. '''
-    pass
-
-
-class SettingsError(BugException):
-    ''' Thrown for invalid settings combinations. '''
-    pass
-
-
 class AbstractBug(Helpers):
     """ This class has an interesting name.
     Anyway, defines an object which can determine URLs for spec
@@ -55,6 +45,14 @@ class AbstractBug(Helpers):
     """
 
     __metaclass__ = ABCMeta
+
+    class BugError(ReviewError):
+        ''' Generic error thrown in bugs, not showing logs. '''
+
+        def __init__(self, what):
+            ReviewError.__init__(self, what, 2)
+            self.show_logs = False
+
 
     def __init__(self):
         Helpers.__init__(self)
@@ -226,6 +224,13 @@ class AbstractBug(Helpers):
         Verify that Settings don't have bad options, raise
         SettingsError if so.
         '''
+
+        class SettingsError(ReviewError):
+            ''' Thrown for invalid settings combinations. '''
+            def __init__(self, what):
+                ReviewError.__init__(self, "Incompatible settings: " + what)
+
+
         for opt in bad_opts:
             if hasattr(Settings, opt) and getattr(Settings, opt):
                 raise SettingsError(

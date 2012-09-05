@@ -34,7 +34,7 @@ from FedoraReview.helpers import Helpers
 from FedoraReview import AbstractCheck, CheckDict, Checks, \
      Sources, Source, ReviewDirs, SRPMFile, SpecFile, Mock, Settings
 from FedoraReview import BugzillaBug, NameBug
-from FedoraReview import ResultDirNotEmptyError
+from FedoraReview import ReviewError
 
 from fr_testcase import FR_TestCase, FAST_TEST, NO_NET
 
@@ -334,7 +334,7 @@ class TestMisc(FR_TestCase):
         self.assertTrue(check.is_passed)
 
         subprocess.check_call('touch results/orvar.rpm', shell=True)
-        self.assertRaises(ResultDirNotEmptyError, check.run)
+        self.assertRaises(ReviewError, check.run)
         Settings.nobuild = True
         check.run()
         self.assertTrue(check.is_passed)

@@ -20,16 +20,14 @@
 Tools for helping Fedora package reviewers
 '''
 
-from abstract_bug import SettingsError, BugException
 from bugzilla_bug import BugzillaBug
 from check_base   import AbstractCheck, GenericCheck, CheckBase
 from check_base   import LangCheckBase, Attachment, CheckDict
 from checks_class import Checks, ChecksLister
 from mock         import Mock
 from name_bug     import NameBug
-from review_error import ReviewError, CleanExitError
-from review_dirs  import ReviewDirs, ReviewDirExistsError, \
-                         ResultDirNotEmptyError
+from review_error import ReviewError
+from review_dirs  import ReviewDirs
 from registry     import AbstractRegistry, RegistryBase
 from settings     import Settings
 from source       import Source

@@ -26,11 +26,6 @@ from urlparse import urlparse
 from abstract_bug import AbstractBug
 
 
-class NameBugException(Exception):
-    ''' When we cannot find files matching --name option. '''
-    pass
-
-
 class NameBug(AbstractBug):
     """ Handles -n, spec and srpm already downloaded.
     """
@@ -52,7 +47,7 @@ class NameBug(AbstractBug):
         pattern = os.path.join(os.getcwd(), self.name + '*.src.rpm')
         srpms = glob(pattern)
         if len(srpms) != 1:
-            raise NameBugException("Cannot find srpm: " + pattern)
+            raise self.BugError("Cannot find srpm: " + pattern)
         self.srpm_url = 'file://' + srpms[0]
 
     def find_spec_url(self):
@@ -60,7 +55,7 @@ class NameBug(AbstractBug):
         pattern = os.path.join(os.getcwd(), self.name + '*.spec')
         specs = glob(pattern)
         if len(specs) != 1:
-            raise NameBugException("Cannot find spec: " + pattern)
+            raise self.BugError("Cannot find spec: " + pattern)
         self.spec_url = 'file://' + specs[0]
 
     def check_options(self):

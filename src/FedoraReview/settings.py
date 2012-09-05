@@ -29,37 +29,28 @@ import os.path
 import re
 import sys
 
-from review_error import ReviewError, CleanExitError
+from review_error import ReviewError
 from xdg_dirs import XdgDirs
 
 SYS_PLUGIN_DIR  = "/usr/share/fedora-review/plugins:%s"
 MY_PLUGIN_DIR   = "~/.config/fedora-review/plugins"
-BZ_OPTS_MESSAGE = """
-The options --assign, --login and --user has been removed from
-fedora-review in favor of using the bugzilla tool instead. See
-fedora-review(1), section ASSIGN AND LOGIN and bugzilla(1).
-"""
 
 
 PARSER_SECTION = 'review'
 
-LOG_ROOT = 'FedoraReview'
-
 SESSION_LOG = os.path.join(XdgDirs.cachedir, 'fedora-review.log')
 
 def _check_mock_grp(log):
-    ''' Raise ConfigError unless mock installation is OK. '''
-    try:
-        mock_gid = grp.getgrnam('mock')[2]
-        if not mock_gid in os.getgroups():
-            raise ConfigError('No mock group - mock not installed or '
-                'mock not in effective groups. Try running  '
-                '"newgrp mock" or logging out from all your local '
-                'sessions and logging back in.')
-    except ConfigError, e:
-        log.error(e)
-        raise e
+    ''' Raise ReviewError unless mock installation is OK. '''
 
+    mock_msg = \
+    'No mock group - mock not installed or mock not in effective' \
+    'groups. Try running  "newgrp" or logging out from all your local '\
+    'sessions and logging back in.'
+
+    mock_gid = grp.getgrnam('mock')[2]
+    if not mock_gid in os.getgroups():
+        raise ReviewError(mock_msg)
 
 def _add_modes(modes):
     ''' Add all mode arguments to the option parser group. '''
@@ -143,17 +134,24 @@ def _make_log_dir():
                       'Cannot create log directory: ' + SESSION_LOG)
 
 
-class ConfigError(ReviewError):
-    ''' Illegal options from user. '''
-    def __init__(self, what):
-        ReviewError.__init__(self, 'Configuration error: ' + what)
-
 
 class _Settings(object):
     """
     FedoraReview singleton Config Setting based on command line options.
     All config values are accessed as attributes.
     """
+
+    BZ_OPTS_MESSAGE = """
+    The options --assign, --login and --user has been removed from
+    fedora-review in favor of using the bugzilla tool instead. See
+    fedora-review(1), section ASSIGN AND LOGIN and bugzilla(1).
+    """
+
+    class SettingsError(ReviewError):
+        ''' Illegal options from user. '''
+        def __init__(self):
+            ReviewError.__init__( self, 'Bad options!!', 2, True)
+
 
     defaults = {
         'ext_dirs':     ':'.join([os.path.expanduser(MY_PLUGIN_DIR),
@@ -234,9 +232,9 @@ class _Settings(object):
         self.do_logger_setup()
         for opt in ['--assign', '--login', '--user',  '-a', '-i', '-l']:
             if opt in sys.argv:
-                print BZ_OPTS_MESSAGE
+                print self.BZ_OPTS_MESSAGE
                 self.init_done = True
-                raise CleanExitError('Attempt to use old bz options')
+                raise self.SettingsError()
         parser = argparse.ArgumentParser(
                     description='Review a package using Fedora Guidelines',
                     add_help=False)
@@ -249,7 +247,7 @@ class _Settings(object):
         try:
             args = parser.parse_args()
         except:
-            raise CleanExitError('Exit from argparse')
+            raise self.SettingsError()
 
         self.add_args(args)
         self.do_logger_setup(logging.DEBUG if args.verbose else None)
