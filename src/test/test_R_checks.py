@@ -49,11 +49,8 @@ class TestRChecks(FR_TestCase):
         self.checks = Checks(self.bug.spec_file, self.bug.srpm_file)
         self.checks.run_checks(writedown=False)
         for check in self.checks.checkdict.itervalues():
-            if check.result:
-                self.assertTrue(check.group == 'Generic' or
-                                check.group == 'R')
-                self.assertIn(check.result.result,
-                              ['na','pass','pending','fail'])
+            if check.is_passed or check.is_pending or check.is_failed:
+                self.assertIn(check.group, ['Generic', 'R'])
 
 
 if __name__ == '__main__':
