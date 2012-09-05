@@ -45,21 +45,17 @@ class _ReviewDirs(object):
             ReviewError.__init__(self,
                  'The resultdir is not empty, I cannot handle this')
 
-
     class ReviewDirExistsError(ReviewError):
         ''' The review dir is already in place. '''
         def __init__(self, path):
-            msg = 'The directory %s is in the way, please remove'% \
+            msg = 'The directory %s is in the way, please remove' % \
                 os.path.abspath(path)
-            ReviewError.__init__(self, msg, 2 )
+            ReviewError.__init__(self, msg, 2)
             self.show_logs = False
-
 
     class ReviewDirChangeError(ReviewError):
         ''' Attempt to change directory already set. '''
         pass
-
-
 
     WD_DIRS = [UPSTREAM, UPSTREAM_UNPACKED, SRPM, SRPM_UNPACKED, RESULTS]
 

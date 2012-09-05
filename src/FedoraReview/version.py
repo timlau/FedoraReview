@@ -66,6 +66,6 @@ def _init():
     return version_script
 
 
-exec(_init())
+exec(_init())                                    # pylint: disable=W0122
 
 # vim: set expandtab: ts=4:sw=4;

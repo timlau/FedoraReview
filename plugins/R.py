@@ -9,6 +9,8 @@ from FedoraReview import LangCheckBase, RegistryBase
 
 
 class Registry(RegistryBase):
+    ''' Register all check in this file in group 'R' '''
+
     group = 'R'
 
     def is_applicable(self):

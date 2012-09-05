@@ -86,7 +86,7 @@ class CheckResultdir(GenericCheckBase):
     def run(self):
         if len(glob.glob(os.path.join(Mock.resultdir, '*.*'))) != 0 \
             and not  (Settings.nobuild or Settings.prebuilt):
-                raise self.NotEmptyError()
+                raise self.NotEmptyError()       # pylint: disable=W0311
         self.set_passed(True)
 
 
@@ -1048,12 +1048,12 @@ class CheckLicensInDoc(GenericCheckBase):
             docs.extend(doclist.split())
         docs = map(lambda f: f.split('/')[-1], docs)
 
-        for license in licenses:
-            if not license in docs:
-                self.log.debug("Cannot find " + license +
+        for _license in licenses:
+            if not _license in docs:
+                self.log.debug("Cannot find " + _license +
                                " in doclist")
                 self.set_passed(False,
-                                "Cannot find %s in rpm(s)" % license)
+                                "Cannot find %s in rpm(s)" % _license)
                 return
         self.set_passed(True)
 
@@ -1592,7 +1592,7 @@ class CheckSourceMD5(GenericCheckBase):
                 return (False, None)
             if output and len(output) > 0:
                 return (False, output)
-        return (True,  None)
+        return (True, None)
 
     def run(self):
         sources = self.sources.get_all()
@@ -1936,6 +1936,7 @@ class CheckUseGlobal(GenericCheckBase):
         else:
             self.set_passed(True)
 
+
 class CheckNoNameConflict(GenericCheckBase):
     '''
     Check that there isn't already a package with this name.
@@ -1949,7 +1950,8 @@ class CheckNoNameConflict(GenericCheckBase):
         self.type = 'MUST'
 
     def run(self):
-        import fedora.client, pycurl
+        import fedora.client
+        import pycurl
         p = fedora.client.PackageDB()
         name = self.spec.name.lower()
         try:
@@ -1958,7 +1960,7 @@ class CheckNoNameConflict(GenericCheckBase):
                      self.FAIL,
                     'A package already exist with this name, please check'
                         ' https://admin.fedoraproject.org/pkgdb/acls/name/'
-                        + name )
+                        + name)
         except fedora.client.AppError:
             self.set_passed(self.PASS)
         except pycurl.error:

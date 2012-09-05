@@ -105,6 +105,7 @@ class AbstractCheck(object):
     Equality:
       - Tests are considered equal if they have the same name.
     """
+    # pylint: disable=R0201
 
     __metaclass__ = ABCMeta
 
@@ -212,11 +213,12 @@ class GenericCheck(AbstractCheck, FileChecks):
             state = self.FAIL
             self.log.warning('Illegal return code: ' + str(result))
         r = TestResult(self, state, output_extra, attachments)
-        self.result = r
+        self.result = r                          # pylint: disable=W0201
 
 
 class CheckBase(GenericCheck, Helpers):
     """ Base class for "regular" python checks. """
+    # pylint: disable=R0201
 
     def __init__(self, checks, defined_in):
         Helpers.__init__(self)
@@ -334,7 +336,6 @@ class CheckDict(dict):
             node.result = None
             for n in node.needs:
                 reap_needed(self[n])
-
 
         needed = []
         reap_needed(self[check_name])

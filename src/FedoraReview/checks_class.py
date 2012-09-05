@@ -209,7 +209,7 @@ class Checks(object):
             repodir = Settings.repo
             if not repodir.startswith('/'):
                 repodir = os.path.join(ReviewDirs.startdir, repodir)
-            rpms = glob(os.path.join( repodir, '*.rpm'))
+            rpms = glob(os.path.join(repodir, '*.rpm'))
             output.write("\nBuilt with local dependencies:\n")
             for rpm in rpms:
                 output.write("    " + rpm + '\n')

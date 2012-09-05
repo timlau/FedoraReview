@@ -36,6 +36,7 @@ class AbstractRegistry(object):
     is_applicable method returns is a given test is valid for current
     srpm.
     """
+    # pylint: disable=R0201,W0613
 
     group = 'Undefined'
 
@@ -68,7 +69,7 @@ class RegistryBase(AbstractRegistry, FileChecks):
     Register all classes containing 'Check' and not ending with 'Base'
     """
 
-    def __init__(self, checks, path=None):
+    def __init__(self, checks, path=None):      # pylint: disable=W0613
         AbstractRegistry.__init__(self, checks)
         FileChecks.__init__(self, checks)
 

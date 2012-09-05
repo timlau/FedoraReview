@@ -89,7 +89,7 @@ class BugzillaBug(AbstractBug):
         else:
             return self.bug_num
 
-    def check_options(self):
+    def check_options(self):                    # pylint: disable=R0201
         ''' Raise SettingsError if Settings combinations is invalid. '''
         AbstractBug.do_check_options('--bug', ['prebuilt'])
 

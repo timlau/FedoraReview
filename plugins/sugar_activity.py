@@ -20,6 +20,8 @@ from FedoraReview import LangCheckBase, RegistryBase
 
 
 class Registry(RegistryBase):
+    ''' Register all checks in this file in group SugarActivity. '''
+
     group = 'SugarActivity'
 
     def is_applicable(self):

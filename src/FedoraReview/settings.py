@@ -40,7 +40,8 @@ PARSER_SECTION = 'review'
 
 SESSION_LOG = os.path.join(XdgDirs.cachedir, 'fedora-review.log')
 
-def _check_mock_grp(log):
+
+def _check_mock_grp():
     ''' Raise ReviewError unless mock installation is OK. '''
 
     mock_msg = \
@@ -51,6 +52,7 @@ def _check_mock_grp(log):
     mock_gid = grp.getgrnam('mock')[2]
     if not mock_gid in os.getgroups():
         raise ReviewError(mock_msg)
+
 
 def _add_modes(modes):
     ''' Add all mode arguments to the option parser group. '''
@@ -102,7 +104,7 @@ def _add_optionals(optional):
     optional.add_argument('--other-bz', default=None,
                 metavar='<bugzilla url>', dest='other_bz',
                 help='Alternative bugzilla URL')
-    optional.add_argument('-p', '--prebuilt',  action='store_true',
+    optional.add_argument('-p', '--prebuilt', action='store_true',
                 dest='prebuilt', help='When using -n <name>, use'
                 ' prebuilt rpms in current directory.')
     optional.add_argument('-s', '--single', metavar='<test>',
@@ -110,7 +112,7 @@ def _add_optionals(optional):
     optional.add_argument('-r', '--rpm-spec', action='store_true',
                 dest='rpm_spec', default=False,
                 help='Take spec file from srpm instead of separate url.')
-    optional.add_argument('-v', '--verbose',  action='store_true',
+    optional.add_argument('-v', '--verbose', action='store_true',
                 help='Show more output.', default=False, dest='verbose')
     optional.add_argument('-x', '--exclude',
                 dest='exclude', metavar='"test,..."',
@@ -134,8 +136,7 @@ def _make_log_dir():
                       'Cannot create log directory: ' + SESSION_LOG)
 
 
-
-class _Settings(object):
+class _Settings(object):                         # pylint: disable=R0902
     """
     FedoraReview singleton Config Setting based on command line options.
     All config values are accessed as attributes.
@@ -150,13 +151,12 @@ class _Settings(object):
     class SettingsError(ReviewError):
         ''' Illegal options from user. '''
         def __init__(self):
-            ReviewError.__init__( self, 'Bad options!!', 2, True)
-
+            ReviewError.__init__(self, 'Bad options!!', 2, True)
 
     defaults = {
-        'ext_dirs':     ':'.join([os.path.expanduser(MY_PLUGIN_DIR),
+        'ext_dirs': ':'.join([os.path.expanduser(MY_PLUGIN_DIR),
                                                      SYS_PLUGIN_DIR]),
-        'bz_url':       'https://bugzilla.redhat.com',
+        'bz_url': 'https://bugzilla.redhat.com',
     }
 
     def __init__(self):
@@ -230,7 +230,7 @@ class _Settings(object):
             return
 
         self.do_logger_setup()
-        for opt in ['--assign', '--login', '--user',  '-a', '-i', '-l']:
+        for opt in ['--assign', '--login', '--user', '-a', '-i', '-l']:
             if opt in sys.argv:
                 print self.BZ_OPTS_MESSAGE
                 self.init_done = True
@@ -254,7 +254,7 @@ class _Settings(object):
         if self.nobuild:
             self.cache = True
         if not self.prebuilt:
-            _check_mock_grp(self.log)
+            _check_mock_grp()
         self._fix_mock_options()
         self.init_done = True
 

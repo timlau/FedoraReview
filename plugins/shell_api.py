@@ -164,9 +164,11 @@ def _find_value(line, key):
         return re.sub('.*' + key, '', line).strip()
     return None
 
+
 def _quote(s):
     ''' Fix string to be included within '' '''
     return s.replace("'", "'\\''")
+
 
 def _settings_generator():
     ''' Bash code defining FR_SETTINGS, reflecting Settings. '''
@@ -180,6 +182,7 @@ def _settings_generator():
         body += 'FR_SETTINGS[%s]="%s"\n' % (key, value)
     return body
 
+
 def _source_generator(spec):
     ''' Bash code defining the %sourceX items. '''
     body = ''
@@ -188,6 +191,7 @@ def _source_generator(spec):
         body += 'export ' + tag + '="' + path + '"\n'
     return body
 
+
 def _patch_generator(spec):
     ''' Bash code defining the %patchX items. '''
     body = ''
@@ -195,6 +199,7 @@ def _patch_generator(spec):
     for tag, path in patches.iteritems():
         body += 'export ' + tag + '="' + path + '"\n'
     return body
+
 
 def _files_generator(spec):
     ''' Bash code defining FR_FILES,reflecting %files. '''
@@ -206,6 +211,7 @@ def _files_generator(spec):
             item += _quote(line) + '\n'
         body += """FR_FILES[%s]='%s'\n""" % (section, item)
     return body
+
 
 def _description_generator(spec):
     '''
@@ -220,6 +226,7 @@ def _description_generator(spec):
         body += """FR_DESCRIPTION[%s]='%s'\n""" % (section, item)
     return body
 
+
 def _package_generator(spec):
     ''' Bash code defining FR_PACKAGE,reflecting %package. '''
     body = 'declare -A FR_PACKAGE\n'
@@ -230,6 +237,7 @@ def _package_generator(spec):
             item += _quote(line) + '\n'
         body += """FR_PACKAGE[%s]='%s'\n""" % (section, item)
     return body
+
 
 def _write_section(spec, env, s):
     ''' Substitute a spec section into env.'''
@@ -247,6 +255,7 @@ def _write_section(spec, env, s):
     env = env.replace('@' + s + '@', body)
     return env
 
+
 def _write_tag(spec, env, tag):
     ''' Substitute a spec tag into env. '''
     value = spec.get_from_spec(tag.upper())
@@ -255,6 +264,7 @@ def _write_tag(spec, env, tag):
     else:
         env = env.replace('@' + tag + '@', '""')
     return env
+
 
 def _create_env(spec):
     ''' Create the review-env.sh file. '''
@@ -281,7 +291,6 @@ def _create_env(spec):
     if os.path.exists(attach_path):
         shutil.rmtree(attach_path)
     os.makedirs(attach_path)
-
 
 
 class Registry(AbstractRegistry):
@@ -409,12 +418,12 @@ class ShellCheck(GenericCheck):
                                       '.attachments', '*;*;*')):
             with open(path) as f:
                 body = f.read(8192)
-            sort_hint, header, nr = os.path.basename(path).split(';')
+            sort_hint, header = os.path.basename(path).split(';')[:2]
             try:
                 sort_hint = int(sort_hint)
             except ValueError:
                 self.log.warning('Cannot decode attachment sorting hint: '
-                                  + sort_hint + ', defaulting to 7' )
+                                  + sort_hint + ', defaulting to 7')
                 sort_hint = 7
             a = Attachment(header, body, sort_hint)
             attachments.append(a)

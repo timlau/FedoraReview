@@ -43,6 +43,7 @@ class AbstractBug(Helpers):
     Concrete implementations basically understands how to
     set the urls, this base class handles the rest.
     """
+    # pylint:disable=R0201
 
     __metaclass__ = ABCMeta
 
@@ -52,7 +53,6 @@ class AbstractBug(Helpers):
         def __init__(self, what):
             ReviewError.__init__(self, what, 2)
             self.show_logs = False
-
 
     def __init__(self):
         Helpers.__init__(self)
@@ -229,7 +229,6 @@ class AbstractBug(Helpers):
             ''' Thrown for invalid settings combinations. '''
             def __init__(self, what):
                 ReviewError.__init__(self, "Incompatible settings: " + what)
-
 
         for opt in bad_opts:
             if hasattr(Settings, opt) and getattr(Settings, opt):

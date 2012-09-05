@@ -74,7 +74,7 @@ class _Mock(Helpers):
         with open(path) as f:
             config = [line for line in f.readlines() if \
                       line.find("config_opts['root']") >= 0]
-        exec config[0]
+        exec config[0]                           # pylint: disable=W0122
         self.mock_root = config_opts['root']
         if Settings.uniqueext:
             self.mock_root += Settings.uniqueext
@@ -94,7 +94,7 @@ class _Mock(Helpers):
         if self.mock_root:
             self.mock_root = None
 
-    def get_resultdir(self):
+    def get_resultdir(self):                     # pylint: disable=R0201
         ''' Return resultdir used by mock. '''
         if Settings.resultdir:
             return Settings.resultdir
@@ -236,7 +236,7 @@ class _Mock(Helpers):
         return None if OK, else the stdout+stderr
         """
 
-        def log_text(out, err):
+        def log_text(out, err):                  # pylint: disable=W0612
             ''' Log message + default prefix. '''
             return  "Install output: " + str(out) + ' ' + str(err)
 

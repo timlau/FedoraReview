@@ -159,7 +159,7 @@ class ReviewHelper(object):
             self._do_run()
         except ReviewError as err:
             rcode = err.exitcode
-            self.log.debug("ReviewError: " + str(err),  exc_info=True)
+            self.log.debug("ReviewError: " + str(err), exc_info=True)
             if not err.silent:
                 msg = 'Error: ' + str(err)
                 if err.show_logs:

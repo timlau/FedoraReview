@@ -29,6 +29,7 @@ from abstract_bug import AbstractBug
 class NameBug(AbstractBug):
     """ Handles -n, spec and srpm already downloaded.
     """
+    # pylint: disable=R0201
 
     def __init__(self, name):
         """ Constructor.

@@ -45,7 +45,7 @@ class UrlBug(AbstractBug):
         tmpfile = urllib.urlretrieve(self.bug_url)[0]
         soup = BeautifulSoup(open(tmpfile))
         links = soup.findAll('a')
-        hrefs = map(lambda l: l['href'],  links)
+        hrefs = map(lambda l: l['href'], links)
         found = []
         for href in reversed(hrefs):
             href = href.encode('ascii', 'ignore')
@@ -70,7 +70,7 @@ class UrlBug(AbstractBug):
     def get_location(self):
         return self.bug_url
 
-    def check_options(self):
+    def check_options(self):                     # pylint: disable=R0201
         ''' Raise error if Settings  combination is invalid. '''
         AbstractBug.do_check_options('--url', ['prebuilt', 'other_bz'])
 

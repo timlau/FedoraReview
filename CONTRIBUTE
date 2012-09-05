@@ -9,8 +9,7 @@ Basic Rules
 * No whitespace at the end of the lines
 * Keep the 80 line length limit
 * Run pylint too see potential issues:
-    - pylint --rcfile=pylint.conf src/FedoraReview/*.py plugins/*.py \
-            > pylint.log
+    - pylint --rcfile=pylint.conf src/FedoraReview plugins > pylint.log
 * Run pep8 to see basic formatting rules:
     - pep8 --exclude=jsonapi* --ignore=E221,E251 src/FedoraReview/*.py \
              plugins/*.py > pep8.log
