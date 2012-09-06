@@ -23,6 +23,7 @@ Unit tests for bugzilla bug handling
 import sys
 import os.path
 sys.path.insert(0,os.path.abspath('../'))
+sys.path.insert(0,os.path.abspath('../FedoraReview'))
 
 import glob
 import unittest
@@ -31,7 +32,8 @@ import re
 import subprocess
 
 from FedoraReview.helpers import Helpers
-from FedoraReview import AbstractCheck, CheckDict, Checks, \
+from checks_class import _CheckDict
+from FedoraReview import AbstractCheck, Checks, \
      Sources, Source, ReviewDirs, SRPMFile, SpecFile, Mock, Settings
 from FedoraReview import BugzillaBug, NameBug
 from FedoraReview import ReviewError
@@ -379,7 +381,7 @@ class TestMisc(FR_TestCase):
              def name(self): return 'foo'
 
         c = TestCheck('a-sourcefile')
-        l = CheckDict()
+        l = _CheckDict()
         l.add(c)
         self.assertEqual(len(l), 1)
         self.assertEqual(c.checkdict, l)

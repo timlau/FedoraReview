@@ -27,7 +27,6 @@ from glob import glob
 from operator import attrgetter
 from straight.plugin import load
 
-from check_base import CheckDict
 from settings import  Settings
 from srpm_file import  SRPMFile
 from spec_file import  SpecFile
@@ -49,12 +48,89 @@ x = Pass
 
 """
 
+class _CheckDict(dict):
+    """
+    A Dictionary of AbstractCheck, with some added behaviour:
+        - Deprecated checks are removed when new items enter.
+        - Duplicates (overwriting existing entry) is not allowed.
+        - Inserted entry gets a checkdict property pointing to
+          containing CheckDict instance.
+        - On insertion, items listed in the 'deprecates'property
+          are removed.
+    """
+
+    def __init__(self, *args, **kwargs):
+        dict.__init__(self)
+        self.update(*args, **kwargs)
+        self.log = Settings.get_logger()
+        self.deprecations = {}
+
+    def __setitem__(self, key, value):
+
+        def log_kill(victim, killer):
+            ''' Log test skipped due to deprecation. '''
+            self.log.info("Skipping %s in %s, deprecated by %s in %s" %
+                              (victim.name, victim.defined_in,
+                               killer.name, killer.defined_in))
+
+        def log_duplicate(first, second):
+            ''' Log warning for duplicate test. '''
+            self.log.warning("Duplicate checks %s in %s, %s in %s" %
+                              (first.name, first.defined_in,
+                              second.name, second.defined_in))
+
+        for victim in value.deprecates:
+            if victim in self.iterkeys():
+                log_kill(self[victim], value)
+                del(self[victim])
+        for killer in self.itervalues():
+            if key in killer.deprecates:
+                log_kill(value, killer)
+                return
+        if key in self.iterkeys():
+            log_duplicate(value, self[key])
+        dict.__setitem__(self, key, value)
+        value.checkdict = self
+
+    def update(self, *args, **kwargs):
+        if len(args) > 1:
+            raise TypeError("update: at most 1 arguments, got %d" %
+                            len(args))
+        other = dict(*args, **kwargs)
+        for key in other.iterkeys():
+            self[key] = other[key]
+
+    def add(self, check):
+        ''' As list.add(). '''
+        self[check.name] = check
+
+    def extend(self, checks):
+        ''' As list.extend() '''
+        for c in checks:
+            self.add(c)
+
+    def set_single_check(self, check_name):
+        ''' Remove all checks besides check_name and it's deps. '''
+
+        def reap_needed(node):
+            ''' Collect all deps into needed. '''
+            needed.append(node)
+            node.result = None
+            for n in node.needs:
+                reap_needed(self[n])
+
+        needed = []
+        reap_needed(self[check_name])
+        self.clear()
+        self.extend(needed)
+        delattr(self[check_name], 'result')
+
 
 class Checks(object):
     '''
     Interface class to load, select and run checks.
     Properties:
-        checkdict: A CheckDict containing all tests (deprecated
+        checkdict: A dictionary of all tests by name (deprecated
                    removed).
     '''
 
@@ -86,7 +162,7 @@ class Checks(object):
         directories and add them to self.checkdict
         """
 
-        self.checkdict = CheckDict()
+        self.checkdict = _CheckDict()
         self.groups = {}
 
         appdir = os.path.abspath(os.path.join(__file__, '../../..'))
