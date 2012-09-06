@@ -375,9 +375,8 @@ class TestMisc(FR_TestCase):
     def test_check_dict(self):
 
         class TestCheck(AbstractCheck):
-
-             def run(self):
-                pass
+             def run(self): pass
+             def name(self): return 'foo'
 
         c = TestCheck('a-sourcefile')
         l = CheckDict()

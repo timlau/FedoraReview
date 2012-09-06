@@ -39,7 +39,7 @@ class DownloadError(ReviewError):
 
 
 class Helpers(object):
-    ''' Miscellaneous  library support. '''
+    ''' Miscellaneous library support mixin class. '''
 
     def __init__(self):
         try:

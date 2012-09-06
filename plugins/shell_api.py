@@ -407,7 +407,7 @@ class ShellCheck(GenericCheck):
         return p.returncode, stdout, stderr
 
     @property
-    def name(self):
+    def name(self):                             # pylint: disable=E0202
         ''' Check's name. '''
         return self._name
 
@@ -432,7 +432,7 @@ class ShellCheck(GenericCheck):
 
     def run(self):
         ''' Run the check. '''
-        if hasattr(self, 'result'):
+        if self.is_run:
             return
         if not self.group in self.groups:
             self.set_passed(self.PENDING, "test run failed: illegal group")

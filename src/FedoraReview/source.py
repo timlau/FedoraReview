@@ -57,6 +57,7 @@ class Source(Helpers):
         self.extract_dir = None
         self.tag = tag
         self.downloaded = True
+        self.local_src = None
         is_url = urlparse(url)[0] != ''
         if is_url:  # This is a URL, Download it
             self.url = url

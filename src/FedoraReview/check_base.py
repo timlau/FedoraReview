@@ -85,8 +85,8 @@ class AbstractCheck(object):
     Class attributes:
       - log: logger
       - version version of api, defaults to 0.1
-      - group: 'Generic', 'C/C++', 'PHP': name of the registry
-                which instantiated this check.
+      - group: 'Generic', 'C/C++', 'PHP': binds the test to a
+                Registry.
       - implementation: 'json'|'python'|'shell', defaults to
         'python'.
 
@@ -96,8 +96,10 @@ class AbstractCheck(object):
       - deprecates: List of  tests replaced (should not run) by this
         test  if the test is applicable.
       - needs: List of tests which should run before this test.
-      - result: Undefined until run(), None if test is not
-        applicable, else TestResult.
+      - is_run: reflects if test has run.
+      - is_na, is_failed, is_passed, is_pending: outcome of test.
+      - result: Undefined until is_run, None if is_na, else
+        TestResult.
 
     Methods:
       - run(): Run the test, sets result
@@ -145,7 +147,7 @@ class AbstractCheck(object):
 
     @property
     def state(self):
-        ''' None for (not is_run or is_na), result.result '''
+        ''' None for (not is_run or is_na), else result.result '''
         assert self != None
         if hasattr(self, 'result'):
             return self.result.result if self.result else None
@@ -189,7 +191,7 @@ class GenericCheck(AbstractCheck, FileChecks):
     log        = property(lambda self: self.checks.log)
 
     @property
-    def name(self):
+    def name(self):                              # pylint: disable=E0202
         ''' The check's name. '''
         return self.__class__.__name__
 
@@ -274,6 +276,8 @@ class CheckDict(dict):
         - Duplicates (overwriting existing entry) is not allowed.
         - Inserted entry gets a checkdict property pointing to
           containing CheckDict instance.
+        - On insertion, items listed in the 'deprecates'property
+          are removed.
     """
 
     def __init__(self, *args, **kwargs):
@@ -300,15 +304,14 @@ class CheckDict(dict):
             if victim in self.iterkeys():
                 log_kill(self[victim], value)
                 del(self[victim])
-        if key in self.deprecations.iterkeys():
-            log_kill(value, self.deprecations[key])
-            return
+        for killer in self.itervalues():
+            if key in killer.deprecates:
+                log_kill(value, killer)
+                return
         if key in self.iterkeys():
             log_duplicate(value, self[key])
         dict.__setitem__(self, key, value)
         value.checkdict = self
-        for d in value.deprecates:
-            self.deprecations[d] = value
 
     def update(self, *args, **kwargs):
         if len(args) > 1:
