@@ -3,7 +3,7 @@
 import re
 import itertools
 
-from FedoraReview import LangCheckBase, RegistryBase
+from FedoraReview import CheckBase, RegistryBase
 
 
 class Registry(RegistryBase):
@@ -21,13 +21,13 @@ class Registry(RegistryBase):
         return self.checks.spec.name.startswith('rubygem-')
 
 
-class RubyCheckBase(LangCheckBase):
+class RubyCheckBase(CheckBase):
     """ Base class for all Ruby specific checks. """
     _guidelines_uri = 'http://fedoraproject.org/wiki/Packaging:Ruby'
     _guidelines_section_uri = '%(uri)s#%%(section)s' % {'uri': _guidelines_uri}
 
     def __init__(self, base):
-        LangCheckBase.__init__(self, base, __file__)
+        CheckBase.__init__(self, base, __file__)
 
     def is_nongem(self):
         return self.spec.name.startswith('ruby-')

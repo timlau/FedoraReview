@@ -2,7 +2,7 @@
 """Java language specific checks"""
 
 import re
-from FedoraReview import LangCheckBase, RegistryBase
+from FedoraReview import CheckBase, RegistryBase
 
 
 class Registry(RegistryBase):
@@ -15,11 +15,11 @@ class Registry(RegistryBase):
         return self.has_files("*.jar") or self.has_files("*.pom")
 
 
-class JavaCheckBase(LangCheckBase):
+class JavaCheckBase(CheckBase):
     """Base check for Java checks"""
 
     def __init__(self, base):
-        LangCheckBase.__init__(self, base, __file__)
+        CheckBase.__init__(self, base, __file__)
 
     def _get_javadoc_sub(self):
         """Returns name of javadoc rpm or None if no such subpackage

@@ -2,7 +2,7 @@
 ''' Python package tests '''
 
 
-from FedoraReview import LangCheckBase, RegistryBase
+from FedoraReview import CheckBase, RegistryBase
 
 
 class Registry(RegistryBase):
@@ -16,11 +16,11 @@ class Registry(RegistryBase):
            self.has_files('*.pyc')
 
 
-class PythonCheckBase(LangCheckBase):
+class PythonCheckBase(CheckBase):
     """ Base class for all python  checks. """
 
     def __init__(self, base):
-        LangCheckBase.__init__(self, base, __file__)
+        CheckBase.__init__(self, base, __file__)
 
 
 class  CheckPythonBuildRequires(PythonCheckBase):

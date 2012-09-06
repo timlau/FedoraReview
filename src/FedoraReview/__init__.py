@@ -22,7 +22,7 @@ Tools for helping Fedora package reviewers
 
 from bugzilla_bug import BugzillaBug
 from check_base   import AbstractCheck, GenericCheck, CheckBase
-from check_base   import LangCheckBase, Attachment, CheckDict
+from check_base   import Attachment, CheckDict
 from checks_class import Checks, ChecksLister
 from mock         import Mock
 from name_bug     import NameBug

@@ -5,7 +5,7 @@
 import re
 import os
 import urllib
-from FedoraReview import LangCheckBase, RegistryBase
+from FedoraReview import CheckBase, RegistryBase
 
 
 class Registry(RegistryBase):
@@ -20,7 +20,7 @@ class Registry(RegistryBase):
         return self.checks.spec.name.startswith("R-")
 
 
-class RCheckBase(LangCheckBase):
+class RCheckBase(CheckBase):
     """ Base class for all R specific checks. """
     DIR = ['%{packname}']
     DOCS = ['doc', 'DESCRIPTION', 'NEWS', 'CITATION']
@@ -33,7 +33,7 @@ class RCheckBase(LangCheckBase):
     ]
 
     def __init__(self, base):
-        LangCheckBase.__init__(self, base, __file__)
+        CheckBase.__init__(self, base, __file__)
 
     def get_upstream_r_package_version(self):
         """ Browse the PACKAGE file of the different repo to find the

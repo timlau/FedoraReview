@@ -3,7 +3,7 @@
 
 import re
 
-from FedoraReview import LangCheckBase, RegistryBase, Attachment
+from FedoraReview import CheckBase, RegistryBase, Attachment
 
 class Registry(RegistryBase):
     """ Register all checks in this file. """
@@ -22,11 +22,11 @@ class Registry(RegistryBase):
         return False
 
 
-class CCppCheckBase(LangCheckBase):
+class CCppCheckBase(CheckBase):
     ''' Common base class for module tests (a. k. a. checks). '''
 
     def __init__(self, base):
-        LangCheckBase.__init__(self, base, __file__)
+        CheckBase.__init__(self, base, __file__)
 
 
 class CheckLDConfig(CCppCheckBase):

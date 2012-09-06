@@ -2,7 +2,7 @@
 
 """ PHP specifics checks """
 
-from FedoraReview import LangCheckBase, Settings, RegistryBase
+from FedoraReview import CheckBase, Settings, RegistryBase
 
 
 class Registry(RegistryBase):
@@ -17,7 +17,7 @@ class Registry(RegistryBase):
         return self.checks.spec.name.startswith("php-")
 
 
-class PhpCheckBase(LangCheckBase):
+class PhpCheckBase(CheckBase):
     """ Base class for all PHP specific checks. """
     DIR = ['%{packname}']
     DOCS = []
@@ -25,7 +25,7 @@ class PhpCheckBase(LangCheckBase):
     log = Settings.get_logger()
 
     def __init__(self, base):
-        LangCheckBase.__init__(self, base, __file__)
+        CheckBase.__init__(self, base, __file__)
 
 
 class PhpCheckPhpRequire(PhpCheckBase):

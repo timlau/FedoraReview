@@ -173,14 +173,16 @@ class GenericCheck(AbstractCheck, FileChecks):
         'MUST'
       - url: Usually guidelines url, possibly None.
       - checks: Checks instance which created this check.
+      - registry: Defining Registry, set by Registry.register()
     """
+    registry = None
 
     def __init__(self, checks, defined_in):
         AbstractCheck.__init__(self, defined_in)
         FileChecks.__init__(self, checks)
         self.checks = checks
         self.url = '(this test has no URL)'
-        self.text = 'No description for this test'
+        self.text = self.__class__.__name__
         self.description = 'This test has no description'
         self.type = 'MUST'
         self.needs = ['CheckBuildCompleted']
@@ -227,11 +229,11 @@ class CheckBase(GenericCheck, Helpers):
         GenericCheck.__init__(self, checks, defined_in)
 
     def is_applicable(self):
-        '''
-        check if this test is applicable
-        overload in child class if needed
-        '''
-        return True
+        """
+        By default, language specific checks uses the registry's
+        is_applicable()
+        """
+        return self.registry.is_applicable()
 
     def run_on_applicable(self):
         ''' Called by run() if is_applicable is true(). '''
@@ -256,17 +258,6 @@ class CheckBase(GenericCheck, Helpers):
         return result
 
     group = property(lambda self: self.registry.group)
-
-
-class LangCheckBase(CheckBase):
-    """ Base class for language specific class. """
-
-    def is_applicable(self):
-        """
-        By default, language specific checks uses the registry's
-        is_applicable()
-        """
-        return self.registry.is_applicable()
 
 
 class CheckDict(dict):
