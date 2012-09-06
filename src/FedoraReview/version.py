@@ -14,9 +14,9 @@ from subprocess import check_output
 from review_error import ReviewError
 
 __version__ = 'Unknown'
-build_full = 'Unknown (no version file nor git info)'
-build_date = "Unknown"
-build_id = "Unknown"
+BUILD_FULL = 'Unknown (no version file nor git info)'
+BUILD_DATE = "Unknown"
+BUILD_ID = "Unknown"
 
 
 class VersionError(ReviewError):

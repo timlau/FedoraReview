@@ -26,12 +26,12 @@ import os.path
 from FedoraReview import  BugzillaBug, Checks, ChecksLister, ReviewDirs, \
                           ReviewError, NameBug, Settings, UrlBug
 
-from FedoraReview import __version__, build_full
+from FedoraReview import __version__, BUILD_FULL
 
 
 def _print_version():
     ''' Handle --version option. '''
-    print('fedora-review version ' + __version__ + ' ' + build_full)
+    print('fedora-review version ' + __version__ + ' ' + BUILD_FULL)
 
 
 class ReviewHelper(object):
