@@ -422,8 +422,7 @@ class CheckClean(GenericCheckBase):
         self.type = 'SHOULD'
 
     def run(self):
-        passed = True
-        msg = 'Clean would be needed if support for EPEL5 is required'
+        has_clean = False
         sec_clean = self.spec.get_section('%clean')
         for sec in sec_clean:
             sec_lines = sec_clean[sec]
@@ -432,10 +431,22 @@ class CheckClean(GenericCheckBase):
             if sec_lines:
                 for line in sec_lines:
                     if regex.search(line):
-                        passed = False
-                        msg = 'Clean is needed only if supporting EPEL5'
+                        has_clean = True
                         break
-        self.set_passed(passed, msg)
+        if self.flags['EPEL5']:
+            self.text = 'EPEL5 requires explicit %clean with rm -rf' \
+                             ' %{buildroot} (or $RPM_BUILD_ROOT)'
+            self.type = 'MUST'
+            if has_clean:
+                self.set_passed(self.PASS)
+            else:
+                self.set_passed(self.FAIL)
+        else:
+            if has_clean:
+                self.set_passed(self.PENDING,
+                                '%clean present but not required')
+            else:
+                self.set_passed(self.PASS)
 
 
 class CheckDistTag(GenericCheckBase):
@@ -529,8 +540,7 @@ class CheckCleanBuildroot(GenericCheckBase):
         self.automatic = True
 
     def run(self):
-        passed = True
-        msg = 'rm -rf would be needed if support for EPEL5 is required'
+        has_clean = False
         sec_clean = self.spec.get_section('%install')
         for sec in sec_clean:
             sec_lines = sec_clean[sec]
@@ -539,10 +549,20 @@ class CheckCleanBuildroot(GenericCheckBase):
             if sec_lines:
                 for line in sec_lines:
                     if regex.search(line):
-                        passed = False
-                        msg = 'rm -rf is only needed if supporting EPEL5'
+                        has_clean = True
                         break
-        self.set_passed(passed, msg)
+        if self.flags['EPEL5']:
+            self.text = 'EPEL5: Package does run rm -rf %{buildroot}' \
+                  ' (or $RPM_BUILD_ROOT) at the beginning of %install.'
+        if has_clean and self.flags['EPEL5']:
+            self.set_passed(self.PASS)
+        elif has_clean and not self.flags['EPEL5']:
+            self.set_passed(self.PENDING,
+                           'rm -rf %{buildroot} present but not required')
+        elif not has_clean and self.flags['EPEL5']:
+            self.set_passed(self.FAIL)
+        else:
+            self.set_passed(self.PASS)
 
 
 class CheckDefattr(GenericCheckBase):
@@ -561,22 +581,25 @@ class CheckDefattr(GenericCheckBase):
         self.automatic = True
 
     def run(self):
-        passed = True
+        has_defattr = False
         output = ''
         sec_files = self.spec.get_section('%files')
         for sec in sec_files:
             sec_lines = sec_files[sec]
             if sec_lines:
                 if sec_lines[0].startswith('%defattr('):
-                    passed = False
-                    output = 'defattr(....) present in %s section. This is' \
-                    ' OK if packaging for EPEL5. Otherwise not needed' % sec
+                    has_defattr = True
                     break
-        if passed:
-            self.set_passed(passed, '%defattr macros not found. They '
-                            'would be needed for EPEL5')
+        if has_defattr and self.flags['EPEL5']:
+            self.set_passed(self.PASS)
+        elif has_defattr and not self.flags['EPEL5']:
+            self.set_passed(self.PENDING,
+                            '%defattr present but not needed')
+        elif not has_defattr and self.flags['EPEL5']:
+            self.set_passed(self.FAIL,
+                            '%defattr missing, required by EPEL5')
         else:
-            self.set_passed(passed, output)
+            self.set_passed(self.PASS)
 
 
 class CheckDescMacros(GenericCheckBase):
@@ -1488,24 +1511,22 @@ class CheckReqPkgConfig(GenericCheckBase):
         GenericCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
                    'EPEL/GuidelinesAndPolicies#EL5'
-        self.text = 'Package requires pkgconfig, if .pc files are' \
-                    ' present. (EPEL5)'
+        self.text = 'EPEL5: Package requires pkgconfig, if .pc files' \
+                    ' are present.'
         self.automatic = True
         self.type = 'MUST'
 
     def run(self):
-        if not self.has_files('*.pc'):
+        if not self.has_files('*.pc') or not self.flags['EPEL5']:
             self.set_passed('not_applicable')
             return
         regex = re.compile('^Require:\s*.*pkgconfig.*', re.I)
         lines = self.spec.get_section('main')
-        found = False
+        result = self.FAIL
         for line in lines:
-            #print line
-            res = regex.search(line)
-            if res:
-                found = True
-        self.set_passed(found, 'Only applicable for EL-5')
+            if regex.search(line):
+                result = self.PASS
+        self.set_passed(result)
 
 
 class CheckRequires(GenericCheckBase):
