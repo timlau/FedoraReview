@@ -24,7 +24,8 @@ import re
 import rpm
 import subprocess
 
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, check_output, CalledProcessError
+from review_error import ReviewError
 
 from settings import Settings
 
@@ -146,8 +147,8 @@ class SpecFile(object):
         '''
         find at given tag in the spec file.
         Ex. Name:, Version:
-        This get the text precise as in is written in the spec,
-        no resolved macros
+        This get the text  written in the spec, no resolved macros
+        but all commas removed and splitted on blanks.
         '''
         # Maybe we can merge the last two regex in one but using
         # (define|global) leads to problem with the res.group(1)
@@ -175,6 +176,32 @@ class SpecFile(object):
                     else:
                         values.append(value)
         return values
+
+    @staticmethod
+    def rpm_eval(expression):
+        ''' Evaluate expression using rpm --eval. '''
+        try:
+            reply = check_output(['rpm', '--eval',  expression])
+        except CalledProcessError as err:
+            raise ReviewError(str(err))
+        return  reply.strip()
+
+    def _rpmspec(self, arg):
+        ''' run rpmspec with arg and return output as list. '''
+        try:
+            reply = check_output('rpmspec ' + arg + ' ' + self.filename,
+                                   shell=True)
+        except CalledProcessError as err:
+            raise ReviewError(str(err))
+        return  [r.strip() for r in reply.split('\n')]
+
+    def get_build_requires(self):
+        ''' Return the list of build requirements. '''
+        return self._rpmspec(' -q --buildrequires ')
+
+    def get_requires(self):
+        ''' Return list of requirements i. e., Requires: '''
+        return self._rpmspec('-q --requires ')
 
     def get_section(self, section):
         '''
