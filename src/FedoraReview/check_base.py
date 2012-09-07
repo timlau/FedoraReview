@@ -202,11 +202,9 @@ class GenericCheck(AbstractCheck, FileChecks):
         Set if the test is passed, failed or N/A
         and set optional extra output to be shown in repost
         '''
-        if result == 'not_applicable':
+        if result in ['not_applicable', self.NA, None]:
             self.result = None
             return
-        if result == None or result == self.NA:
-            state = self.NA
         elif result == True or result == self.PASS:
             state = self.PASS
         elif result == False or result == self.FAIL:
