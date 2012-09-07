@@ -400,7 +400,6 @@ class TestMisc(FR_TestCase):
         self.assertEqual(len(l), 1)
         self.assertEqual(l['test1'], c1)
 
-
     def test_unversioned_so(self):
         self.init_test('unversioned-so',
                        argv=['-rpn','python-test'],
@@ -446,6 +445,23 @@ class TestMisc(FR_TestCase):
         check.run()
         self.assertTrue(check.is_failed)
         self.assertIn('Bad spec filename:', check.result.output_extra)
+
+    def test_perl_module(self):
+        ''' test basic perl python + shell test '''
+        self.init_test('perl',
+                       argv=['-rn','perl-RPM-Specfile', '--no-build'])
+        ReviewDirs.reset(os.getcwd())
+        bug = NameBug('perl-RPM-Specfile')
+        bug.find_urls()
+        bug.download_files()
+        checks = Checks(bug.spec_file, bug.srpm_file)
+        check = checks.checkdict['PerlCheckBuildRequires']
+        check.run()
+        self.assertTrue(check.is_pending)
+        check = checks.checkdict['perl-url-tag']
+        check.run()
+        self.assertTrue(check.is_pending)
+
 
 
 

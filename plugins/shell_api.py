@@ -373,7 +373,7 @@ class ShellCheck(GenericCheck):
         @group: java # generic, C/C++ etc
         @type: MUST|SHOULD|EXTRA
         @text :"User info, visible in listings"
-        @test: "More text, appended to previous, w blank separator"
+        @text: "More text, appended to previous, w blank separator"
         @url: Guidelines URL, optional
         @deprecates: test1, test2, ...
         @needs: test4, test5, ...

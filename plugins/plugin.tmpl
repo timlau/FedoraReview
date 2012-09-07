@@ -2,10 +2,8 @@
 
 # This is an example file of a language specific plugin
 
-import re
-import os
 
-from FedoraReview import LangCheckBase, RegistryBase
+from FedoraReview import CheckBase, RegistryBase
 
 class Registry(RegistryBase):
 
@@ -15,7 +13,7 @@ class Registry(RegistryBase):
         return self.spec.name.startswith("R-")
 
 
-class RCheckBase(LangCheckBase):
+class RCheckBase(CheckBase):
     """ Base class for all R specific checks. """
 
     def __init__(self, base):
