@@ -1,0 +1,26 @@
+RPM::Specfile version 1.51
+=================
+
+See the documentation in RPM::Specfile module for usage.
+
+INSTALLATION
+
+To install this module type the following:
+
+   perl Makefile.PL
+   make
+   make test
+   make install
+
+DEPENDENCIES
+
+This module requires these other modules and libraries:
+
+COPYRIGHT AND LICENCE
+
+Copyright (C) 2006 Chip Turner
+
+This module is distributed under the same terms as Perl itself:
+
+http://dev.perl.org/licenses/
+
