@@ -28,7 +28,6 @@ from fnmatch import fnmatch
 from textwrap import TextWrapper
 
 from helpers import Helpers
-from settings import Settings
 
 
 class AbstractCallError(Exception):
