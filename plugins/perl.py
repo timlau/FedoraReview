@@ -1,18 +1,12 @@
 #-*- coding: utf-8 -*-
-<<<<<<< HEAD
 ''' Checks for perl packages. '''
-=======
 
 import re
->>>>>>> b75ec62... First shot on perl module
 
 from FedoraReview import CheckBase, RegistryBase
 
 class Registry(RegistryBase):
-<<<<<<< HEAD
     ''' Register all checks in this file in group 'Perl'. '''
-=======
->>>>>>> b75ec62... First shot on perl module
 
     group = 'Perl'
 
