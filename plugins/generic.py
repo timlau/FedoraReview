@@ -319,7 +319,7 @@ class CheckBuildroot(GenericCheckBase):
         self.type = 'SHOULD'
 
     def run(self):
-        br_tags = self.spec.find_tag('BuildRoot', split_tag=False)
+        br_tags = self.spec.find_tag('BuildRoot')
         if len(br_tags) == 0:
             self.set_passed(True, 'Unless packager wants to package'
                             ' for EPEL5 this is fine')
@@ -363,7 +363,7 @@ class CheckBuildRequires(GenericCheckBase):
         if  self.checks.checkdict['CheckBuild'].is_pending:
             self.set_passed('pending', 'Using prebuilt rpms.')
         elif self.checks.checkdict['CheckBuild'].is_passed:
-            brequires = self.spec.find_tag('BuildRequires')
+            brequires = self.spec.get_build_requires()
             pkg_by_default = ['bash', 'bzip2', 'coreutils', 'cpio',
                 'diffutils', 'fedora-release', 'findutils', 'gawk',
                 'gcc', 'gcc-c++', 'grep', 'gzip', 'info', 'make',
@@ -1293,7 +1293,7 @@ class CheckNoConflicts(GenericCheckBase):
         self.type = 'MUST'
 
     def run(self):
-        if self.spec.find_tag('Conflicts', split_tag=False):
+        if self.spec.find_tag('Conflicts'):
             self.set_passed(False,
                             'Package contains Conflicts: tag(s)'
                             ' needing fix or justification.')

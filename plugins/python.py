@@ -35,6 +35,6 @@ class  CheckPythonBuildRequires(PythonCheckBase):
 
     def run_on_applicable(self):
 
-        br = self.spec.find_tag('BuildRequires')
+        br = self.spec.get_build_requires()
         passed = 'python2-devel' in br  or 'python3-devel' in br
         self.set_passed(self.PASS if passed else self.FAIL)

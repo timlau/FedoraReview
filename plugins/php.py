@@ -40,7 +40,7 @@ class PhpCheckPhpRequire(PhpCheckBase):
 
     def run_on_applicable(self):
         """ Run the check """
-        brs = self.spec.find_tag('Requires')
+        brs = self.spec.get_requires()
         if ('php' in brs and not 'php-common' in brs):
             self.set_passed(False,
                 "Package should require php-common rather than php.")

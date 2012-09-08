@@ -143,12 +143,19 @@ class SpecFile(object):
                            exc_info=True)
             return None
 
-    def find_tag(self, tag, section = None, split_tag = True):
+    def find_tag(self, tag, section = None):
         '''
-        find at given tag in the spec file.
-        Ex. Name:, Version:
-        This get the text  written in the spec, no resolved macros
-        but all commas removed and splitted on blanks.
+        Find at given tag in the spec file. Parameters:
+          - tag: tag to look for. E. g., 'Name', 'gem-name'
+            Matches tag: (E. g. Name:) in beginning of line,
+            or %define tag or %global tag e. g.,
+            %global gem-name mygem
+          - section. A section corresponds to a subpackage e. g.,
+            'devel'
+
+        Returns array of strings, each string corresponds to a
+        definition line in the spec file.
+
         '''
         # Maybe we can merge the last two regex in one but using
         # (define|global) leads to problem with the res.group(1)
@@ -164,24 +171,17 @@ class SpecFile(object):
             if lines:
                 lines = lines[section]
         for line in lines:
-            # check for release
             for key in keys:
-                res = key.search(line)
-                if res:
-                    value = res.group(1).strip()
-                    value = value.replace(',', ' ')
-                    value = value.replace('  ', ' ')
-                    if split_tag:
-                        values.extend(value.split())
-                    else:
-                        values.append(value)
+                match = key.search(line)
+                if match:
+                    values.append(match.group(1).strip())
         return values
 
     @staticmethod
     def rpm_eval(expression):
         ''' Evaluate expression using rpm --eval. '''
         try:
-            reply = check_output(['rpm', '--eval',  expression])
+            reply = check_output(['rpm', '--eval', expression])
         except CalledProcessError as err:
             raise ReviewError(str(err))
         return  reply.strip()

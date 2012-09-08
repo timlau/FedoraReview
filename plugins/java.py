@@ -151,8 +151,8 @@ class CheckJPackageRequires(JavaCheckBase):
         self.automatic = True
 
     def run_on_applicable(self):
-        brs = self.spec.find_tag('BuildRequires')
-        requires = self.spec.find_tag('Requires')
+        brs = self.spec.get_build_requires()
+        requires = self.spec.get_requires()
         br_found = False
         r_found = False
         for build_r in brs:

@@ -76,7 +76,7 @@ class RCheckBuildRequires(RCheckBase):
 
     def run_on_applicable(self):
         """ Run the check """
-        brs = self.spec.find_tag('BuildRequires')
+        brs = self.spec.get_build_requires()
         tocheck = ['R-devel','tex(latex)']
         if set(tocheck).intersection(set(brs)):
             self.set_passed(True)
@@ -97,7 +97,7 @@ class RCheckRequires(RCheckBase):
 
     def run_on_applicable(self):
         """ Run the check """
-        brs = self.spec.find_tag('Requires')
+        brs = self.spec.get_requires()
         if ('R' in brs and not 'R-core' in brs):
             self.set_passed(False,
                 "Package should requires R-core rather than R")

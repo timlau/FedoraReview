@@ -61,7 +61,7 @@ class SugarActivityCheckBuildRequires(SugarActivityCheckBase):
         self.automatic = True
 
     def run_on_applicable(self):
-        br = self.spec.find_tag('BuildRequires')
+        br = self.spec.get_build_requires()
         self.set_passed('sugar-toolkit' in br)
 
 

@@ -64,7 +64,7 @@ class RubyCheckRequiresRubyAbi(RubyCheckBase):
 
     def run_on_applicable(self):
         """ Run the check """
-        br = self.spec.find_tag('Requires')
+        br = self.spec.get_requires()
         self.set_passed('ruby(abi)' in br)
 
 class RubyCheckBuildArchitecture(RubyCheckBase):
@@ -171,7 +171,7 @@ class GemCheckRequiresProperDevel(GemCheckBase):
 
     def run_on_applicable(self):
         """ Run the check """
-        br = self.spec.find_tag('BuildRequires')
+        br = self.spec.get_build_requires()
         self.set_passed('rubygems-devel' in br)
         if self.has_extension():
             self.set_passed('ruby-devel' in br, 'The Gem package must have BuildRequires: ruby-devel, if the Gem contains binary extension.')
@@ -185,7 +185,7 @@ class NonGemCheckRequiresProperDevel(NonGemCheckBase):
 
     def run_on_applicable(self):
         """ Run the check """
-        self.set_passed('ruby-devel' in self.spec.find_tag('BuildRequires'))
+        self.set_passed('ruby-devel' in self.spec.get_build-requires())
 
 class GemCheckSetsGemName(GemCheckBase):
     def __init__(self, base):
