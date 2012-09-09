@@ -91,12 +91,14 @@ class TestExt(FR_TestCase):
         check = checks['test-attachments']
         check.run()
         self.assertEqual(len(check.result.attachments), 2)
-        self.assertIn('attachment 1', check.result.attachments[1].text)
-        self.assertEqual('Heading 1',  check.result.attachments[1].header)
-        self.assertEqual(8,  check.result.attachments[1].order_hint)
-        self.assertIn('attachment 2', check.result.attachments[0].text)
-        self.assertEqual('Heading 2',  check.result.attachments[0].header)
-        self.assertEqual(9,  check.result.attachments[0].order_hint)
+        a1 = filter( lambda a: 'attachment 1' in a.text,
+                     check.result.attachments)[0]
+        a2 = filter( lambda a: 'attachment 2' in a.text,
+                     check.result.attachments)[0]
+        self.assertEqual('Heading 1',  a1.header)
+        self.assertEqual(8,  a1.order_hint)
+        self.assertEqual('Heading 2',  a2.header)
+        self.assertEqual(9,  a2.order_hint)
 
     def test_srv_opt(self):
         ''' Test check of no files in /srv, /opt and /usr/local. '''
