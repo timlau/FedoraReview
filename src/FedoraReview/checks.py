@@ -48,6 +48,7 @@ x = Pass
 
 """
 
+
 class _CheckDict(dict):
     """
     A Dictionary of AbstractCheck, with some added behaviour:
@@ -217,7 +218,7 @@ class Checks(object):
             already run.
             """
             check = self.checkdict[name]
-            if hasattr(check, 'result'):
+            if check.is_run:
                 return False
             for dep in check.needs:
                 if not dep in self.checkdict:
@@ -227,14 +228,14 @@ class Checks(object):
                                      name)
                     del(self.checkdict[name])
                     return True
-                elif not hasattr(self.checkdict[dep], 'result'):
+                elif not self.checkdict[dep].is_run:
                     return False
             return True
 
         def run_check(name):
             """ Run check. Update results, attachments and issues. """
             check = self.checkdict[name]
-            if hasattr(check, 'result'):
+            if check.is_run:
                 return
             self.log.debug('Running check: ' + name)
             check.run()
