@@ -3,7 +3,7 @@
 
 import re
 
-from FedoraReview import CheckBase, RegistryBase, Attachment
+from FedoraReview import CheckBase, RegistryBase
 
 class Registry(RegistryBase):
     """ Register all checks in this file. """
@@ -202,7 +202,7 @@ class CheckSoFiles(CCppCheckBase):
             passed = 'fail'
 
         if bad_list:
-            attachments = [Attachment('Unversioned so-files',
+            attachments = [self.Attachment('Unversioned so-files',
                 "\n".join(bad_list), 10)]
 
         self.set_passed(passed, extra, attachments)

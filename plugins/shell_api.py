@@ -28,7 +28,7 @@ import shutil
 from glob import glob
 from subprocess import Popen, PIPE
 
-from FedoraReview import AbstractRegistry, Attachment
+from FedoraReview import AbstractRegistry
 from FedoraReview import GenericCheck, ReviewDirs, Settings, XdgDirs
 
 
@@ -425,7 +425,7 @@ class ShellCheck(GenericCheck):
                 self.log.warning('Cannot decode attachment sorting hint: '
                                   + sort_hint + ', defaulting to 7')
                 sort_hint = 7
-            a = Attachment(header, body, sort_hint)
+            a = self.Attachment(header, body, sort_hint)
             attachments.append(a)
             os.unlink(path)
         return attachments

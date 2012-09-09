@@ -27,7 +27,7 @@ import re
 
 from subprocess import Popen, PIPE, check_output
 
-from FedoraReview import CheckBase, Attachment, ReviewDirs, Mock, Settings
+from FedoraReview import CheckBase, ReviewDirs, Mock, Settings
 from FedoraReview import RegistryBase
 from FedoraReview import ReviewError
 
@@ -143,7 +143,7 @@ class CheckRpmlint(GenericCheckBase):
             no_errors, retval = self.srpm.rpmlint_rpms()
             text = 'No rpmlint messages.' if no_errors else \
                         'There are rpmlint messages (see attachment).'
-            attachments = [Attachment('Rpmlint', retval, 5)]
+            attachments = [self.Attachment('Rpmlint', retval, 5)]
             self.set_passed(True, text, attachments)
         else:
             self.set_passed(False, 'Mock build failed')
@@ -186,7 +186,8 @@ class CheckPackageInstalls(GenericCheckBase):
         if output == None:
             self.set_passed(self.PASS)
         else:
-            attachments = [Attachment('Installation errors', output, 3)]
+            attachments = [
+               self.Attachment('Installation errors', output, 3)]
             self.set_passed(self.FAIL,
                            "Installation errors (see attachment)",
                             attachments)
@@ -214,8 +215,8 @@ class CheckRpmlintInstalled(GenericCheckBase):
             text = 'No rpmlint messages.' if no_errors else \
                              'There are rpmlint messages (see attachment).'
             attachments = \
-                [Attachment('Rpmlint (installed packages)',
-                             retcode + '\n', 5)]
+                [self.Attachment('Rpmlint (installed packages)',
+                                 retcode + '\n', 5)]
             self.set_passed(True, text, attachments)
         else:
             self.set_passed(False, 'Mock build failed')
@@ -798,8 +799,8 @@ class CheckFileRequires(GenericCheckBase):
             cmd = 'rpm -qp --provides ' + rpm
             provides = self._run_cmd(cmd).split('\n')
             prov_txt += get_provides(rpm, provides) + '\n'
-        attachments = [Attachment('Requires', req_txt, 10),
-                       Attachment('Provides', prov_txt, 10)]
+        attachments = [self.Attachment('Requires', req_txt, 10),
+                       self.Attachment('Provides', prov_txt, 10)]
         if len(wrong_req) == 0:
             self.set_passed(True, None, attachments)
         else:
@@ -1649,7 +1650,7 @@ class CheckSourceMD5(GenericCheckBase):
         finally:
             if passed:
                 msg = None
-            attachments = [Attachment('MD5-sum check', text, 10)]
+            attachments = [self.Attachment('MD5-sum check', text, 10)]
             self.set_passed(passed, msg, attachments)
 
 
@@ -1746,9 +1747,9 @@ class CheckSpecAsInSRPM(GenericCheckBase):
             self.set_passed(self.FAIL, "OS error runnning diff")
             return
         if output and len(output) > 0:
-            a = Attachment("Diff spec file in url and in SRPM",
-                           output,
-                           8)
+            a = self.Attachment("Diff spec file in url and in SRPM",
+                                output,
+                                8)
             text = ('Spec file as given by url is not the same as in '
                     'SRPM (see attached diff).')
             self.set_passed(self.FAIL, text, [a])

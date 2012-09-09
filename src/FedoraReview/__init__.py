@@ -22,7 +22,6 @@ Tools for helping Fedora package reviewers
 
 from bugzilla_bug import BugzillaBug
 from check_base   import AbstractCheck, GenericCheck, CheckBase
-from check_base   import Attachment
 from checks       import Checks, ChecksLister
 from mock         import Mock
 from name_bug     import NameBug

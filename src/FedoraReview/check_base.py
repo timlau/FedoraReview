@@ -176,6 +176,10 @@ class GenericCheck(AbstractCheck, FileChecks):
     """
     registry = None
 
+    class Attachment(_Attachment):
+        """ Text written after the test lines. """
+        pass
+
     def __init__(self, checks, defined_in):
         AbstractCheck.__init__(self, defined_in)
         FileChecks.__init__(self, checks)
@@ -300,7 +304,7 @@ class TestResult(object):
         self.get_text()
 
 
-class Attachment(object):
+class _Attachment(object):
     """ Text written after the test lines. """
 
     def __init__(self, header, text, order_hint=10):
