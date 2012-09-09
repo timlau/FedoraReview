@@ -32,7 +32,7 @@ import re
 import subprocess
 
 from FedoraReview.helpers import Helpers
-from checks_class import _CheckDict
+from checks import _CheckDict
 from FedoraReview import AbstractCheck, Checks, \
      Sources, Source, ReviewDirs, SRPMFile, SpecFile, Mock, Settings
 from FedoraReview import BugzillaBug, NameBug
