@@ -30,9 +30,36 @@ from textwrap import TextWrapper
 from helpers import Helpers
 
 
-class AbstractCallError(Exception):
-    ''' When calling an abstract method. '''
-    pass
+class _Attachment(object):
+    """ Text written after the test lines. """
+
+    def __init__(self, header, text, order_hint=10):
+        """
+        Setup an attachment. Args:
+         -  header: short header, < 40 char.
+         -  text: printed as-is.
+         -  order_hint: Sorting hint, lower hint goes first.
+                0 <= order_hint <= 10
+        """
+
+        self.header = header
+        self.text = text
+        self.order_hint = order_hint
+
+    def __str__(self):
+        s = self.header + '\n'
+        s += '-' * len(self.header) + '\n'
+        s += self.text
+        return s
+
+    def __cmp__(self, other):
+        if not hasattr(other, 'order_hint'):
+            return NotImplemented
+        if self.order_hint < other.order_hint:
+            return -1
+        if self.order_hint > other.order_hint:
+            return 1
+        return 0
 
 
 class FileChecks(object):
@@ -142,7 +169,7 @@ class AbstractCheck(object):
     @abstractmethod
     def run(self):
         ''' Perform the check, update result. '''
-        raise AbstractCallError('AbstractCheck')
+        pass
 
     @property
     def state(self):
@@ -303,37 +330,6 @@ class TestResult(object):
     def __str__(self):
         self.get_text()
 
-
-class _Attachment(object):
-    """ Text written after the test lines. """
-
-    def __init__(self, header, text, order_hint=10):
-        """
-        Setup an attachment. Args:
-         -  header: short header, < 40 char.
-         -  text: printed as-is.
-         -  order_hint: Sorting hint, lower hint goes first.
-                0 <= order_hint <= 10
-        """
-
-        self.header = header
-        self.text = text
-        self.order_hint = order_hint
-
-    def __str__(self):
-        s = self.header + '\n'
-        s += '-' * len(self.header) + '\n'
-        s += self.text
-        return s
-
-    def __cmp__(self, other):
-        if not hasattr(other, 'order_hint'):
-            return NotImplemented
-        if self.order_hint < other.order_hint:
-            return -1
-        if self.order_hint > other.order_hint:
-            return 1
-        return 0
 
 
 # vim: set expandtab: ts=4:sw=4:
