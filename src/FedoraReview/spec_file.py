@@ -42,6 +42,7 @@ class SpecFile(object):
     Wrapper classes for getting information from a .spec file
     '''
     def __init__(self, filename):
+        self.macros = {}
         self.log = Settings.get_logger()
         self._sections = {}
         self._section_list = []
@@ -51,10 +52,14 @@ class SpecFile(object):
         ts = rpm.TransactionSet()
         self.spec_obj = ts.parseSpec(self.filename)
 
-        self.name = self.get_from_spec('name')
-        self.version = self.get_from_spec('version')
-        self.release = self.get_from_spec('release')
+        self._name_vers_rel = [self.get_from_spec('name'),
+                               self.get_from_spec('version'),
+                               self.get_from_spec('release')]
         self.process_sections()
+
+    name = property(lambda self: self._name_vers_rel[0])
+    version = property(lambda self: self._name_vers_rel[1])
+    release = property(lambda self: self._name_vers_rel[2])
 
     def get_sources(self, _type='Source'):
         ''' Get SourceX/PatchX lines with macros resolved '''
