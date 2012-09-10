@@ -1,6 +1,9 @@
 #-*- coding: utf-8 -*-
 
 """ R specifics checks """
+# Let's disable the complain about how short R is
+# pylint: disable=C0103
+
 
 import re
 import os
@@ -25,9 +28,12 @@ class RCheckBase(CheckBase):
     DIR = ['%{packname}']
     DOCS = ['doc', 'DESCRIPTION', 'NEWS', 'CITATION']
     URLS = [
-    'http://www.bioconductor.org/packages/release/data/experiment/src/contrib/PACKAGES',
-    'http://www.bioconductor.org/packages/release/data/annotation/src/contrib/PACKAGES',
-    'http://www.bioconductor.org/packages/release/bioc/src/contrib/PACKAGES',
+    'http://www.bioconductor.org/packages/release/data/' \
+    'experiment/src/contrib/PACKAGES',
+    'http://www.bioconductor.org/packages/release/data/' \
+    'annotation/src/contrib/PACKAGES',
+    'http://www.bioconductor.org/packages/release/bioc/' \
+    'src/contrib/PACKAGES',
     'http://cran.at.r-project.org/src/contrib/PACKAGES',
     'http://r-forge.r-project.org/src/contrib/PACKAGES',
     ]
@@ -41,7 +47,7 @@ class RCheckBase(CheckBase):
         """
         name = self.spec.name[2:]
 
-        ok = []
+        versionok = []
         version = None
         for url in self.URLS:
             try:
@@ -55,14 +61,15 @@ class RCheckBase(CheckBase):
             res = re.search('Package: %s\nVersion:.*' % name, content)
             if res is not None:
                 self.log.debug("Found in: %s" % url)
-                ok.append(url)
+                versionok.append(url)
                 if version is None:
                     ver = res.group().split('\n')[1]
-                    version = ver.replace('Version:','').strip()
+                    version = ver.replace('Version:', '').strip()
                 else:
                     " * Found two version of the package in %s" % (
-                        " ".join(ok))
+                        " ".join(versionok))
         return version
+
 
 class RCheckBuildRequires(RCheckBase):
     """ Check if the BuildRequires have the mandatory elements. """
@@ -77,7 +84,7 @@ class RCheckBuildRequires(RCheckBase):
     def run_on_applicable(self):
         """ Run the check """
         brs = self.spec.get_build_requires()
-        tocheck = ['R-devel','tex(latex)']
+        tocheck = ['R-devel', 'tex(latex)']
         if set(tocheck).intersection(set(brs)):
             self.set_passed(True)
         else:
@@ -117,17 +124,17 @@ class RCheckDoc(RCheckBase):
 
     def run_on_applicable(self):
         """ Run the check """
-        self.doc_found = []
+        doc_found = []
         for doc in self.DOCS:
             if self.srpm and self.has_files("*" + doc):
-                self.doc_found.append(doc)
+                doc_found.append(doc)
         docs = self.spec.find_all(re.compile("%doc.*"))
-        self.text += ", ".join(self.doc_found)
+        self.text += ", ".join(doc_found)
         for entry in docs:
             entry = os.path.basename(entry.group(0)).strip()
-            if str(entry) in self.doc_found:
-                self.doc_found.remove(entry)
-        self.set_passed(self.doc_found == [])
+            if str(entry) in doc_found:
+                doc_found.remove(entry)
+        self.set_passed(doc_found == [])
 
 
 class RCheckLatestVersionIsPackaged(RCheckBase):
@@ -151,7 +158,7 @@ class RCheckLatestVersionIsPackaged(RCheckBase):
             self.set_passed('inconclusive',
                 'The package does not come from one of the standard sources')
             return
-        up_version = up_version.replace('-','.')
+        up_version = up_version.replace('-', '.')
 
         self.set_passed(up_version == cur_version, "Latest upstream " +
                 "version is %s, packaged version is %s" %
@@ -189,8 +196,10 @@ class RCheckDir(RCheckBase):
     def dont_run_on_applicable(self):
         # Disabled, does not call set_passed -> errors.
         """ Run the check """
-        dirs = self.spec.find_tag('%dir')
+        #dirs = self.spec.find_tag('%dir')
         #print dirs
+        pass
+
 
 class RCheckBuildSection(RCheckBase):
     """ Check if the build section follows the expected behavior """
@@ -210,9 +219,11 @@ class RCheckBuildSection(RCheckBase):
         b_rm = False
         b_install = False
         for line in self.spec.lines:
-            if 'mkdir -p' in line and ('/R/library' in line or 'rlibdir' in line):
+            if 'mkdir -p' in line and \
+                ('/R/library' in line or 'rlibdir' in line):
                 b_dir = True
-            if "test -d %{packname}/src && (cd %{packname}/src; rm -f *.o *.so)" in line:
+            if "test -d %{packname}/src && " \
+            "(cd %{packname}/src; rm -f *.o *.so)" in line:
                 b_test = True
             if 'rm' in line and 'R.css' in line:
                 b_rm = True
@@ -227,13 +238,17 @@ class RCheckBuildSection(RCheckBase):
         else:
             cmt = ''
             if b_dir is False:
-                cmt += "Package doesn't have the standard directory creation.\n"
+                cmt += "Package doesn't have the standard " \
+                "directory creation.\n"
             if b_test is False:
-                cmt += "Package doesn't have the standard removal of *.o and *.so.\n"
+                cmt += "Package doesn't have the standard " \
+                "removal of *.o and *.so.\n"
             if b_rm is False:
-                cmt += "Package doesn't have the standard removal of the R.css file\n"
+                cmt += "Package doesn't have the standard " \
+                "removal of the R.css file\n"
             if b_install is False:
-                cmt += "Package doesn't have the standard R CMD INSTALL function\n"
+                cmt += "Package doesn't have the standard " \
+                "R CMD INSTALL function\n"
             self.set_passed(False, cmt)
 
 # vim: set expandtab: ts=4:sw=4:
