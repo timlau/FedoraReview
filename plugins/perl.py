@@ -1,9 +1,8 @@
 #-*- coding: utf-8 -*-
 ''' Checks for perl packages. '''
 
-import re
-
 from FedoraReview import CheckBase, RegistryBase
+
 
 class Registry(RegistryBase):
     ''' Register all checks in this file in group 'Perl'. '''
