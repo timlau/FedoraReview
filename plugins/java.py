@@ -88,6 +88,7 @@ class CheckJavadoc(JavaCheckBase):
         self.automatic = True
 
     def run_on_applicable(self):
+        """ run check for java packages """
         files = self.get_files_by_pattern("/usr/share/javadoc/%s/*.html" %
                                           self.spec.name)
         key = self._get_javadoc_sub()
@@ -115,6 +116,7 @@ class CheckJavadocdirName(JavaCheckBase):
         self.automatic = True
 
     def run_on_applicable(self):
+        """ run check for java packages """
         name = self.get_files_by_pattern(
                                 "/usr/share/javadoc/%s" % self.spec.name)
         name_ver = self.get_files_by_pattern("/usr/share/javadoc/%s-%s" %
@@ -151,6 +153,7 @@ class CheckJPackageRequires(JavaCheckBase):
         self.automatic = True
 
     def run_on_applicable(self):
+        """ run check for java packages """
         brs = self.spec.get_build_requires()
         requires = self.spec.get_requires()
         br_found = False
@@ -176,8 +179,8 @@ class CheckJavadocJPackageRequires(JavaCheckBase):
         self.text = 'Javadoc subpackages have Requires: jpackage-utils'
         self.automatic = True
 
-
     def run_on_applicable(self):
+        """ run check for java packages """
         brs = self.spec.find_tag('Requires', '%package javadoc')
         self.set_passed('jpackage-utils' in brs)
 
@@ -197,6 +200,7 @@ class CheckJavaFullVerReqSub(JavaCheckBase):
         self.type = 'MUST'
 
     def run_on_applicable(self):
+        """ run check for java packages """
         regex = re.compile(r'Requires:\s*%{name}\s*=\s*%{version}-%{release}')
         sections = self.spec.get_section("%package")
         extra = ""
@@ -232,6 +236,7 @@ class CheckNoOldMavenDepmap(JavaCheckBase):
         self.regex = re.compile(r'^\s*%add_to_maven_depmap\s+.*')
 
     def run_on_applicable(self):
+        """ run check for java packages """
         self.set_passed(not self.spec.find(self.regex))
 
 
@@ -290,7 +295,8 @@ class CheckUpdateDepmap(JavaCheckBase):
         JavaCheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Java' \
                    '#add_maven_depmap_macro'
-        self.text = 'Package DOES NOT use %update_maven_depmap in %post/%postun'
+        self.text = 'Package DOES NOT use %update_maven_depmap in ' \
+                    '%post/%postun'
         self.automatic = True
         self.type = 'MUST'
         self.regex = re.compile(r'^\s*%update_maven_depmap\s+.*')
@@ -337,24 +343,25 @@ class CheckTestSkip(JavaCheckBase):
                     ' why it was needed in a comment'
         self.automatic = True
         self.type = 'MUST'
-        self.skip_regex = re.compile(r'^\s+-Dmaven.test.skip.*')
-        self.mvn_regex = re.compile(r'^\s*mvn-rpmbuild\s+')
-        self.comment_regex = re.compile(r'^\s*#.*')
-        self.empty_regex = re.compile(r'^\s*$')
-        if self.spec:
-            try:
-                self.build_sec = self.spec.get_section('%build')['%build']
-            except KeyError:
-                self.build_sec = ''
 
     def run(self):
-        if not self.spec.find(self.skip_regex):
+        skip_regex = re.compile(r'^\s+-Dmaven.test.skip.*')
+        mvn_regex = re.compile(r'^\s*mvn-rpmbuild\s+')
+        comment_regex = re.compile(r'^\s*#.*')
+        build_sec = ''
+        if self.spec:
+            try:
+                build_sec = self.spec.get_section('%build')['%build']
+            except KeyError:
+                pass
+
+        if not self.spec.find(skip_regex):
             self.set_passed('not_applicable')
             return
-        result = self._search_previous_line(self.build_sec,
-                                            self.skip_regex,
-                                            self.mvn_regex,
-                                            self.comment_regex)
+        result = self._search_previous_line(build_sec,
+                                            skip_regex,
+                                            mvn_regex,
+                                            comment_regex)
         if result == None:
             # weird. It has skip regex but no maven call?
             self.set_passed(True)
@@ -380,24 +387,25 @@ class CheckLocalDepmap(JavaCheckBase):
         why it was needed in a comment"""
         self.automatic = True
         self.type = 'MUST'
-        self.depmap_regex = re.compile(r'^\s+-Dmaven.local.depmap.*')
-        self.mvn_regex = re.compile(r'^\s*mvn-rpmbuild\s+')
-        self.comment_regex = re.compile(r'^\s*#.*')
-        self.empty_regex = re.compile(r'^\s*$')
-        if self.spec:
-            try:
-                self.build_sec = self.spec.get_section('%build')['%build']
-            except KeyError:
-                self.build_sec = ''
 
     def run(self):
-        if not self.spec.find(self.depmap_regex):
+        depmap_regex = re.compile(r'^\s+-Dmaven.local.depmap.*')
+        mvn_regex = re.compile(r'^\s*mvn-rpmbuild\s+')
+        comment_regex = re.compile(r'^\s*#.*')
+        build_sec = ''
+        if self.spec:
+            try:
+                build_sec = self.spec.get_section('%build')['%build']
+            except KeyError:
+                pass
+
+        if not self.spec.find(depmap_regex):
             self.set_passed('not_applicable')
             return
-        result = self._search_previous_line(self.build_sec,
-                                            self.depmap_regex,
-                                            self.mvn_regex,
-                                            self.comment_regex)
+        result = self._search_previous_line(build_sec,
+                                            depmap_regex,
+                                            mvn_regex,
+                                            comment_regex)
         if result == None:
             # weird. It has skip regex but no maven call?
             self.set_passed(True)
