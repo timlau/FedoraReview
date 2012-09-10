@@ -66,8 +66,9 @@ class RCheckBase(CheckBase):
                     ver = res.group().split('\n')[1]
                     version = ver.replace('Version:', '').strip()
                 else:
-                    " * Found two version of the package in %s" % (
-                        " ".join(versionok))
+                    self.log.warning(
+                        " * Found two version of the package in %s" % (
+                        " ".join(versionok)))
         return version
 
 
