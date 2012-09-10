@@ -16,6 +16,7 @@
 #
 # (C) 2011 - Tim Lauridsen <timlau@fedoraproject.org>
 
+
 '''
 This module contains automatic test for Fedora Packaging guidelines
 '''
@@ -582,7 +583,6 @@ class CheckDefattr(GenericCheckBase):
 
     def run(self):
         has_defattr = False
-        output = ''
         sec_files = self.spec.get_section('%files')
         for sec in sec_files:
             sec_lines = sec_files[sec]
@@ -1917,8 +1917,7 @@ class CheckUTF8Filenames(GenericCheckBase):
 
     def run(self):
         for line in self.srpm.rpmlint_output:
-            # TODO: add encoding check
-            if 'wrong-file-end-of-line-encoding' in line or\
+            if 'wrong-file-end-of-line-encoding' in line or \
             'file-not-utf8' in line:
                 self.set_passed(False)
         self.set_passed(True)
