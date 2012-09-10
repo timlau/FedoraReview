@@ -61,13 +61,6 @@ class _Attachment(object):
             return 1
         return 0
 
-    def __nonzero__(self):
-        return bool(self.value)
-
-    def activate(self):
-        ''' Turn 'on' flag from default 'off' state. '''
-        self.value = '1'
-
 
 class FileChecks(object):
     """ Add file-checking capabilities to self. """
