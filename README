@@ -46,22 +46,22 @@ installing without mock is not recommended.
 
 Download
 --------
-Install git and run the command below to clone the source:
+Clone the source using:
 
-    $ git clone http://git.fedorahosted.org/git/FedoraReview.git
+    $ git clone -b devel http://git.fedorahosted.org/git/FedoraReview.git
 
 Alternative repository for users wishing to use github:
-git clone git://github.com/timlau/FedoraReview.git
+git://github.com/timlau/FedoraReview.git. You might consider cloning
+another branch e. g., a release branch. However, 'master' branch is
+probably not what you want.
 
 
 Running from git
 ----------------
 
-After downloading (above) checkout proper branch (usually 'devel')
-and use try-fedora-review:
+After downloading (above) use try-fedora-review:
 
     $ cd FedoraReview
-    $ git checkout devel
     $ ./update-version
     $ ./try-fedora-review --help
 
@@ -75,7 +75,7 @@ Usage
     $ nroff -man fedora-review.1 | more
     $ fedora-review --help
 
-There's more in the wiki (above)
+There's more in the wiki (above).
 
 
 Extending
@@ -84,3 +84,7 @@ Extending
 fedora-review can be extended with small shell-scripts and full-featured
 python plugins. See the wiki (above).
 
+
+Bugs and issues
+---------------
+Follow link in the wiki.
