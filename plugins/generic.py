@@ -878,9 +878,9 @@ class CheckFullVerReqSub(GenericCheckBase):
         for section, lines in lines_by_section.iteritems():
             if not regex.search(' '.join(lines)):
                 # Requires: %{name}%{?_isa} = %{version}-%{release}
-                extra += 'Missing : Requires: %{name}%{?_isa} = ' \
+                extra += 'No Requires: %{name}%{?_isa} = ' \
                              '%{version}-%{release} in ' + section
-        self.set_passed('fail' if extra else 'pass', extra)
+        self.set_passed('pending' if extra else 'pass', extra)
 
 
 class CheckFunctionAsDescribed(GenericCheckBase):
