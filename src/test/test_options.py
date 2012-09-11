@@ -115,7 +115,7 @@ class TestOptions(FR_TestCase):
 
         self.init_test('git-source',
                        argv= ['-rpn', 'get-flash-videos', '--cache'],
-                       buildroot='fedora-16-i386-rpmfusion_free')
+                       buildroot='fedora-16-i386')
         ReviewDirs.reset()
         ReviewDirs.startdir = os.getcwd()
 
