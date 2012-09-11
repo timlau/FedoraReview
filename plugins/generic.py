@@ -869,28 +869,18 @@ class CheckFullVerReqSub(GenericCheckBase):
         self.type = 'MUST'
 
     def run(self):
-        sections = self.spec.get_section('%package')
-        if len(sections) == 0:
+        lines_by_section = self.spec.get_section('%package')
+        if len(lines_by_section) == 0:
             self.set_passed('not_applicable')
             return
         regex = re.compile(r'Requires:\s*%{name}\s*=\s*%{version}-%{release}')
-        sections = self.spec.get_section('%package')
         extra = ''
-        errors = False
-        for section in sections:
-            passed = False
-            for line in sections[section]:
-                if regex.search(line):
-                    passed = True
-            if not passed:
+        for section, lines in lines_by_section.iteritems():
+            if not regex.search(' '.join(lines)):
                 # Requires: %{name}%{?_isa} = %{version}-%{release}
-                extra += 'Missing : Requires: %%{name}%%{?_isa} = ' \
-                             '%%{version}-%%{release} in %s' % section
-                errors = False
-        if errors:
-            self.set_passed(False, extra)
-        else:
-            self.set_passed(True)
+                extra += 'Missing : Requires: %{name}%{?_isa} = ' \
+                             '%{version}-%{release} in ' + section
+        self.set_passed('fail' if extra else 'pass', extra)
 
 
 class CheckFunctionAsDescribed(GenericCheckBase):
