@@ -69,8 +69,8 @@ class RCheckLatestVersionIsPackaged(RCheckBase):
         is applicable and quit if not.
         """
 
-        # See if the package should be checked. if not:
-        #     set_passed('not_applicable')
+        # See if the package should be checked. If not, disable output:
+        #     set_passed(self.NA)
         #     return
 
         # do something...
@@ -86,10 +86,10 @@ class RCheckLatestVersionIsPackaged(RCheckBase):
         # Access the rpmlint output via:
         #  self.srpm.rpmlint_output
         # Return a simple 'approved' ([x])
-        #     self.set_passed('pass')
+        #     self.set_passed(self.PASS)
         # a failure[!]  with a Note: message:
-        #     self.set_passed('fail', 'test failed because...')
+        #     self.set_passed(self.FAIL, 'test failed because...')
         # or a pending [ ] status:
-        #     self.set_passed('pending')
+        #     self.set_passed(self.PENDING)
 
 # Other classes doing other tests....
