@@ -25,13 +25,13 @@ import shutil
 
 from urlparse import urlparse
 
-from helpers import Helpers, DownloadError
+from helpers_mixin import HelpersMixin, DownloadError
 from review_dirs import ReviewDirs
 from review_error import ReviewError
 from settings import Settings
 
 
-class Source(Helpers):
+class Source(HelpersMixin):
     ''' A source defined in the specfile.
     Attributes:
          - url: complete url, possibly file://
@@ -53,7 +53,7 @@ class Source(Helpers):
             else:
                 self.log.info("Downloading (%s): %s" % (tag, url))
 
-        Helpers.__init__(self)
+        HelpersMixin.__init__(self)
         self.extract_dir = None
         self.tag = tag
         self.downloaded = True

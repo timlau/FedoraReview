@@ -24,14 +24,14 @@ from abc import ABCMeta, abstractmethod
 from glob import glob
 from urlparse import urlparse
 
-from helpers import Helpers
+from helpers_mixin import HelpersMixin
 from review_error import ReviewError
 from settings import Settings
 from srpm_file import SRPMFile
 from review_dirs import ReviewDirs
 
 
-class AbstractBug(Helpers):
+class AbstractBug(HelpersMixin):
     """ This class has an interesting name.
     Anyway, defines an object which can determine URLs for spec
     and srpm given a key like a name, bug nr etc. Attributes:
@@ -55,7 +55,7 @@ class AbstractBug(Helpers):
             self.show_logs = False
 
     def __init__(self):
-        Helpers.__init__(self)
+        HelpersMixin.__init__(self)
         self.log = Settings.get_logger()
         self.spec_url = None
         self.srpm_url = None

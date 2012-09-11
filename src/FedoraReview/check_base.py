@@ -27,7 +27,7 @@ from abc import ABCMeta, abstractmethod
 from fnmatch import fnmatch
 from textwrap import TextWrapper
 
-from helpers import Helpers
+from helpers_mixin import HelpersMixin
 
 
 class _Attachment(object):
@@ -249,12 +249,12 @@ class GenericCheck(AbstractCheck, FileChecks):
         self.result = r                          # pylint: disable=W0201
 
 
-class CheckBase(GenericCheck, Helpers):
+class CheckBase(GenericCheck, HelpersMixin):
     """ Base class for "regular" python checks. """
     # pylint: disable=R0201
 
     def __init__(self, checks, defined_in):
-        Helpers.__init__(self)
+        HelpersMixin.__init__(self)
         GenericCheck.__init__(self, checks, defined_in)
 
     def is_applicable(self):

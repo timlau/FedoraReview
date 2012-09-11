@@ -27,7 +27,7 @@ import os.path
 from glob import glob
 from subprocess import call, Popen, PIPE, STDOUT
 
-from helpers import Helpers
+from helpers_mixin import HelpersMixin
 from review_dirs import ReviewDirs
 from settings import Settings
 from review_error import ReviewError
@@ -52,11 +52,11 @@ def _run_script(script):
     return True, output
 
 
-class _Mock(Helpers):
+class _Mock(HelpersMixin):
     """ Some basic operations on the mock chroot env, a singleton. """
 
     def __init__(self):
-        Helpers.__init__(self)
+        HelpersMixin.__init__(self)
         self.log = Settings.get_logger()
         self.build_failed = None
         self.mock_root = None

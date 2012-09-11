@@ -26,13 +26,13 @@ import shutil
 from glob import glob
 from subprocess import call
 
-from helpers import Helpers
+from helpers_mixin import HelpersMixin
 from mock import Mock
 from review_dirs import ReviewDirs
 from settings import Settings
 
 
-class SRPMFile(Helpers):
+class SRPMFile(HelpersMixin):
     ''' Models the srpm and it's methods. '''
 
     # Codes > 0 as returned by mock(1)
@@ -41,7 +41,7 @@ class SRPMFile(Helpers):
     BUILD_PREBUILT = -2
 
     def __init__(self, filename, spec=None):
-        Helpers.__init__(self)
+        HelpersMixin.__init__(self)
         self._rpm_files = None
         self._prebuilt_info = None
         self._unpacked_src = None

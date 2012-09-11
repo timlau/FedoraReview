@@ -38,7 +38,7 @@ class DownloadError(ReviewError):
            self, "Error %s downloading %s" % (code, url))
 
 
-class Helpers(object):
+class HelpersMixin(object):
     ''' Miscellaneous library support mixin class. '''
 
     def __init__(self):

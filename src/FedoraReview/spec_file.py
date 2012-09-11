@@ -41,8 +41,9 @@ class SpecFile(object):
     '''
     Wrapper classes for getting information from a .spec file
     '''
+    # pylint: disable=W0212
+
     def __init__(self, filename):
-        self.macros = {}
         self.log = Settings.get_logger()
         self._sections = {}
         self._section_list = []

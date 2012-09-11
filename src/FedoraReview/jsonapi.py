@@ -25,7 +25,7 @@ import subprocess
 
 from json import JSONEncoder, JSONDecoder
 
-from helpers import Helpers
+from helpers_mixin import HelpersMixin
 from check_base import TestResult, GenericCheck
 from mock import Mock
 from review_error import ReviewError
@@ -182,11 +182,11 @@ class PluginTestsParser(PluginTestParser):
         return tests
 
 
-class JSONPlugin(Helpers):
+class JSONPlugin(HelpersMixin):
     """Plugin for communicating with external review checks using JSON"""
 
     def __init__(self, checks, plugin_path):
-        Helpers.__init__(self)
+        HelpersMixin.__init__(self)
         self.plugin_path = plugin_path
         self.version = None
         self.checks = checks

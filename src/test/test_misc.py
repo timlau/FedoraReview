@@ -31,7 +31,7 @@ import os
 import re
 import subprocess
 
-from FedoraReview.helpers import Helpers
+from FedoraReview.helpers_mixin import HelpersMixin
 from checks import _CheckDict
 from FedoraReview import AbstractCheck, Checks, \
      Sources, Source, ReviewDirs, SRPMFile, SpecFile, Mock, Settings
@@ -46,7 +46,7 @@ class TestMisc(FR_TestCase):
         sys.argv = ['fedora-review', '-b', '1']
         Settings.init(True)
         self.log = Settings.get_logger()
-        self.helpers = Helpers()
+        self.helpers = HelpersMixin()
         self.srpm_file = os.path.join(os.path.abspath('.'),
                                       'test_misc',
                                       'python-test-1.0-1.fc16.src.rpm')
@@ -234,7 +234,7 @@ class TestMisc(FR_TestCase):
     def test_checksum_command_line(self):
         sys.argv = ['fedora-review','-b','1', '-k', 'sha1']
         Settings.init(True)
-        helpers = Helpers()
+        helpers = HelpersMixin()
         checksum = helpers._checksum('scantailor.desktop')
         self.assertEqual(checksum, '5315b33321883c15c19445871cd335f7f698a2aa')
 
@@ -242,7 +242,7 @@ class TestMisc(FR_TestCase):
         sys.argv = ['fedora-review','-b','1']
         Settings.init(True)
         Settings.checksum = 'md5'
-        helpers = Helpers()
+        helpers = HelpersMixin()
         checksum = helpers._checksum('scantailor.desktop')
         self.assertEqual(checksum, '4a1c937e62192753c550221876613f86')
 
@@ -250,7 +250,7 @@ class TestMisc(FR_TestCase):
         sys.argv = ['fedora-review','-b','1']
         Settings.init(True)
         Settings.checksum = 'sha1'
-        helpers = Helpers()
+        helpers = HelpersMixin()
         checksum = helpers._checksum('scantailor.desktop')
         self.assertEqual(checksum, '5315b33321883c15c19445871cd335f7f698a2aa')
 
@@ -258,7 +258,7 @@ class TestMisc(FR_TestCase):
         sys.argv = ['fedora-review','-b','1']
         Settings.init(True)
         Settings.checksum = 'sha224'
-        helpers = Helpers()
+        helpers = HelpersMixin()
         checksum = helpers._checksum('scantailor.desktop')
         self.assertEqual(checksum, '01959559db8ef8d596ff824fe207fc0345be67df6b8a51942214adb7')
 
@@ -266,7 +266,7 @@ class TestMisc(FR_TestCase):
         sys.argv = ['fedora-review','-b','1']
         Settings.init(True)
         Settings.checksum = 'sha256'
-        helpers = Helpers()
+        helpers = HelpersMixin()
         checksum = helpers._checksum('scantailor.desktop')
         self.assertEqual(checksum, 'd8669d49c8557ac47681f9b85e322849fa84186a8683c93959a590d6e7b9ae29')
 
@@ -274,7 +274,7 @@ class TestMisc(FR_TestCase):
         sys.argv = ['fedora-review','-b','1']
         Settings.init(True)
         Settings.checksum = 'sha384'
-        helpers = Helpers()
+        helpers = HelpersMixin()
         checksum = helpers._checksum('scantailor.desktop')
         self.assertEqual(checksum, '3d6a580100b1e8a40dc41892f6b289ff13c0b489b8079d8b7c01a17c67b88bf77283f784b4e8dacac6572050df8c948e')
 
@@ -282,7 +282,7 @@ class TestMisc(FR_TestCase):
         sys.argv = ['fedora-review','-b','1']
         Settings.init(True)
         Settings.checksum = 'sha512'
-        helpers = Helpers()
+        helpers = HelpersMixin()
         checksum = helpers._checksum('scantailor.desktop')
         self.assertEqual(checksum, '77a138fbd918610d55d9fd22868901bd189d987f17701498164badea88dd6f5612c118fc9e66d7b57f802bf0cddadc1cec54674ee1c3df2ddfaf1cac4007ac26')
 
