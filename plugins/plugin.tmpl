@@ -5,19 +5,21 @@
 
 from FedoraReview import CheckBase, RegistryBase
 
+
 class Registry(RegistryBase):
+    """ Register all checks in this file in group "R". """
 
     group = 'R'
 
     def is_applicable(self):
-        return self.spec.name.startswith("R-")
+        return self.checks.spec.name.startswith("R-")
 
 
 class RCheckBase(CheckBase):
     """ Base class for all R specific checks. """
 
-    def __init__(self, base):
-        LangCheckBase.__init__(self, base, __file__)
+    def __init__(self, checks):
+        CheckBase.__init__(self, checks, __file__)
 
 
 class  RCheckBuildRequires(RCheckBase):
@@ -35,9 +37,9 @@ class  RCheckBuildRequires(RCheckBase):
         if is_applicable() is True.
         """
 
-        br = self.checks.spec.find_tag('BuildRequires')
+        br = self.spec.get_build_requires()
         passed = 'R-devel' in br and 'tex(latex)' in br
-        self.set_passed('pass' if passed else 'fail')
+        self.set_passed(self.PASS if passed else self.FAIL)
 
 
 class RCheckLatestVersionIsPackaged(RCheckBase):
