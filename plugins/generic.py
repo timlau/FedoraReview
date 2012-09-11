@@ -859,6 +859,9 @@ class CheckFullVerReqSub(GenericCheckBase):
     package using a fully versioned dependency:
     Requires: %{name}%{?_isa} = %{version}-%{release}
     '''
+
+    HDR = 'No Requires: %{name}%{?_isa} = %{version}-%{release} in '
+
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
@@ -874,12 +877,13 @@ class CheckFullVerReqSub(GenericCheckBase):
             self.set_passed('not_applicable')
             return
         regex = re.compile(r'Requires:\s*%{name}\s*=\s*%{version}-%{release}')
-        extra = ''
+        extra = []
         for section, lines in lines_by_section.iteritems():
             if not regex.search(' '.join(lines)):
                 # Requires: %{name}%{?_isa} = %{version}-%{release}
-                extra += 'No Requires: %{name}%{?_isa} = ' \
-                             '%{version}-%{release} in ' + section
+                extra.append(section)
+        if extra:
+            extra =self. HDR + ', '.join(extra)
         self.set_passed('pending' if extra else 'pass', extra)
 
 
