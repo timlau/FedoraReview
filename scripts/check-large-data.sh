@@ -1,8 +1,8 @@
 #!/bin/bash
-# @deprecates: CheckLargeDocs
 # @group: Generic
-# @url: http://fedoraproject.org/wiki/Packaging/Guidelines#PackageDocumentation
-# @text: Large data in /usr/share should live in a noarch subpackage if package is arched.
+# @url: http://fedoraproject.org/wiki/Packaging:ReviewGuidelines#Package_Review_Guidelines
+# @text: Large data in /usr/share should live in a noarch subpackage
+# @text: if package is arched.
 # @type: EXTRA
 
 
@@ -19,7 +19,7 @@ if unpack_rpms; then
         [ -d "$rpm/$datadir" ] || continue
         sizes[$rpm]=$( tar -c $rpm/$datadir | wc -c )
         sum=$((sum + ${sizes[$rpm]}))
-    done 
+    done
 
     test $sum -lt $min && exit $FR_PASS
     echo "Arch-ed rpms have a total of $sum bytes in /usr/share"
