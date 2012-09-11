@@ -33,9 +33,8 @@ from glob import glob
 from FedoraReview import Checks, ReviewDirs, SpecFile, Settings, Sources
 from FedoraReview import BugzillaBug, NameBug, UrlBug
 
-VERSION = '0.2.2'
 
-from fr_testcase import FR_TestCase, NO_NET, FAST_TEST
+from fr_testcase import FR_TestCase, NO_NET, FAST_TEST, VERSION
 
 class TestOptions(FR_TestCase):
 
