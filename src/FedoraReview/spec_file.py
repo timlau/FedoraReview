@@ -146,11 +146,9 @@ class SpecFile(object):
 
     def find_tag(self, tag, section = None):
         '''
-        Find at given tag in the spec file. Parameters:
-          - tag: tag to look for. E. g., 'Name', 'gem-name'
-            Matches tag: (E. g. Name:) in beginning of line,
-            or %define tag or %global tag e. g.,
-            %global gem-name mygem
+        Find a given tag in the spec file. Parameters:
+          - tag: tag to look for. E. g., 'Name'
+            Matches tag: (E. g. Name:) in beginning of line.
           - section. A section corresponds to a subpackage e. g.,
             'devel'
 
@@ -158,24 +156,17 @@ class SpecFile(object):
         definition line in the spec file.
 
         '''
-        # Maybe we can merge the last two regex in one but using
-        # (define|global) leads to problem with the res.group(1)
-        # so for the time being let's go with 2 regex
-        keys = [re.compile(r"^%s\d*\s*:\s*(.*)" % tag, re.I),
-                 re.compile(r"^.define\s*%s\s*(.*)" % tag, re.I),
-                 re.compile(r"^.global\s*%s\s*(.*)" % tag, re.I)
-               ]
+        key = re.compile(r"^%s\d*\s*:\s*(.*)" % tag, re.I)
         values = []
         lines = self.lines
         if section:
-            lines = self.get_section(section)
-            if lines:
-                lines = lines[section]
+            lines_by_section = self.get_section(section)
+            if lines_by_section:
+                lines = lines_by_section[section]
         for line in lines:
-            for key in keys:
-                match = key.search(line)
-                if match:
-                    values.append(match.group(1).strip())
+            match = key.search(line)
+            if match:
+                values.append(match.group(1).strip())
         return values
 
     @staticmethod
