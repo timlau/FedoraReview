@@ -83,8 +83,8 @@ class CheckJavadoc(JavaCheckBase):
         JavaCheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Java' \
                    '#Javadoc_installation'
-        self.text = """Javadoc documentation files are generated and
-        included in -javadoc subpackage"""
+        self.text = "Javadoc documentation files are generated and " \
+                    "included in -javadoc subpackage"
         self.automatic = True
 
     def run_on_applicable(self):
@@ -111,8 +111,8 @@ class CheckJavadocdirName(JavaCheckBase):
         JavaCheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Java' \
                    '#Javadoc_installation'
-        self.text = """Javadocs are placed in %{_javadocdir}/%{name}
-        (no -%{version} symlink)"""
+        self.text = "Javadocs are placed in %{_javadocdir}/%{name} " \
+                    "(no -%{version} symlink)"
         self.automatic = True
 
     def run_on_applicable(self):
@@ -148,8 +148,8 @@ class CheckJPackageRequires(JavaCheckBase):
     def __init__(self, base):
         JavaCheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Java'
-        self.text = """Packages have proper BuildRequires/Requires on
-        jpackage-utils"""
+        self.text = "Packages have proper BuildRequires/Requires on " \
+                    "jpackage-utils"
         self.automatic = True
 
     def run_on_applicable(self):
@@ -316,9 +316,9 @@ class CheckNoRequiresPost(JavaCheckBase):
     def __init__(self, base):
         JavaCheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Java'
-        self.text = """Packages DOES NOT have Requires(post) and
-                    Requires(postun) on jpackage-utils for
-                    %update_maven_depmap macro"""
+        self.text = "Packages DOES NOT have Requires(post) and " \
+                    "Requires(postun) on jpackage-utils for " \
+                    "%update_maven_depmap macro"
         self.automatic = True
         self.type = 'MUST'
         self.regex = \
@@ -383,8 +383,8 @@ class CheckLocalDepmap(JavaCheckBase):
     def __init__(self, base):
         JavaCheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Java'
-        self.text = """If package uses "-Dmaven.local.depmap" explain
-        why it was needed in a comment"""
+        self.text = "If package uses '-Dmaven.local.depmap' explain " \
+                    "why it was needed in a comment"
         self.automatic = True
         self.type = 'MUST'
 
@@ -449,8 +449,8 @@ class CheckPomInstalled(JavaCheckBase):
 
     def __init__(self, base):
         JavaCheckBase.__init__(self, base)
-        self.text = """If package contains pom.xml files install it
-        (including depmaps) even when building with ant"""
+        self.text = "If package contains pom.xml files install it " \
+                    "(including depmaps) even when building with ant"
         self.url = 'https://fedoraproject.org/wiki/Packaging:Java' \
                    '#Maven_pom.xml_files_and_depmaps'
         self.automatic = False
