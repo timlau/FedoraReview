@@ -11,7 +11,7 @@ class Registry(RegistryBase):
     group = 'Java'
 
     def is_applicable(self):
-        ''' Return true iff this is a java package. '''
+        ''' Return true if this is a java package. '''
         return self.has_files("*.jar") or self.has_files("*.pom")
 
 
