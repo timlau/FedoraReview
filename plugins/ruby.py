@@ -185,7 +185,7 @@ class NonGemCheckRequiresProperDevel(NonGemCheckBase):
 
     def run_on_applicable(self):
         """ Run the check """
-        self.set_passed('ruby-devel' in self.spec.get_build-requires())
+        self.set_passed('ruby-devel' in self.spec.get_build_requires())
 
 class GemCheckSetsGemName(GemCheckBase):
     def __init__(self, base):
