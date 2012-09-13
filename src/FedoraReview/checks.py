@@ -42,10 +42,11 @@ Package Review
 ==============
 
 Key:
-- = N/A
-x = Pass
-! = Fail
-? = Not evaluated
+[x] = Pass
+[!] = Fail
+[-] = Not applicable
+[?] = Not evaluated
+[ ] = Manual review needed
 
 """
 
