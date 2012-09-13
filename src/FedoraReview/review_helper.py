@@ -129,7 +129,7 @@ class ReviewHelper(object):
                         continue
                     print 'Group: ' + group
                     for c in sorted(checks):
-                        print '    ' + c.name
+                        print '    %s: %s' % (c.name, c.text)
                 print
 
         checks_lister = ChecksLister()
