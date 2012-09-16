@@ -34,8 +34,18 @@ except ImportError:
     from FedoraReview.el_compat import check_output
 
 
-from FedoraReview import CheckBase, Mock, ReviewDirs, Settings
-from FedoraReview import RegistryBase, ReviewError
+from FedoraReview import CheckBase, Mock, ReviewDirs, ReviewError
+from FedoraReview import RegistryBase, Settings
+
+
+def _in_list(what, list_):
+    ''' test if 'what' is in each item in list_. '''
+    for item in list_:
+        if not item:
+            return False
+        if not what in item:
+            return False
+    return True
 
 
 class Registry(RegistryBase):
@@ -122,7 +132,7 @@ class CheckBuild(GenericCheckBase):
             self.set_passed(self.PENDING, 'Using prebuilt packages')
             return
         if Settings.nobuild:
-            if Mock.have_cache_for(self.spec.name):
+            if Mock.have_cache_for(self.spec):
                 self.set_passed(self.PENDING,
                                 'Re-using old build in mock')
                 return
@@ -150,7 +160,8 @@ class CheckRpmlint(GenericCheckBase):
 
     def run(self):
         if not self.checks.checkdict['CheckBuild'].is_failed:
-            no_errors, retval = self.srpm.rpmlint_rpms()
+            rpms = Mock.get_package_rpm_paths(self.spec)
+            no_errors, retval = Mock.rpmlint_rpms(rpms)
             text = 'No rpmlint messages.' if no_errors else \
                         'There are rpmlint messages (see attachment).'
             attachments = [self.Attachment('Rpmlint', retval, 5)]
@@ -172,10 +183,13 @@ class CheckPackageInstalls(GenericCheckBase):
 
     def check_build_installed(self):
         ''' Return list of used rpms which are not installed'''
-        rpms = self.srpm.get_used_rpms()
-        rpms = [os.path.basename(r).rsplit('-', 2)[0] for r in rpms]
-        bad_rpms = filter(lambda r: not Mock.is_installed(r), rpms)
-        return bad_rpms
+        bad_ones = []
+        for pkg in self.spec.packages:
+            try:
+                Mock.get_package_rpm_path(pkg, self.spec)
+            except ReviewError:
+                bad_ones.append(pkg)
+        return bad_ones
 
     def run(self):
         if Settings.nobuild:
@@ -190,7 +204,7 @@ class CheckPackageInstalls(GenericCheckBase):
                 rpms = [glob(os.path.join(Mock.resultdir, p + '*'))[0]
                              for p in bad_ones]
         else:
-            rpms = self.srpm.get_used_rpms('.src.rpm')
+            rpms = Mock.get_package_rpm_paths(self.spec)
         _mock_root_setup('While installing built packages')
         self.log.info('Installing built package(s)')
         output = Mock.install(rpms)
@@ -221,7 +235,7 @@ class CheckRpmlintInstalled(GenericCheckBase):
 
     def run(self):
         if self.checks.checkdict['CheckPackageInstalls'].is_passed:
-            rpms = self.srpm.get_used_rpms('.src.rpm')
+            rpms = Mock.get_package_rpm_paths(self.spec)
             no_errors, retcode = Mock.rpmlint_rpms(rpms)
             text = 'No rpmlint messages.' if no_errors else \
                              'There are rpmlint messages (see attachment).'
@@ -248,7 +262,7 @@ class CheckBuildCompleted(GenericCheckBase):
         self.needs = ['CheckRpmlintInstalled']
 
     def run(self):
-        Mock.rpmbuild_bp(self.srpm.filename)
+        Mock.rpmbuild_bp(self.srpm)
         if not os.path.exists('BUILD'):
             os.symlink(Mock.get_builddir('BUILD'), 'BUILD')
         self.set_passed('not_applicable')
@@ -330,7 +344,7 @@ class CheckBuildroot(GenericCheckBase):
         self.type = 'SHOULD'
 
     def run(self):
-        br_tags = self.spec.find_tag('BuildRoot')
+        br_tags = self.spec.find_all('^BuildRoot')
         if len(br_tags) == 0:
             if self.flags['EPEL5']:
                 self.set_passed(self.FAIL,
@@ -343,7 +357,10 @@ class CheckBuildroot(GenericCheckBase):
                             'Multiple BuildRoot definitions found')
             return
 
-        br = br_tags[0]
+        try:
+            br = br_tags[0].split(':')[1].strip()
+        except IndexError:
+            br = 'Illegal buildroot line:' + br_tags[0]
         legal_buildroots = [
         '%(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)',
         '%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)',
@@ -382,7 +399,7 @@ class CheckBuildRequires(GenericCheckBase):
         if  self.checks.checkdict['CheckBuild'].is_pending:
             self.set_passed('pending', 'Using prebuilt rpms.')
         elif self.checks.checkdict['CheckBuild'].is_passed:
-            brequires = self.spec.get_build_requires()
+            brequires = self.spec.build_requires
             pkg_by_default = ['bash', 'bzip2', 'coreutils', 'cpio',
                 'diffutils', 'fedora-release', 'findutils', 'gawk',
                 'gcc', 'gcc-c++', 'grep', 'gzip', 'info', 'make',
@@ -432,15 +449,13 @@ class CheckClean(GenericCheckBase):
     def run(self):
         has_clean = False
         sec_clean = self.spec.get_section('%clean')
-        for sec in sec_clean:
-            sec_lines = sec_clean[sec]
+        if sec_clean:
             regex = re.compile('^(rm|%{__rm})\s+\-rf\s+(%{buildroot}|'
                                '\$RPM_BUILD_ROOT)\s*$')
-            if sec_lines:
-                for line in sec_lines:
-                    if regex.search(line):
-                        has_clean = True
-                        break
+            for line in sec_clean:
+                if regex.search(line):
+                    has_clean = True
+                    break
         if self.flags['EPEL5']:
             self.text = 'EPEL5 requires explicit %clean with rm -rf' \
                              ' %{buildroot} (or $RPM_BUILD_ROOT)'
@@ -469,7 +484,7 @@ class CheckDistTag(GenericCheckBase):
         self.type = 'SHOULD'
 
     def run(self):
-        rel_tags = self.spec.find_tag('Release')
+        rel_tags = self.spec.find_all('^Release\s*:')
         if len(rel_tags) > 1:
             self.set_passed(False, 'Multiple Release tags found')
             return
@@ -505,25 +520,17 @@ class CheckConfigNoReplace(GenericCheckBase):
         self.automatic = True
         self.type = 'MUST'
 
-    def is_applicable(self):
-        sections = self.spec.get_section('%files')
-        for section in sections:
-            for line in sections[section]:
-                if line.startswith('%config'):
-                    return True
-        return False
-
-    def run_on_applicable(self):
-        passed = True
+    def run(self):
+        rc = self.NA
         extra = ''
-        sections = self.spec.get_section('%files')
-        for section in sections:
-            for line in sections[section]:
+        for pkg in self.spec.packages:
+            for line in self.spec.get_files(pkg):
                 if line.startswith('%config'):
                     if not line.startswith('%config(noreplace)'):
-                        passed = False
                         extra += line
-        self.set_passed(passed, extra)
+                    else:
+                        rc = self.PASS
+        self.set_passed(self.FAIL if extra else rc, extra)
 
 
 class CheckContainsLicenseText(GenericCheckBase):
@@ -549,16 +556,10 @@ class CheckCleanBuildroot(GenericCheckBase):
 
     def run(self):
         has_clean = False
-        sec_clean = self.spec.get_section('%install')
-        for sec in sec_clean:
-            sec_lines = sec_clean[sec]
-            regex = re.compile('^(rm|%{__rm})\s\-rf\s(%{buildroot}|'
-                               '\$RPM_BUILD_ROOT)\s*$')
-            if sec_lines:
-                for line in sec_lines:
-                    if regex.search(line):
-                        has_clean = True
-                        break
+        regex = re.compile('^(rm|%{__rm})\s\-rf\s(%{buildroot}|'
+                           '\$RPM_BUILD_ROOT)\s*$')
+        install_sec = self.spec.get_section('%install', raw=True)
+        has_clean = install_sec and regex.search(install_sec)
         if self.flags['EPEL5']:
             self.text = 'EPEL5: Package does run rm -rf %{buildroot}' \
                   ' (or $RPM_BUILD_ROOT) at the beginning of %install.'
@@ -590,11 +591,12 @@ class CheckDefattr(GenericCheckBase):
 
     def run(self):
         has_defattr = False
-        sec_files = self.spec.get_section('%files')
-        for sec in sec_files:
-            sec_lines = sec_files[sec]
-            if sec_lines:
-                if sec_lines[0].startswith('%defattr('):
+        for pkg in self.spec.packages:
+            if pkg.endswith('-debuginfo'):
+                #auto-generated %defattr, ignore
+                continue
+            for line in self.spec.get_files(pkg):
+                if line.startswith('%defattr('):
                     has_defattr = True
                     break
         if has_defattr and self.flags['EPEL5']:
@@ -639,7 +641,7 @@ class CheckDesktopFile(GenericCheckBase):
         self.type = 'MUST'
 
     def run(self):
-        have_desktop = self.has_files('*.desktop')
+        have_desktop = self.rpms.has_files('*.desktop')
         self.set_passed(True if have_desktop else 'inconclusive')
 
 
@@ -661,14 +663,13 @@ class CheckDesktopFileInstall(GenericCheckBase):
         self.type = 'MUST'
 
     def run(self):
-        if not self.has_files('*.desktop'):
+        if not self.rpms.has_files('*.desktop'):
             self.set_passed('not_applicable')
             return
         pattern = r'(desktop-file-install|desktop-file-validate)' \
                    '.*(desktop|SOURCE)'
-        spec_lines = '\n'.join(self.spec.lines)
-        m = re.compile(pattern, re.DOTALL).search(spec_lines)
-        self.set_passed(m != None)
+        found = self.spec.find(re.compile(pattern))
+        self.set_passed(self.PASS if found else self.FAIL)
 
 
 class CheckDevelFilesInDevel(GenericCheckBase):
@@ -777,7 +778,7 @@ class CheckFilePermissions(GenericCheckBase):
         self.type = 'MUST'
 
     def run(self):
-        for line in self.srpm.rpmlint_output:
+        for line in Mock.rpmlint_output:
             if 'non-standard-executable-perm' in line:
                 self.set_passed(False, 'See rpmlint output')
                 return
@@ -810,35 +811,32 @@ class CheckFileRequires(GenericCheckBase):
                     return True
             return not req.startswith('/')
 
-        def get_requires(rpm, requires):
+        def get_requires(rpm_name, requires):
             ''' Return printable requirements for a rpm. '''
             requires = filter(lambda s: not 'rpmlib' in s, requires)
             requires = filter(lambda s: not 'GLIBC' in s, requires)
             requires = sorted(list(set(requires)))
-            hdr = os.path.basename(rpm) + ' (rpmlib, GLIBC filtered):'
+            hdr = rpm_name + ' (rpmlib, GLIBC filtered):'
             requires.insert(0, hdr)
             return '\n    '.join(requires) + '\n'
 
-        def get_provides(rpm, provides):
+        def get_provides(rpm_name, provides):
             ''' Return printable Provides:  for a rpm. '''
             provides = sorted(list(set(provides)))
-            provides.insert(0, os.path.basename(rpm) + ':')
+            provides.insert(0, rpm_name + ':')
             return '\n    '.join(provides) + '\n'
 
         wrong_req = []
-        rpm_files = self.srpm.get_used_rpms('src.rpm')
         req_txt = ''
         prov_txt = ''
-        for rpm in rpm_files:
-            cmd = 'rpm -qp --requires ' + rpm
-            requires = self._run_cmd(cmd).split('\n')
+        for pkg in self.rpms.get_keys():
+            rpm_pkg = self.rpms.get(pkg)
+            requires = rpm_pkg.requires
             for req in requires:
                 if not is_acceptable(req):
                     wrong_req.append(req)
-            req_txt += get_requires(rpm, requires) + '\n'
-            cmd = 'rpm -qp --provides ' + rpm
-            provides = self._run_cmd(cmd).split('\n')
-            prov_txt += get_provides(rpm, provides) + '\n'
+            req_txt += get_requires(pkg, requires) + '\n'
+            prov_txt += get_provides(pkg, rpm_pkg.provides) + '\n'
         attachments = [self.Attachment('Requires', req_txt, 10),
                        self.Attachment('Provides', prov_txt, 10)]
         if len(wrong_req) == 0:
@@ -868,6 +866,7 @@ class CheckFullVerReqSub(GenericCheckBase):
     '''
 
     HDR = 'No Requires: %{name}%{?_isa} = %{version}-%{release} in '
+    REGEX = r'Requires:\s*%{name}\s*=\s*%{version}-%{release}'
 
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
@@ -879,19 +878,19 @@ class CheckFullVerReqSub(GenericCheckBase):
         self.type = 'MUST'
 
     def run(self):
-        lines_by_section = self.spec.get_section('%package')
-        if len(lines_by_section) == 0:
-            self.set_passed('not_applicable')
-            return
-        regex = re.compile(r'Requires:\s*%{name}\s*=\s*%{version}-%{release}')
-        extra = []
-        for section, lines in lines_by_section.iteritems():
-            if not regex.search(' '.join(lines)):
-                # Requires: %{name}%{?_isa} = %{version}-%{release}
-                extra.append(section)
-        if extra:
-            extra = self. HDR + ', '.join(extra)
-        self.set_passed('pending' if extra else 'pass', extra)
+        bad_pkgs = []
+        regex = re.compile(self.REGEX)
+        for pkg in self.spec.packages:
+            if not pkg.endswith('-devel'):
+                continue
+            requires = ' '.join(self.spec.get_requires(pkg))
+            if not regex.search(requires):
+                bad_pkgs.append(pkg)
+        if bad_pkgs:
+            self.set_passed(self.PENDING,
+                            self.HDR + ' , '.join(bad_pkgs))
+        else:
+            self.set_passed(self.PASS)
 
 
 class CheckFunctionAsDescribed(GenericCheckBase):
@@ -933,7 +932,7 @@ class CheckIllegalSpecTags(GenericCheckBase):
         passed = True
         output = ''
         for tag in ('Packager', 'Vendor', 'PreReq'):
-            value = self.spec.get_from_spec(tag)
+            value = self.spec.expand_tag(tag)
             if value:
                 passed = False
                 output += 'Found : %s: %s\n' % (tag, value)
@@ -1099,18 +1098,18 @@ class CheckLicensInDoc(GenericCheckBase):
         licenses = []
         for potentialfile in ['COPYING', 'LICEN', 'copying', 'licen']:
             pattern = '*' + potentialfile + '*'
-            rpm_files = self.get_files_by_pattern(pattern)
-            for files in rpm_files.itervalues():
-                licenses.extend(files)
+            for pkg in self.spec.packages:
+                licenses.extend(
+                            self.rpms.find_all(pattern, pkg))
         licenses = map(lambda f: f.split('/')[-1], licenses)
         if licenses == []:
             self.set_passed('inconclusive')
             return
 
-        rpms = self.srpm.get_used_rpms('src.rpm')
         docs = []
-        for rpm in rpms:
-            cmd = 'rpm -qldp ' + rpm
+        for pkg in self.spec.packages:
+            rpm_path = Mock.get_package_rpm_path(pkg, self.spec)
+            cmd = 'rpm -qldp ' + rpm_path
             doclist = check_output(cmd.split())
             docs.extend(doclist.split())
         docs = map(lambda f: f.split('/')[-1], docs)
@@ -1138,11 +1137,7 @@ class CheckLicenseInSubpackages(GenericCheckBase):
 
     def is_applicable(self):
         '''Check if subpackages exists'''
-        sections = self.spec.get_section('%package')
-        if len(sections) == 0:
-            return False
-        else:
-            return True
+        return len(self.spec.packages) > 1
 
 
 class CheckLocale(GenericCheckBase):
@@ -1160,7 +1155,7 @@ class CheckLocale(GenericCheckBase):
         self.type = 'MUST'
 
     def is_applicable(self):
-        return self.has_files('/usr/share/locale/*/LC_MESSAGES/*.mo')
+        return self.rpms.has_files('/usr/share/locale/*/LC_MESSAGES/*.mo')
 
 
 class CheckLicenseUpstream(GenericCheckBase):
@@ -1243,7 +1238,7 @@ class CheckManPages(GenericCheckBase):
         self.type = 'SHOULD'
 
     def is_applicable(self):
-        return self.has_files('[/usr]/[s]bin/*')
+        return self.rpms.has_files('[/usr]/[s]bin/*')
 
 
 class CheckMultipleLicenses(GenericCheckBase):
@@ -1259,7 +1254,7 @@ class CheckMultipleLicenses(GenericCheckBase):
         self.type = 'MUST'
 
     def is_applicable(self):
-        license_ = self.spec.get_from_spec('License').lower().split()
+        license_ = self.spec.expand_tag('License').lower().split()
         return 'and' in license_ or 'or' in license_
 
 
@@ -1320,9 +1315,8 @@ class CheckNoConfigInUsr(GenericCheckBase):
         self.type = 'MUST'
 
     def is_applicable(self):
-        sections = self.spec.get_section('%files')
-        for section in sections:
-            for line in sections[section]:
+        for pkg in self.spec.packages:
+            for line in self.spec.get_files(pkg):
                 if line.startswith('%config'):
                     return True
         return False
@@ -1330,15 +1324,12 @@ class CheckNoConfigInUsr(GenericCheckBase):
     def run_on_applicable(self):
         passed = True
         extra = ''
-        sections = self.spec.get_section('%files')
-        for section in sections:
-            for line in sections[section]:
+        for pkg in self.spec.packages:
+            for line in self.spec.get_files(pkg):
                 if line.startswith('%config'):
                     l = line.replace("%config", "")
                     l = l.replace("(noreplace)", "").strip()
-                    stdout = check_output(['rpm', '--eval', l])
-                    output = stdout.decode('utf-8').strip()
-                    if output.startswith('/usr'):
+                    if l.startswith('/usr'):
                         passed = False
                         extra += line
 
@@ -1361,7 +1352,7 @@ class CheckNoConflicts(GenericCheckBase):
         self.type = 'MUST'
 
     def run(self):
-        if self.spec.find_tag('Conflicts'):
+        if self.spec.expand_tag('Conflicts'):
             self.set_passed(False,
                             'Package contains Conflicts: tag(s)'
                             ' needing fix or justification.')
@@ -1444,29 +1435,15 @@ class CheckParallelMake(GenericCheckBase):
         self.automatic = False
         self.type = 'SHOULD'
 
-    def is_applicable(self):
-        '''
-        check if this test is applicable
-        '''
-        regex = re.compile(r'^make')
-        lines = self.spec.get_section('build')
-        found = False
-        for line in lines:
-            res = regex.search(line)
-            if res:
-                found = True
-        self.set_passed(found)
-        return found
-
-    def run_on_applicable(self):
-        regex = re.compile(r'^make*.%{?_smp_mflags}')
-        lines = self.spec.get_section('build')
-        found = False
-        for line in lines:
-            res = regex.search(line)
-            if res:
-                found = True
-        self.set_passed(found)
+    def run(self):
+        rc = self.NA
+        build_sec = self.spec.get_section('build')
+        if build_sec:
+            for line in build_sec:
+                if line.startswith('make'):
+                    ok = '%{?_smp_mflags}' in line
+                    rc = self.PASS if ok else self.FAIL
+        self.set_passed(rc)
 
 
 class CheckPatchComments(GenericCheckBase):
@@ -1482,7 +1459,7 @@ class CheckPatchComments(GenericCheckBase):
         self.type = 'SHOULD'
 
     def is_applicable(self):
-        return self.spec.has_patches()
+        return len(self.spec.patches_by_tag) > 0
 
 
 class CheckPkgConfigFiles(GenericCheckBase):
@@ -1503,17 +1480,21 @@ class CheckPkgConfigFiles(GenericCheckBase):
         self.type = 'SHOULD'
 
     def run(self):
-        files = self.get_files_by_pattern('*.pc')
-        if files == []:
+        files_by_pkg = {}
+        for pkg in self.spec.packages:
+            file_list = self.rpms.find_all('*.pc', pkg)
+            if file_list:
+                files_by_pkg[pkg] = file_list
+        if files_by_pkg == {}:
             self.set_passed('not_applicable')
             return
         passed = 'pass'
         extra = ''
-        for rpm in files:
-            for fn in files[rpm]:
-                if not '-devel' in rpm:
+        for pkg in files_by_pkg.iterkeys():
+            for fn in files_by_pkg[pkg]:
+                if not '-devel' in pkg:
                     passed = 'pending'
-                    extra += '%s : %s\n' % (rpm, fn)
+                    extra += '%s : %s\n' % (pkg, fn)
         self.set_passed(passed, extra)
 
 
@@ -1551,15 +1532,14 @@ class CheckReqPkgConfig(GenericCheckBase):
         self.type = 'MUST'
 
     def run(self):
-        if not self.has_files('*.pc') or not self.flags['EPEL5']:
+        if not self.rpms.has_files('*.pc') or not self.flags['EPEL5']:
             self.set_passed('not_applicable')
             return
-        regex = re.compile('^Require:\s*.*pkgconfig.*', re.I)
-        lines = self.spec.get_section('main')
         result = self.FAIL
-        for line in lines:
-            if regex.search(line):
+        for line in self.spec.get_requires():
+            if 'pkgconfig' in line:
                 result = self.PASS
+                break
         self.set_passed(result)
 
 
@@ -1666,7 +1646,7 @@ class CheckSourceMD5(GenericCheckBase):
         all_sources_passed = True
         for source in sources:
             if source.local:
-                self.log.debug('Skipping md5-tst for '
+                self.log.debug('Skipping md5-test for '
                                 + source.filename)
                 continue
             if source.local_src:
@@ -1685,16 +1665,17 @@ class CheckSourceMD5(GenericCheckBase):
 
     def run(self):
         sources = self.sources.get_all()
-        if len(sources) == 0:
+        if sources == []:
             self.log.debug('No testable sources')
             self.set_passed(self.PENDING, 'Package has no sources or they'
                             ' are generated by developer')
             return
         msg = 'Check did not complete'
+        text = ''
         try:
-            passed, text = self.check_checksums(sources)
+            passed, text = self.check_checksums(self.sources.get_all())
             if not passed:
-                passed, diff = self.make_diff(sources)
+                passed, diff = self.make_diff(self.sources.get_all())
                 if passed:
                     text += 'However, diff -r shows no differences\n'
                     msg = 'checksum differs but diff -r is OK'
@@ -1735,8 +1716,8 @@ class CheckSourcePatchPrefix(GenericCheckBase):
         self.type = 'SHOULD'
 
     def run(self):
-        sources = self.spec.get_sources()
-        sources.update(self.spec.get_sources('Patch'))
+        sources = self.spec.sources_by_tag
+        sources.update(self.spec.patches_by_tag)
         extra = ''
         passed = True
         if len(sources) == 0:
@@ -1903,9 +1884,9 @@ class CheckSupportAllArchs(GenericCheckBase):
     def run(self):
         build_ok = self.checks.checkdict['CheckBuild'].is_passed
 
-        arch = self.spec.find_tag('BuildArch')
+        arch = self.spec.expand_tag('BuildArch')
         noarch = arch and arch[0].lower() == 'noarch'
-        one_arch = self.spec.find_tag('ExclusiveArch')
+        one_arch = self.spec.expand_tag('ExclusiveArch')
         if build_ok and (one_arch or noarch):
             self.set_passed(self.PASS)
         else:
@@ -1965,7 +1946,7 @@ class CheckUTF8Filenames(GenericCheckBase):
         self.type = 'MUST'
 
     def run(self):
-        for line in self.srpm.rpmlint_output:
+        for line in Mock.rpmlint_output:
             if 'wrong-file-end-of-line-encoding' in line or \
             'file-not-utf8' in line:
                 self.set_passed(False)
@@ -1992,9 +1973,8 @@ class CheckUsefulDebuginfo(GenericCheckBase):
         self.type = 'MUST'
 
     def is_applicable(self):
-        rpm_files = self.srpm.get_used_rpms('src.rpm')
-        for rpm in rpm_files:
-            if not rpm.endswith('noarch.rpm'):
+        for path in Mock.get_package_rpm_paths(self.spec):
+            if not path.endswith('noarch.rpm'):
                 return True
         return False
 
@@ -2015,7 +1995,7 @@ class CheckUseGlobal(GenericCheckBase):
         if result:
             extra = ''
             for res in result:
-                extra += '%s\n' % res.group(0)
+                extra += res + '\n'
             self.set_passed(False, extra)
         else:
             self.set_passed(True)
@@ -2070,7 +2050,7 @@ class CheckTmpfiles(GenericCheckBase):
             self.set_passed(self.NA)
             return
         for p in ['/run/*', '/var/run/*', '/var/lock/*', '/run/lock/*']:
-            if self.has_files(p):
+            if self.rpms.has_files(p):
                 self.set_passed(self.PENDING)
                 break
         else:
@@ -2093,7 +2073,7 @@ class CheckBundledFonts(GenericCheckBase):
             self.set_passed(self.NA)
             return
         for p in ['*.pfb', '*.pfa', '*.afm', '*.ttf', '*.otf']:
-            if self.has_files(p):
+            if self.rpms.has_files(p):
                 self.set_passed(self.PENDING,
                                 'Package contains font files')
                 break
@@ -2114,11 +2094,14 @@ class CheckSourcedirMacroUse(GenericCheckBase):
 
     def run(self):
         text = ''.join(self.spec.lines)
-        if '%_sourcedir' in text or '$RPM_SOURCE_DIR' in text:
+        if '%_sourcedir' in text or '$RPM_SOURCE_DIR' in text or \
+        '%{_sourcedir}' in text:
             self.set_passed(self.PENDING,
                             '%_sourcedir/$RPM_SOURCE_DIR is used.')
         else:
             self.set_passed(self.NA)
 
 
+
+#
 # vim: set expandtab: ts=4:sw=4:
