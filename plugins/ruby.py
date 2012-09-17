@@ -1,6 +1,9 @@
 #-*- coding: utf-8 -*-
 ''' Checks for ruby and rubygem packages.'''
 
+# The inheritance chain is 8 level deep. Let's live with it.
+# pylint: disable=R0901
+
 import re
 import itertools
 
