@@ -53,6 +53,25 @@ Key:
 """
 
 
+def _write_section(results, output):
+    ''' Print a {SHOULD,MUST, EXTRA} section. '''
+
+    def hdr(group):
+        ''' Return header this test is printed under. '''
+        if group == 'Setup':
+            return 'Generic'
+        return group
+
+    groups = list(set([hdr(test.group) for test in results]))
+    for group in sorted(groups):
+        res = filter(lambda t: t.group == group, results)
+        if res == []:
+            continue
+        output.write('\n' + group + ':\n')
+        for r in res:
+            output.write(r.get_text() + '\n')
+
+
 class _CheckDict(dict):
     """
     A Dictionary of AbstractCheck, with some added behaviour:
@@ -132,7 +151,7 @@ class _CheckDict(dict):
 
 
 class _Flags(dict):
-    ''' A dict storing Flag  entries with some added baheviour. '''
+    ''' A dict storing Flag  entries with some added behaviour. '''
 
     def __init__(self):
         dict.__init__(self)
@@ -332,17 +351,6 @@ class Checks(object):
     def show_output(output, results, issues, attachments):
         ''' Print test results on output. '''
 
-        def write_sections(results):
-            ''' Print a {SHOULD,MUST, EXTRA} section. '''
-            groups = sorted(list(set([test.group for test in results])))
-            for group in groups:
-                res = filter(lambda t: t.group == group, results)
-                if res == []:
-                    continue
-                output.write('\n' + group + ':\n')
-                for r in res:
-                    output.write(r.get_text() + '\n')
-
         def dump_local_repo():
             ''' print info on --local-repo rpms used. '''
             repodir = Settings.repo
@@ -363,15 +371,15 @@ class Checks(object):
 
         output.write("\n\n===== MUST items =====\n")
         musts = filter(lambda r: r.type == 'MUST', results)
-        write_sections(musts)
+        _write_section(musts, output)
 
         output.write("\n===== SHOULD items =====\n")
         shoulds = filter(lambda r: r.type == 'SHOULD', results)
-        write_sections(shoulds)
+        _write_section(shoulds, output)
 
         output.write("\n===== EXTRA items =====\n")
         extras = filter(lambda r: r.type == 'EXTRA', results)
-        write_sections(extras)
+        _write_section(extras, output)
 
         for a in sorted(attachments):
             output.write('\n\n')
