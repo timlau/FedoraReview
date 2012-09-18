@@ -230,13 +230,10 @@ class SpecFile(object):
 
     def find_all(self, regex, skip_changelog=False):
         ''' Find all non-changelog lines matching regex. '''
-        my_lines = list(self.lines)
-        if skip_changelog:
-            line = my_lines.pop()
-            while not '%changelog' in line.lower() and my_lines:
-                line = my_lines.pop()
-        result = []
-        for line in my_lines:
+        for line in self.lines:
+            if skip_changelog:
+                if line.lower().strip().startswith('%changelog'):
+                    break
             res = regex.search(line)
             if res:
                 result.append(res)
