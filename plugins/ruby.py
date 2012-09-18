@@ -340,7 +340,7 @@ class GemCheckUsesMacros(GemCheckBase):
 
         # mark the present macro regexps with True
         files_val = self.spec.get_section('%files').values()
-        files_sections = itertools.chain(*files_val)
+        files_sections = itertools.chain(*files_val)  # pylint: disable=W0142
         for line in files_sections:
             for macro_re in re_dict:
                 if macro_re.match(line):
