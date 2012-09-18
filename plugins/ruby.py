@@ -1,17 +1,43 @@
 #-*- coding: utf-8 -*-
 ''' Checks for ruby and rubygem packages.'''
 
-# The inheritance chain is 8 level deep. Let's live with it.
-# pylint: disable=R0901
-
 import re
 import itertools
 
 from FedoraReview import CheckBase, RegistryBase
 
+_GUIDELINES_URI = 'http://fedoraproject.org/wiki/Packaging:Ruby'
+_GUIDELINES_SECTION_URI = '%(uri)s#%%(section)s' % {'uri': _GUIDELINES_URI}
+
+
+def _is_nongem(spec):
+    """ Return true for pure ruby packages"""
+    return spec.name.startswith('ruby-')
+
+
+def _is_gem(spec):
+    """ Return true for rubygem packages"""
+    return spec.name.startswith('rubygem-')
+
+
+def _has_extension(check):
+    """ Return True if the package contains native extension """
+    # TODO: will need altering for jruby .jar files
+    return check.has_files_re(r'.*\.c(?:pp)')
+
+
+def _gl_uri():
+    """ Returns default URL for packaging guidelines """
+    return _GUIDELINES_URI
+
+
+def _gl_fmt_uri(fmt):
+    """ Returns formatted subsection of packaging guidelines"""
+    return _GUIDELINES_SECTION_URI % fmt
+
 
 class Registry(RegistryBase):
-    ''' Register all checks inthis file in group 'Ruby' '''
+    ''' Register all checks in this file in group 'Ruby' '''
 
     group = 'Ruby'
 
@@ -19,67 +45,40 @@ class Registry(RegistryBase):
         """ Check is the tests are applicable, here it checks whether
         it is either ruby or rubygem package
         """
-        return self._is_gem() or self._is_nongem()
-
-    def _is_nongem(self):
-        """ Check if this is a ruby package """
-        return self.checks.spec.name.startswith('ruby-')
-
-    def _is_gem(self):
-        """ Check if this is a rubygem package """
-        return self.checks.spec.name.startswith('rubygem-')
+        return _is_gem(self.checks.spec) or _is_nongem(self.checks.spec)
 
 
 class RubyCheckBase(CheckBase):
-    """ Base class for all Ruby specific checks. """
-    _guidelines_uri = 'http://fedoraproject.org/wiki/Packaging:Ruby'
-    _guidelines_section_uri = '%(uri)s#%%(section)s' % {'uri': _guidelines_uri}
-
+    """ Base class for all general Ruby checks. """
     def __init__(self, base):
         CheckBase.__init__(self, base, __file__)
 
-    def is_nongem(self):
-        """ Return true for pure ruby packages"""
-        return self.spec.name.startswith('ruby-')
 
-    def is_gem(self):
-        """ Return true for rubygem packages"""
-        return self.spec.name.startswith('rubygem-')
-
-    def has_extension(self):
-        """ Return True if the package contains native extension """
-        # TODO: will need altering for jruby .jar files
-        return self.has_files_re(r'.*\.c(?:pp)')
-
-    @property
-    def gl_uri(self):
-        """ Returns default URL for packaging guidelines """
-        return self._guidelines_uri
-
-    def gl_fmt_uri(self, fmt):
-        """ Returns formatted subsection of packaging guidelines"""
-        return self._guidelines_section_uri % fmt
-
-
-class GemCheckBase(RubyCheckBase):
+class GemCheckBase(CheckBase):
     """ Base class for all Gem specific checks. """
+    def __init__(self, base):
+        CheckBase.__init__(self, base, __file__)
+
     def is_applicable(self):
         """ Return true for rubygem packages"""
-        return self.is_gem()
+        return _is_gem(self.spec)
 
 
-class NonGemCheckBase(RubyCheckBase):
+class NonGemCheckBase(CheckBase):
     """ Base class for all non-Gem specific checks. """
+    def __init__(self, base):
+        CheckBase.__init__(self, base, __file__)
+
     def is_applicable(self):
         """ Return true for pure ruby packages"""
-        return self.is_nongem()
+        return _is_nongem(self.spec)
 
 
 class RubyCheckRequiresRubyAbi(RubyCheckBase):
     """ Check if package requires ruby(abi) """
     def __init__(self, base):
         RubyCheckBase.__init__(self, base)
-        self.url = self.gl_fmt_uri({'section': 'Ruby_ABI'})
+        self.url = _gl_fmt_uri({'section': 'Ruby_ABI'})
         self.text = 'Package contains Requires: ruby(abi).'
         self.automatic = True
 
@@ -101,7 +100,7 @@ class RubyCheckBuildArchitecture(RubyCheckBase):
     def run_on_applicable(self):
         """ Run the check """
         arch = self.spec.find_tag('BuildArch')
-        if self.has_extension():
+        if _has_extension(self):
             self.set_passed('noarch' not in arch,
                             "Package with binary extension can't be built" \
                             " as noarch.")
@@ -114,7 +113,7 @@ class RubyCheckPlatformSpecificFilePlacement(RubyCheckBase):
     """
     def __init__(self, base):
         RubyCheckBase.__init__(self, base)
-        self.url = self.gl_fmt_uri({'section':
+        self.url = _gl_fmt_uri({'section':
                     'Ruby_packages_with_binary_content.2Fshared_libraries'})
         self.text = 'Platform specific files must be located under ' \
                     '/usr/lib[64]'
@@ -122,7 +121,7 @@ class RubyCheckPlatformSpecificFilePlacement(RubyCheckBase):
 
     def is_applicable(self):
         return super(RubyCheckPlatformSpecificFilePlacement,
-                     self).is_applicable() and self.has_extension()
+                     self).is_applicable() and _has_extension(self)
 
     def run_on_applicable(self):
         usr_lib_re = re.compile(r'/usr/lib')
@@ -139,7 +138,7 @@ class RubyCheckTestsRun(RubyCheckBase):
     """ Check if test suite is being run """
     def __init__(self, base):
         RubyCheckBase.__init__(self, base)
-        self.url = self.gl_fmt_uri({'section': 'Running_test_suites'})
+        self.url = _gl_fmt_uri({'section': 'Running_test_suites'})
         self.text = 'Test suite of the library should be run.'
         self.automatic = True
         self.type = 'SHOULD'
@@ -157,7 +156,7 @@ class RubyCheckTestsNotRunByRake(RubyCheckBase):
     """ Check and fail if tests are being run by rake """
     def __init__(self, base):
         RubyCheckBase.__init__(self, base)
-        self.url = self.gl_fmt_uri({'section': 'Running_test_suites'})
+        self.url = _gl_fmt_uri({'section': 'Running_test_suites'})
         self.text = 'Test suite should not be run by rake.'
         self.automatic = True
         self.type = 'SHOULD'
@@ -175,7 +174,7 @@ class NonGemCheckUsesMacros(NonGemCheckBase):
     """ Check if spec files uses proper macros instead of hardcoding """
     def __init__(self, base):
         NonGemCheckBase.__init__(self, base)
-        self.url = self.gl_fmt_uri({'section': 'Macros'})
+        self.url = _gl_fmt_uri({'section': 'Macros'})
         self.text = 'Specfile should utilize macros from ruby-devel package.'
         self.automatic = True
         self.type = 'SHOULD'
@@ -187,9 +186,9 @@ class NonGemCheckUsesMacros(NonGemCheckBase):
         vendorlibdir_re = re.compile('%{vendorlibdir}', re.I)
 
         for line in self.spec.get_section('%files')['%files']:
-            if self.has_extension() and vendorarchdir_re.match(line):
+            if _has_extension(self) and vendorarchdir_re.match(line):
                 self.set_passed(True)
-            if not self.has_extension() and vendorlibdir_re.match(line):
+            if not _has_extension(self) and vendorlibdir_re.match(line):
                 self.set_passed(True)
 
 
@@ -197,7 +196,7 @@ class NonGemCheckFilePlacement(NonGemCheckBase):
     """ Check if files are placed in correct directories"""
     def __init__(self, base):
         NonGemCheckBase.__init__(self, base)
-        self.url = self.gl_fmt_uri({'section':
+        self.url = _gl_fmt_uri({'section':
                                     'Build_Architecture_and_File_Placement'})
         self.text = 'Platform dependent files must go under ' \
             '%{ruby_vendorarchdir}, platform independent under ' \
@@ -209,7 +208,7 @@ class GemCheckFilePlacement(GemCheckBase):
     """ Check if gem files are placed in correct directories """
     def __init__(self, base):
         GemCheckBase.__init__(self, base)
-        self.url = self.gl_fmt_uri({'section': '.25install'})
+        self.url = _gl_fmt_uri({'section': '.25install'})
         self.text = 'Platform dependent files must all go under ' \
             '%{gem_extdir}, platform independent under %{gem_dir}.'
         self.automatic = False
@@ -219,7 +218,7 @@ class GemCheckRequiresProperDevel(GemCheckBase):
     """ Check that gem packages contain proper BuildRequires """
     def __init__(self, base):
         GemCheckBase.__init__(self, base)
-        self.url = self.gl_fmt_uri({'section': 'RubyGems'})
+        self.url = _gl_fmt_uri({'section': 'RubyGems'})
         self.text = 'Package contains BuildRequires: rubygems-devel.'
         self.automatic = True
 
@@ -227,7 +226,7 @@ class GemCheckRequiresProperDevel(GemCheckBase):
         """ Run the check """
         br = self.spec.get_build_requires()
         self.set_passed('rubygems-devel' in br)
-        if self.has_extension():
+        if _has_extension(self):
             self.set_passed('ruby-devel' in br,
                             'The Gem package must have BuildRequires: ' \
                             'ruby-devel if the Gem contains binary extension.')
@@ -237,7 +236,7 @@ class NonGemCheckRequiresProperDevel(NonGemCheckBase):
     """ Check that non-gem packages contain proper BuildRequires """
     def __init__(self, base):
         NonGemCheckBase.__init__(self, base)
-        self.url = self.gl_fmt_uri({'section': 'Non-Gem_Packages'})
+        self.url = _gl_fmt_uri({'section': 'Non-Gem_Packages'})
         self.text = 'Package contains BuildRequires: ruby-devel.'
         self.automatic = True
 
@@ -250,7 +249,7 @@ class GemCheckSetsGemName(GemCheckBase):
     """ Check for proper gem_name macro """
     def __init__(self, base):
         GemCheckBase.__init__(self, base)
-        self.url = self.gl_fmt_uri({'section': 'RubyGems'})
+        self.url = _gl_fmt_uri({'section': 'RubyGems'})
         self.text = 'Gem package must define %{gem_name} macro.'
         self.automatic = True
 
@@ -263,7 +262,7 @@ class GemCheckProperName(GemCheckBase):
     """ Check for proper naming of package """
     def __init__(self, base):
         GemCheckBase.__init__(self, base)
-        self.url = self.gl_fmt_uri({'section': 'Naming_Guidelines'})
+        self.url = _gl_fmt_uri({'section': 'Naming_Guidelines'})
         self.text = 'Gem package is named rubygem-%{gem_name}'
         self.automatic = True
 
@@ -277,8 +276,8 @@ class GemCheckDoesntHaveNonGemSubpackage(GemCheckBase):
     """ Check and fail if gem package contains non-gem subpackage """
     def __init__(self, base):
         GemCheckBase.__init__(self, base)
-        self.url = self.gl_fmt_uri({'section':
-                                    'Packaging_for_Gem_and_non-Gem_use'})
+        self.url = _gl_fmt_uri({'section':
+                               'Packaging_for_Gem_and_non-Gem_use'})
         self.text = 'Gem package must not define a non-gem subpackage'
         self.automatic = True
 
@@ -297,7 +296,7 @@ class GemCheckExcludesGemCache(GemCheckBase):
     """ Check if cached gem is excluded """
     def __init__(self, base):
         GemCheckBase.__init__(self, base)
-        self.url = self.gl_uri
+        self.url = _gl_uri
         self.text = 'Gem package should exclude cached Gem.'
         self.automatic = True
         self.type = 'SHOULD'
@@ -319,7 +318,7 @@ class GemCheckUsesMacros(GemCheckBase):
     """ Check if spec files uses proper macros instead of hardcoding """
     def __init__(self, base):
         GemCheckBase.__init__(self, base)
-        self.url = self.gl_fmt_uri({'section': 'Macros'})
+        self.url = _gl_fmt_uri({'section': 'Macros'})
         self.text = 'Specfile should use macros from rubygem-devel package.'
         self.automatic = True
         self.type = 'SHOULD'
@@ -336,7 +335,7 @@ class GemCheckUsesMacros(GemCheckBase):
                    doc_gem_docdir_re: False,
                    exclude_gem_cache_re: False,
                    gem_spec_re: False}
-        if self.has_extension():
+        if _has_extension(self):
             re_dict[gem_extdir_re] = False
 
         # mark the present macro regexps with True
