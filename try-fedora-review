@@ -2,18 +2,19 @@
 #-*- coding: utf-8 -*-
 # vim: set expandtab: ts=4:sw=4:
 #
-# Script to run a fedora-review installation from wherever it is 
+# Script to run a fedora-review installation from wherever it is
 # located. Primarely intended to be able to run a test version
 # in parallell with the official one.
 #
 # Usage:
 #     $ ln -s $PWD/try-fedora-review ~/bin
 #     $ try-fedora-review <args>
-#   
-# (C) 2011 - Alec Leamas 
+#
+# (C) 2011 - Alec Leamas
 
 import os.path
 import sys
+import subprocess
 
 pkg_dir = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])),
                        'src')
@@ -23,4 +24,12 @@ from FedoraReview.review_helper import ReviewHelper
 
 review = ReviewHelper()
 review.run()
+
+cmd = ["git", "rev-parse", "--abbrev-ref", "HEAD"]
+cur_branch = subprocess.check_output(cmd).strip()
+if cur_branch == "master":
+    print "\033[91mYou are running fedora-review from 'master' branch. This " \
+          "is probably not what you want to do. Master branch is equal to " \
+          "latest stable release. For development/bugreporting use " \
+          "'devel' branch. See CONTRIBUTE file for more details\033[0m"
 
