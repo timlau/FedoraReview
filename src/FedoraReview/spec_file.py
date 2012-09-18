@@ -71,7 +71,7 @@ class SpecFile(object):
             if _type != srctype:
                 continue
             tag = srctype + str(num)
-            result[tag] = url
+            result[tag] = self.spec_obj.sourceHeader.format(url)
         return result
 
     def has_patches(self):
@@ -230,6 +230,7 @@ class SpecFile(object):
 
     def find_all(self, regex, skip_changelog=False):
         ''' Find all non-changelog lines matching regex. '''
+        result = []
         for line in self.lines:
             if skip_changelog:
                 if line.lower().strip().startswith('%changelog'):
