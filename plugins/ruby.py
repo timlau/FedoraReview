@@ -42,7 +42,7 @@ class Registry(RegistryBase):
     group = 'Ruby'
 
     def is_applicable(self):
-        """ Check is the tests are applicable, here it checks whether
+        """ Check if the tests are applicable, here it checks whether
         it is either ruby or rubygem package
         """
         return _is_gem(self.checks.spec) or _is_nongem(self.checks.spec)
@@ -83,7 +83,6 @@ class RubyCheckRequiresRubyAbi(RubyCheckBase):
         self.automatic = True
 
     def run_on_applicable(self):
-        """ Run the check """
         br = self.spec.get_requires()
         self.set_passed('ruby(abi)' in br)
 
@@ -98,7 +97,6 @@ class RubyCheckBuildArchitecture(RubyCheckBase):
         self.automatic = True
 
     def run_on_applicable(self):
-        """ Run the check """
         arch = self.spec.find_tag('BuildArch')
         if _has_extension(self):
             self.set_passed('noarch' not in arch,
@@ -144,7 +142,6 @@ class RubyCheckTestsRun(RubyCheckBase):
         self.type = 'SHOULD'
 
     def run_on_applicable(self):
-        """ Run the check """
         check_sections = self.spec.get_section('%check')
         self.set_passed(True)
 
@@ -162,7 +159,6 @@ class RubyCheckTestsNotRunByRake(RubyCheckBase):
         self.type = 'SHOULD'
 
     def run_on_applicable(self):
-        """ Run the check """
         self.set_passed(True)
         if self.spec.get_section('%check'):
             for line in self.spec.get_section('%check')['%check']:
@@ -180,7 +176,6 @@ class NonGemCheckUsesMacros(NonGemCheckBase):
         self.type = 'SHOULD'
 
     def run_on_applicable(self):
-        """ Run the check """
         self.set_passed(False)
         vendorarchdir_re = re.compile('%{vendorarchdir}', re.I)
         vendorlibdir_re = re.compile('%{vendorlibdir}', re.I)
@@ -223,7 +218,6 @@ class GemCheckRequiresProperDevel(GemCheckBase):
         self.automatic = True
 
     def run_on_applicable(self):
-        """ Run the check """
         br = self.spec.get_build_requires()
         self.set_passed('rubygems-devel' in br)
         if _has_extension(self):
@@ -241,7 +235,6 @@ class NonGemCheckRequiresProperDevel(NonGemCheckBase):
         self.automatic = True
 
     def run_on_applicable(self):
-        """ Run the check """
         self.set_passed('ruby-devel' in self.spec.get_build_requires())
 
 
@@ -254,7 +247,6 @@ class GemCheckSetsGemName(GemCheckBase):
         self.automatic = True
 
     def run_on_applicable(self):
-        """ Run the check """
         self.set_passed(len(self.spec.find_tag('gem_name')) > 0)
 
 
@@ -267,7 +259,6 @@ class GemCheckProperName(GemCheckBase):
         self.automatic = True
 
     def run_on_applicable(self):
-        """ Run the check """
         names = self.spec.find_tag('Name')
         self.set_passed('rubygem-%{gem_name}' in names)
 
@@ -282,7 +273,6 @@ class GemCheckDoesntHaveNonGemSubpackage(GemCheckBase):
         self.automatic = True
 
     def run_on_applicable(self):
-        """ Run the check """
         subpackage_re = re.compile(r'^%package\s+-n\s+ruby-.*')
         self.set_passed(True)
 
@@ -302,7 +292,6 @@ class GemCheckExcludesGemCache(GemCheckBase):
         self.type = 'SHOULD'
 
     def run_on_applicable(self):
-        """ Run the check """
         # it seems easier to check whether .gem is not present in rpms
         # than to examine %files
         gemfile_re = re.compile(r'.*\.gem$')
@@ -324,7 +313,6 @@ class GemCheckUsesMacros(GemCheckBase):
         self.type = 'SHOULD'
 
     def run_on_applicable(self):
-        """ Run the check """
         gem_libdir_re = re.compile('%{gem_libdir}', re.I)
         gem_extdir_re = re.compile('%{gem_extdir}', re.I)
         doc_gem_docdir_re = re.compile('%doc\s+%{gem_docdir}', re.I)
