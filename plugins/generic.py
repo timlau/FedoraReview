@@ -883,7 +883,7 @@ class CheckFullVerReqSub(GenericCheckBase):
                 # Requires: %{name}%{?_isa} = %{version}-%{release}
                 extra.append(section)
         if extra:
-            extra =self. HDR + ', '.join(extra)
+            extra = self. HDR + ', '.join(extra)
         self.set_passed('pending' if extra else 'pass', extra)
 
 
