@@ -10,23 +10,28 @@ fedora-review \- Automatically review RPM packages for Fedora.
 [options] [--prebuilt] -n <package name>
 .br
 .B fedora-review
+[options] [--prebuilt] -rn <srpm path>
+.br
+.B fedora-review
 [options] -u <url>
 
 .SH DESCRIPTION
 
-This tool makes reviews of rpm packages for Fedora easier. It tries to automate most of the process.
-Through a json API the checks can be extended in any programming language and for any programming language.
+This tool makes reviews of rpm packages for Fedora easier. It tries to
+automate most of the process.  Through a  bash API the checks can be
+extended in any programming language and for any programming language.
 We have at the moment checks for C/C++, R, Java and Perl packages.
 
 .SH USAGE
-This program runs a number of checks for packages in Fedora.
+The program runs a number of checks for packages in Fedora, producing
+a customized review template.
 .IP "" 4
 $ fedora-review -b <bug number>
 .br
 $ fedora-review -u <url>
 .PP
 Will download the SPEC & SRPM files from the Bugzilla report,
-build them in mock, run a number of tests and generate a report.
+build them in mock, run a number of tests and generate a template.
 
 Not all bugzillas support the -b option. The -u option only allows for
 downloads and is not as reliable as -b, but works in many cases.
@@ -37,6 +42,11 @@ $ fedora-review -n <package name>
 This alternative usage expects <package name>.spec and source rpm in current
 directory. By adding the -p switch, fedora-review uses already built rpms
 in current directory instead of building using mock.
+.IP "" 4
+$ fedora-review --rpm-spec -n <srpm path>
+.PP
+This form accepts a single path to a source rpm. It uses the specfile
+bundled in the srpm package.
 .PP
 You will need to have mock installed and be member of the mock group
 for the build to work. Run as root:
@@ -53,8 +63,11 @@ bug number
 .TP 4
 .B -n, --name <name>
 Runs the checks against the named spec and source rpm located in the
-current working directory. The files are expected to hane the names
+current working directory. The files are expected to have the names
 <name>.spec and <name>*.src.rpm.
+.PP
+When used together with --rpm-spec/-r, name can also be a complete path
+to a source rpm.
 .TP 4
 .B -u url, --url <url>
 Fetch data from given url, typically another bugzilla instance without

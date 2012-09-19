@@ -59,8 +59,9 @@ def _add_modes(modes):
     modes.add_argument('-b', '--bug', metavar='<bug>',
                 help='Operate on fedora bugzilla using its bug number.')
     modes.add_argument('-n', '--name', metavar='<name>',
-                help='Use local files <name>.spec and'
-                     ' <name>*.src.rpm in current dir.')
+                help='Use local files <name>.spec and <name>*.src.rpm'
+                     ' in current dir or, when using --rpm-spec, use'
+                     ' <name> as path to srpm.')
     modes.add_argument('-u', '--url', default = None, dest='url',
                 metavar='<url>',
                  help='Use another bugzilla, using complete'

@@ -21,6 +21,7 @@ import os
 import os.path
 
 from glob import glob
+from settings import Settings
 from urlparse import urlparse
 
 from abstract_bug import AbstractBug
@@ -43,8 +44,11 @@ class NameBug(AbstractBug):
         return 'Local files in ' + os.getcwd()
 
     def find_srpm_url(self):
-        """ Retrieve the page and parse for srpm and spec url. """
-
+        """ Retrieve the page and parse for srpm url. """
+        if Settings.rpm_spec:
+            if os.path.isfile(self.name):
+                self.srpm_url = 'file://' + os.path.abspath(self.name)
+                return
         pattern = os.path.join(os.getcwd(), self.name + '*.src.rpm')
         srpms = glob(pattern)
         if len(srpms) != 1:
@@ -52,7 +56,7 @@ class NameBug(AbstractBug):
         self.srpm_url = 'file://' + srpms[0]
 
     def find_spec_url(self):
-        """ Retrieve the page and parse for srpm and spec url. """
+        """ Retrieve the page and parse for spec url. """
         pattern = os.path.join(os.getcwd(), self.name + '*.spec')
         specs = glob(pattern)
         if len(specs) != 1:
