@@ -72,7 +72,7 @@ class _CheckDict(dict):
 
         def log_kill(victim, killer):
             ''' Log test skipped due to deprecation. '''
-            self.log.info("Skipping %s in %s, deprecated by %s in %s" %
+            self.log.debug("Skipping %s in %s, deprecated by %s in %s" %
                               (victim.name, victim.defined_in,
                                killer.name, killer.defined_in))
 
