@@ -21,11 +21,11 @@
 This module contains automatic test for Fedora Packaging guidelines
 '''
 
-import glob
 import os
 import os.path
 import re
 
+from glob import glob
 from subprocess import Popen, PIPE, check_output
 
 from FedoraReview import CheckBase, Mock, ReviewDirs, Settings
@@ -63,7 +63,7 @@ def _mock_root_setup(while_what):
         repodir = Settings.repo
         if not repodir.startswith('/'):
             repodir = os.path.join(ReviewDirs.startdir, repodir)
-        rpms = glob.glob(os.path.join(repodir, '*.rpm'))
+        rpms = glob(os.path.join(repodir, '*.rpm'))
         error = Mock.install(rpms)
         if error:
             raise DependencyInstallError(while_what + ': ' + error)
@@ -88,7 +88,7 @@ class CheckResultdir(GenericCheckBase):
         self.needs = []
 
     def run(self):
-        if len(glob.glob(os.path.join(Mock.resultdir, '*.*'))) != 0 \
+        if len(glob(os.path.join(Mock.resultdir, '*.*'))) != 0 \
             and not  (Settings.nobuild or Settings.prebuilt):
                 raise self.NotEmptyError()       # pylint: disable=W0311
         self.set_passed(True)
@@ -176,15 +176,16 @@ class CheckPackageInstalls(GenericCheckBase):
             bad_ones = self.check_build_installed()
             if bad_ones == []:
                 self.set_passed(self.PASS)
+                return
             else:
                 bad_ones = list(set(bad_ones))
-                self.set_passed(self.FAIL,
-                                '--no-build: package(s) not installed')
                 self.log.info('Packages required by --no-build are'
                               ' not installed: ' + ', '.join(bad_ones))
-            return
+                rpms = [glob(os.path.join(Mock.resultdir, p + '*'))[0]
+                             for p in bad_ones]
+        else:
+            rpms = self.srpm.get_used_rpms('.src.rpm')
         _mock_root_setup('While installing built packages')
-        rpms = self.srpm.get_used_rpms('.src.rpm')
         self.log.info('Installing built package(s)')
         output = Mock.install(rpms)
         if output == None:
@@ -992,7 +993,7 @@ class CheckLicenseField(GenericCheckBase):
             msg = ''
             if self.checks.checkdict['CheckBuild'].is_passed:
                 s = Mock.get_builddir('BUILD') + '/*'
-                source_dir = glob.glob(s)[0]
+                source_dir = glob(s)[0]
                 msg += 'Checking patched sources after %prep for licenses.'
             else:
                 source.extract()
@@ -1748,7 +1749,7 @@ class CheckSpecAsInSRPM(GenericCheckBase):
     def run(self):
         self.srpm.unpack()
         pattern = os.path.join(ReviewDirs.srpm_unpacked, '*.spec')
-        spec_files = glob.glob(pattern)
+        spec_files = glob(pattern)
         if len(spec_files) != 1:
             self.set_passed(self.FAIL,
                             '0 or more than one spec file in srpm(!)')
