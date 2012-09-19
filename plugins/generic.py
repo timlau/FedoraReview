@@ -26,6 +26,7 @@ import os.path
 import re
 
 from glob import glob
+from StringIO import StringIO
 from subprocess import Popen, PIPE, check_output
 
 from FedoraReview import CheckBase, Mock, ReviewDirs, Settings
@@ -981,52 +982,71 @@ class CheckLicenseField(GenericCheckBase):
         self.automatic = True
         self.type = 'MUST'
 
+    @staticmethod
+    def _write_license(files_by_license, filename):
+        ''' Dump files_by_license to filename. '''
+        with open(filename, 'w') as f:
+            for license_ in files_by_license.iterkeys():
+                f.write('\n' + license_ + '\n')
+                f.write('-' * len(license_) + '\n')
+                for path in sorted(files_by_license[license_]):
+                    f.write(path + '\n')
+
+
     def run(self):
 
-        def license_valid(_license):
+        def license_is_valid(_license):
             ''' Test that license from licencecheck is parsed OK. '''
             return not 'UNKNOWN'  in _license and \
                   not 'GENERATED' in _license
 
-        source = self.sources.get('Source0')
+        def parse_licenses(raw_text):
+            ''' Convert licensecheck output to files_by_license. '''
+            files_by_license = {}
+            raw_file = StringIO(raw_text)
+            while True:
+                line = raw_file.readline()
+                if not line:
+                    break
+                try:
+                    file_, license_ = line.split(':')
+                except ValueError:
+                    continue
+                file_ = file_.strip()
+                license_ = license_.strip()
+                if not license_is_valid(license_):
+                    license_ = 'Unknown or generated'
+                if not license in files_by_license.iterkeys():
+                    files_by_license[license_] = []
+                files_by_license[license_].append(file_)
+            return files_by_license
+
         try:
             msg = ''
-            if self.checks.checkdict['CheckBuild'].is_passed:
-                s = Mock.get_builddir('BUILD') + '/*'
-                source_dir = glob(s)[0]
-                msg += 'Checking patched sources after %prep for licenses.'
-            else:
-                source.extract()
-                source_dir = source.extract_dir
-                msg += 'Checking original sources for licenses'
+            s = Mock.get_builddir('BUILD') + '/*'
+            source_dir = glob(s)[0]
+            msg += 'Checking patched sources after %prep for licenses.'
             self.log.debug("Scanning sources in " + source_dir)
             licenses = []
             if os.path.exists(source_dir):
-                cmd = 'licensecheck -r %s' % source_dir
-                out = self._run_cmd(cmd)
-                if out:
-                    filename = os.path.join(ReviewDirs.root,
-                                            'licensecheck.txt')
-                    stream = open(filename, 'w')
-                    stream.write(out)
-                    stream.close()
-                regex = re.compile(':\s(.*)$', re.MULTILINE)
-                # remove dupes
-                licenses = map(lambda l: l.strip(),
-                               list(set(regex.findall(out))))
-                licenses = filter(license_valid, licenses)
+                cmd = ['licensecheck', '-r', source_dir]
+                filename = os.path.join(ReviewDirs.root,
+                                        'licensecheck.txt')
+                out = check_output(cmd)
+                licenses = parse_licenses(out)
+                self._write_license(licenses, filename)
             else:
                 self.log.error('Source directory %s does not exist!' %
                                 source_dir)
-
             if not licenses:
                 msg += ' No licenses found.'
                 msg += ' Please check the source files for licenses manually.'
                 self.set_passed(False, msg)
             else:
-                msg += ' Licenses found: "' + '", "'.join(licenses) + '"'
-                msg += ' For detailed output of licensecheck'
-                msg += ' see file: ' + filename
+                msg += ' Licenses found: "' \
+                         + '", "'.join(licenses.iterkeys()) + '".'
+                msg += ' %d files have unknown license.' %  len(licenses)
+                msg += ' Detailed output of licensecheck in ' + filename
                 self.set_passed('inconclusive', msg)
         except OSError, e:
             self.log.error('OSError: %s' % str(e))
