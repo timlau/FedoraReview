@@ -203,8 +203,8 @@ class CheckJavaFullVerReqSub(JavaCheckBase):
         """ run check for java packages """
         regex = re.compile(r'Requires:\s*%{name}\s*=\s*%{version}-%{release}')
         sections = self.spec.get_section("%package")
-        extra = ""
-        errors = False
+        bad_ones = []
+        extra = None
         for section in sections:
             if section == "%package javadoc":
                 continue
@@ -213,13 +213,11 @@ class CheckJavaFullVerReqSub(JavaCheckBase):
                 if regex.search(line):
                     passed = True
             if not passed:
-                extra += "Missing : Requires: %%{name} = " \
-                              "%%{version}-%%{release} in %s" % section
-                errors = False
-        if errors:
-            self.set_passed(False, extra)
-        else:
-            self.set_passed(True)
+                bad_ones.append(section)
+        if bad_ones:
+            extra =  "Missing: 'Requires: %%{name} =' in: " + \
+                        ', '.join(bad_ones)
+        self.set_passed(self.FAIL if extra else self.PASS, extra)
 
 
 class CheckNoOldMavenDepmap(JavaCheckBase):
