@@ -79,6 +79,10 @@ class _Mock(HelpersMixin):
         if Settings.uniqueext:
             self.mock_root += Settings.uniqueext
 
+        if not 'rawhide' in self.mock_root:
+            self.log.warn('Probably non-rawhide buildroot used. Rahide ' \
+                          'should be used for most package reviews')
+
     def _get_dir(self, subdir=None):
         ''' Return a directory under root, create if non-existing. '''
         if not self.mock_root:
