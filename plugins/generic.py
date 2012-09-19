@@ -1853,8 +1853,19 @@ class CheckSupportAllArchs(GenericCheckBase):
                    'Packaging/Guidelines#ArchitectureSupport'
         self.text = 'Package should compile and build into binary' \
                     ' rpms on all supported architectures.'
-        self.automatic = False
+        self.automatic = True
         self.type = 'SHOULD'
+
+    def run(self):
+        build_ok = self.checks.checkdict['CheckBuild'].is_passed
+
+        arch = self.spec.find_tag('BuildArch')
+        noarch = arch and arch[0].lower() == 'noarch'
+        one_arch = self.spec.find_tag('ExclusiveArch')
+        if build_ok and (one_arch or noarch):
+            self.set_passed(self.PASS)
+        else:
+            self.set_passed(self.PENDING)
 
 
 class CheckSystemdScripts(GenericCheckBase):
