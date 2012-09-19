@@ -12,6 +12,7 @@
 #
 # (C) 2011 - Alec Leamas
 
+import os
 import os.path
 import sys
 import subprocess
@@ -24,6 +25,8 @@ from FedoraReview.review_helper import ReviewHelper
 
 review = ReviewHelper()
 review.run()
+
+os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
 cmd = ["git", "rev-parse", "--abbrev-ref", "HEAD"]
 cur_branch = subprocess.check_output(cmd).strip()
