@@ -1241,8 +1241,8 @@ class CheckMultipleLicenses(GenericCheckBase):
         self.type = 'MUST'
 
     def is_applicable(self):
-        license = self.spec.get_from_spec('License').lower().split()
-        return 'and' in license or 'or' in license
+        license_ = self.spec.get_from_spec('License').lower().split()
+        return 'and' in license_ or 'or' in license_
 
 
 class CheckNameCharset(GenericCheckBase):
