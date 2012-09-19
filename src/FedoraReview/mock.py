@@ -63,7 +63,7 @@ class _Mock(HelpersMixin):
 
     def _get_root(self):
         '''Return mock's root according to Settings. '''
-        config = 'fedora-rawhide-x86_64'
+        config = 'default'
         if Settings.mock_config:
             config  = Settings.mock_config
         mockdir = Settings.configdir if Settings.configdir \
