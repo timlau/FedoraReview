@@ -28,6 +28,7 @@ from name_bug     import NameBug
 from review_error import ReviewError
 from review_dirs  import ReviewDirs
 from registry     import AbstractRegistry, RegistryBase
+from rpm_file     import RpmFile
 from settings     import Settings
 from source       import Source
 from sources      import Sources
