@@ -144,6 +144,37 @@ def _make_log_dir():
             raise ReviewError(
                       'Cannot create log directory: ' + SESSION_LOG)
 
+class ColoredFormatter(logging.Formatter):
+    BLACK = "\033[1;30m"
+    RED = "\033[1;31m"
+    GREEN = "\033[1;32m"
+    YELLOW = "\033[1;33m"
+    BLUE = "\033[1;34m"
+    MAGENTA = "\033[1;35m"
+    CYAN = "\033[1;36m"
+    WHITE = "\033[1;37m"
+    RESET = "\033[0m"
+
+    COLORS = {
+        'WARNING': YELLOW,
+        'CRITICAL': YELLOW,
+        'ERROR': RED
+    }
+
+
+    def __init__(self, fmt=None, datefmt=None, use_color=True):
+        logging.Formatter.__init__(self, fmt, datefmt)
+        self.use_color = use_color
+
+    def format(self, record):
+        lname = record.levelname
+        ret = logging.Formatter.format(self, record)
+        if self.use_color and lname in self.COLORS:
+            ret = self.COLORS[lname] + \
+                  ret + \
+                  self.RESET
+        return ret
+
 
 class _Settings(object):                         # pylint: disable=R0902
     """
@@ -322,7 +353,7 @@ class _Settings(object):                         # pylint: disable=R0902
         # define a Handler which writes INFO  or higher to sys.stderr
         console = logging.StreamHandler()
         console.setLevel(lvl)
-        formatter = logging.Formatter('%(message)s', "%H:%M:%S")
+        formatter = ColoredFormatter('%(message)s', "%H:%M:%S")
         console.setFormatter(formatter)
         if self._con_handler:
             self.log.removeHandler(self._con_handler)
