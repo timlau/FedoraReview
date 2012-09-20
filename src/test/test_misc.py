@@ -450,7 +450,7 @@ class TestMisc(FR_TestCase):
 
     def test_unversioned_so(self):
         self.init_test('unversioned-so',
-                       argv=['-rpn','python-test'],
+                       argv=['-rpn','python-test', '--cache'],
                        wd='python-test')
         ReviewDirs.reset(os.getcwd())
         bug = NameBug('python-test')
@@ -459,7 +459,7 @@ class TestMisc(FR_TestCase):
 
     def test_unversioned_so_private(self):
         self.init_test('unversioned-so-private',
-                       argv=['-rpn','python-test'],
+                       argv=['-rpn', 'python-test', '--cache'],
                        wd='python-test')
         ReviewDirs.reset(os.getcwd())
         bug = NameBug('python-test')
