@@ -253,5 +253,10 @@ class TestOptions(FR_TestCase):
 
 
 if __name__ == '__main__':
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestOptions)
+    if len(sys.argv) > 1:
+        suite = unittest.TestSuite()
+        for test in sys.argv[1:]:
+            suite.addTest(TestOptions(test))
+    else:
+        suite = unittest.TestLoader().loadTestsFromTestCase(TestOptions)
     unittest.TextTestRunner(verbosity=2).run(suite)

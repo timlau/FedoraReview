@@ -24,6 +24,7 @@ import os.path
 sys.path.insert(0,os.path.abspath('../'))
 
 import os
+import unittest
 
 from subprocess import check_call
 
@@ -117,3 +118,12 @@ class TestExt(FR_TestCase):
         self.assertTrue( '/srv' in check.result.output_extra)
         self.assertTrue( '/opt' in check.result.output_extra)
         self.assertTrue( '/usr/local' in check.result.output_extra)
+
+if __name__ == '__main__':
+    if len(sys.argv) > 1:
+        suite = unittest.TestSuite()
+        for test in sys.argv[1:]:
+            suite.addTest(TestExt(test))
+    else:
+        suite = unittest.TestLoader().loadTestsFromTestCase(TestExt)
+    unittest.TextTestRunner(verbosity=2).run(suite)

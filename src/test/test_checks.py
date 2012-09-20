@@ -60,5 +60,10 @@ class TestChecks(FR_TestCase):
 
 
 if __name__ == '__main__':
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestChecks)
+    if len(sys.argv) > 1:
+        suite = unittest.TestSuite()
+        for test in sys.argv[1:]:
+            suite.addTest(TestChecks(test))
+    else:
+        suite = unittest.TestLoader().loadTestsFromTestCase(TestChecks)
     unittest.TextTestRunner(verbosity=2).run(suite)
