@@ -51,6 +51,9 @@ class TestRegressions(FR_TestCase):
         self.spec_file = os.path.join(os.path.abspath('.'),
                                       'test_regressions',
                                       'test_107_1.spec')
+        self.srpm_file = os.path.join(os.path.abspath('.'),
+                                      'test_regressions',
+                                      'test_107_1-1.0-1.fc17.src.rpm')
         Mock.reset()
 
     def test_107_changelog_skipping(self):
@@ -58,7 +61,7 @@ class TestRegressions(FR_TestCase):
         that file gets mixed up with a directory
         """
         self.init_test('test_regressions',
-                       argv=['-rn','test_107_1'])
+                       argv=['-rn', self.srpm_file])
         ReviewDirs.reset(os.getcwd())
         spec = SpecFile(self.spec_file)
         regex = re.compile('initial fedora')
@@ -71,11 +74,27 @@ class TestRegressions(FR_TestCase):
         the file and macro itself
         """
         self.init_test('test_regressions',
-                       argv=['-rn','test_107_1', '--cache'])
+                       argv=['-rn', self.srpm_file, '--cache'])
         ReviewDirs.reset(os.getcwd())
-        bug = NameBug('test_107_1')
+        bug = NameBug(self.srpm_file)
         check = self.run_single_check(bug, 'CheckNoConfigInUsr')
         self.assertTrue(check.is_failed)
+
+    def test_107_source_same_as_name(self):
+        """ Test the case when Source is equal to %{name}
+        """
+        srpm_file = os.path.join(os.path.abspath('.'),
+                                      'test_regressions',
+                                      'test_107_2-1.0-1.fc17.src.rpm')
+        self.init_test('test_regressions',
+                       argv=['-rn', srpm_file, '--cache'])
+        ReviewDirs.reset(os.getcwd())
+        bug = NameBug(srpm_file)
+        bug.find_urls()
+        self.assertNotEqual(None, bug.srpm_file)
+        self.assertNotEqual(None, bug.spec_file)
+
+
 
 
 
