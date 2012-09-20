@@ -311,7 +311,8 @@ class TestMisc(FR_TestCase):
         bug.find_urls()
         expected = 'src/test/test_misc/python-test-1.0-1.fc16.src.rpm'
         self.assertTrue(bug.srpm_url.endswith(expected))
-        expected = 'src/test/test_misc/python-test/srpm-unpacked/python-test.spec'
+        expected = 'src/test/test_misc/review-python-test/srpm-unpacked/python-test.spec'
+        print bug.spec_url
         self.assertTrue(bug.spec_url.endswith(expected))
 
     def test_jsonapi(self):
