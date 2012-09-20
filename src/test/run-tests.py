@@ -41,6 +41,7 @@ from test_checks   import TestChecks
 from test_R_checks import TestRChecks
 from test_options  import TestOptions
 from test_ext      import TestExt
+from test_regressions import TestRegressions
 
 VERBOSITY = 2
 
@@ -57,7 +58,8 @@ if fr_testcase.FAST_TEST:
 Mock.init()
 
 testFail = 0
-for t in 'Misc', 'Bugzilla', 'Ext', 'Options','Checks', 'RChecks':
+for t in 'Misc', 'Bugzilla', 'Ext', 'Options','Checks', 'RChecks',\
+         'Regressions':
    test = eval( 'unittest.TestLoader().loadTestsFromTestCase(Test%s)' % t)
    result = unittest.TextTestRunner(verbosity=VERBOSITY).run(test)
    testFail = testFail + len(result.errors) + len(result.failures)
