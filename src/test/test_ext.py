@@ -105,7 +105,7 @@ class TestExt(FR_TestCase):
     def test_srv_opt(self):
         ''' Test check of no files in /srv, /opt and /usr/local. '''
         self.init_test('srv-opt',
-                       argv=['-rn','python-test', '--cache',
+                       argv=['-rn','dummy', '--cache',
                               '--no-build'])
         ReviewDirs.reset(os.getcwd())
         bug = NameBug('dummy')
