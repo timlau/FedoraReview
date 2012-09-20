@@ -168,7 +168,7 @@ class AbstractBug(HelpersMixin):
         ''' Extract spec from srpm and update self.spec_url. '''
         path = urlparse(self.srpm_url).path
         name = os.path.basename(path).rsplit('-', 2)[0]
-        ReviewDirs.workdir_setup(name)
+        ReviewDirs.workdir_setup(self.get_dirname())
         self.do_download_srpm()
 
         SRPMFile(self.srpm_file).unpack()
@@ -210,12 +210,12 @@ class AbstractBug(HelpersMixin):
         else:
             return '?'
 
-    def get_dirname(self, prefix=''):
+    def get_dirname(self, prefix='review-'):
         ''' Return dirname to be used for this bug. '''
         if self.get_name() != '?':
             return prefix + self.get_name()
         else:
-            return prefix + tempfile.mkdtemp(prefix='review-',
+            return prefix + tempfile.mkdtemp(prefix=prefix,
                                              dir=os.getcwd())
 
     @staticmethod
