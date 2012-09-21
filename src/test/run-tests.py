@@ -33,11 +33,11 @@
 import sys
 import os.path
 os.chdir(os.path.dirname(os.path.realpath(__file__)))
-sys.path.insert(0, os.path.abspath('../'))
+sys.path.insert(0,os.path.abspath('..'))
 
 import unittest2 as unittest
 
-from FedoraReview  import Mock
+from FedoraReview import Mock
 
 from test_misc     import TestMisc
 from test_bugzilla import TestBugzilla

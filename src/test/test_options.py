@@ -22,7 +22,7 @@ Unit tests for bugzilla bug handling
 
 import sys
 import os.path
-sys.path.insert(0,os.path.abspath('../'))
+sys.path.insert(0,os.path.abspath('..'))
 
 import unittest2 as unittest
 import os
@@ -34,8 +34,12 @@ except ImportError:
 
 from glob import glob
 
-from FedoraReview import Checks, ReviewDirs, SpecFile, Settings, Sources
-from FedoraReview import BugzillaBug, NameBug, UrlBug
+from FedoraReview import Checks, Mock, ReviewDirs, SpecFile, Settings
+
+from FedoraReview.checks import _CheckDict
+from FedoraReview.bugzilla_bug import BugzillaBug
+from FedoraReview.name_bug import NameBug
+from FedoraReview.url_bug import UrlBug
 
 
 from fr_testcase import FR_TestCase, NO_NET, FAST_TEST, VERSION
@@ -44,7 +48,6 @@ class TestOptions(FR_TestCase):
 
     def init_opt_test(self, argv= [], cd=None, wd=None,root=None):
         cd = cd if cd else 'options'
-        wd = wd if wd else 'python-test'
         FR_TestCase.init_test(self, cd, argv, wd, buildroot=root)
 
     def test_name(self):
@@ -53,13 +56,13 @@ class TestOptions(FR_TestCase):
         bug = NameBug(Settings.name)
 
         bug.find_urls()
-        expected = self.abs_file_url('./python-test-1.0-1.fc16.src.rpm')
+        expected = self.abs_file_url('./python-test-1.0-1.fc17.src.rpm')
         self.assertEqual(expected, bug.srpm_url)
         expected = self.abs_file_url('./python-test.spec')
         self.assertEqual(expected, bug.spec_url),
 
         bug.download_files()
-        expected = os.path.abspath('./python-test-1.0-1.fc16.src.rpm')
+        expected = os.path.abspath('./python-test-1.0-1.fc17.src.rpm')
         self.assertEqual(expected, bug.srpm_file),
         expected = os.path.abspath('./python-test.spec')
         self.assertEqual(expected, bug.spec_file),
@@ -119,16 +122,18 @@ class TestOptions(FR_TestCase):
 
         self.init_test('git-source',
                        argv= ['-rpn', 'get-flash-videos', '--cache'],
+                       wd='get-flash-videos',
                        buildroot='fedora-16-i386')
-        ReviewDirs.reset()
-        ReviewDirs.startdir = os.getcwd()
+        os.chdir('..')
 
         bug = NameBug('get-flash-videos')
         bug.find_urls()
         bug.download_files()
         checks = Checks(bug.spec_file, bug.srpm_file)
-        check = checks.checkdict['CheckBuildCompleted']
-        check.run()
+        #if not Mock.is_installed('rpmbuild'):
+        #    Mock.install(['rpmbuild'])
+        #check = checks.checkdict['CheckBuildCompleted']
+        #check.run()
         check = checks.checkdict['CheckSourceMD5']
         check.run()
         self.assertTrue(check.is_passed)
@@ -151,13 +156,12 @@ class TestOptions(FR_TestCase):
             path = glob(pattern)[0]
             return os.stat(path).st_mtime
 
-        self.init_opt_test(['-b','818805'], 'options', '818805-openerp-client')
+        self.init_opt_test(['-b','818805'], 'options')
         bug = BugzillaBug(Settings.bug)
         bug.find_urls()
         bug.download_files()
         srpm_org_time = get_mtime('srpm/openerp-client*.src.rpm')
-        spec = SpecFile(bug.spec_file)
-        sources = Sources(spec)
+        Checks(bug.spec_file, bug.srpm_file)
         upstream_org_time = get_mtime('upstream/openerp-client*.gz')
         del bug
 
@@ -167,44 +171,33 @@ class TestOptions(FR_TestCase):
         bug.find_urls()
         bug.download_files()
         srpm_new_time = get_mtime('srpm/openerp-client*.src.rpm')
-        spec = SpecFile(bug.spec_file)
-        sources = Sources(spec)
+        Checks(bug.spec_file, bug.srpm_file)
         upstream_new_time = get_mtime('upstream/openerp-client*.gz')
 
         self.assertEqual(upstream_org_time, upstream_new_time, 'upstream')
         self.assertEqual(srpm_org_time, srpm_new_time, 'srpm')
 
-    @unittest.skipIf(FAST_TEST, 'slow test disabled by REVIEW_FAST_TEST')
     def test_mock_options(self):
         ''' test -o/--mock-options and -m/mock-config '''
         v = '16' if '17' in self.BUILDROOT else '17'
-        self.init_test('test_misc',
+        buildroot='fedora-%s-i386' % v
+        self.init_test('mock-options',
                        argv=['-n','python-test','--cache'],
-                       options='--resultdir=results',
-                       buildroot='fedora-%s-i386' % v)
-        d = os.path.join(os.getcwd(), 'results')
-        if os.path.exists(d):
-            for crap in glob(os.path.join('results', '*.*')):
-                os.unlink(crap)
-        else:
-            os.mkdir(d)
+                       options='--resultdir=results --uniqueext=foo',
+                       buildroot=buildroot)
         bug = NameBug('python-test')
         bug.find_urls()
         bug.download_files()
-        checks = Checks(bug.spec_file, bug.srpm_file)
-        check = checks.checkdict['CheckBuild']
-        check.run()
-        self.assertTrue(check.is_passed)
-        rpms = glob(os.path.join('results', '*fc%s*.rpm' % v))
-        self.assertTrue(len(rpms) > 0)
+        mock_cmd = ' '.join(Mock._mock_cmd())
+        Mock._get_root()
+        self.assertIn( '-r ' + buildroot, mock_cmd)
+        self.assertEqual(Mock.mock_root, buildroot + '-foo')
 
     def test_prebuilt(self):
         ''' test --name --prebuilt '''
 
         argv = ['-rpn', 'python-spiffgtkwidgets', '--cache']
         self.init_test('prebuilt', argv=argv)
-        ReviewDirs.reset()
-
         bug = NameBug('python-spiffgtkwidgets')
         bug.find_urls()
         bug.download_files()
@@ -217,21 +210,19 @@ class TestOptions(FR_TestCase):
 
     def test_rpm_spec(self):
         """ Test --rpm-spec/-r option """
-        self.init_opt_test(['-rn','python-test', '--cache'],
-                           'desktop-file')
-        ReviewDirs.reset()
+        self.init_opt_test(['-rn', 'python-test', '--cache'], 'options')
         bug = NameBug(Settings.name)
         bug.find_urls()
 
-        expected = self.abs_file_url('../python-test-1.0-1.fc16.src.rpm')
+        expected = self.abs_file_url('python-test-1.0-1.fc17.src.rpm')
         self.assertEqual(expected, bug.srpm_url)
-        expected = self.abs_file_url('./srpm-unpacked/python-test.spec')
+        expected = self.abs_file_url('srpm-unpacked/python-test.spec')
         self.assertEqual(expected, bug.spec_url),
 
         bug.download_files()
-        expected = os.path.abspath('../python-test-1.0-1.fc16.src.rpm')
+        expected = os.path.abspath('python-test-1.0-1.fc17.src.rpm')
         self.assertEqual(expected, bug.srpm_file),
-        expected = os.path.abspath('./srpm-unpacked/python-test.spec')
+        expected = os.path.abspath('srpm-unpacked/python-test.spec')
         self.assertEqual(expected, bug.spec_file),
 
     def test_single(self):

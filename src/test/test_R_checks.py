@@ -25,8 +25,10 @@ import os.path
 import sys
 import unittest2 as unittest
 
-sys.path.insert(0,os.path.abspath('../'))
-from FedoraReview import  Checks, ReviewDirs, NameBug
+sys.path.insert(0,os.path.abspath('..'))
+
+from FedoraReview import Checks, ReviewDirs
+from FedoraReview.name_bug import NameBug
 
 from fr_testcase import FR_TestCase, FAST_TEST
 
@@ -42,7 +44,6 @@ class TestRChecks(FR_TestCase):
         ''' Run all automated review checks'''
         self.init_test('test-R',
                         argv=['-rpn','R-Rdummypkg', '--no-build'])
-        ReviewDirs.reset()
         self.bug = NameBug('R-Rdummypkg')
         self.bug.find_urls()
         self.bug.download_files()
@@ -50,7 +51,7 @@ class TestRChecks(FR_TestCase):
         self.checks.run_checks(writedown=False)
         for check in self.checks.checkdict.itervalues():
             if check.is_passed or check.is_pending or check.is_failed:
-                self.assertIn(check.group, ['Generic', 'R'])
+                self.assertIn(check.group, ['Setup', 'Generic', 'R'])
 
 
 if __name__ == '__main__':

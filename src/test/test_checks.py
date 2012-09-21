@@ -22,7 +22,7 @@ Unit checks for automatic test of fedora review guidelines
 
 import os
 import sys
-sys.path.insert(0,os.path.abspath('../'))
+sys.path.insert(0,os.path.abspath('..'))
 
 import os.path
 import unittest2 as unittest
@@ -43,7 +43,7 @@ class TestChecks(FR_TestCase):
 
         self.checks = None
         self.srpm = os.path.join(os.getcwd(),
-                            'python-test-1.0-1.fc16.src.rpm')
+                            'python-test-1.0-1.fc17.src.rpm')
         self.spec = os.path.join(os.getcwd(),'python-test.spec')
         self.source = os.path.join(os.getcwd(),
                                    'python-test-1.0.tar.gz')
