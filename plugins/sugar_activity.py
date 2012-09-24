@@ -29,7 +29,8 @@ class Registry(RegistryBase):
     group = 'SugarActivity'
 
     def is_applicable(self):
-        return self.has_files_re('^/usr/(share|lib|lib64)/sugar/activities/')
+        regex = '^/usr/(share|lib|lib64)/sugar/activities/'
+        return self.checks.rpms.find(regex) != None
 
 
 class SugarActivityCheckBase(CheckBase):
@@ -67,7 +68,7 @@ class SugarActivityCheckBuildRequires(SugarActivityCheckBase):
         self.automatic = True
 
     def run_on_applicable(self):
-        br = self.spec.get_build_requires()
+        br = self.spec.build_requires()
         self.set_passed('sugar-toolkit' in br)
 
 

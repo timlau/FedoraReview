@@ -197,9 +197,14 @@ class JSONPlugin(HelpersMixin):
         self.plugin_path = plugin_path
         self.version = None
         self.checks = checks
-        self.spec = checks.spec
-        self.srpm = checks.srpm
-        self.sources = checks.sources
+        try:
+            self.spec = checks.spec
+            self.srpm = checks.srpm
+            self.sources = checks.sources
+        except AttributeError:
+            self.srpm = None
+            self.spec = None
+            self.sources = None
         self.encoder = ReviewJSONEncoder()
         self.decoder = JSONDecoder()
         self.plug_in = None
