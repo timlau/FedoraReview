@@ -36,6 +36,7 @@ from review_dirs import ReviewDirs
 from version import  __version__, BUILD_ID, BUILD_DATE
 from review_error import ReviewError
 from jsonapi import JSONPlugin
+from xdg_dirs import XdgDirs
 
 
 HEADER = """
@@ -129,6 +130,7 @@ class _CheckDict(dict):
         self.extend(needed)
         delattr(self[check_name], 'result')
 
+
 class _Flags(dict):
     ''' A dict storing Flag  entries with some added baheviour. '''
 
@@ -149,8 +151,6 @@ class _Flags(dict):
             self[key].value = value
         else:
             self[optarg].set_active()
-
-
 
 
 class Checks(object):
@@ -208,12 +208,15 @@ class Checks(object):
 
         appdir = os.path.abspath(os.path.join(__file__, '../../..'))
         sys.path.insert(0, appdir)
+        sys.path.insert(0, XdgDirs.app_datadir)
         plugins = load('plugins')
         for plugin in plugins:
             registry = plugin.Registry(self)
             tests = registry.register(plugin)
             self.checkdict.extend(tests)
             self.groups[registry.group] = registry
+        sys.path.remove(XdgDirs.app_datadir)
+        sys.path.remove(appdir)
 
         ext_dirs = []
         if "REVIEW_EXT_DIRS" in os.environ:
@@ -225,6 +228,8 @@ class Checks(object):
             for plugin in os.listdir(ext_dir):
                 full_path = os.path.join(ext_dir, plugin)
                 if os.path.isfile(full_path) and os.access(full_path, os.X_OK):
+                    if full_path.endswith('.py'):
+                        continue
                     self.log.debug('Add external module: %s' % full_path)
                     pl = JSONPlugin(self, full_path)
                     tests = pl.register()

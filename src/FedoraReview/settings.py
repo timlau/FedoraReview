@@ -32,9 +32,9 @@ import sys
 from review_error import ReviewError
 from xdg_dirs import XdgDirs
 
-SYS_PLUGIN_DIR  = "/usr/share/fedora-review/plugins:%s"
-MY_PLUGIN_DIR   = "~/.config/fedora-review/plugins"
-
+SYS_PLUGIN_DIR  = os.path.abspath(os.path.join(__file__,
+                                               '../../../json-plugins'))
+MY_PLUGIN_DIR   = os.path.expanduser("~/.config/fedora-review/plugins")
 
 PARSER_SECTION = 'review'
 
@@ -194,8 +194,7 @@ class _Settings(object):                         # pylint: disable=R0902
             ReviewError.__init__(self, 'Bad options!!', 2, True)
 
     defaults = {
-        'ext_dirs': ':'.join([os.path.expanduser(MY_PLUGIN_DIR),
-                                                     SYS_PLUGIN_DIR]),
+        'ext_dirs': ':'.join([MY_PLUGIN_DIR, SYS_PLUGIN_DIR]),
         'bz_url': 'https://bugzilla.redhat.com',
     }
 
