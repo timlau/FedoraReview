@@ -1,4 +1,4 @@
-fedora-review: Tools to helpe review packages for inclusion in Fedora
+fedora-review: Tools to help review packages for inclusion in Fedora
 ---------------------------------------------------------------------
 
 This tool automates much of the dirty work when reviewing a package
@@ -6,82 +6,85 @@ for the Fedora Package Collection.
 
 Like:
 - Downloading SRPM & SPEC from Bugzilla report
+- Build and install package in mock
 - Download upstream source
 - Check md5sums
 - Run rpmlint
-- Generate review report will both manual & automated checks, ready to
-  complete and paste into the Bugzilla report.
+- Generate review template with both manual & automated checks serving
+  as a starting point for the review work.
 
 fedora-review is still under heavy development.
+
 
 Contacts
 --------
 
 * IRC: #fedora-review @ freenode
 * Mailing list: fedorareview@lists.fedorahosted.org
+* wiki: https://fedorahosted.org/FedoraReview/wiki/WikiStart
 
-Requirements
-------------
-
-* Python
-* rpm & yum
-* mock
-* editor
-* python-bugzilla
-* fedora-packager
-* python-straight-plugin
-* python-kitchen
-* python-BeautifulSoup
-* rpmdevtools
-
-The mock requirement is not hard, it's possible to use fedora-review
-without mock when always using the --prebuilt/-p option. This means 
-that packages must be built using other tools e. g., koji. Generally,
-installing without mock is not recommended.
-
-Download
---------
-Install git and run the command below to clone the source:
-
-git clone http://git.fedorahosted.org/git/FedoraReview.git
-
-Alternative repository for users wishing to use github:
-git clone git://github.com/timlau/FedoraReview.git
-
-Usage
------
-
-See nroff -man fedora-review.1 | more
 
 License
 -------
 fedora-review is licensed under GPLv2+, for more details check COPYING.
 
 
-Create a language plugin
-------------------------
-To create a plugin of checks, create a file in src/reviewtools/checks.
-All the files in this folder are automatically loaded.
+Dependencies
+------------
 
-Your class should inherit from the class `LangCheckBase`.
-You may want to create a Base class for your own language. Then each tests
-is a class. This class has a __init__ method with predefine information
-(such as the link to the guidelines and the text to be printed) and a
-run method which is what is actually performing the test.
+Install dependencies:
 
-For your test to be taken into account, the class should have
-- 'Check' (case sensitive) in its name
-- *Not* end with 'Base' (this is reserved for parent class which don't
-actually run tests).
-- The result of the test should be set using the self.set_passed():
-    None            == na
-    'inconclusive'  == pending
-    True            == passed
-    False           == failed
-The file plugin.tmpl shows the basic structure/idea and implement an
-example test.
+    # yum install python-straight-plugin python-BeautifulSoup \
+          python-bugzilla  python-requests python-kitchen \
+          fedora-packager rpmdevtools mock git python-fedora
 
-External plugins
+The mock requirement is not hard, it's possible to use fedora-review
+without mock when always using the --prebuilt/-p option. This means
+that packages must be built using other tools e. g., koji. Generally,
+installing without mock is not recommended.
+
+
+Download
+--------
+Clone the source using:
+
+    $ git clone -b devel http://git.fedorahosted.org/git/FedoraReview.git
+
+Alternative repository for users wishing to use github:
+git://github.com/timlau/FedoraReview.git. You might consider cloning
+another branch e. g., a release branch. However, 'master' branch is
+probably not what you want.
+
+
+Running from git
 ----------------
-It is also possible to create plugins in different languages than
-Python. See api/README for details
+
+After downloading (above) use try-fedora-review:
+
+    $ cd FedoraReview
+    $ ./update-version
+    $ ./try-fedora-review --help
+
+To run from any directory, install try-fedora-review according to
+instructions in that script. update-version only needs to run once.
+
+
+Usage
+-----
+
+    $ nroff -man fedora-review.1 | more
+    $ fedora-review --help
+
+There's more in the wiki (above).
+
+
+Extending
+---------
+
+fedora-review can be extended with small shell-scripts and full-featured
+python plugins. See the wiki (above).
+
+
+Bugs and issues
+---------------
+Follow link in the wiki.

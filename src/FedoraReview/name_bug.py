@@ -21,20 +21,16 @@ import os
 import os.path
 
 from glob import glob
+from settings import Settings
 from urlparse import urlparse
 
-from abstract_bug import AbstractBug, SettingsError
-from mock import Mock
-from review_dirs import ReviewDirs
-from settings import Settings
-from srpm_file import SRPMFile
+from abstract_bug import AbstractBug
 
-class NameBugException(Exception):
-    pass
 
 class NameBug(AbstractBug):
     """ Handles -n, spec and srpm already downloaded.
     """
+    # pylint: disable=R0201
 
     def __init__(self, name):
         """ Constructor.
@@ -45,34 +41,35 @@ class NameBug(AbstractBug):
         self.name = name
 
     def get_location(self):
-        return 'Local files in ' +  os.getcwd()
+        return 'Local files in ' + os.getcwd()
 
     def find_srpm_url(self):
-        """ Retrieve the page and parse for srpm and spec url. """
-
+        """ Retrieve the page and parse for srpm url. """
+        if Settings.rpm_spec:
+            if os.path.isfile(self.name):
+                self.srpm_url = 'file://' + os.path.abspath(self.name)
+                return
         pattern = os.path.join(os.getcwd(), self.name + '*.src.rpm')
         srpms = glob(pattern)
         if len(srpms) != 1:
-            raise NameBugException( "Cannot find srpm: " + pattern)
+            raise self.BugError("Cannot find srpm: " + pattern)
         self.srpm_url = 'file://' + srpms[0]
 
     def find_spec_url(self):
-        """ Retrieve the page and parse for srpm and spec url. """
+        """ Retrieve the page and parse for spec url. """
         pattern = os.path.join(os.getcwd(), self.name + '*.spec')
         specs = glob(pattern)
         if len(specs) != 1:
-            raise NameBugException( "Cannot find spec: " + pattern)
+            raise self.BugError("Cannot find spec: " + pattern)
         self.spec_url = 'file://' + specs[0]
 
     def check_options(self):
-        bad_opts = list(AbstractBug.BZ_OPTIONS)
-        bad_opts.append('cache')
-        AbstractBug.do_check_options(self, '--name', bad_opts)
-
+        ''' Raise error if Settings options combination is invalid. '''
+        AbstractBug.do_check_options('--name', ['other_bz'])
 
     def download_files(self):
-        self.srpm_file  = urlparse(self.srpm_url).path
-        self.spec_file  = urlparse(self.spec_url).path
+        self.srpm_file = urlparse(self.srpm_url).path
+        self.spec_file = urlparse(self.spec_url).path
         return True
 
 # vim: set expandtab: ts=4:sw=4:

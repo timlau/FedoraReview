@@ -20,20 +20,22 @@
 Tools for helping Fedora package reviewers
 '''
 
-class FedoraReviewError(Exception):
-    """ General Error class for fedora-review. """
 
-    def __init__(self, value):
-        """ Instanciante the error. """
+class ReviewError(Exception):
+    """ General Error class for fedora-review. It always terminates
+        the session, possibly writing a message before exiting.
+    """
+
+    def __init__(self, value, exitcode=1, silent=False):
+        Exception.__init__(self, value)
         self.value = value
+        self.exitcode = exitcode
+        self.silent = silent
+        self.show_logs = True
 
     def __str__(self):
         """ Represent the error. """
         return repr(self.value)
-
-class CleanExitError(FedoraReviewError):
-    ''' Request a clean exit, no printouts. '''
-    pass
 
 
 # vim: set expandtab: ts=4:sw=4:

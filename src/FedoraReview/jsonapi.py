@@ -19,15 +19,23 @@
 '''
 JSON API for FedoraReview plugins
 '''
+import os
+import re
 import subprocess
+
 from json import JSONEncoder, JSONDecoder
 
-from helpers import Helpers
-from check_base import TestResult
+from helpers_mixin import HelpersMixin
+from check_base import TestResult, GenericCheck
 from mock import Mock
+from review_error import ReviewError
 
 class ERR_CODE(object):
     ERR_NO_COMMAND = 1
+
+
+class PluginParseError(ReviewError):
+    pass
 
 
 class JSONAPI(object):
@@ -71,34 +79,138 @@ class PluginResponse(JSONAPI):
     """Class for plugin responses"""
     command = None
 
+class JSON_check(GenericCheck):
+    """ A single test in the list of tests defined by a plugin. """
 
-class JSONPlugin(Helpers):
+    def __init__(self, name, checks, plugin):
+        GenericCheck.__init__(self, checks, plugin.plugin_path)
+        self.plugin = plugin
+        self.implementation='json'
+        self._name = name
+
+    name = property(lambda self: self._name)
+
+    def run(self):
+        if not hasattr( self.plugin, 'results'):
+           self.plugin.run()
+        self.result = self.plugin.get_result_by_name(self.name)
+
+
+class PluginTestParser(object):
+    """
+    Parse registration info for plugin with just one test, like:
+    @name: test-name
+    @group: java # generic, C/C++ etc
+    @type: MUST|SHOULD|EXTRA
+    @text :"User info, visible in listings"
+    @url: Guidelines URL, optional
+    @deprecates: test1, test2, ...
+    @needs: test4, test5, ...
+    """
+
+    def find_value(self, line, name, key):
+        if name:
+           key = name + '.' + key
+        key = '@' + key + ':'
+        if key in line:
+            return re.sub('.*' + key, '', line).strip()
+        return None
+
+    def parse_attributes(self, check, lines, name = None):
+        for line in lines:
+            for attr in ['group', 'url', 'text', 'type']:
+                value = self.find_value(line, name, attr)
+                if value:
+                    setattr(check, attr, value)
+            list = self.find_value(line, name, 'deprecates')
+            if list:
+                check.deprecates = list.replace(',', ' ').split()
+            list = self.find_value(line, name, 'needs')
+            if list:
+                check.needs = list.replace(',', ' ').split()
+
+    def parse(self, plugin, checks ):
+        """ Parse a path, return a JSON_check object. """
+
+        with open(plugin.plugin_path) as f:
+            lines = f.readlines()
+        for line in lines:
+            name = self.find_value(line, None, 'name')
+            if name:
+                break
+        if not name:
+            name = os.path.basename(plugin.plugin_path)
+        test = JSON_check(name, checks, plugin)
+        self.parse_attributes(test, lines)
+        return test
+
+
+class PluginTestsParser(PluginTestParser):
+    """
+    Parse comments for a plugin with more than one test. Format:
+    @tests: test1,test2 ...
+    @test1.text: user info, one short line.
+    @test1.group: Generic
+    @test1.type:  MUST
+    @test1.url: http://somewhere...
+    @test1.deprecates: test1, test2
+    @test1.needs: test4,test5
+    @test2.text: user info, one short line.
+    @test2.group: Generic
+    @test2.type:  MUST
+    @test2.url: http://somewhere...
+    @test2.deprecates: test1, test2
+    @test2.needs: test4,test5
+    """
+
+    def parse(self, plugin, checks):
+        """
+        Return a list of JSON_check corresponding to comments.
+        """
+        with open(plugin.plugin_path) as f:
+            lines = f.readlines()
+        tests = []
+        name_lines = filter(lambda l: '@names:' in l, lines)
+        if name_lines == []:
+            raise PluginParseError("Cannot find '@names:'")
+        name_line = name_lines[0]
+        name_line = re.sub('.*@names:', '', name_line)
+        for name in name_line.replace(',', ' ').split():
+             test = JSON_check(name, checks, plugin)
+             tests.append(test)
+             self.parse_attributes(test, lines, name)
+        return tests
+
+
+class JSONPlugin(HelpersMixin):
     """Plugin for communicating with external review checks using JSON"""
 
-    def __init__(self, base, plugin_path):
-        Helpers.__init__(self)
+    def __init__(self, checks, plugin_path):
+        HelpersMixin.__init__(self)
         self.plugin_path = plugin_path
         self.version = None
-        self.spec = base.spec
-        self.srpm = base.srpm
-        self.sources = base.sources
+        self.checks = checks
+        self.spec = checks.spec
+        self.srpm = checks.srpm
+        self.sources = checks.sources
         self.encoder = ReviewJSONEncoder()
         self.decoder = JSONDecoder()
-        self.results = []
         self.plug_in = None
         self.plug_out = None
         self.plug_err = None
+        self.tests = []
+        self.results = []
 
-    name = property(lambda self: self.plugin_path)
-
-    def __eq__(self, other):
-       return self.name.__eq__(other)
-
-    def __ne__(self, other):
-       return self.name.__ne__(other)
-
-    def __hash__(self):
-        return self.name.__hash__()
+    def register(self):
+        try:
+            self.tests = PluginTestsParser().parse(self, self.checks)
+        except PluginParseError:
+            try:
+                self.tests = [PluginTestParser().parse(self, self.checks)]
+            except:
+                self.log.warning("Can't parse test metadata in " +
+                                  self.plugin_path)
+        return self.tests
 
     def run(self):
         """Run the plugin to produce results"""
@@ -136,10 +248,14 @@ class JSONPlugin(Helpers):
 
 
     def get_results(self):
-        """Returns array of results
+        """ Returns list of TestResult"""
 
-        get_result() -> [TestResult, TestResult, ...]"""
         return self.results
+
+    def get_result_by_name(self, name):
+        found = filter(lambda r: r.name == name, self.results)
+        assert(len(found) < 2)
+        return None if found == [] else found[0]
 
     def __get_class_from_json(self, text):
         """Convert JSON reply to simple Python object
@@ -163,22 +279,29 @@ class JSONPlugin(Helpers):
 
     def __handle_reply(self, reply):
         """Handle incomming commands and results"""
+
+        class JSON_TestResult(TestResult):
+
+            def __init__(self, map_):
+                 self.name = map_['name']
+                 self.text = map_['text']
+                 self.url = map_['url']
+                 self.type = map_['type']
+                 self.deprecates = map_['deprecates']
+                 self.result = map_['result']
+                 self.group = 'json'
+                 extra = None
+                 if "output_extra" in map_:
+                     extra  =  map_['output_extra']
+                 TestResult.__init__(self, self, map_['result'], extra, [])
+
         if reply.command == "results":
             self.__debug("Processing results")
             if hasattr(reply, "version"):
                 self.version = reply.version
 
             for result in reply.checks:
-                extra = None
-                if "output_extra" in result:
-                    extra = result["output_extra"]
-                self.results.append(TestResult(result["name"],
-                                               result["url"],
-                                               result["group"],
-                                               result["deprecates"],
-                                               result["text"],
-                                               result["type"],
-                                               result["result"], extra))
+                self.results.append(JSON_TestResult(result))
         elif reply.command == "get_section":
             self.__debug("get_section call")
             sec_name = "%%%s" % reply.section
@@ -246,4 +369,3 @@ class ReviewJSONEncoder(JSONEncoder):
         return ret
 
 # vim: set expandtab: ts=4:sw=4:
-

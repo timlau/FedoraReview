@@ -21,168 +21,16 @@ This module contains automatic test for Fedora Packaging guidelines
 '''
 
 import re
-import fnmatch
 import StringIO
 
+from abc import ABCMeta, abstractmethod
+from fnmatch import fnmatch
 from textwrap import TextWrapper
 
-from helpers import Helpers
-from settings import Settings
-from mock import Mock
-
-TEST_STATES = {'pending': '[ ]', 'pass': '[x]', 'fail': '[!]', 'na': '[-]'}
+from helpers_mixin import HelpersMixin
 
 
-class CheckBase(Helpers):
-
-    deprecates = []
-    header = 'Generic'
-
-    def __init__(self, base):
-        Helpers.__init__(self)
-        self.base = base
-        self.spec = base.spec
-        self.srpm = base.srpm
-        self.sources = base.sources
-        self.url = None
-        self.text = None
-        self.description = None
-        self.state = 'pending'
-        self.type = 'MUST'
-        self.result = None
-        self.output_extra = None
-        self.attachments = []
-
-    def __eq__(self, other):
-       return self.__class__.__name__.__eq__(other)
-
-    def __ne__(self, other):
-       return self.__class__.__name__.__ne__(other)
-
-    def __hash__(self):
-        return self.__class__.__name__.__hash__()
-
-    def run(self):
-        ''' By default, a manual test returning 'inconclusive'.'''
-        self.set_passed('inconclusive')
-
-    def set_passed(self, result, output_extra=None):
-        '''
-        Set if the test is passed, failed or N/A
-        and set optional extra output to be shown in repost
-        '''
-        if result == None:
-            self.state = 'na'
-        elif result == True:
-            self.state = 'pass'
-        elif result == 'inconclusive':
-            self.state = 'pending'
-        else:
-            self.state = 'fail'
-        if output_extra:
-            self.output_extra = output_extra
-
-    name = property(lambda self: self.__class__.__name__)
-
-    def get_result(self):
-        '''
-        Get the test report result for this test
-        '''
-        ret = TestResult(self.__class__.__name__, self.url, self.__class__.header,
-                          self.__class__.deprecates, self.text, self.type,
-                          self.state, self.output_extra, self.attachments)
-        return ret
-
-    def is_applicable(self):
-        '''
-        check if this test is applicable
-        overload in child class if needed
-        '''
-        return True
-
-    def sources_have_files(self, pattern):
-        ''' Check if rpms has file matching a pattern'''
-        sources_files = self.sources.get_files_sources()
-        for source in sources_files:
-            if fnmatch.fnmatch(source, pattern):
-                return True
-        return False
-
-    def has_files(self, pattern):
-        ''' Check if rpms has file matching a pattern'''
-        rpm_files = self.srpm.get_files_rpms()
-        for rpm in rpm_files:
-            for fn in rpm_files[rpm]:
-                if fnmatch.fnmatch(fn, pattern):
-                    return True
-        return False
-
-    def has_files_re(self, pattern_re):
-        ''' Check if rpms has file matching a pattern'''
-        fn_pat = re.compile(pattern_re)
-        rpm_files = self.srpm.get_files_rpms()
-        #print rpm_files, pattern_re
-        for rpm in rpm_files:
-            for fn in rpm_files[rpm]:
-                if fn_pat.search(fn):
-                    return True
-        return False
-
-    def get_files_by_pattern(self, pattern):
-        result = {}
-        rpm_files = self.srpm.get_files_rpms()
-        for rpm in rpm_files:
-            result[rpm] = []
-            for fn in rpm_files[rpm]:
-                if fnmatch.fnmatch(fn, pattern):
-                    result[rpm].append(fn)
-        return result
-
-
-class LangCheckBase(CheckBase):
-    """ Base class for language specific class. """
-    header = 'Language'
-
-    def is_applicable(self):
-        """ By default, language specific check are disabled. """
-        return False
-
-
-class TestResult(object):
-
-    def __init__(self, name, url, group, deprecates, text, check_type,
-                 result, output_extra, attachments=[]):
-        self.name = name
-        self.url = url
-        self.group = group
-        self.deprecates = deprecates
-        self.text = re.sub("\s+", " ", text) if text else ''
-        self.type = check_type
-        self.result = result
-        self.output_extra = output_extra
-        self.attachments = attachments
-        if self.output_extra:
-            self.output_extra = re.sub("\s+", " ", self.output_extra)
-        self.wrapper = TextWrapper(width=78, subsequent_indent=" " * 5,
-                                   break_long_words=False, )
-
-    def get_text(self):
-        strbuf = StringIO.StringIO()
-        main_lines = self.wrapper.wrap("%s: %s %s" %
-                                                     (TEST_STATES[self.result],
-                                                      self.type,
-                                                      self.text))
-        strbuf.write("%s" % '\n'.join(main_lines))
-        if self.output_extra and self.output_extra != "":
-            strbuf.write("\n")
-            extra_lines = self.wrapper.wrap("     Note: %s" %
-                                            self.output_extra)
-            strbuf.write('\n'.join(extra_lines))
-
-        return strbuf.getvalue()
-
-
-class Attachment(object):
+class _Attachment(object):
     """ Text written after the test lines. """
 
     def __init__(self, header, text, order_hint=10):
@@ -200,8 +48,8 @@ class Attachment(object):
 
     def __str__(self):
         s = self.header + '\n'
-        s +=  '-' * len(self.header) + '\n'
-        s +=  self.text
+        s += '-' * len(self.header) + '\n'
+        s += self.text
         return s
 
     def __cmp__(self, other):
@@ -212,6 +60,277 @@ class Attachment(object):
         if self.order_hint > other.order_hint:
             return 1
         return 0
+
+
+class FileChecks(object):
+    """ Add file-checking capabilities to self. """
+
+    def __init__(self, checks):
+        """ Build an instance from a Checks instance. """
+
+        class FileCheckData:
+            ''' Container for class private data. '''
+            pass
+
+        self._filechecks = FileCheckData()
+        self._filechecks.srpm = checks.srpm
+        self._filechecks.spec = checks.spec
+        self._filechecks.sources = checks.sources
+
+    def sources_have_files(self, pattern):
+        ''' Check if sources have file matching a glob pattern'''
+        for source in self._filechecks.sources.get_files_sources():
+            if fnmatch(source, pattern):
+                return True
+        return False
+
+    def _match_rpmfiles(self, matcher):
+        ''' Run matcher on all files in rpms, return match or not. '''
+        files_by_rpm = self._filechecks.srpm.get_files_rpms()
+        for rpm in files_by_rpm.iterkeys():
+            for fn in files_by_rpm[rpm]:
+                if matcher(fn):
+                    return True
+        return False
+
+    def has_files(self, pattern):
+        ''' Check if rpms have file matching a glob pattern'''
+        return self._match_rpmfiles(lambda f: fnmatch(f, pattern))
+
+    def has_files_re(self, pattern_re):
+        ''' Check if rpms have file matching a regex pattern'''
+        regex = re.compile(pattern_re)
+        return self._match_rpmfiles(regex.search)
+
+
+class AbstractCheck(object):
+    """
+    The basic interface for a test (a. k a. check) as seen from
+    the outside.
+
+    Class attributes:
+      - log: logger
+      - version version of api, defaults to 0.1
+      - group: 'Generic', 'C/C++', 'PHP': binds the test to a
+                Registry.
+      - implementation: 'json'|'python'|'shell', defaults to
+        'python'.
+
+    Properties:
+      - name: Unique string.
+      - defined_in: Filename (complete path).
+      - deprecates: List of  tests replaced (should not run) by this
+        test  if the test is applicable.
+      - needs: List of tests which should run before this test.
+      - is_run: reflects if test has run.
+      - is_na, is_failed, is_passed, is_pending: outcome of test.
+      - result: Undefined until is_run, None if is_na, else
+        TestResult.
+
+    Methods:
+      - run(): Run the test, sets result
+
+    Equality:
+      - Tests are considered equal if they have the same name.
+    """
+    # pylint: disable=R0201
+
+    __metaclass__ = ABCMeta
+
+    PASS    = 'pass'
+    FAIL    = 'fail'
+    NA      = 'na'
+    PENDING = 'pending'
+
+    version        = '0.1'
+    implementation = 'python'
+
+    def __init__(self, defined_in):
+        self.defined_in = defined_in
+        self.deprecates = []
+        self.needs = []
+        try:
+            self.name = 'Undefined'
+        except AttributeError:
+            pass
+
+    def __eq__(self, other):
+        return self.name.__eq__(other)
+
+    def __ne__(self, other):
+        return self.name.__ne__(other)
+
+    def __hash__(self):
+        return self.name.__hash__()
+
+    def __str__(self):
+        return self.name
+
+    @abstractmethod
+    def run(self):
+        ''' Perform the check, update result. '''
+        pass
+
+    @property
+    def state(self):
+        ''' None for (not is_run or is_na), else result.result '''
+        assert self != None
+        if hasattr(self, 'result'):
+            return self.result.result if self.result else None
+        return None
+
+    is_run     = property(lambda self: hasattr(self, 'result'))
+    is_failed  = property(lambda self: self.state == self.FAIL)
+    is_passed  = property(lambda self: self.state == self.PASS)
+    is_pending = property(lambda self: self.state == self.PENDING)
+    is_na      = property(
+                     lambda self: self.is_run and self.state == None)
+
+
+class GenericCheck(AbstractCheck, FileChecks):
+
+    """
+    Common interface inherited by all Check implementations.
+
+    Properties:
+      - text: free format user info on test, one line.
+      - description: longer, multiline free format text info.
+      - type: 'MUST'|'SHOULD'|'EXTRA'|'UNDEFINED', defaults to
+        'MUST'
+      - url: Usually guidelines url, possibly None.
+      - checks: Checks instance which created this check.
+      - registry: Defining Registry, set by Registry.register()
+    """
+    registry = None
+
+    class Attachment(_Attachment):
+        """ Text written after the test lines. """
+        pass
+
+    def __init__(self, checks, defined_in):
+        AbstractCheck.__init__(self, defined_in)
+        FileChecks.__init__(self, checks)
+        self.checks = checks
+        self.url = '(this test has no URL)'
+        self.text = self.__class__.__name__
+        self.description = 'This test has no description'
+        self.type = 'MUST'
+        self.needs = ['CheckBuildCompleted']
+
+    spec       = property(lambda self: self.checks.spec)
+    flags      = property(lambda self: self.checks.flags)
+    srpm       = property(lambda self: self.checks.srpm)
+    sources    = property(lambda self: self.checks.sources)
+    log        = property(lambda self: self.checks.log)
+
+    @property
+    def name(self):                              # pylint: disable=E0202
+        ''' The check's name. '''
+        return self.__class__.__name__
+
+    def set_passed(self, result, output_extra=None, attachments=None):
+        '''
+        Set if the test is passed, failed or N/A
+        and set optional extra output to be shown in repost
+        '''
+        if result in ['not_applicable', self.NA, None]:
+            self.result = None
+            return
+        elif result == True or result == self.PASS:
+            state = self.PASS
+        elif result == False or result == self.FAIL:
+            state = self.FAIL
+        elif result == 'inconclusive' or result == self.PENDING:
+            state = self.PENDING
+        else:
+            state = self.FAIL
+            self.log.warning('Illegal return code: ' + str(result))
+        r = TestResult(self, state, output_extra, attachments)
+        self.result = r                          # pylint: disable=W0201
+
+
+class CheckBase(GenericCheck, HelpersMixin):
+    """ Base class for "regular" python checks. """
+    # pylint: disable=R0201
+
+    def __init__(self, checks, defined_in):
+        HelpersMixin.__init__(self)
+        GenericCheck.__init__(self, checks, defined_in)
+
+    def is_applicable(self):
+        """
+        By default, language specific checks uses the registry's
+        is_applicable()
+        """
+        return self.registry.is_applicable()
+
+    def run_on_applicable(self):
+        ''' Called by run() if is_applicable is true(). '''
+        self.set_passed(self.PENDING)
+
+    def run(self):
+        ''' By default, a manual test returning 'inconclusive'.'''
+        if self.is_applicable():
+            self.run_on_applicable()
+        else:
+            self.set_passed('not_applicable')
+
+    def get_files_by_pattern(self, pattern):
+        ''' Return plain list of files in rpms matching glob pattern. '''
+        result = {}
+        rpm_files = self.srpm.get_files_rpms()
+        for rpm in rpm_files:
+            result[rpm] = []
+            for fn in rpm_files[rpm]:
+                if fnmatch(fn, pattern):
+                    result[rpm].append(fn)
+        return result
+
+    group = property(lambda self: self.registry.group)
+
+
+class TestResult(object):
+    ''' The outcome of a test, stored in check.result. '''
+
+    TEST_STATES = {
+         'pending': '[ ]', 'pass': '[x]', 'fail': '[!]', 'na': '[-]'}
+
+    def __init__(self, check, result, output_extra, attachments=None):
+        self.check = check
+        self.text = re.sub("\s+", " ", check.text) if check.text else ''
+        self.result = result
+        self.output_extra = output_extra
+        self.attachments = attachments if attachments else []
+        if self.output_extra:
+            self.output_extra = re.sub("\s+", " ", self.output_extra)
+        self.wrapper = TextWrapper(width=78, subsequent_indent=" " * 5,
+                                   break_long_words=False, )
+
+    url = property(lambda self: self.check.url)
+    name = property(lambda self: self.check.name)
+    type = property(lambda self: self.check.type)
+    group = property(lambda self: self.check.group)
+    deprecates = property(lambda self: self.check.deprecates)
+
+    state = property(lambda self: self.result)
+
+    def get_text(self):
+        ''' Return printable representation of test. '''
+        strbuf = StringIO.StringIO()
+        main_lines = self.wrapper.wrap(
+            "%s: %s" % (self.TEST_STATES[self.result], self.text))
+        strbuf.write("%s" % '\n'.join(main_lines))
+        if self.output_extra and self.output_extra != "":
+            strbuf.write("\n")
+            extra_lines = self.wrapper.wrap("     Note: %s" %
+                                            self.output_extra)
+            strbuf.write('\n'.join(extra_lines))
+
+        return strbuf.getvalue()
+
+    def __str__(self):
+        self.get_text()
+
 
 
 # vim: set expandtab: ts=4:sw=4:

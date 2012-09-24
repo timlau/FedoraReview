@@ -1,5 +1,5 @@
 #!/usr/bin/python -tt
-#-*- coding: UTF-8 -*-
+#-*- coding: utf-8 -*-
 
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -24,49 +24,46 @@ import os
 import sys
 sys.path.insert(0,os.path.abspath('../'))
 
-import logging
 import os.path
 import unittest
 
-from FedoraReview import Checks, Settings, ReviewDirs
-from FedoraReview.helpers import Helpers
 
-from base import *
-from test_env import no_net
+from FedoraReview import Checks
 
-class TestChecks(unittest.TestCase):
+from fr_testcase import FR_TestCase
+
+class TestChecks(FR_TestCase):
 
     def setUp(self):
-        self.startdir = os.getcwd()
-        sys.argv = ['test-checks','-b','1234']
-        Settings.init(True)
-        ReviewDirs.reset()
-        ReviewDirs.workdir_setup('.', True)
-        if not os.path.exists(TEST_WORK_DIR):
-            os.makedirs(TEST_WORK_DIR)
-        self.checks = None
-        self.srpm = TEST_WORK_DIR + os.path.basename(TEST_SRPM)
-        self.spec = TEST_WORK_DIR + os.path.basename(TEST_SPEC)
-        self.source = TEST_WORK_DIR + os.path.basename(TEST_SRC)
-        helper = Helpers()
-        helper._get_file(TEST_SRPM, TEST_WORK_DIR)
-        helper._get_file(TEST_SRC, TEST_WORK_DIR)
-        helper._get_file(TEST_SPEC, TEST_WORK_DIR)
-        del helper
+        FR_TestCase.setUp(self)
+        self.init_test('test-checks',
+                        argv=['-b','1234', '--cache', '--no-build'])
+        #for crap in glob(os.path.join(os.getcwd(), 'results', '*.*')):
+        #      os.unlink(crap)
 
-    @unittest.skipIf(no_net, 'No network available')
+        self.checks = None
+        self.srpm = os.path.join(os.getcwd(),
+                            'python-test-1.0-1.fc16.src.rpm')
+        self.spec = os.path.join(os.getcwd(),'python-test.spec')
+        self.source = os.path.join(os.getcwd(),
+                                   'python-test-1.0.tar.gz')
+
+
+    #@unittest.skipIf(NO_NET, 'No network available')
     def test_all_checks(self):
         ''' Run all automated review checks'''
-        self.checks = Checks(self.spec, self.srpm)
-        self.checks.run_checks(writedown=False)
-        # Automatic Checks
-        checks = self.checks.checks
-        for check in checks:
-            result = check.get_result()
-            self.assertNotEqual(result, None)
-        os.chdir(self.startdir)
+        checks = Checks(self.spec, self.srpm)
+        checks.run_checks(writedown=False)
+        checkdict = checks.get_checks()
+        for check in checkdict.itervalues():
+            self.assertTrue(check.is_run)
 
 
 if __name__ == '__main__':
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestChecks)
+    if len(sys.argv) > 1:
+        suite = unittest.TestSuite()
+        for test in sys.argv[1:]:
+            suite.addTest(TestChecks(test))
+    else:
+        suite = unittest.TestLoader().loadTestsFromTestCase(TestChecks)
     unittest.TextTestRunner(verbosity=2).run(suite)

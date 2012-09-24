@@ -1,0 +1,19 @@
+Revision history for Perl extension RPM.
+
+1.51  2006-09-24  cturner@pattern.net
+	- no code change from 1.50, just updating license
+
+1.19  Mon May  2 01:43:36 PDT 2005
+	- add support for --use-usr-local to try to avoid 
+	  conflicting with files from core perl itself
+	- add code to detect toplevel dir of tarball instead
+	  of assuming it is the same as NAME-VERSION
+	- wow, I haven't maintained this file well
+
+1.02  Sat Feb 16 12:35:01 2002
+	- finally wrestled module back into place
+
+0.01  Mon Sep 24 20:58:23 2001
+	- original version; created by h2xs 1.21 with options
+		-b 5.5.3 -A -X -n RPM
+

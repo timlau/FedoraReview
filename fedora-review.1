@@ -10,23 +10,28 @@ fedora-review \- Automatically review RPM packages for Fedora.
 [options] [--prebuilt] -n <package name>
 .br
 .B fedora-review
+[options] [--prebuilt] -rn <srpm path>
+.br
+.B fedora-review
 [options] -u <url>
 
 .SH DESCRIPTION
 
-This tool makes reviews of rpm packages for Fedora easier. It tries to automate most of the process.
-Through a json API the checks can be extended in any programming language and for any programming language.
+This tool makes reviews of rpm packages for Fedora easier. It tries to
+automate most of the process.  Through a  bash API the checks can be
+extended in any programming language and for any programming language.
 We have at the moment checks for C/C++, R, Java and Perl packages.
 
 .SH USAGE
-This program runs a number of checks for packages in Fedora.
+The program runs a number of checks for packages in Fedora, producing
+a customized review template.
 .IP "" 4
 $ fedora-review -b <bug number>
 .br
 $ fedora-review -u <url>
 .PP
 Will download the SPEC & SRPM files from the Bugzilla report,
-build them in mock, run a number of tests and generate a report.
+build them in mock, run a number of tests and generate a template.
 
 Not all bugzillas support the -b option. The -u option only allows for
 downloads and is not as reliable as -b, but works in many cases.
@@ -37,15 +42,19 @@ $ fedora-review -n <package name>
 This alternative usage expects <package name>.spec and source rpm in current
 directory. By adding the -p switch, fedora-review uses already built rpms
 in current directory instead of building using mock.
+.IP "" 4
+$ fedora-review --rpm-spec -n <srpm path>
+.PP
+This form accepts a single path to a source rpm. It uses the specfile
+bundled in the srpm package.
 .PP
 You will need to have mock installed and be member of the mock group
 for the build to work. Run as root:
 .IP "" 4
-# usermod -a -G mock [your user name] && newgrp mock
+# usermod -a -G mock [your user name]
 .PP
-To assign bugs in bugzilla automatically you will first have to login
-into bugzilla (--login). This will create a bugzilla cookie so you
-don't have to login every time.
+After this, you will need to logout and login again (or use newgrp(1)) - the
+changes in user's group list is not read until a new login.
 .SH MODE OPTIONS - one is required
 .TP 4
 .B -b, --bug <bug nr>
@@ -54,8 +63,11 @@ bug number
 .TP 4
 .B -n, --name <name>
 Runs the checks against the named spec and source rpm located in the
-current working directory. The files are expected to hane the names
+current working directory. The files are expected to have the names
 <name>.spec and <name>*.src.rpm.
+.PP
+When used together with --rpm-spec/-r, name can also be a complete path
+to a source rpm.
 .TP 4
 .B -u url, --url <url>
 Fetch data from given url, typically another bugzilla instance without
@@ -69,12 +81,26 @@ be found.
 List all available checks, usable as arguments to --exclude and
 --single
 .TP 4
+.B  -f, --display-flags
+List all available flags, usable as arguments to --define or -D.
+.TP 4
 .B  -V, --version
 Show version info
 .SH GENERAL OPTIONS
 .TP 4
 .B -c, --cache
 Do not redownload the files from bugzilla, use the local one.
+.TP 4
+.B -D, --define <flag>
+Define a flag e. g., EPEL5. A flag can either just be activated
+using
+.I -D flag
+or set to a value using
+.I -D flag=value.
+--display-flags shows available flags.
+.TP 4
+.B -k, --checksum <md5|sha1|sha224|sha256|sha384|sha512>
+Algorithm used for checksum.
 .TP 4
 .B -m, --mock-config <configuration>
 Specify which mock config to use, one of the files in /etc/mock,
@@ -90,7 +116,12 @@ you provide.
 Do not generate the review report.
 .TP 4
 .B --no-build
-Do not rebuild the source rpm, use the one currently built in mock.
+Do not rebuild or install the source rpm, instead use the last installed
+package available in mock. Implies --cache.
+.TP 4
+.B --other_bz
+Url of alternative bugzilla, instead of using default
+https://bugzilla.redhat.com
 .TP 4
 .B -p, --prebuilt
 When using -n <name>, use prebuilt rpms in current directory instead
@@ -106,54 +137,39 @@ Run a single test, as listed by --display-checks
 Provides a more detailed output of what's going on.
 .TP 4
 .B -x  "test1, test2, ...", --exclude "test1, test2, ..."
-Comma-separated list of test(s) to exclude, as listed by --display-checks
-.TP 4
-.B -k, --checksum {md5,sha1,sha224,sha256,sha384,sha512}
-algorithm used for checksum (currently supported: md5, sha1, sha224, sha256, sha384, sha512)
-.SH BUGZILLA OPTIONS
-.TP 4
-.B -a, --assign
-Assign the Fedora bugzilla ticket to yourself. Only known to work with bugzilla.redhat.com
-.TP 4
-.B -l, --login "Fedora FAS user id"
-Login into Fedora Bugzilla before starting.
-.TP 4
-.B -o url,--other-bz url
-URL for another bugzilla.
-.TP 4
-.B -i id, --user userid
-The bugzilla user id.
+Comma-separated list of test(s) to exclude, as listed by --display-checks.
+A test which depends on an excluded test, will run.
 .SH THE REVIEW DIRECTORY
-The report template create by fedora-review lives in a review directory. 
+The report template create by fedora-review lives in a review directory.
 Besides the report, here is:
 .TP 4
 srpm directory
-Holds whats downloaded, normally a src.rpm and a 
+Holds whats downloaded, normally a src.rpm and a
 spec file. When using --rpm-spec, here is no .spec file.
 .TP 4
 srpm-unpacked directory
 Holds the unpacked content of the src.rpm
 file.
 .TP 4
-upstream directory 
+upstream directory
 contains sources downloaded from the Source: url in the spec file.
 .TP 4
-upstream-unpacked directory 
+upstream-unpacked directory
 Occasionally contains the unpacked sources, but is normally empty.
-.TP 4 
-BUILD link 
-Points to the mock directory containing the sources used in 
+.TP 4
+BUILD link
+Points to the mock directory containing the sources used in
 the build. These sources have been created and modifified by the %prep
-stuff in the spec file. The link is only valid direct after the run, 
+stuff in the spec file. The link is only valid direct after the run,
 it's overwritten next time mock executes.
 .TP 4
-result link 
+result link
 Points to the mock result dir, containing logs and rpms.
-This is also overwritten as soon as mock is run again e. g., by 
+This is also overwritten as soon as mock is run again e. g., by
 fedora-review.
 .SH LOCAL SOURCES (GIT-BASED OR SIMILAR)
 Normally, the Source0 (or others SourceX) in the specfile contains an URL
-to the upstream source. fedora-review uses this url to download the 
+to the upstream source. fedora-review uses this url to download the
 upstream source and then compare md5sum with source in rpm.
 
 However, in some cases the Source0: is just a filename e. g., when sources
@@ -170,35 +186,47 @@ uses the --prebuilt option, and has some limitations on checks performed
 since fedora-review cannot access the build directories.
 .PP
 The workflow:
-.IP \(bu 3 
-Invoke koji, note the task number: 
+.IP \(bu 3
+Invoke koji, note the task number:
 .IP "" 8
 koji build --scratch my-package.src.rpm
-.IP \(bu 3 
-Download the results: 
+.IP \(bu 3
+Download the results:
 .IP "" 8
 koji-download-scratch <task number>
-.IP \(bu 3 
+.IP \(bu 3
 Invoke fedora-review using --prebuilt, --name options and --rpmspec:
 .IP "" 8
 fedora-review --rpm-spec --prebuilt --name my-package
 
 .SH URL limitations
-fedora-review handles two types of URL: the spec and srpm url found in 
+fedora-review handles two types of URL: the spec and srpm url found in
 e. g. the bugzilla page, and the source url(s) found in the spec file.
 
 For the srpm and spec file url:
-.IP \(bu 3 
-The parameters (i. e., the ? and everything beyond) is removed. 
+.IP \(bu 3
+The parameters (i. e., the ? and everything beyond) is removed.
 .IP \(bu 3
 The rest must end with /*.spec or /*.src.rpm
 
 .P
-For the source url, possible parameters are 
+For the source url, possible parameters are
 .B not
 removed. It must end with /filename, typically something like
 /package-2.0.1.tar.gz
 
+.SH LOGIN AND ASSIGN
+fedora-review as of version 0.2.2 had options to login and assign a bugzilla
+bug. As of version 0.2.3 these options have been removed in favor of using
+bugzilla(1). Direct correspondence with old options:
+.PP
+--login --user <user id>
+.IP "" 4
+bugzilla login --user <user id>
+.PP
+--assign
+.IP "" 4
+bugzilla modify --assignee=<user id> --status=ASSIGNED --flag='fedora-cvs?'
 
 .SH EXAMPLES
 Make a report template for Fedora bug 817271:
@@ -227,39 +255,50 @@ $ fedora-review --rpm-spec -n my-package
 This works if (and only if) the local files has name with correct prefix
 as given to -n (my-package in this example). The filenames must also end
 with \.spec and \.src.rpm
-.PP
-Finally, you can assign the bug from the commandline:
-.nf
-.IP "" 4
-$ fedora-review -b 811221 --assign --user my-bugzilla-id --login
-password:
 
 .SH FILES
-.I $HOME/.cache/fedora-review.log
+.I ~/.cache/fedora-review.log
 .RS
 Debug logging from last session.
 .RE
-.I $HOME/.bugzillacookies
-.RS
-Persistent credentials setup when using --login.
-.RE
 .I /usr/share/fedora-review/plugins
 .RS
-System-wide external plugins directory
+System-wide python plugins directory
 .RE
-.I $HOME/.config/fedora-review/plugins/
+.I /usr/share/fedora-review/scripts
 .RS
-User supplied external plugins directory
+System-wide scripts directory
+.RE
+.I ~/.local/share/fedora-review/plugins/
+.RS
+User supplied directory for full-featured python plugins
+.RE
+.I ~/.local/share/fedora-review/scripts/
+.RS
+User supplied directory with shell-based plugins
 .RE
 
 .SH ENVIRONMENT
 .TP
 .B  REVIEW_EXT_DIRS
-If REVIEW_EXT_DIRS is set, it specifies additional directories that will be searched for external plugins
+If REVIEW_EXT_DIRS is set, it specifies additional directories that will be searched for external
+json plugins
 .TP
 .B REVIEW_LOGLEVEL
 loglevel used when not using -v/--verbose. A logging.* value like 'DEBUG', 'Info', or 'warning'. Setting
 REVIEW_LOGLEVEL to 'debug' is the same as providing the -v/--verbose option.
+.TP
+.B XDG_DATA_HOME
+fedora-review respects XDG_DATA_HOME which defaults to ~/.local/share. Eg g.,
+the personal data directory with plugins is by default ~/.local/share/fedora-review/plugins,
+but is $XDG_DATA_HOME/fedora-review/plugins if XDG_DATA_HOME is set. See FILES.
+.TP
+.B XDG_CACHE_HOME
+If set, defines the directory where the logfile fedora-review.log is written.
+Defaults to ~ /.cache.
+
+.SH SEE ALSO
+bugzilla(1) - CLI tool to create and modify bugzilla bug tickets.
 
 .SH AUTHORS
 Original author: Tim Lauridsen <tim.lauridsen@gmail.com>

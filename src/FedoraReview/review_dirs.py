@@ -25,9 +25,8 @@ import os
 import os.path
 import shutil
 import tempfile
-import logging
 
-from FedoraReview.review_error import FedoraReviewError
+from FedoraReview.review_error import ReviewError
 from FedoraReview.settings     import Settings
 
 SRPM              = 'srpm'
@@ -37,70 +36,97 @@ UPSTREAM_UNPACKED = 'upstream-unpacked'
 RESULTS           = 'results'
 
 
-class ReviewDirExistsError(FedoraReviewError):
-    pass
-
-
-class ReviewDirChangeError(FedoraReviewError):
-    pass
-
-
 class _ReviewDirs(object):
+    ''' Wraps the review directory and it's paths. '''
+
+    class ResultDirNotEmptyError(ReviewError):
+        ''' Thrown when trying to reuse old review dir without --cache. '''
+        def __init__(self):
+            ReviewError.__init__(self,
+                 'The resultdir is not empty, I cannot handle this')
+
+    class ReviewDirExistsError(ReviewError):
+        ''' The review dir is already in place. '''
+        def __init__(self, path):
+            msg = 'The directory %s is in the way, please remove' % \
+                os.path.abspath(path)
+            ReviewError.__init__(self, msg, 2)
+            self.show_logs = False
+
+    class ReviewDirChangeError(ReviewError):
+        ''' Attempt to change directory already set. '''
+        pass
 
     WD_DIRS = [UPSTREAM, UPSTREAM_UNPACKED, SRPM, SRPM_UNPACKED, RESULTS]
 
     def __init__(self):
         self.startdir = os.getcwd()
+        self.wdir = None
 
-    def reset(self):
-        if hasattr(self, 'wd'):
-            delattr(self, 'wd')
+    def reset(self, startdir=None):
+        ''' Clear persistent state (test tool). '''
+        self.wdir = None
+        if startdir:
+            self.startdir = startdir
 
-    def report_path(self, name):
+    @staticmethod
+    def report_path(name):
+        ''' Return path for report. '''
         return os.path.abspath('./%s-review.txt' % name)
 
-    def workdir_setup(self, wd, reuse_old=False):
-        reuse = reuse_old or Settings.cache
-        if not reuse and os.path.exists(wd):
-            d = ''.join(wd.split(os.getcwd(), 1))
-            raise ReviewDirExistsError(d)
-        wd = os.path.abspath(wd)
-        if hasattr(self, 'wd'):
-            if self.wd != wd and not reuse_old:
-               raise ReviewDirChangeError('Old dir ' + self.wd + 
-                                           ' new dir: ' + wd)
+    def _create_and_copy_wd(self, wd, reuse_old):
+        ''' Create wd, possibly filled with cached data. '''
         if os.path.exists(wd) and not reuse_old:
             if Settings.cache:
                 cache = tempfile.mkdtemp(dir='.')
                 for d in self.WD_DIRS:
                     shutil.move(os.path.join(wd, d), cache)
+                try:
+                    buildlink = os.readlink('BUILD')
+                except  OSError:
+                    buildlink = None
             logging.info("Clearing old review directory: " + wd)
             shutil.rmtree(wd)
             os.mkdir(wd)
             if Settings.cache:
                 for d in self.WD_DIRS:
-                    shutil.move(os.path.join(cache,d), wd)
+                    shutil.move(os.path.join(cache, d), wd)
+                    if buildlink:
+                        shutil.symlink(buildlink, 'BUILD')
                 shutil.rmtree(cache)
         if not os.path.exists(wd):
             os.mkdir(wd)
+
+    def workdir_setup(self, wd, reuse_old=False):
+        ''' Initiate a new review directory, or re-use an old one. '''
+        reuse = reuse_old or Settings.cache
+        if not reuse and os.path.exists(wd):
+            d = ''.join(wd.split(os.getcwd(), 1))
+            raise self.ReviewDirExistsError(d)
+        wd = os.path.abspath(wd)
+        if self.wdir:
+            if self.wdir != wd and not reuse_old:
+                raise self.ReviewDirChangeError('Old dir ' + self.wdir +
+                                                ' new dir: ' + wd)
+        self._create_and_copy_wd(wd, reuse_old)
         os.chdir(wd)
         logging.info("Using review directory: " + wd)
-        self.wd = wd
+        self.wdir = wd
         for d in self.WD_DIRS:
             if not os.path.exists(d):
                 os.mkdir(d)
 
-    is_inited = property(lambda self: hasattr(self, 'wd'))
-    root = property(lambda self: self.wd)
+    is_inited = property(lambda self: bool(self.wdir))
+    root = property(lambda self: self.wdir)
 
-    srpm = property(lambda self: os.path.join(self.wd, SRPM))
-    srpm_unpacked = property(lambda self: os.path.join(self.wd, 
+    srpm = property(lambda self: os.path.join(self.wdir, SRPM))
+    srpm_unpacked = property(lambda self: os.path.join(self.wdir,
                                                        SRPM_UNPACKED))
-    upstream = property(lambda self: os.path.join(self.wd, UPSTREAM))
-    upstream_unpacked = property(lambda self: 
-                                     os.path.join(self.wd, 
+    upstream = property(lambda self: os.path.join(self.wdir, UPSTREAM))
+    upstream_unpacked = property(lambda self:
+                                     os.path.join(self.wdir,
                                                   UPSTREAM_UNPACKED))
-    results = property(lambda self: os.path.join(self.wd, RESULTS))
+    results = property(lambda self: os.path.join(self.wdir, RESULTS))
 
 ReviewDirs = _ReviewDirs()
 

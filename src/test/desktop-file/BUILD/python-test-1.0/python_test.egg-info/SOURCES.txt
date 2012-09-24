@@ -1,0 +1,9 @@
+COPYING
+MANIFEST.in
+setup.cfg
+setup.py
+python_test.egg-info/PKG-INFO
+python_test.egg-info/SOURCES.txt
+python_test.egg-info/dependency_links.txt
+python_test.egg-info/top_level.txt
+test/__init__.py

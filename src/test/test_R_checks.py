@@ -1,5 +1,5 @@
 #!/usr/bin/python -tt
-#-*- coding: UTF-8 -*-
+#-*- coding: utf-8 -*-
 
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -20,48 +20,44 @@ Unit checks for automatic test of fedora R review guidelines
 '''
 
 
-import sys
-import os.path
-sys.path.insert(0,os.path.abspath('../'))
-
 import os
-import shutil
+import os.path
+import sys
 import unittest
 
+sys.path.insert(0,os.path.abspath('../'))
+from FedoraReview import  Checks, ReviewDirs, NameBug
 
-from FedoraReview import Settings, Checks, ReviewDirs, NameBug
-from FedoraReview.checks import R
+from fr_testcase import FR_TestCase, FAST_TEST
 
-from test_env import no_net
+class TestRChecks(FR_TestCase):
 
+    R_TEST_SRPM =            'https://fedorahosted.org/releases/F/e' \
+                             '/FedoraReview/R-Rdummypkg-1.0-2.fc15.src.rpm'
+    R_TEST_SPEC = FR_TestCase.BASE_URL + 'R-Rdummypkg.spec'
+    R_TEST_SRC  = FR_TestCase.BASE_URL + 'Rdummypkg_1.0.tar.gz'
 
-class TestRChecks(unittest.TestCase):
-
-    def setUp(self):
-        sys.argv = ['fedora-review','-rpn','R-Rdummypkg']
-        os.chdir('test-R')
-        if os.path.exists('R-Rdummypkg'):
-             shutil.rmtree('R-Rdummypkg')
-        Settings.init(True)
-        ReviewDirs.reset()
-
-    @unittest.skipIf(no_net, 'No network available')
+    @unittest.skipIf(FAST_TEST, 'slow test disabled by REVIEW_FAST_TEST')
     def test_all_checks(self):
         ''' Run all automated review checks'''
+        self.init_test('test-R',
+                        argv=['-rpn','R-Rdummypkg', '--cache'])
+        ReviewDirs.reset()
         self.bug = NameBug('R-Rdummypkg')
         self.bug.find_urls()
         self.bug.download_files()
         self.checks = Checks(self.bug.spec_file, self.bug.srpm_file)
         self.checks.run_checks(writedown=False)
-        for check in self.checks.checks:
-            if check.is_applicable():
-                self.assertTrue(check.header == 'Generic' or 
-                                check.header == 'R')
-                result = check.get_result()
-                self.assertTrue(result.result in ['pass', 'pending', 'fail']) 
-        os.chdir('..')
+        for check in self.checks.checkdict.itervalues():
+            if check.is_passed or check.is_pending or check.is_failed:
+                self.assertIn(check.group, ['Generic', 'R'])
 
 
 if __name__ == '__main__':
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestRChecks)
+    if len(sys.argv) > 1:
+        suite = unittest.TestSuite()
+        for test in sys.argv[1:]:
+            suite.addTest(TestRChecks(test))
+    else:
+        suite = unittest.TestLoader().loadTestsFromTestCase(TestRChecks)
     unittest.TextTestRunner(verbosity=2).run(suite)

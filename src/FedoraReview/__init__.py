@@ -20,20 +20,21 @@
 Tools for helping Fedora package reviewers
 '''
 
-from abstract_bug import SettingsError,BugException
 from bugzilla_bug import BugzillaBug
-from check_base   import CheckBase, LangCheckBase, Attachment
-from checks_class import Checks, ChecksLister
+from check_base   import AbstractCheck, GenericCheck, CheckBase
+from checks       import Checks, ChecksLister
 from mock         import Mock
 from name_bug     import NameBug
-from review_error import FedoraReviewError, CleanExitError
-from review_dirs  import ReviewDirs, ReviewDirExistsError
+from review_error import ReviewError
+from review_dirs  import ReviewDirs
+from registry     import AbstractRegistry, RegistryBase
 from settings     import Settings
 from source       import Source
 from sources      import Sources
 from spec_file    import SpecFile
 from srpm_file    import SRPMFile
 from url_bug      import UrlBug
-from version      import __version__, build_id, build_date, build_full
+from version      import __version__, BUILD_ID, BUILD_DATE, BUILD_FULL
+from xdg_dirs     import XdgDirs
 
 # vim: set expandtab: ts=4:sw=4:

@@ -24,7 +24,8 @@ import re
 import rpm
 import subprocess
 
-from subprocess import call, Popen, PIPE, STDOUT
+from subprocess import Popen, PIPE, check_output, CalledProcessError
+from review_error import ReviewError
 
 from settings import Settings
 
@@ -40,50 +41,45 @@ class SpecFile(object):
     '''
     Wrapper classes for getting information from a .spec file
     '''
+    # pylint: disable=W0212
+
     def __init__(self, filename):
         self.log = Settings.get_logger()
         self._sections = {}
         self._section_list = []
         self.filename = filename
-        f = None
-        try:
-            f = open(filename, "r")
+        with open(filename, "r") as f:
             self.lines = f.readlines()
-        finally:
-            f and f.close()
-
         ts = rpm.TransactionSet()
         self.spec_obj = ts.parseSpec(self.filename)
 
-        self.name = self.get_from_spec('name')
-        self.version = self.get_from_spec('version')
-        self.release = self.get_from_spec('release')
+        self._name_vers_rel = [self.get_from_spec('name'),
+                               self.get_from_spec('version'),
+                               self.get_from_spec('release')]
         self.process_sections()
 
-    def get_sources(self, type='Source'):
+    name = property(lambda self: self._name_vers_rel[0])
+    version = property(lambda self: self._name_vers_rel[1])
+    release = property(lambda self: self._name_vers_rel[2])
+
+    def get_sources(self, _type='Source'):
         ''' Get SourceX/PatchX lines with macros resolved '''
         result = {}
         for (url, num, flags) in self.spec_obj.sources:
             # rpmspec.h, rpm.org ticket #123
             srctype = "Source" if flags & 1 else "Patch"
-            if type != srctype:
+            if _type != srctype:
                 continue
             tag = srctype + str(num)
-            result[tag] = url
+            result[tag] = self.spec_obj.sourceHeader.format(url)
         return result
 
     def has_patches(self):
         '''Returns true if source rpm contains patch files'''
         return len(self.get_sources('Patch')) > 0
 
-    # FIXME: dead code, not referenced?!
-    def get_macros(self):
-        for lin in self.lines:
-            res = MACROS.search(lin)
-            if res:
-                print "macro: %s = %s" % (res.group(2), res.group(3))
-
     def process_sections(self):
+        ''' Scan lines and build self._sections, self.section_list. '''
         section_lines = []
         cur_sec = 'main'
         for l in self.lines:
@@ -99,25 +95,11 @@ class SpecFile(object):
                     section_lines = []
                     cur_sec = this_sec
             else:
-                if line and line.strip() != '':
-                    section_lines.append(line)
+                if line:
+                    section_lines.append(line.strip())
         self._section_list.append(cur_sec)
         self._sections[cur_sec] = section_lines
         cur_sec = this_sec
-        #self.dump_sections()
-
-    # FIXME: this is dead code, only referenced line above?!
-    def dump_sections(self, section=None):
-        if section:
-            sections = self.get_section(section)
-            lst = sorted(sections)
-        else:
-            sections = self._sections
-            lst = self._section_list
-        for sec in lst:
-            print "-->", sec
-            for line in sections[sec]:
-                print "      %s" % line
 
     def get_from_spec(self, macro):
         ''' Use rpm for a value for a given tag (macro is resolved)'''
@@ -127,12 +109,12 @@ class SpecFile(object):
                 # Run the command
         try:
             proc = \
-                Popen(cmd, stdout=PIPE, stderr=PIPE, env={'LC_ALL':'C'})
+                Popen(cmd, stdout=PIPE, stderr=PIPE, env={'LC_ALL': 'C'})
             output, error = proc.communicate()
             #print "output : [%s], error : [%s]" % (output, error)
         except OSError, e:
-            self.log.error( "OSError : %s" % str(e))
-            self.log.debug( "OSError : %s" % str(e), exc_info=True)
+            self.log.error("OSError : %s" % str(e))
+            self.log.debug("OSError : %s" % str(e), exc_info=True)
             return False
         if output:
             rc = output.split("\n")[0]
@@ -151,47 +133,40 @@ class SpecFile(object):
                 self.log.warning("Error : [%s]" % (error))
                 return False
 
-    # FIXME: This is dead code, not referenced?!
-    def get_rpm_eval(self, filter):
-        lines = "\n".join(self.get_section('main')['main'])
-        #print lines
-        args = ['rpm', '--eval', lines]
-        #print len(args), args
-        try:
-            proc = Popen(args, stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE, shell=True)
-            output, error = proc.communicate()
-            print "output : [%s], error : [%s]" % (output, error)
-        except OSError, e:
-            self.log.error("OSError : %s" % str(e))
-            return False
-        return output
-
     def get_expanded(self):
+        ''' Return expanded spec, as provided by rpmspec -P. '''
         cmd = ['rpmspec', '-P', self.filename]
         try:
-            proc = Popen(cmd, stdin = subprocess.PIPE, stdout = subprocess.PIPE,
-                         stderr = subprocess.PIPE)
+            proc = Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE)
             output, error = proc.communicate()
             if proc.wait() != 0:
                 return None
             return output
         except OSError, e:
             self.log.error("OSError: %s" % str(e))
-            self.log.debug("OSError: %s" % str(e), exc_info=True)
+            self.log.debug("OSError: %s stderr: %s " % (str(e), error),
+                           exc_info=True)
             return None
 
-    def find_tag(self, tag, section = None, split_tag = True):
+    def find_tag(self, tag, section = None):
         '''
-        find at given tag in the spec file.
-        Ex. Name:, Version:
-        This get the text precise as in is written in the spec,
-        no resolved macros
+        Find at given tag in the spec file. Parameters:
+          - tag: tag to look for. E. g., 'Name', 'gem-name'
+            Matches tag: (E. g. Name:) in beginning of line,
+            or %define tag or %global tag e. g.,
+            %global gem-name mygem
+          - section. A section corresponds to a subpackage e. g.,
+            'devel'
+
+        Returns array of strings, each string corresponds to a
+        definition line in the spec file.
+
         '''
         # Maybe we can merge the last two regex in one but using
         # (define|global) leads to problem with the res.group(1)
         # so for the time being let's go with 2 regex
-        keys = [ re.compile(r"^%s\d*\s*:\s*(.*)" % tag, re.I),
+        keys = [re.compile(r"^%s\d*\s*:\s*(.*)" % tag, re.I),
                  re.compile(r"^.define\s*%s\s*(.*)" % tag, re.I),
                  re.compile(r"^.global\s*%s\s*(.*)" % tag, re.I)
                ]
@@ -202,18 +177,37 @@ class SpecFile(object):
             if lines:
                 lines = lines[section]
         for line in lines:
-            # check for release
             for key in keys:
-                res = key.search(line)
-                if res:
-                    value = res.group(1).strip()
-                    value = value.replace(',', ' ')
-                    value = value.replace('  ', ' ')
-                    if split_tag:
-                        values.extend(value.split())
-                    else:
-                        values.append(value)
+                match = key.search(line)
+                if match:
+                    values.append(match.group(1).strip())
         return values
+
+    @staticmethod
+    def rpm_eval(expression):
+        ''' Evaluate expression using rpm --eval. '''
+        try:
+            reply = check_output(['rpm', '--eval', expression])
+        except CalledProcessError as err:
+            raise ReviewError(str(err))
+        return  reply.strip()
+
+    def _rpmspec(self, arg):
+        ''' run rpmspec with arg and return output as list. '''
+        try:
+            reply = check_output('rpmspec ' + arg + ' ' + self.filename,
+                                   shell=True)
+        except CalledProcessError as err:
+            raise ReviewError(str(err))
+        return  [r.strip() for r in reply.split('\n')]
+
+    def get_build_requires(self):
+        ''' Return the list of build requirements. '''
+        return self._rpmspec(' -q --buildrequires ')
+
+    def get_requires(self):
+        ''' Return list of requirements i. e., Requires: '''
+        return self._rpmspec('-q --requires ')
 
     def get_section(self, section):
         '''
@@ -227,6 +221,7 @@ class SpecFile(object):
         return results
 
     def find(self, regex):
+        ''' Return first line matching regex or None. '''
         for line in self.lines:
             res = regex.search(line)
             if res:
@@ -234,13 +229,12 @@ class SpecFile(object):
         return None
 
     def find_all(self, regex, skip_changelog=False):
-        my_lines = list(self.lines)
-        if skip_changelog:
-           line = my_lines.pop()
-           while not '%changelog' in line:
-               line = my_lines.pop()
+        ''' Find all non-changelog lines matching regex. '''
         result = []
-        for line in my_lines:
+        for line in self.lines:
+            if skip_changelog:
+                if line.lower().strip().startswith('%changelog'):
+                    break
             res = regex.search(line)
             if res:
                 result.append(res)
