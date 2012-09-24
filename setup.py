@@ -2,6 +2,12 @@
 """
 Setup script
 """
+import os
+import sys
+pkg_dir = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])),
+                       'src')
+sys.path.insert(0, pkg_dir)
+
 
 from distutils.core import setup
 from src.FedoraReview import __version__
