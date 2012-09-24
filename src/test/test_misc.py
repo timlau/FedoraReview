@@ -311,7 +311,8 @@ class TestMisc(FR_TestCase):
         bug.find_urls()
         expected = 'src/test/test_misc/python-test-1.0-1.fc16.src.rpm'
         self.assertTrue(bug.srpm_url.endswith(expected))
-        expected = 'src/test/test_misc/python-test/srpm-unpacked/python-test.spec'
+        expected = 'src/test/test_misc/review-python-test/srpm-unpacked/python-test.spec'
+        print bug.spec_url
         self.assertTrue(bug.spec_url.endswith(expected))
 
     def test_jsonapi(self):
@@ -449,7 +450,7 @@ class TestMisc(FR_TestCase):
 
     def test_unversioned_so(self):
         self.init_test('unversioned-so',
-                       argv=['-rpn','python-test'],
+                       argv=['-rpn','python-test', '--cache'],
                        wd='python-test')
         ReviewDirs.reset(os.getcwd())
         bug = NameBug('python-test')
@@ -458,7 +459,7 @@ class TestMisc(FR_TestCase):
 
     def test_unversioned_so_private(self):
         self.init_test('unversioned-so-private',
-                       argv=['-rpn','python-test'],
+                       argv=['-rpn', 'python-test', '--cache'],
                        wd='python-test')
         ReviewDirs.reset(os.getcwd())
         bug = NameBug('python-test')
@@ -514,5 +515,10 @@ class TestMisc(FR_TestCase):
 
 
 if __name__ == '__main__':
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestMisc)
+    if len(sys.argv) > 1:
+        suite = unittest.TestSuite()
+        for test in sys.argv[1:]:
+            suite.addTest(TestMisc(test))
+    else:
+        suite = unittest.TestLoader().loadTestsFromTestCase(TestMisc)
     unittest.TextTestRunner(verbosity=2).run(suite)

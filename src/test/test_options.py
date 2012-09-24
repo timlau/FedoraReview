@@ -33,9 +33,8 @@ from glob import glob
 from FedoraReview import Checks, ReviewDirs, SpecFile, Settings, Sources
 from FedoraReview import BugzillaBug, NameBug, UrlBug
 
-VERSION = '0.2.2'
 
-from fr_testcase import FR_TestCase, NO_NET, FAST_TEST
+from fr_testcase import FR_TestCase, NO_NET, FAST_TEST, VERSION
 
 class TestOptions(FR_TestCase):
 
@@ -116,7 +115,7 @@ class TestOptions(FR_TestCase):
 
         self.init_test('git-source',
                        argv= ['-rpn', 'get-flash-videos', '--cache'],
-                       buildroot='fedora-16-i386-rpmfusion_free')
+                       buildroot='fedora-16-i386')
         ReviewDirs.reset()
         ReviewDirs.startdir = os.getcwd()
 
@@ -254,5 +253,10 @@ class TestOptions(FR_TestCase):
 
 
 if __name__ == '__main__':
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestOptions)
+    if len(sys.argv) > 1:
+        suite = unittest.TestSuite()
+        for test in sys.argv[1:]:
+            suite.addTest(TestOptions(test))
+    else:
+        suite = unittest.TestLoader().loadTestsFromTestCase(TestOptions)
     unittest.TextTestRunner(verbosity=2).run(suite)

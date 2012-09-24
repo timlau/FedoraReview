@@ -78,5 +78,10 @@ class TestBugzilla(FR_TestCase):
         self.assertTrue(os.path.exists(spec))
 
 if __name__ == '__main__':
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestBugzilla)
+    if len(sys.argv) > 1:
+        suite = unittest.TestSuite()
+        for test in sys.argv[1:]:
+            suite.addTest(TestExt(test))
+    else:
+        suite = unittest.TestLoader().loadTestsFromTestCase(TestBugzilla)
     unittest.TextTestRunner(verbosity=2).run(suite)

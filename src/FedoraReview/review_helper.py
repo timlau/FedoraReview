@@ -89,7 +89,11 @@ class ReviewHelper(object):
                                    writedown=not Settings.no_report)
             output.close()
         if not Settings.no_report:
-            print "Review in: " + self.outfile
+            print "\033[92mReview template in: %s\033[0m" % self.outfile
+            print "\033[91mfedora-review is automated tool, but *YOU* " \
+                  "are responsible for manually reviewing the results " \
+                  "and finishing the review. Do not just copy-paste the " \
+                  "results without understanding them.\033[0m"
 
     @staticmethod
     def _list_flags():
@@ -125,7 +129,7 @@ class ReviewHelper(object):
                         continue
                     print 'Group: ' + group
                     for c in sorted(checks):
-                        print '    ' + c.name
+                        print '    %s: %s' % (c.name, c.text)
                 print
 
         checks_lister = ChecksLister()

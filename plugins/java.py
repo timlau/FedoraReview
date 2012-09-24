@@ -11,7 +11,7 @@ class Registry(RegistryBase):
     group = 'Java'
 
     def is_applicable(self):
-        ''' Return true iff this is a java package. '''
+        ''' Return true if this is a java package. '''
         return self.has_files("*.jar") or self.has_files("*.pom")
 
 
@@ -83,8 +83,8 @@ class CheckJavadoc(JavaCheckBase):
         JavaCheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Java' \
                    '#Javadoc_installation'
-        self.text = """Javadoc documentation files are generated and
-        included in -javadoc subpackage"""
+        self.text = "Javadoc documentation files are generated and " \
+                    "included in -javadoc subpackage"
         self.automatic = True
 
     def run_on_applicable(self):
@@ -111,8 +111,8 @@ class CheckJavadocdirName(JavaCheckBase):
         JavaCheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Java' \
                    '#Javadoc_installation'
-        self.text = """Javadocs are placed in %{_javadocdir}/%{name}
-        (no -%{version} symlink)"""
+        self.text = "Javadocs are placed in %{_javadocdir}/%{name} " \
+                    "(no -%{version} symlink)"
         self.automatic = True
 
     def run_on_applicable(self):
@@ -148,8 +148,8 @@ class CheckJPackageRequires(JavaCheckBase):
     def __init__(self, base):
         JavaCheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Java'
-        self.text = """Packages have proper BuildRequires/Requires on
-        jpackage-utils"""
+        self.text = "Packages have proper BuildRequires/Requires on " \
+                    "jpackage-utils"
         self.automatic = True
 
     def run_on_applicable(self):
@@ -203,8 +203,8 @@ class CheckJavaFullVerReqSub(JavaCheckBase):
         """ run check for java packages """
         regex = re.compile(r'Requires:\s*%{name}\s*=\s*%{version}-%{release}')
         sections = self.spec.get_section("%package")
-        extra = ""
-        errors = False
+        bad_ones = []
+        extra = None
         for section in sections:
             if section == "%package javadoc":
                 continue
@@ -213,13 +213,11 @@ class CheckJavaFullVerReqSub(JavaCheckBase):
                 if regex.search(line):
                     passed = True
             if not passed:
-                extra += "Missing : Requires: %%{name} = " \
-                              "%%{version}-%%{release} in %s" % section
-                errors = False
-        if errors:
-            self.set_passed(False, extra)
-        else:
-            self.set_passed(True)
+                bad_ones.append(section)
+        if bad_ones:
+            extra =  "Missing: 'Requires: %%{name} =' in: " + \
+                        ', '.join(bad_ones)
+        self.set_passed(self.FAIL if extra else self.PASS, extra)
 
 
 class CheckNoOldMavenDepmap(JavaCheckBase):
@@ -316,9 +314,9 @@ class CheckNoRequiresPost(JavaCheckBase):
     def __init__(self, base):
         JavaCheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Java'
-        self.text = """Packages DOES NOT have Requires(post) and
-                    Requires(postun) on jpackage-utils for
-                    %update_maven_depmap macro"""
+        self.text = "Packages DOES NOT have Requires(post) and " \
+                    "Requires(postun) on jpackage-utils for " \
+                    "%update_maven_depmap macro"
         self.automatic = True
         self.type = 'MUST'
         self.regex = \
@@ -383,8 +381,8 @@ class CheckLocalDepmap(JavaCheckBase):
     def __init__(self, base):
         JavaCheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Java'
-        self.text = """If package uses "-Dmaven.local.depmap" explain
-        why it was needed in a comment"""
+        self.text = "If package uses '-Dmaven.local.depmap' explain " \
+                    "why it was needed in a comment"
         self.automatic = True
         self.type = 'MUST'
 
@@ -449,8 +447,8 @@ class CheckPomInstalled(JavaCheckBase):
 
     def __init__(self, base):
         JavaCheckBase.__init__(self, base)
-        self.text = """If package contains pom.xml files install it
-        (including depmaps) even when building with ant"""
+        self.text = "If package contains pom.xml files install it " \
+                    "(including depmaps) even when building with ant"
         self.url = 'https://fedoraproject.org/wiki/Packaging:Java' \
                    '#Maven_pom.xml_files_and_depmaps'
         self.automatic = False

@@ -21,11 +21,12 @@
 This module contains automatic test for Fedora Packaging guidelines
 '''
 
-import glob
 import os
 import os.path
 import re
 
+from glob import glob
+from StringIO import StringIO
 from subprocess import Popen, PIPE, check_output
 
 from FedoraReview import CheckBase, Mock, ReviewDirs, Settings
@@ -63,7 +64,7 @@ def _mock_root_setup(while_what):
         repodir = Settings.repo
         if not repodir.startswith('/'):
             repodir = os.path.join(ReviewDirs.startdir, repodir)
-        rpms = glob.glob(os.path.join(repodir, '*.rpm'))
+        rpms = glob(os.path.join(repodir, '*.rpm'))
         error = Mock.install(rpms)
         if error:
             raise DependencyInstallError(while_what + ': ' + error)
@@ -88,7 +89,7 @@ class CheckResultdir(GenericCheckBase):
         self.needs = []
 
     def run(self):
-        if len(glob.glob(os.path.join(Mock.resultdir, '*.*'))) != 0 \
+        if len(glob(os.path.join(Mock.resultdir, '*.*'))) != 0 \
             and not  (Settings.nobuild or Settings.prebuilt):
                 raise self.NotEmptyError()       # pylint: disable=W0311
         self.set_passed(True)
@@ -176,15 +177,16 @@ class CheckPackageInstalls(GenericCheckBase):
             bad_ones = self.check_build_installed()
             if bad_ones == []:
                 self.set_passed(self.PASS)
+                return
             else:
                 bad_ones = list(set(bad_ones))
-                self.set_passed(self.FAIL,
-                                '--no-build: package(s) not installed')
                 self.log.info('Packages required by --no-build are'
                               ' not installed: ' + ', '.join(bad_ones))
-            return
+                rpms = [glob(os.path.join(Mock.resultdir, p + '*'))[0]
+                             for p in bad_ones]
+        else:
+            rpms = self.srpm.get_used_rpms('.src.rpm')
         _mock_root_setup('While installing built packages')
-        rpms = self.srpm.get_used_rpms('.src.rpm')
         self.log.info('Installing built package(s)')
         output = Mock.install(rpms)
         if output == None:
@@ -883,7 +885,7 @@ class CheckFullVerReqSub(GenericCheckBase):
                 # Requires: %{name}%{?_isa} = %{version}-%{release}
                 extra.append(section)
         if extra:
-            extra =self. HDR + ', '.join(extra)
+            extra = self. HDR + ', '.join(extra)
         self.set_passed('pending' if extra else 'pass', extra)
 
 
@@ -980,52 +982,71 @@ class CheckLicenseField(GenericCheckBase):
         self.automatic = True
         self.type = 'MUST'
 
+    @staticmethod
+    def _write_license(files_by_license, filename):
+        ''' Dump files_by_license to filename. '''
+        with open(filename, 'w') as f:
+            for license_ in files_by_license.iterkeys():
+                f.write('\n' + license_ + '\n')
+                f.write('-' * len(license_) + '\n')
+                for path in sorted(files_by_license[license_]):
+                    f.write(path + '\n')
+
+
     def run(self):
 
-        def license_valid(_license):
+        def license_is_valid(_license):
             ''' Test that license from licencecheck is parsed OK. '''
             return not 'UNKNOWN'  in _license and \
                   not 'GENERATED' in _license
 
-        source = self.sources.get('Source0')
+        def parse_licenses(raw_text):
+            ''' Convert licensecheck output to files_by_license. '''
+            files_by_license = {}
+            raw_file = StringIO(raw_text)
+            while True:
+                line = raw_file.readline()
+                if not line:
+                    break
+                try:
+                    file_, license_ = line.split(':')
+                except ValueError:
+                    continue
+                file_ = file_.strip()
+                license_ = license_.strip()
+                if not license_is_valid(license_):
+                    license_ = 'Unknown or generated'
+                if not license in files_by_license.iterkeys():
+                    files_by_license[license_] = []
+                files_by_license[license_].append(file_)
+            return files_by_license
+
         try:
             msg = ''
-            if self.checks.checkdict['CheckBuild'].is_passed:
-                s = Mock.get_builddir('BUILD') + '/*'
-                source_dir = glob.glob(s)[0]
-                msg += 'Checking patched sources after %prep for licenses.'
-            else:
-                source.extract()
-                source_dir = source.extract_dir
-                msg += 'Checking original sources for licenses'
+            s = Mock.get_builddir('BUILD') + '/*'
+            source_dir = glob(s)[0]
+            msg += 'Checking patched sources after %prep for licenses.'
             self.log.debug("Scanning sources in " + source_dir)
             licenses = []
             if os.path.exists(source_dir):
-                cmd = 'licensecheck -r %s' % source_dir
-                out = self._run_cmd(cmd)
-                if out:
-                    filename = os.path.join(ReviewDirs.root,
-                                            'licensecheck.txt')
-                    stream = open(filename, 'w')
-                    stream.write(out)
-                    stream.close()
-                regex = re.compile(':\s(.*)$', re.MULTILINE)
-                # remove dupes
-                licenses = map(lambda l: l.strip(),
-                               list(set(regex.findall(out))))
-                licenses = filter(license_valid, licenses)
+                cmd = ['licensecheck', '-r', source_dir]
+                filename = os.path.join(ReviewDirs.root,
+                                        'licensecheck.txt')
+                out = check_output(cmd)
+                licenses = parse_licenses(out)
+                self._write_license(licenses, filename)
             else:
                 self.log.error('Source directory %s does not exist!' %
                                 source_dir)
-
             if not licenses:
                 msg += ' No licenses found.'
                 msg += ' Please check the source files for licenses manually.'
                 self.set_passed(False, msg)
             else:
-                msg += ' Licenses found: "' + '", "'.join(licenses) + '"'
-                msg += ' For detailed output of licensecheck'
-                msg += ' see file: ' + filename
+                msg += ' Licenses found: "' \
+                         + '", "'.join(licenses.iterkeys()) + '".'
+                msg += ' %d files have unknown license.' %  len(licenses)
+                msg += ' Detailed output of licensecheck in ' + filename
                 self.set_passed('inconclusive', msg)
         except OSError, e:
             self.log.error('OSError: %s' % str(e))
@@ -1220,7 +1241,8 @@ class CheckMultipleLicenses(GenericCheckBase):
         self.type = 'MUST'
 
     def is_applicable(self):
-        return 'and' in self.spec.get_from_spec('License').lower().split()
+        license_ = self.spec.get_from_spec('License').lower().split()
+        return 'and' in license_ or 'or' in license_
 
 
 class CheckNameCharset(GenericCheckBase):
@@ -1747,7 +1769,7 @@ class CheckSpecAsInSRPM(GenericCheckBase):
     def run(self):
         self.srpm.unpack()
         pattern = os.path.join(ReviewDirs.srpm_unpacked, '*.spec')
-        spec_files = glob.glob(pattern)
+        spec_files = glob(pattern)
         if len(spec_files) != 1:
             self.set_passed(self.FAIL,
                             '0 or more than one spec file in srpm(!)')
@@ -1853,8 +1875,19 @@ class CheckSupportAllArchs(GenericCheckBase):
                    'Packaging/Guidelines#ArchitectureSupport'
         self.text = 'Package should compile and build into binary' \
                     ' rpms on all supported architectures.'
-        self.automatic = False
+        self.automatic = True
         self.type = 'SHOULD'
+
+    def run(self):
+        build_ok = self.checks.checkdict['CheckBuild'].is_passed
+
+        arch = self.spec.find_tag('BuildArch')
+        noarch = arch and arch[0].lower() == 'noarch'
+        one_arch = self.spec.find_tag('ExclusiveArch')
+        if build_ok and (one_arch or noarch):
+            self.set_passed(self.PASS)
+        else:
+            self.set_passed(self.PENDING)
 
 
 class CheckSystemdScripts(GenericCheckBase):

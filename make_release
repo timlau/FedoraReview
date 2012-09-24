@@ -4,7 +4,12 @@
 #
 # Options: -b  Batch mode, don't ask for fedorahosted upload
 
-cd $( dirname $( readlink -fn $0 ))
+newdir=`mktemp --tmpdir -d fedora-review-release-XXXXX`
+
+git clone $( dirname $( readlink -fn $0 )) $newdir
+
+cd ${newdir}
+
 
 status=$( git status --short )
 [ -n "$status" ] && echo 'Warning: there are uncommitted changes' >&2
@@ -28,14 +33,15 @@ if [ ! -e "$dfile" ];  then
 fi
 echo "Created: $dfile"
 
-echo "Running tests before finalizing release"
+echo "Running tests on tarball before finalizing release"
+tar -xf $dfile && pushd fedora-review-$__version__
 REVIEW_LOGLEVEL=error src/test/run-tests.py
 if [ $? -ne 0 ]; then
     echo "Some tests failed. Review test logs and fix all problems"
     echo "before doing a release. Aborting"
     exit 1
 fi
-
+popd
 [ "$1" = '-b' ] && exit 0
 
 read -i 'n' -e -p "Do you want to upload file $dfile to fedorahosted? (y/n): "

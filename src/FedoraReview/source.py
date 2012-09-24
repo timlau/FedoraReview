@@ -115,6 +115,11 @@ class Source(HelpersMixin):
             could be extracted e. g., plain files are copied to the
             extract-dir.
         '''
+        if not os.path.isfile(self.filename):
+            raise ReviewError("%s file %s is missing in src.rpm."
+                    " Conditional source inclusion?" %
+                    (self.tag, self.filename))
+
         self.extract_dir = os.path.join(ReviewDirs.upstream_unpacked,
                                         self.tag)
         if not os.path.exists(self.extract_dir):
