@@ -138,8 +138,8 @@ class _Mock(HelpersMixin):
             output, error = p.communicate()
             logging.debug(log_text(output, error), exc_info=True)
         except OSError:
-            logging.warning(log_text(output, error), exc_info=True)
-            return str(output)
+            logging.error("Command failed", exc_info=True)
+            return "Command utterly failed. See logs for details"
         if p.returncode != 0:
             logging.warning(header + " command returned error code %i",
                             p.returncode)
