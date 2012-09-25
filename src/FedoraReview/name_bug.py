@@ -51,16 +51,22 @@ class NameBug(AbstractBug):
                 return
         pattern = os.path.join(os.getcwd(), self.name + '*.src.rpm')
         srpms = glob(pattern)
-        if len(srpms) != 1:
+        if len(srpms) == 0:
             raise self.BugError("Cannot find srpm: " + pattern)
+        elif len(srpms) > 1:
+            raise self.BugError("More than one srpm found for: "
+                                + pattern)
         self.srpm_url = 'file://' + srpms[0]
 
     def find_spec_url(self):
         """ Retrieve the page and parse for spec url. """
         pattern = os.path.join(os.getcwd(), self.name + '*.spec')
         specs = glob(pattern)
-        if len(specs) != 1:
+        if len(specs) == 0:
             raise self.BugError("Cannot find spec: " + pattern)
+        elif len(specs) > 1:
+            raise self.BugError("More than one spec found for: "
+                                + pattern)
         self.spec_url = 'file://' + specs[0]
 
     def check_options(self):
