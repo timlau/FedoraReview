@@ -221,7 +221,7 @@ class Checks(object):
         ext_dirs = []
         if "REVIEW_EXT_DIRS" in os.environ:
             ext_dirs = os.environ["REVIEW_EXT_DIRS"].split(":")
-        ext_dirs.extend(Settings.ext_dirs.split(":"))
+        ext_dirs.extend(Settings.ext_dirs)
         for ext_dir in ext_dirs:
             if not os.path.isdir(ext_dir):
                 continue

@@ -196,7 +196,7 @@ class _Settings(object):                         # pylint: disable=R0902
             ReviewError.__init__(self, 'Bad options!!', 2, True)
 
     defaults = {
-        'ext_dirs': ':'.join([MY_JSON_PLUGIN_DIR, SYS_JSON_PLUGIN_DIR]),
+        'ext_dirs': [MY_JSON_PLUGIN_DIR, SYS_JSON_PLUGIN_DIR],
         'bz_url': 'https://bugzilla.redhat.com',
     }
 
