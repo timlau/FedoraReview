@@ -33,7 +33,7 @@ from FedoraReview import Checks, ReviewDirs,  Mock, Settings
 
 STARTDIR = os.getcwd()
 
-VERSION = '0.3.0'
+VERSION = '0.3.1'
 
 try:
     urlopen('http://bugzilla.redhat.com')
