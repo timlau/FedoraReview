@@ -331,7 +331,6 @@ class Registry(AbstractRegistry):
         self.checks = checks
         self.log = Settings.get_logger()
 
-
     def register(self, plugin):
         ''' Return all available scripts as ShellCheck instances. '''
 

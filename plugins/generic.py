@@ -992,7 +992,6 @@ class CheckLicenseField(GenericCheckBase):
                 for path in sorted(files_by_license[license_]):
                     f.write(path + '\n')
 
-
     def run(self):
 
         def license_is_valid(_license):
@@ -1045,7 +1044,7 @@ class CheckLicenseField(GenericCheckBase):
             else:
                 msg += ' Licenses found: "' \
                          + '", "'.join(licenses.iterkeys()) + '".'
-                msg += ' %d files have unknown license.' %  len(licenses)
+                msg += ' %d files have unknown license.' % len(licenses)
                 msg += ' Detailed output of licensecheck in ' + filename
                 self.set_passed('inconclusive', msg)
         except OSError, e:

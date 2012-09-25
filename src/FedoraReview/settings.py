@@ -144,6 +144,7 @@ def _make_log_dir():
             raise ReviewError(
                       'Cannot create log directory: ' + SESSION_LOG)
 
+
 class ColoredFormatter(logging.Formatter):
     BLACK = "\033[1;30m"
     RED = "\033[1;31m"
@@ -160,7 +161,6 @@ class ColoredFormatter(logging.Formatter):
         'CRITICAL': YELLOW,
         'ERROR': RED
     }
-
 
     def __init__(self, fmt=None, datefmt=None, use_color=True):
         logging.Formatter.__init__(self, fmt, datefmt)
