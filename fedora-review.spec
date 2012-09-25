@@ -28,22 +28,22 @@ provides:       FedoraReview = %{version}-%{release}
 
 
 %description
-FedoraReview: Tools to help review packages for inclusion in Fedora
-
 This tool automates much of the dirty work when reviewing a package
-for the Fedora Package Collection.
+for the Fedora Package Collection like:
 
-Like:
-
-    * Downloading SRPM & SPEC from Bugzilla report
+    * Downloading SRPM & SPEC.
     * Download upstream source
     * Check md5sums
-    * Generate a review report will both manual & automated checks,
-      ready to complete and paste into the Bugzilla report.
+    * Build and install package in mock.
+    * Run rpmlint.
+    * Generate a review template, which becomes the starting
+      point for the review work.
 
-This tool can be extended with a collection of plugins for each
-programming language. There is also support for external plugins that
-can be written in any language supporting JSON format.
+The tool is composed of a plugins, one for each supported language.
+As of today, there is plugins for C/C++, Ruby, java, R, perl and
+python.  There is also support for external tests that can be written
+in a simple way in bash.
+
 
 %prep
 %setup -q
