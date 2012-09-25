@@ -41,7 +41,7 @@ class TestRChecks(FR_TestCase):
     def test_all_checks(self):
         ''' Run all automated review checks'''
         self.init_test('test-R',
-                        argv=['-rpn','R-Rdummypkg', '--cache'])
+                        argv=['-rpn','R-Rdummypkg', '--no-build'])
         ReviewDirs.reset()
         self.bug = NameBug('R-Rdummypkg')
         self.bug.find_urls()
