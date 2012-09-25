@@ -206,7 +206,12 @@ class Checks(object):
         self.checkdict = _CheckDict()
         self.groups = {}
 
+        # appdir gets used when running from git
         appdir = os.path.abspath(os.path.join(__file__, '../../..'))
+        # sysappdir gets used when running from /usr.  We expect pluings
+        # directory to be symlinked in same directory as this __file__ 
+        sysappdir = os.path.abspath(os.path.dirname(__file__))
+        sys.path.insert(0, sysappdir)
         sys.path.insert(0, appdir)
         sys.path.insert(0, XdgDirs.app_datadir)
         plugins = load('plugins')
@@ -217,6 +222,7 @@ class Checks(object):
             self.groups[registry.group] = registry
         sys.path.remove(XdgDirs.app_datadir)
         sys.path.remove(appdir)
+        sys.path.remove(sysappdir)
 
         ext_dirs = []
         if "REVIEW_EXT_DIRS" in os.environ:
