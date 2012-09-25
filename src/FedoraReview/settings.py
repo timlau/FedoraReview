@@ -146,6 +146,8 @@ def _make_log_dir():
 
 
 class ColoredFormatter(logging.Formatter):
+    ''' Formatter usable for colorizing terminal output acccording to presets
+    '''
     BLACK = "\033[1;30m"
     RED = "\033[1;31m"
     GREEN = "\033[1;32m"
