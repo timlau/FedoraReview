@@ -1722,7 +1722,7 @@ class CheckSourcePatchPrefix(GenericCheckBase):
             extra = 'No SourceX/PatchX tags found'
         for tag, path in sources.iteritems():
             basename = os.path.basename(path)
-            if not path.startswith(self.spec.name):
+            if not basename.startswith(self.spec.name):
                 passed = False
                 extra += '%s (%s)\n' % (tag, basename)
         self.set_passed(passed, extra if extra != '' else None)
