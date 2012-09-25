@@ -24,7 +24,6 @@ import re
 import StringIO
 
 from abc import ABCMeta, abstractmethod
-from fnmatch import fnmatch
 from textwrap import TextWrapper
 
 from helpers_mixin import HelpersMixin
@@ -60,47 +59,6 @@ class _Attachment(object):
         if self.order_hint > other.order_hint:
             return 1
         return 0
-
-
-class FileChecks(object):
-    """ Add file-checking capabilities to self. """
-
-    def __init__(self, checks):
-        """ Build an instance from a Checks instance. """
-
-        class FileCheckData:
-            ''' Container for class private data. '''
-            pass
-
-        self._filechecks = FileCheckData()
-        self._filechecks.srpm = checks.srpm
-        self._filechecks.spec = checks.spec
-        self._filechecks.sources = checks.sources
-
-    def sources_have_files(self, pattern):
-        ''' Check if sources have file matching a glob pattern'''
-        for source in self._filechecks.sources.get_files_sources():
-            if fnmatch(source, pattern):
-                return True
-        return False
-
-    def _match_rpmfiles(self, matcher):
-        ''' Run matcher on all files in rpms, return match or not. '''
-        files_by_rpm = self._filechecks.srpm.get_files_rpms()
-        for rpm in files_by_rpm.iterkeys():
-            for fn in files_by_rpm[rpm]:
-                if matcher(fn):
-                    return True
-        return False
-
-    def has_files(self, pattern):
-        ''' Check if rpms have file matching a glob pattern'''
-        return self._match_rpmfiles(lambda f: fnmatch(f, pattern))
-
-    def has_files_re(self, pattern_re):
-        ''' Check if rpms have file matching a regex pattern'''
-        regex = re.compile(pattern_re)
-        return self._match_rpmfiles(regex.search)
 
 
 class AbstractCheck(object):
@@ -187,7 +145,7 @@ class AbstractCheck(object):
                      lambda self: self.is_run and self.state == None)
 
 
-class GenericCheck(AbstractCheck, FileChecks):
+class GenericCheck(AbstractCheck):
 
     """
     Common interface inherited by all Check implementations.
@@ -209,7 +167,6 @@ class GenericCheck(AbstractCheck, FileChecks):
 
     def __init__(self, checks, defined_in):
         AbstractCheck.__init__(self, defined_in)
-        FileChecks.__init__(self, checks)
         self.checks = checks
         self.url = '(this test has no URL)'
         self.text = self.__class__.__name__
@@ -222,6 +179,7 @@ class GenericCheck(AbstractCheck, FileChecks):
     srpm       = property(lambda self: self.checks.srpm)
     sources    = property(lambda self: self.checks.sources)
     log        = property(lambda self: self.checks.log)
+    rpms       = property(lambda self: self.checks.rpms)
 
     @property
     def name(self):                              # pylint: disable=E0202
@@ -274,17 +232,6 @@ class CheckBase(GenericCheck, HelpersMixin):
             self.run_on_applicable()
         else:
             self.set_passed('not_applicable')
-
-    def get_files_by_pattern(self, pattern):
-        ''' Return plain list of files in rpms matching glob pattern. '''
-        result = {}
-        rpm_files = self.srpm.get_files_rpms()
-        for rpm in rpm_files:
-            result[rpm] = []
-            for fn in rpm_files[rpm]:
-                if fnmatch(fn, pattern):
-                    result[rpm].append(fn)
-        return result
 
     group = property(lambda self: self.registry.group)
 
