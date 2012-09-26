@@ -3,8 +3,8 @@
 # vim: set expandtab: ts=4:sw=4:
 #
 # Script to run a fedora-review installation from wherever it is
-# located. Primarely intended to be able to run a test version
-# in parallell with the official one.
+# located. Primarily intended to be able to run a test version
+# in parallel with the official one.
 #
 # Usage:
 #     $ ln -s $PWD/try-fedora-review ~/bin
@@ -17,8 +17,13 @@ import os.path
 import sys
 import subprocess
 
-pkg_dir = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])),
-                       'src')
+main_dir = os.path.dirname(os.path.realpath(__file__))
+# let's setup a proper git commit hooks so people don't commit ugly code
+# accidentally
+subprocess.call(['ln', '-s', '../../git-hooks/pre-commit',
+                 os.path.join(main_dir, '.git/hooks/pre-commit')])
+
+pkg_dir = os.path.join(main_dir, 'src')
 sys.path.insert(0, pkg_dir)
 
 from FedoraReview.review_helper import ReviewHelper
@@ -26,7 +31,7 @@ from FedoraReview.review_helper import ReviewHelper
 review = ReviewHelper()
 review.run()
 
-os.chdir(os.path.dirname(os.path.realpath(__file__)))
+os.chdir(main_dir)
 
 cmd = ["git", "rev-parse", "--abbrev-ref", "HEAD"]
 cur_branch = subprocess.check_output(cmd).strip()
@@ -35,4 +40,3 @@ if cur_branch == "master":
           "is probably not what you want to do. Master branch is equal to " \
           "latest stable release. For development/bugreporting use " \
           "'devel' branch. See CONTRIBUTE file for more details\033[0m"
-
