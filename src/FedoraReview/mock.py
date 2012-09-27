@@ -93,6 +93,12 @@ class _Mock(HelpersMixin):
             os.makedirs(p)
         return p
 
+    @property
+    def buildroot(self):
+        if not self.mock_root:
+            self._get_root()
+        return self.mock_root
+
     def reset(self):
         """ Clear all persistent state. """
         if self.mock_root:
