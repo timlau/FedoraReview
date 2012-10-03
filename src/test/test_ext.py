@@ -75,6 +75,7 @@ class TestExt(FR_TestCase):
         bug.find_urls()
         bug.download_files()
         checks = Checks(bug.spec_file, bug.srpm_file)
+        checks.checkdict['CreateEnvCheck'].run()
         checks.checkdict['unittest-test2'].run()
         self.assertTrue(checks.checkdict['unittest-test2'].is_pending)
         self.assertNotIn('CheckLargeDocs', checks.checkdict)
