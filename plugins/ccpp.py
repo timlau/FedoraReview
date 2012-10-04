@@ -13,6 +13,9 @@ class Registry(RegistryBase):
 
     def is_applicable(self):
         """Need more comprehensive check and return True in valid cases"""
+        archs = self.checks.spec.expand_tag('BuildArchs')
+        if len(archs) == 1 and archs[0].lower() == 'noarch':
+            return False
         rpms = self.checks.rpms
         if rpms.has_files_re('/usr/(lib|lib64)/[\w\-]*\.so\.[0-9]') or \
         rpms.has_files('*.h') or rpms.has_files('*.a') or \
