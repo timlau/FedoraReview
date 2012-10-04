@@ -31,6 +31,7 @@ from urllib import urlopen
 import srcpath
 from FedoraReview import Mock, ReviewDirs, Settings
 from FedoraReview.checks import Checks
+from FedoraReview.name_bug import NameBug
 
 STARTDIR = os.getcwd()
 
@@ -104,3 +105,39 @@ class  FR_TestCase(unittest.TestCase):
         check = checks[check_name]
         check.run()
         return check
+
+    def run_spec(self, spec):
+        ''' Run all tests for a test spec.... '''
+
+        argv = ['-rn', spec.testcase, '-x', 'check-large-docs',
+                '--no-build']
+        argv.extend(spec.args)
+        self.init_test(spec.testcase, wd=spec.workdir, argv=argv)
+        bug = NameBug(spec.testcase)
+        bug.find_urls()
+        bug.download_files()
+        checks = Checks(bug.spec_file, bug.srpm_file)
+        Mock.clear_builddir()
+        if os.path.exists('BUILD'):
+             os.unlink('BUILD')
+        checks.run_checks(writedown=False)
+        checkdict = checks.get_checks()
+        for check in checkdict.itervalues():
+            self.assertTrue(check.is_run)
+            if check.is_passed or check.is_pending or check.is_failed:
+                self.assertIn(check.group, spec.groups_ok,
+                              check.name + ': group is ' + check.group)
+        for (what, check) in spec.expected:
+            state = checkdict[check].state
+            if what in ['pass', 'fail', 'pending']:
+                self.assertEqual(state, what,
+                                 check + ': state is ' + str(state))
+            elif what == 'na':
+                self.assertEqual(state, None,
+                                 check + ': state is ' + str(state))
+            elif what.startswith == 'in_attachment':
+                self.assertIn(what.split(':')[1],
+                              checkdict[check].attachments[0].text)
+            else:
+                self.assertFalse(what)
+

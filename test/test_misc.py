@@ -203,7 +203,7 @@ class TestMisc(FR_TestCase):
     @unittest.skipIf(FAST_TEST, 'slow test disabled by REVIEW_FAST_TEST')
     def test_mock_uniqueext(self):
         self.init_test('mock-uniqueext',
-                       argv=['-n','python-test'],
+                       argv=['-cn','python-test'],
                        options='--uniqueext=hugo')
         bug = NameBug('python-test')
         bug.find_urls()
@@ -469,7 +469,7 @@ class TestMisc(FR_TestCase):
 
     def test_prebuilt_sources(self):
         self.init_test('test_misc',
-                       argv=['-n','python-test', '--prebuilt'])
+                       argv=['-cn','python-test', '--prebuilt'])
         ReviewDirs.startdir = os.getcwd()
         bug = NameBug('python-test')
         bug.find_urls()

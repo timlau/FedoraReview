@@ -124,7 +124,7 @@ class TestOptions(FR_TestCase):
         self.init_test('git-source',
                        argv= ['-rpn', 'get-flash-videos', '--cache'],
                        wd='get-flash-videos',
-                       buildroot='fedora-16-i386')
+                       buildroot='fedora-17-i386')
         os.chdir('..')
 
         bug = NameBug('get-flash-videos')
