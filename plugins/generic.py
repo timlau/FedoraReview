@@ -2028,4 +2028,29 @@ class CheckNoNameConflict(GenericCheckBase):
             self.set_passed(self.PENDING,
                             "Couldn't connect to PackageDB, check manually")
 
+class CheckTmpfiles(GenericCheckBase):
+    '''
+    Check for files in /run, /var/run etc, candidates for tmpfiles.d
+    '''
+
+    def __init__(self, base):
+        GenericCheckBase.__init__(self, base)
+        self.url = 'https://fedoraproject.org/wiki/Packaging:Tmpfiles.d'
+        self.text = 'Files in /run, var/run and /var/lock uses tmpfiles.d' \
+                    ' when appropriate'
+        self.automatic = True
+        self.type = 'SHOULD'
+
+    def run(self):
+        if self.flags['EPEL5']:
+            self.set_passed(self.NA)
+            return
+        for p in ['/run/*', '/var/run/*', '/var/lock/*', '/run/lock/*']:
+            if self.rpms.has_files(p):
+                self.set_passed(self.PENDING)
+                break
+        else:
+            self.set_passed(self.NA)
+
+
 # vim: set expandtab: ts=4:sw=4:
