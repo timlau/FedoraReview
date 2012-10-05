@@ -250,7 +250,7 @@ class CheckRPATH(CCppCheckBase):
         ''' Run the test, called if is_applicable() is True. '''
         for line in self.srpm.rpmlint_output:
             if 'binary-or-shlib-defines-rpath' in line:
-                self.set_passed(False, 'See rpmlint output')
+                self.set_passed(self.PENDING, 'See rpmlint output')
                 return
         self.set_passed(True)
 
