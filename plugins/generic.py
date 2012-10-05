@@ -108,8 +108,15 @@ class CheckBuildCompilerFlags(GenericCheckBase):
                    'Packaging/Guidelines#Compiler_flags'
         self.text = '%build honors applicable compiler flags or ' \
                     'justifies otherwise.'
-        self.automatic = False
+        self.automatic = True
         self.type = 'MUST'
+
+    def run(self):
+        archs = self.checks.spec.expand_tag('BuildArchs')
+        if len(archs) == 1 and archs[0].lower() == 'noarch':
+            self.set_passed(self.NA)
+            return
+        self.set_passed(self.PENDING)
 
 
 class CheckBuildInMock(GenericCheckBase):
