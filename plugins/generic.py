@@ -2076,6 +2076,24 @@ class CheckBundledFonts(GenericCheckBase):
         else:
             self.set_passed(self.NA)
 
+class CheckSourcedirMacroUse(GenericCheckBase):
+    ''' Check for usage of %_sourcedir macro. '''
+
+    def __init__(self, base):
+        GenericCheckBase.__init__(self, base)
+        self.url = 'http://fedoraproject.org/wiki/Packaging:Guidelines' \
+                   '#Improper_use_of_.25_sourcedir'
+        self.text = 'Only use %_sourcedir in very specific situations.'
+        self.automatic = True
+        self.type = 'MUST'
+
+    def run(self):
+        text = ''.join(self.spec.lines)
+        if '%_sourcedir' in text or '$RPM_SOURCE_DIR' in text:
+            self.set_passed(self.PENDING,
+                            '%_sourcedir/$RPM_SOURCE_DIR is used.' )
+        else:
+            self.set_passed(self.NA)
 
 
 # vim: set expandtab: ts=4:sw=4:
