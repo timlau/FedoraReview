@@ -423,8 +423,21 @@ class CheckDescMacros(GenericCheckBase):
                    'Packaging/Guidelines#Source_RPM_Buildtime_Macros'
         self.text = 'Macros in Summary, %description expandable at' \
                     ' SRPM build time.'
-        self.automatic = False
+        self.automatic = True
         self.type = 'MUST'
+
+    def run(self):
+        bad_tags = []
+        for pkg_name in self.spec.packages:
+            if '%' in self.spec.expand_tag('Summary', pkg_name):
+                bad_tags.append(pkg_name + ' (summary)')
+            if '%' in self.spec.expand_tag('Description', pkg_name):
+                bad_tags.append(pkg_name + ' (description)')
+        if bad_tags:
+            self.set_passed(self.PENDING,
+                            'Macros in: ' + ', '.join(bad_tags))
+        else:
+            self.set_passed(self.PASS)
 
 
 class CheckDesktopFile(GenericCheckBase):
