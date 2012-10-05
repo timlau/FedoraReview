@@ -2053,4 +2053,29 @@ class CheckTmpfiles(GenericCheckBase):
             self.set_passed(self.NA)
 
 
+class CheckBundledFonts(GenericCheckBase):
+    ''' Check for bundled font files '''
+
+    def __init__(self, base):
+        GenericCheckBase.__init__(self, base)
+        self.url = 'http://fedoraproject.org/wiki/Packaging:Guidelines' \
+                   '#Avoid_bundling_of_fonts_in_other_packages'
+        self.text = 'Avoid bundling fonts in non-fonts packages. '
+        self.automatic = True
+        self.type = 'SHOULD'
+
+    def run(self):
+        if self.spec.name.endswith('-fonts'):
+            self.set_passed(self.NA)
+            return
+        for p in ['*.pfb', '*.pfa', '*.afm', '*.ttf', '*.otf']:
+            if self.rpms.has_files(p):
+                self.set_passed(self.PENDING,
+                                'Package contains font files')
+                break
+        else:
+            self.set_passed(self.NA)
+
+
+
 # vim: set expandtab: ts=4:sw=4:
