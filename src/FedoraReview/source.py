@@ -62,6 +62,16 @@ class Source(HelpersMixin):
         if is_url:  # This is a URL, Download it
             self.url = url
             self.local = False
+            if Settings.cache:
+                cached = os.path.join(ReviewDirs.upstream,
+                                      url.rsplit('/', 1)[1])
+                if os.path.exists(cached):
+                    self.log.info( "Using cached upstream: " + cached)
+                    self.filename = cached
+                    return
+                self.log.warning(
+                    "No cache found for %s, downloading anyway."
+                    % cached)
             try:
                 self.filename = self._get_file(url,
                                                ReviewDirs.upstream,
