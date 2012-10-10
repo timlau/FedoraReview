@@ -318,7 +318,10 @@ class _Settings(object):                         # pylint: disable=R0902
         for k, v in vars(self).iteritems():
             if k in ['_dict', 'mock_config_options', 'log']:
                 continue
-            self.log.debug("    " + k + ": " + v.__str__())
+            try:
+                self.log.debug("    " + k + ": " + v.__str__())
+            except AttributeError:
+                self.log.debug("    " + k + ": not printable")
 
     def do_logger_setup(self, lvl=None):
         ''' Setup Python logging. lvl is a logging.* thing like
