@@ -1033,11 +1033,12 @@ class CheckLicenseField(GenericCheckBase):
             self.log.debug("Scanning sources in " + source_dir)
             licenses = []
             if os.path.exists(source_dir):
-                cmd = ['licensecheck', '-r', source_dir]
+                cmd = 'licensecheck -r ' + source_dir
+                out = check_output(cmd, shell=True)
+                self.log.debug("Got license reply, length: %d" % len(out))
+                licenses = parse_licenses(out)
                 filename = os.path.join(ReviewDirs.root,
                                         'licensecheck.txt')
-                out = check_output(cmd)
-                licenses = parse_licenses(out)
                 self._write_license(licenses, filename)
             else:
                 self.log.error('Source directory %s does not exist!' %
