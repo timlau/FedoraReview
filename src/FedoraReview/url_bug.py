@@ -42,7 +42,10 @@ class UrlBug(AbstractBug):
     def _find_urls_by_ending(self, pattern):
         """ Locate url based on links ending in .src.rpm and .spec.
         """
-        tmpfile = urllib.urlretrieve(self.bug_url)[0]
+        if self.bug_url.startswith('file://'):
+            tmpfile = self.bug_url.replace('file://', '')
+        else:
+            tmpfile = urllib.urlretrieve(self.bug_url)[0]
         soup = BeautifulSoup(open(tmpfile))
         links = soup.findAll('a')
         hrefs = map(lambda l: l['href'], links)
