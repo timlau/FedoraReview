@@ -1,9 +1,25 @@
 #!/bin/bash
-# reads version from setup.py, create a source tarball and optionally
-# upload to fedorahosted
+# reads version from setup.py, create a source tarball and customized
+# spec file. Optionally upload to fedorahosted
 #
 # Options: -b  Batch mode, don't ask for fedorahosted upload
 #          -q  Quick: disable test, implies -b.
+#
+# Creating release:
+#   - Update version in version.tmpl and test/fr_testcase.py.
+#   - Comment %git_tag ("%global  %gittag" -> "#global gittag")
+#     in specfile.
+#
+# Preparing post-release:
+#   -  Reactivate %global %git_tag
+#
+# Making post-release:
+#   -  Make changelog entry with git commit (must exist, might
+#      be anything - the git tag will be patched).
+#   -  Update release number (first part of Release: field).
+#
+# All cases: run this script, find spec, tarball and srpm in dist/.
+
 
 startdir=$PWD
 cd $( dirname $( readlink -fn $0 ))
@@ -55,24 +71,34 @@ if [ ! "$1" = '-q' ]; then
     fi
 fi
 
+cd $startdir
+sed -r  -e 's/git_tag[ ]*\.[0-9a-f]*/git_tag  '".$BUILD_ID/" \
+        -e '/%changelog/,/^$/ s/[0-9a-f]{7}/'"$BUILD_ID/" \
+    < fedora-review.spec  > dist/fedora-review.spec
+echo Created: dist/fedora-review.spec
+
+source0=$( spectool dist/fedora-review.spec | awk '{print $2}' )
+source0=${source0##*/}
+cp "$newdir/$dfile" "$startdir/dist/$source0"
+echo "Created: dist/$source0"
 
 if [[ "$1" = '-b' || "$1" = '-q' ]]; then
     rm -rf $newdir
-    exit
+    exit 0
 fi
 
-cd $startdir
-read -i 'n' -e -p "Do you want to upload file $dfile to fedorahosted? (y/n): "
+read -i 'n' -e -p "Do you want to upload file $source0 to fedorahosted? (y/n): "
 if [ "$REPLY" = "y" ];then
     scp "${dfile}" fedorahosted.org:FedoraReview
     git tag $__version__
     git push --tags
     echo "Things to do now:"
     echo "      1. Merge to 'master' and 'devel'"
-    echo "      2. Update trac releases and tickets"
-    echo "      3. Build rpms for Fedoras/EPEL"
-    echo "      4. Create updates in bodhi"
-    echo "      5. Announce!"
-    echo "      6. (nice to have) Update trac queries for new milestone"
+    echo "      2. On devel, reactivate %git_tag in fedora-review.spec"
+    echo "      3. Update trac releases and tickets"
+    echo "      4. Build rpms for Fedoras/EPEL"
+    echo "      5. Create updates in bodhi"
+    echo "      6. Announce!"
+    echo "      7. (nice to have) Update trac queries for new milestone"
 fi
 rm -rf $newdir

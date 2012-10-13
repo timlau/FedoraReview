@@ -1,11 +1,13 @@
+%global     git_tag  .dd754de
+
 Name:       fedora-review
 Version:    0.3.1
-Release:    1%{?dist}
+Release:    2%{?git_tag}%{?dist}
 Summary:    Review tool for fedora rpm packages
 
 License:    GPLv2+
 URL:        https://fedorahosted.org/FedoraReview/
-Source0:    https://fedorahosted.org/released/FedoraReview/%{name}-%{version}.tar.gz
+Source0:    https://fedorahosted.org/released/FedoraReview/%{name}-%{version}%{?git_tag}.tar.gz
 
 BuildArch:  noarch
 
@@ -93,6 +95,10 @@ cp -ar test "$RPM_BUILD_ROOT%{_datadir}/%{name}"
 
 
 %changelog
+* Fri Oct 11 2012 Alec Leamas <leamas@nowhere.net> - 0.3.1-2.dd754de
+- Merge version-info branch -> post-release capabilities
+- Fix symlinking of plugin/script dirs
+
 * Tue Sep 25 2012 Stanislav Ochotnicky <sochotnicky@redhat.com> - 0.3.1-1
 - Update to lastest upstream (0.3.1)
 - Fix loading of system-wide plugins
@@ -111,6 +117,10 @@ cp -ar test "$RPM_BUILD_ROOT%{_datadir}/%{name}"
 
 * Wed Jul 11 2012 Stanislav Ochotnicky <sochotnicky@redhat.com> - 0.2.0-1
 - Update to latest release (0.2.0)
+
+* Tue Jun 26 2012 Alec Leamas <alec.leamas@nowhere.net> - 0.2.0-1
+- Added support for git post-release %%git_tag
+- Adjusted file section to include missing entries
 
 * Fri Feb 24 2012 Stanislav Ochotnicky <sochotnicky@redhat.com> - 0.1.3-1
 - Update to latest bugfix release
