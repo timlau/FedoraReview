@@ -72,6 +72,7 @@ if [ ! "$1" = '-q' ]; then
 fi
 
 cd $startdir
+rm -f dist/*
 sed -r  -e 's/git_tag[ ]*\.[0-9a-f]*/git_tag  '".$BUILD_ID/" \
         -e '/%changelog/,/^$/ s/[0-9a-f]{7}/'"$BUILD_ID/" \
     < fedora-review.spec  > dist/fedora-review.spec
@@ -82,6 +83,14 @@ source0=${source0##*/}
 cp "$newdir/$dfile" "$startdir/dist/$source0"
 echo "Created: dist/$source0"
 
+ln -sf $PWD/dist/$source0  $( rpm --eval %_sourcedir )
+cd dist
+    evr=$( rpmspec --srpm -q --qf '%{version}-%{release}' fedora-review.spec )
+    rpmbuild --quiet -bs fedora-review.spec
+    mv $( rpm --eval %_srcrpmdir )/fedora-review-${evr}* .
+cd ..
+echo Created: dist/fedora-review-${evr}*
+
 if [[ "$1" = '-b' || "$1" = '-q' ]]; then
     rm -rf $newdir
     exit 0
@@ -89,7 +98,7 @@ fi
 
 read -i 'n' -e -p "Do you want to upload file $source0 to fedorahosted? (y/n): "
 if [ "$REPLY" = "y" ];then
-    scp "${dfile}" fedorahosted.org:FedoraReview
+    scp "dist/$source0" fedorahosted.org:FedoraReview
     git tag $__version__
     git push --tags
     echo "Things to do now:"
