@@ -2034,6 +2034,7 @@ class CheckNoNameConflict(GenericCheckBase):
             self.set_passed(self.PENDING,
                             "Couldn't connect to PackageDB, check manually")
 
+
 class CheckTmpfiles(GenericCheckBase):
     '''
     Check for files in /run, /var/run etc, candidates for tmpfiles.d
@@ -2052,7 +2053,7 @@ class CheckTmpfiles(GenericCheckBase):
             self.set_passed(self.NA)
             return
         for p in ['/run/*', '/var/run/*', '/var/lock/*', '/run/lock/*']:
-            if self.rpms.has_files(p):
+            if self.has_files(p):
                 self.set_passed(self.PENDING)
                 break
         else:
@@ -2075,12 +2076,13 @@ class CheckBundledFonts(GenericCheckBase):
             self.set_passed(self.NA)
             return
         for p in ['*.pfb', '*.pfa', '*.afm', '*.ttf', '*.otf']:
-            if self.rpms.has_files(p):
+            if self.has_files(p):
                 self.set_passed(self.PENDING,
                                 'Package contains font files')
                 break
         else:
             self.set_passed(self.NA)
+
 
 class CheckSourcedirMacroUse(GenericCheckBase):
     ''' Check for usage of %_sourcedir macro. '''
@@ -2097,7 +2099,7 @@ class CheckSourcedirMacroUse(GenericCheckBase):
         text = ''.join(self.spec.lines)
         if '%_sourcedir' in text or '$RPM_SOURCE_DIR' in text:
             self.set_passed(self.PENDING,
-                            '%_sourcedir/$RPM_SOURCE_DIR is used.' )
+                            '%_sourcedir/$RPM_SOURCE_DIR is used.')
         else:
             self.set_passed(self.NA)
 
