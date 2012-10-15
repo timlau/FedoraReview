@@ -1,3 +1,7 @@
+#invoke with "--without tests" to disable tests
+%bcond_without tests
+
+# See notes in make_release
 %global     git_tag  .dd754de
 
 Name:       fedora-review
@@ -76,6 +80,14 @@ bash < restore-links.sh
 rm restore-links.sh remember-links
 cd ..
 cp -ar test "$RPM_BUILD_ROOT%{_datadir}/%{name}"
+
+
+%check
+%if %{with tests}
+cd test
+export REVIEW_LOGLEVEL=warning
+python -m unittest discover -f
+%endif
 
 
 %files
