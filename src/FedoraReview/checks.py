@@ -209,7 +209,7 @@ class Checks(object):
         # appdir gets used when running from git
         appdir = os.path.abspath(os.path.join(__file__, '../../..'))
         # sysappdir gets used when running from /usr.  We expect pluings
-        # directory to be symlinked in same directory as this __file__ 
+        # directory to be symlinked in same directory as this __file__
         sysappdir = os.path.abspath(os.path.dirname(__file__))
         sys.path.insert(0, sysappdir)
         sys.path.insert(0, appdir)
