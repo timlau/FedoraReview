@@ -140,19 +140,9 @@ class SpecFile(object):
 
     def get_expanded(self):
         ''' Return expanded spec, as provided by rpmspec -P. '''
-        cmd = ['rpmspec', '-P', self.filename]
-        try:
-            proc = Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE)
-            output, error = proc.communicate()
-            if proc.wait() != 0:
-                return None
-            return output
-        except OSError, e:
-            self.log.error("OSError: %s" % str(e))
-            self.log.debug("OSError: %s stderr: %s " % (str(e), error),
-                           exc_info=True)
-            return None
+        # this is not really working now, but only json is using it...phasing
+        # out
+        return self.lines
 
     def find_tag(self, tag, section = None):
         '''
