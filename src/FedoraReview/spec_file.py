@@ -24,7 +24,13 @@ import re
 import rpm
 import subprocess
 
-from subprocess import Popen, PIPE, check_output, CalledProcessError
+from subprocess import Popen, PIPE, CalledProcessError
+try:
+    from subprocess import check_output
+except ImportError:
+    from FedoraReview.el_compat import check_output
+
+
 from review_error import ReviewError
 
 from settings import Settings

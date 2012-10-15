@@ -10,7 +10,11 @@ import os.path
 import os
 import socket
 
-from subprocess import check_output
+try:
+    from subprocess import check_output
+except ImportError:
+    from FedoraReview.el_compat import check_output
+
 from review_error import ReviewError
 
 __version__ = 'Unknown'

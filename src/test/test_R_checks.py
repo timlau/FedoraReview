@@ -23,7 +23,7 @@ Unit checks for automatic test of fedora R review guidelines
 import os
 import os.path
 import sys
-import unittest
+import unittest2 as unittest
 
 sys.path.insert(0,os.path.abspath('../'))
 from FedoraReview import  Checks, ReviewDirs, NameBug

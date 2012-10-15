@@ -27,7 +27,12 @@ import re
 
 from glob import glob
 from StringIO import StringIO
-from subprocess import Popen, PIPE, check_output
+from subprocess import Popen, PIPE
+try:
+    from subprocess import check_output
+except ImportError:
+    from FedoraReview.el_compat import check_output
+
 
 from FedoraReview import CheckBase, Mock, ReviewDirs, Settings
 from FedoraReview import RegistryBase, ReviewError

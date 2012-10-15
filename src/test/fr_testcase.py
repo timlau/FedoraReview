@@ -23,7 +23,7 @@ import sys
 import os.path
 sys.path.insert(0,os.path.abspath('../'))
 
-import unittest
+import unittest2 as unittest
 import os
 import shutil
 
