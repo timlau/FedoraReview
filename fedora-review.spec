@@ -46,22 +46,33 @@ As of today, there is plugins for C/C++, Ruby, java, R, perl and
 python.  There is also support for external tests that can be written
 in a simple way in bash.
 
+%package tests
+Summary: Test and test data files for fedora-review
+Requires: %{name} = %{version}-%{release}
+
+%description tests
+Tests are packaged separately due to space concerns.
+
 
 %prep
 %setup -q
 chmod -x api/examples/*
+cd test
+bash < restore-links.sh
+rm restore-links.sh remember-links
 
 
 %build
-%{__python} setup.py build
+%{__python} setup.py --quiet build
 
 
 %install
-%{__python} setup.py install -O1 --skip-build --root $RPM_BUILD_ROOT
+%{__python} setup.py --quiet install -O1 --skip-build --root $RPM_BUILD_ROOT
 pkg_dir="$RPM_BUILD_ROOT/%{python_sitelib}/FedoraReview"
 ln -s %{_datadir}/%{name}/scripts $pkg_dir/scripts
 ln -s %{_datadir}/%{name}/plugins $pkg_dir/plugins
 ln -s %{_datadir}/%{name}/plugins $pkg_dir/json-plugins
+cp -ar test "$RPM_BUILD_ROOT%{_datadir}/%{name}"
 
 
 %files
@@ -75,6 +86,9 @@ ln -s %{_datadir}/%{name}/plugins $pkg_dir/json-plugins
 %dir %{_datadir}/%{name}
 %{_datadir}/%{name}/plugins
 %{_datadir}/%{name}/scripts
+
+%files tests
+%{_datadir}/%{name}/test
 
 
 %changelog

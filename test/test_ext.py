@@ -19,17 +19,16 @@
 '''
 Unit tests for utilities
 '''
-import sys
-import os.path
-sys.path.insert(0,os.path.abspath('../src'))
 
 import os
+import sys
 import unittest2 as unittest
 
 from subprocess import check_call
 
-from FedoraReview import Checks, ReviewDirs
-from FedoraReview.checks import _CheckDict
+import srcpath
+from FedoraReview import ReviewDirs
+from FedoraReview.checks import Checks, _CheckDict
 from FedoraReview.name_bug import NameBug
 
 from fr_testcase import FR_TestCase

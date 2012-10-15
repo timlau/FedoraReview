@@ -20,23 +20,21 @@
 Unit tests for bugzilla bug handling
 '''
 
-import sys
-import os.path
-sys.path.insert(0,os.path.abspath('../src'))
-
-import unittest2 as unittest
 import os
+import os.path
+import sys
+
+from glob import glob
+import unittest2 as unittest
 
 try:
     from subprocess import check_output
 except ImportError:
     from FedoraReview.el_compat import check_output
 
-from glob import glob
-
-from FedoraReview import Checks, Mock, ReviewDirs, SpecFile, Settings
-
-from FedoraReview.checks import _CheckDict
+import srcpath
+from FedoraReview import Mock, ReviewDirs, Settings
+from FedoraReview.checks import Checks, _CheckDict
 from FedoraReview.bugzilla_bug import BugzillaBug
 from FedoraReview.name_bug import NameBug
 from FedoraReview.url_bug import UrlBug

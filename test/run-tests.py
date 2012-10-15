@@ -30,13 +30,11 @@
 # Running a single test case:
 #     $ python -m unittest test_misc.TestMisc.test_sources
 
+import os
 import sys
-import os.path
-os.chdir(os.path.dirname(os.path.realpath(__file__)))
-sys.path.insert(0,os.path.abspath('../src'))
-
 import unittest2 as unittest
 
+import srcpath
 from FedoraReview import Mock
 
 from test_misc     import TestMisc

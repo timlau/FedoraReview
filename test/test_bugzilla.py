@@ -20,17 +20,16 @@
 Unit tests for bugzilla bug handling
 '''
 
-
-import sys
-import os.path
-sys.path.insert(0,os.path.abspath('../src'))
-
 import os
+import os.path
+import sys
 import unittest2 as unittest
 
+import srcpath
 from FedoraReview.bugzilla_bug import BugzillaBug
 
 from fr_testcase import FR_TestCase, NO_NET
+
 
 class TestBugzilla(FR_TestCase):
     TEST_BUG = '672280'

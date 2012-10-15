@@ -19,19 +19,19 @@
 Base class for FedoraReview tests
 '''
 
-import sys
-import os.path
-sys.path.insert(0,os.path.abspath('../src'))
-
 import unittest2 as unittest
 import os
+import os.path
 import shutil
 import subprocess
 import sys
 
 from urllib import urlopen
 
-from FedoraReview import Checks, Mock, ReviewDirs, Settings
+import srcpath
+from FedoraReview import Mock, ReviewDirs, Settings
+from FedoraReview.checks import Checks
+from FedoraReview.name_bug import NameBug
 
 STARTDIR = os.getcwd()
 

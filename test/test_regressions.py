@@ -20,15 +20,15 @@
 Unit tests for bugzilla bug handling
 '''
 
-import sys
-import os.path
-sys.path.insert(0,os.path.abspath('../src'))
-
-import unittest
 import os
+import os.path
 import re
 import subprocess
+import sys
 
+import unittest2 as unittest
+
+import srcpath
 from FedoraReview.helpers_mixin import HelpersMixin
 from FedoraReview.checks import _CheckDict
 
