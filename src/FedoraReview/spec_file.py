@@ -22,7 +22,6 @@ Tools for helping Fedora package reviewers
 
 import re
 import rpm
-import subprocess
 
 from subprocess import Popen, PIPE, CalledProcessError
 try:
@@ -198,22 +197,26 @@ class SpecFile(object):
             raise ReviewError(str(err))
         return  reply.strip()
 
-    def _rpmspec(self, arg):
-        ''' run rpmspec with arg and return output as list. '''
-        try:
-            reply = check_output('rpmspec ' + arg + ' ' + self.filename,
-                                   shell=True)
-        except CalledProcessError as err:
-            raise ReviewError(str(err))
-        return  [r.strip() for r in reply.split('\n')]
-
     def get_build_requires(self):
         ''' Return the list of build requirements. '''
-        return self._rpmspec(' -q --buildrequires ')
+        return self.spec_obj.sourceHeader[rpm.RPMTAG_REQUIRES]
 
-    def get_requires(self):
+    def get_requires(self, pkg_name=None):
         ''' Return list of requirements i. e., Requires: '''
-        return self._rpmspec('-q --requires ')
+        package = self._get_pkg_by_name(pkg_name)
+        return package.header[rpm.RPMTAG_REQUIRES]
+
+    def _get_pkg_by_name(self, pkg_name):
+        '''
+        Return package with given name. pgk_name == None
+        -> base package, not existing name -> KeyError
+        '''
+        if not pkg_name:
+            return self.spec_obj.packages[0]
+        for p in self.spec_obj.packages:
+            if p.header[rpm.RPMTAG_NAME] == pkg_name:
+                return p
+        raise KeyError(pkg_name + ': no such package')
 
     def get_section(self, section):
         '''
