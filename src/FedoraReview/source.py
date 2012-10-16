@@ -122,8 +122,9 @@ class Source(HelpersMixin):
 
         self.extract_dir = os.path.join(ReviewDirs.upstream_unpacked,
                                         self.tag)
-        if not os.path.exists(self.extract_dir):
-            os.mkdir(self.extract_dir)
+        if os.path.exists(self.extract_dir):
+            return
+        os.mkdir(self.extract_dir)
         if self.downloaded:
             if not self.rpmdev_extract(self.filename, self.extract_dir):
                 shutil.copy(self.filename, self.extract_dir)

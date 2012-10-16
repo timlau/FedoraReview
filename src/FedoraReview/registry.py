@@ -24,6 +24,7 @@ import inspect
 from check_base import FileChecks
 from review_error import ReviewError
 
+
 class _Flag(object):
     ''' A flag such as EPEL5, set byuser, handled by checks. '''
 
@@ -50,7 +51,6 @@ class _Flag(object):
     def activate(self):
         ''' Turn 'on' flag from default 'off' state. '''
         self.value = '1'
-
 
 
 class AbstractRegistry(object):

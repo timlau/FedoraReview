@@ -23,7 +23,7 @@ Unit checks for automatic test of fedora R review guidelines
 import os
 import os.path
 import sys
-import unittest
+import unittest2 as unittest
 
 sys.path.insert(0,os.path.abspath('../'))
 from FedoraReview import  Checks, ReviewDirs, NameBug
@@ -41,7 +41,7 @@ class TestRChecks(FR_TestCase):
     def test_all_checks(self):
         ''' Run all automated review checks'''
         self.init_test('test-R',
-                        argv=['-rpn','R-Rdummypkg', '--cache'])
+                        argv=['-rpn','R-Rdummypkg', '--no-build'])
         ReviewDirs.reset()
         self.bug = NameBug('R-Rdummypkg')
         self.bug.find_urls()

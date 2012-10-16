@@ -331,18 +331,19 @@ class Registry(AbstractRegistry):
         self.checks = checks
         self.log = Settings.get_logger()
 
-
     def register(self, plugin):
         ''' Return all available scripts as ShellCheck instances. '''
 
         def _get_plugin_dirs():
             ''' Return list of dirs to scan for scripts. '''
+            dir_list = []
             plugindir = os.path.dirname(__file__)
             plugindir = os.path.join(plugindir, '../scripts')
             plugindir = os.path.normpath(plugindir)
-            path = plugindir + ':' + os.path.join(XdgDirs.app_datadir,
-                                                  'scripts')
-            return path.split(':')
+            dir_list.append(plugindir)
+            dir_list.append(os.path.join(XdgDirs.app_datadir,
+                                                  'scripts'))
+            return dir_list
 
         dirs = _get_plugin_dirs()
         my_checks = [self.CreateEnvCheck(self.checks, self)]

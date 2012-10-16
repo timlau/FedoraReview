@@ -102,7 +102,6 @@ class ReviewHelper(object):
         for flag in checks_lister.flags.itervalues():
             print flag.name + ': ' + flag.doc
 
-
     @staticmethod
     def _list_checks():
         """ List all the checks and flags available.  """

@@ -24,9 +24,13 @@ import sys
 import os.path
 sys.path.insert(0,os.path.abspath('../'))
 
-import unittest
+import unittest2 as unittest
 import os
-import subprocess
+
+try:
+    from subprocess import check_output
+except ImportError:
+    from FedoraReview.el_compat import check_output
 
 from glob import glob
 
@@ -106,7 +110,7 @@ class TestOptions(FR_TestCase):
     def test_display(self):
         """ test -d/--display option. """
         cmd = '../fedora-review --display-checks'
-        output = subprocess.check_output(cmd, shell=True)
+        output = check_output(cmd, shell=True)
         output = output.decode('utf-8')
         self.assertTrue(len(output) > 20)
 
@@ -134,7 +138,7 @@ class TestOptions(FR_TestCase):
     def test_version(self):
         """ test --version option. """
         cmd = '../fedora-review --version'
-        output = subprocess.check_output(cmd, shell=True)
+        output = check_output(cmd, shell=True)
         output = output.decode('utf-8')
         self.assertIn('fedora-review', output)
         self.assertIn(VERSION, output)

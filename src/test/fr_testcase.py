@@ -23,7 +23,7 @@ import sys
 import os.path
 sys.path.insert(0,os.path.abspath('../'))
 
-import unittest
+import unittest2 as unittest
 import os
 import shutil
 
@@ -33,7 +33,7 @@ from FedoraReview import Checks, ReviewDirs,  Mock, Settings
 
 STARTDIR = os.getcwd()
 
-VERSION = '0.3.0'
+VERSION = '0.3.1'
 
 try:
     urlopen('http://bugzilla.redhat.com')

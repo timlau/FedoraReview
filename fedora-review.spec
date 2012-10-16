@@ -1,5 +1,5 @@
 Name:       fedora-review
-Version:    0.3.0
+Version:    0.3.1
 Release:    1%{?dist}
 Summary:    Review tool for fedora rpm packages
 
@@ -14,6 +14,7 @@ BuildRequires:  python-bugzilla
 BuildRequires:  python-straight-plugin
 BuildRequires:  python2-devel
 BuildRequires:  rpm-python
+BuildRequires:  python-argparse
 
 Requires:       fedora-packager
 Requires:       python-BeautifulSoup
@@ -22,28 +23,29 @@ Requires:       python-kitchen
 Requires:       python-straight-plugin
 Requires:       rpm-python
 Requires:       rpmdevtools
+Requires:       python-argparse
 
 # Let's be consistent with the name used on fedorahosted
 provides:       FedoraReview = %{version}-%{release}
 
 
 %description
-FedoraReview: Tools to help review packages for inclusion in Fedora
-
 This tool automates much of the dirty work when reviewing a package
-for the Fedora Package Collection.
+for the Fedora Package Collection like:
 
-Like:
-
-    * Downloading SRPM & SPEC from Bugzilla report
+    * Downloading SRPM & SPEC.
     * Download upstream source
     * Check md5sums
-    * Generate a review report will both manual & automated checks,
-      ready to complete and paste into the Bugzilla report.
+    * Build and install package in mock.
+    * Run rpmlint.
+    * Generate a review template, which becomes the starting
+      point for the review work.
 
-This tool can be extended with a collection of plugins for each
-programming language. There is also support for external plugins that
-can be written in any language supporting JSON format.
+The tool is composed of a plugins, one for each supported language.
+As of today, there is plugins for C/C++, Ruby, java, R, perl and
+python.  There is also support for external tests that can be written
+in a simple way in bash.
+
 
 %prep
 %setup -q
@@ -55,7 +57,8 @@ chmod -x api/examples/*
 %install
 %{__python} setup.py install -O1 --skip-build --root $RPM_BUILD_ROOT
 
-install -d -m755 $RPM_BUILD_ROOT/%{_datadir}/%{name}/plugins
+ln -s %{_datadir}/%{name}/plugins \
+      %{buildroot}%{python_sitelib}/FedoraReview/plugins
 
 %files
 %doc COPYING AUTHORS TODO README api
@@ -66,9 +69,15 @@ install -d -m755 $RPM_BUILD_ROOT/%{_datadir}/%{name}/plugins
 %{_mandir}/man1/%{name}.1.*
 %{_mandir}/man1/fedora-create-review.1.*
 %dir %{_datadir}/%{name}
-%dir %{_datadir}/%{name}/plugins
+%{_datadir}/%{name}/plugins
+%{_datadir}/%{name}/scripts
 
 %changelog
+* Tue Sep 25 2012 Stanislav Ochotnicky <sochotnicky@redhat.com> - 0.3.1-1
+- Update to lastest upstream (0.3.1)
+- Fix loading of system-wide plugins
+- Add back suport for EL6
+
 * Mon Sep 24 2012 Stanislav Ochotnicky <sochotnicky@redhat.com> - 0.3.0-1
 - Update to lastest upstream (0.3.0)
 - Remove no longer needed build workarounds

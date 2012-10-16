@@ -215,7 +215,7 @@ class CheckJavaFullVerReqSub(JavaCheckBase):
             if not passed:
                 bad_ones.append(section)
         if bad_ones:
-            extra =  "Missing: 'Requires: %%{name} =' in: " + \
+            extra = "Missing: 'Requires: %%{name} =' in: " + \
                         ', '.join(bad_ones)
         self.set_passed(self.FAIL if extra else self.PASS, extra)
 

@@ -32,9 +32,9 @@ import sys
 from review_error import ReviewError
 from xdg_dirs import XdgDirs
 
-SYS_PLUGIN_DIR  = "/usr/share/fedora-review/plugins:%s"
-MY_PLUGIN_DIR   = "~/.config/fedora-review/plugins"
-
+SYS_JSON_PLUGIN_DIR  = os.path.abspath(os.path.join(__file__,
+                                               '../../../json-plugins'))
+MY_JSON_PLUGIN_DIR   = os.path.expanduser("~/.config/fedora-review/plugins")
 
 PARSER_SECTION = 'review'
 
@@ -144,7 +144,10 @@ def _make_log_dir():
             raise ReviewError(
                       'Cannot create log directory: ' + SESSION_LOG)
 
+
 class ColoredFormatter(logging.Formatter):
+    ''' Formatter usable for colorizing terminal output acccording to presets
+    '''
     BLACK = "\033[1;30m"
     RED = "\033[1;31m"
     GREEN = "\033[1;32m"
@@ -160,7 +163,6 @@ class ColoredFormatter(logging.Formatter):
         'CRITICAL': YELLOW,
         'ERROR': RED
     }
-
 
     def __init__(self, fmt=None, datefmt=None, use_color=True):
         logging.Formatter.__init__(self, fmt, datefmt)
@@ -194,8 +196,7 @@ class _Settings(object):                         # pylint: disable=R0902
             ReviewError.__init__(self, 'Bad options!!', 2, True)
 
     defaults = {
-        'ext_dirs': ':'.join([os.path.expanduser(MY_PLUGIN_DIR),
-                                                     SYS_PLUGIN_DIR]),
+        'ext_dirs': [MY_JSON_PLUGIN_DIR, SYS_JSON_PLUGIN_DIR],
         'bz_url': 'https://bugzilla.redhat.com',
     }
 
@@ -317,7 +318,10 @@ class _Settings(object):                         # pylint: disable=R0902
         for k, v in vars(self).iteritems():
             if k in ['_dict', 'mock_config_options', 'log']:
                 continue
-            self.log.debug("    " + k + ": " + v.__str__())
+            try:
+                self.log.debug("    " + k + ": " + v.__str__())
+            except AttributeError:
+                self.log.debug("    " + k + ": not printable")
 
     def do_logger_setup(self, lvl=None):
         ''' Setup Python logging. lvl is a logging.* thing like

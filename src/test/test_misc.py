@@ -26,7 +26,7 @@ sys.path.insert(0,os.path.abspath('../'))
 sys.path.insert(0,os.path.abspath('../FedoraReview'))
 
 import glob
-import unittest
+import unittest2 as unittest
 import os
 import re
 import subprocess

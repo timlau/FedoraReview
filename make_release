@@ -49,4 +49,11 @@ if [ "$REPLY" = "y" ];then
     scp "${dfile}" fedorahosted.org:FedoraReview
     git tag $__version__
     git push --tags
+    echo "Things to do now:"
+    echo "      1. Merge to 'master' and 'devel'"
+    echo "      2. Update trac releases and tickets"
+    echo "      3. Build rpms for Fedoras/EPEL"
+    echo "      4. Create updates in bodhi"
+    echo "      5. Announce!"
+    echo "      6. (nice to have) Update trac queries for new milestone"
 fi

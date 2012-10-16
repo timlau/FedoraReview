@@ -46,7 +46,3 @@ class PhpCheckPhpRequire(PhpCheckBase):
                 "Package should require php-common rather than php.")
         else:
             self.set_passed('php-common' in brs)
-
-
-
-

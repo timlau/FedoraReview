@@ -5,6 +5,7 @@ import re
 
 from FedoraReview import CheckBase, RegistryBase
 
+
 class Registry(RegistryBase):
     """ Register all checks in this file. """
 
@@ -17,7 +18,7 @@ class Registry(RegistryBase):
             self.has_files('*.a') or \
             self.sources_have_files('*.c') or \
             self.sources_have_files('*.C') or \
-            self.sources_have_files('*.cpp') :
+            self.sources_have_files('*.cpp'):
             return True
         return False
 
@@ -43,16 +44,14 @@ class CheckLDConfig(CCppCheckBase):
         self.automatic = True
         self.type = 'MUST'
 
-
     def is_applicable(self):
         ''' check if this test is applicable '''
         return self.has_files_re('/usr/(lib|lib64)/[\w\-]*\.so\.[0-9]')
 
-
     def run_on_applicable(self):
         ''' Run the test, called if is_applicable() is True. '''
 
-        sources = ['%post','%postun']
+        sources = ['%post', '%postun']
         for source in sources:
             passed = False
             sections = self.spec.get_section(source)
@@ -72,6 +71,7 @@ class CheckLDConfig(CCppCheckBase):
                                 '/sbin/ldconfig not called in %s' % source)
                 return
         self.set_passed(True)
+
 
 class CheckHeaderFiles(CCppCheckBase):
     '''
@@ -108,7 +108,6 @@ class CheckHeaderFiles(CCppCheckBase):
         self.set_passed(passed, extra)
 
 
-
 class CheckStaticLibs(CCppCheckBase):
     '''
     MUST: Static libraries must be in a -static package.
@@ -139,8 +138,6 @@ class CheckStaticLibs(CCppCheckBase):
         self.set_passed(passed, extra)
 
 
-
-
 class CheckNoStaticExecutables(CCppCheckBase):
     ''' We do not packaga static executables, do we? '''
 
@@ -152,10 +149,12 @@ class CheckNoStaticExecutables(CCppCheckBase):
         self.automatic = False
         self.type = 'MUST'
 
+
 class CheckSoFiles(CCppCheckBase):
     '''
-    MUST: If a package contains library files with a suffix (e.g. libfoo.so.1.1),
-    then library files that end in .so (without suffix) must go in a -devel package.
+    MUST: If a package contains library files with a suffix (e.g.
+    libfoo.so.1.1), then library files that end in .so (without suffix)
+    must go in a -devel package.
     http://fedoraproject.org/wiki/Packaging/Guidelines#DevelPackages
     '''
     def __init__(self, base):
@@ -207,6 +206,7 @@ class CheckSoFiles(CCppCheckBase):
 
         self.set_passed(passed, extra, attachments)
 
+
 class CheckLibToolArchives(CCppCheckBase):
     '''
     MUST: Packages must NOT contain any .la libtool archives,
@@ -253,7 +253,6 @@ class CheckRPATH(CCppCheckBase):
                 self.set_passed(False, 'See rpmlint output')
                 return
         self.set_passed(True)
-
 
 
 class CheckNoKernelModules(CCppCheckBase):

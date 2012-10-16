@@ -65,7 +65,6 @@ bug number
 Runs the checks against the named spec and source rpm located in the
 current working directory. The files are expected to have the names
 <name>.spec and <name>*.src.rpm.
-.PP
 When used together with --rpm-spec/-r, name can also be a complete path
 to a source rpm.
 .TP 4
@@ -89,14 +88,15 @@ Show version info
 .SH GENERAL OPTIONS
 .TP 4
 .B -c, --cache
-Do not redownload the files from bugzilla, use the local one.
+Do not redownload the files from bugzilla or upstream, use the local ones
+from previous run instead.
 .TP 4
-.B -D, --define <flag>
+.B -D, --define <flag[=value]>
 Define a flag e. g., EPEL5. A flag can either just be activated
 using
-.I -D flag
+flag
 or set to a value using
-.I -D flag=value.
+flag=value.
 --display-flags shows available flags.
 .TP 4
 .B -k, --checksum <md5|sha1|sha224|sha256|sha384|sha512>
@@ -163,10 +163,8 @@ the build. These sources have been created and modifified by the %prep
 stuff in the spec file. The link is only valid direct after the run,
 it's overwritten next time mock executes.
 .TP 4
-result link
-Points to the mock result dir, containing logs and rpms.
-This is also overwritten as soon as mock is run again e. g., by
-fedora-review.
+results directory
+Contains the result from the build, logs and rpm packages.
 .SH LOCAL SOURCES (GIT-BASED OR SIMILAR)
 Normally, the Source0 (or others SourceX) in the specfile contains an URL
 to the upstream source. fedora-review uses this url to download the
@@ -277,6 +275,10 @@ User supplied directory for full-featured python plugins
 .RS
 User supplied directory with shell-based plugins
 .RE
+.I ~/.config/fedora-review/plugins
+.RS
+User directory for JSON-based plugins (deprecated).
+
 
 .SH ENVIRONMENT
 .TP

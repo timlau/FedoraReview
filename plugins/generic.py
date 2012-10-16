@@ -27,7 +27,12 @@ import re
 
 from glob import glob
 from StringIO import StringIO
-from subprocess import Popen, PIPE, check_output
+from subprocess import Popen, PIPE
+try:
+    from subprocess import check_output
+except ImportError:
+    from FedoraReview.el_compat import check_output
+
 
 from FedoraReview import CheckBase, Mock, ReviewDirs, Settings
 from FedoraReview import RegistryBase, ReviewError
@@ -992,7 +997,6 @@ class CheckLicenseField(GenericCheckBase):
                 for path in sorted(files_by_license[license_]):
                     f.write(path + '\n')
 
-
     def run(self):
 
         def license_is_valid(_license):
@@ -1029,11 +1033,12 @@ class CheckLicenseField(GenericCheckBase):
             self.log.debug("Scanning sources in " + source_dir)
             licenses = []
             if os.path.exists(source_dir):
-                cmd = ['licensecheck', '-r', source_dir]
+                cmd = 'licensecheck -r ' + source_dir
+                out = check_output(cmd, shell=True)
+                self.log.debug("Got license reply, length: %d" % len(out))
+                licenses = parse_licenses(out)
                 filename = os.path.join(ReviewDirs.root,
                                         'licensecheck.txt')
-                out = check_output(cmd)
-                licenses = parse_licenses(out)
                 self._write_license(licenses, filename)
             else:
                 self.log.error('Source directory %s does not exist!' %
@@ -1045,7 +1050,7 @@ class CheckLicenseField(GenericCheckBase):
             else:
                 msg += ' Licenses found: "' \
                          + '", "'.join(licenses.iterkeys()) + '".'
-                msg += ' %d files have unknown license.' %  len(licenses)
+                msg += ' %d files have unknown license.' % len(licenses)
                 msg += ' Detailed output of licensecheck in ' + filename
                 self.set_passed('inconclusive', msg)
         except OSError, e:
@@ -1722,7 +1727,7 @@ class CheckSourcePatchPrefix(GenericCheckBase):
             extra = 'No SourceX/PatchX tags found'
         for tag, path in sources.iteritems():
             basename = os.path.basename(path)
-            if not path.startswith(self.spec.name):
+            if not basename.startswith(self.spec.name):
                 passed = False
                 extra += '%s (%s)\n' % (tag, basename)
         self.set_passed(passed, extra if extra != '' else None)
@@ -2028,5 +2033,75 @@ class CheckNoNameConflict(GenericCheckBase):
         except pycurl.error:
             self.set_passed(self.PENDING,
                             "Couldn't connect to PackageDB, check manually")
+
+
+class CheckTmpfiles(GenericCheckBase):
+    '''
+    Check for files in /run, /var/run etc, candidates for tmpfiles.d
+    '''
+
+    def __init__(self, base):
+        GenericCheckBase.__init__(self, base)
+        self.url = 'https://fedoraproject.org/wiki/Packaging:Tmpfiles.d'
+        self.text = 'Files in /run, var/run and /var/lock uses tmpfiles.d' \
+                    ' when appropriate'
+        self.automatic = True
+        self.type = 'SHOULD'
+
+    def run(self):
+        if self.flags['EPEL5']:
+            self.set_passed(self.NA)
+            return
+        for p in ['/run/*', '/var/run/*', '/var/lock/*', '/run/lock/*']:
+            if self.has_files(p):
+                self.set_passed(self.PENDING)
+                break
+        else:
+            self.set_passed(self.NA)
+
+
+class CheckBundledFonts(GenericCheckBase):
+    ''' Check for bundled font files '''
+
+    def __init__(self, base):
+        GenericCheckBase.__init__(self, base)
+        self.url = 'http://fedoraproject.org/wiki/Packaging:Guidelines' \
+                   '#Avoid_bundling_of_fonts_in_other_packages'
+        self.text = 'Avoid bundling fonts in non-fonts packages. '
+        self.automatic = True
+        self.type = 'SHOULD'
+
+    def run(self):
+        if self.spec.name.endswith('-fonts'):
+            self.set_passed(self.NA)
+            return
+        for p in ['*.pfb', '*.pfa', '*.afm', '*.ttf', '*.otf']:
+            if self.has_files(p):
+                self.set_passed(self.PENDING,
+                                'Package contains font files')
+                break
+        else:
+            self.set_passed(self.NA)
+
+
+class CheckSourcedirMacroUse(GenericCheckBase):
+    ''' Check for usage of %_sourcedir macro. '''
+
+    def __init__(self, base):
+        GenericCheckBase.__init__(self, base)
+        self.url = 'http://fedoraproject.org/wiki/Packaging:Guidelines' \
+                   '#Improper_use_of_.25_sourcedir'
+        self.text = 'Only use %_sourcedir in very specific situations.'
+        self.automatic = True
+        self.type = 'MUST'
+
+    def run(self):
+        text = ''.join(self.spec.lines)
+        if '%_sourcedir' in text or '$RPM_SOURCE_DIR' in text:
+            self.set_passed(self.PENDING,
+                            '%_sourcedir/$RPM_SOURCE_DIR is used.')
+        else:
+            self.set_passed(self.NA)
+
 
 # vim: set expandtab: ts=4:sw=4:
