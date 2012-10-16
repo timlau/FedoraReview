@@ -1,5 +1,5 @@
 Name:       fedora-review
-Version:    0.3.0
+Version:    0.3.1
 Release:    1%{?dist}
 Summary:    Review tool for fedora rpm packages
 
@@ -14,6 +14,7 @@ BuildRequires:  python-bugzilla
 BuildRequires:  python-straight-plugin
 BuildRequires:  python2-devel
 BuildRequires:  rpm-python
+BuildRequires:  python-argparse
 
 Requires:       fedora-packager
 Requires:       python-BeautifulSoup
@@ -22,6 +23,7 @@ Requires:       python-kitchen
 Requires:       python-straight-plugin
 Requires:       rpm-python
 Requires:       rpmdevtools
+Requires:       python-argparse
 
 # Let's be consistent with the name used on fedorahosted
 provides:       FedoraReview = %{version}-%{release}
@@ -55,7 +57,8 @@ chmod -x api/examples/*
 %install
 %{__python} setup.py install -O1 --skip-build --root $RPM_BUILD_ROOT
 
-install -d -m755 $RPM_BUILD_ROOT/%{_datadir}/%{name}/plugins
+ln -s %{_datadir}/%{name}/plugins \
+      %{buildroot}%{python_sitelib}/FedoraReview/plugins
 
 %files
 %doc COPYING AUTHORS TODO README api
@@ -66,9 +69,15 @@ install -d -m755 $RPM_BUILD_ROOT/%{_datadir}/%{name}/plugins
 %{_mandir}/man1/%{name}.1.*
 %{_mandir}/man1/fedora-create-review.1.*
 %dir %{_datadir}/%{name}
-%dir %{_datadir}/%{name}/plugins
+%{_datadir}/%{name}/plugins
+%{_datadir}/%{name}/scripts
 
 %changelog
+* Tue Sep 25 2012 Stanislav Ochotnicky <sochotnicky@redhat.com> - 0.3.1-1
+- Update to lastest upstream (0.3.1)
+- Fix loading of system-wide plugins
+- Add back suport for EL6
+
 * Mon Sep 24 2012 Stanislav Ochotnicky <sochotnicky@redhat.com> - 0.3.0-1
 - Update to lastest upstream (0.3.0)
 - Remove no longer needed build workarounds

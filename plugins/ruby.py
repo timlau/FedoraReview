@@ -282,6 +282,30 @@ class GemCheckDoesntHaveNonGemSubpackage(GemCheckBase):
                 break
 
 
+class GemCheckRequiresRubygems(GemCheckBase):
+    """ gems should have Requires: rubygem """
+    def __init__(self, base):
+        GemCheckBase.__init__(self, base)
+        self.url = _gl_fmt_uri({'section': 'RubyGems'})
+        self.text = 'gems should require rubygems package'
+        self.automatic = True
+        self.type = 'MUST'
+
+    def run_on_applicable(self):
+        # it seems easier to check whether .gem is not present in rpms
+        # than to examine %files
+        failed = []
+        for pkg_name in self.spec_packages:
+            rpm_pkg = self.rpms.get(pkg_name)
+            if not 'rubygems' in rpm_pkg.requires:
+                failed.append(pkg_name)
+        if failed:
+            text = 'Requires: rubygems missing in ' + ', '.join(failed)
+            self.set_passed(self.FAIL, text)
+        else:
+            self.set_passed(self.PASS)
+
+
 class GemCheckExcludesGemCache(GemCheckBase):
     """ Check if cached gem is excluded """
     def __init__(self, base):

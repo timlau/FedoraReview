@@ -22,9 +22,14 @@ Tools for helping Fedora package reviewers
 
 import re
 import rpm
-import subprocess
 
-from subprocess import Popen, PIPE, check_output, CalledProcessError
+from subprocess import Popen, PIPE, CalledProcessError
+try:
+    from subprocess import check_output
+except ImportError:
+    from FedoraReview.el_compat import check_output
+
+
 from review_error import ReviewError
 
 from settings import Settings
@@ -135,19 +140,9 @@ class SpecFile(object):
 
     def get_expanded(self):
         ''' Return expanded spec, as provided by rpmspec -P. '''
-        cmd = ['rpmspec', '-P', self.filename]
-        try:
-            proc = Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE)
-            output, error = proc.communicate()
-            if proc.wait() != 0:
-                return None
-            return output
-        except OSError, e:
-            self.log.error("OSError: %s" % str(e))
-            self.log.debug("OSError: %s stderr: %s " % (str(e), error),
-                           exc_info=True)
-            return None
+        # this is not really working now, but only json is using it...phasing
+        # out
+        return self.lines
 
     def find_tag(self, tag, section = None):
         '''
@@ -192,22 +187,26 @@ class SpecFile(object):
             raise ReviewError(str(err))
         return  reply.strip()
 
-    def _rpmspec(self, arg):
-        ''' run rpmspec with arg and return output as list. '''
-        try:
-            reply = check_output('rpmspec ' + arg + ' ' + self.filename,
-                                   shell=True)
-        except CalledProcessError as err:
-            raise ReviewError(str(err))
-        return  [r.strip() for r in reply.split('\n')]
-
     def get_build_requires(self):
         ''' Return the list of build requirements. '''
-        return self._rpmspec(' -q --buildrequires ')
+        return self.spec_obj.sourceHeader[rpm.RPMTAG_REQUIRES]
 
-    def get_requires(self):
+    def get_requires(self, pkg_name=None):
         ''' Return list of requirements i. e., Requires: '''
-        return self._rpmspec('-q --requires ')
+        package = self._get_pkg_by_name(pkg_name)
+        return package.header[rpm.RPMTAG_REQUIRES]
+
+    def _get_pkg_by_name(self, pkg_name):
+        '''
+        Return package with given name. pgk_name == None
+        -> base package, not existing name -> KeyError
+        '''
+        if not pkg_name:
+            return self.spec_obj.packages[0]
+        for p in self.spec_obj.packages:
+            if p.header[rpm.RPMTAG_NAME] == pkg_name:
+                return p
+        raise KeyError(pkg_name + ': no such package')
 
     def get_section(self, section):
         '''

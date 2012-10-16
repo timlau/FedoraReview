@@ -24,7 +24,7 @@ import logging
 import os.path
 import re
 import urllib
-from subprocess import call, Popen, PIPE
+from subprocess import Popen, PIPE
 import hashlib
 
 from settings import Settings
@@ -115,10 +115,14 @@ class HelpersMixin(object):
         """
         cmd = 'rpmdev-extract -qC ' + extract_dir + ' ' + archive
         cmd += ' &>/dev/null'
-        rc = call(cmd, shell=True)
-        if rc != 0:
-            Settings.get_logger().debug("Cannot unpack " + archive)
-        return rc == 0
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
+        stdout, stderr = p.communicate()
+        if p.returncode != 0:
+            log = Settings.get_logger()
+            log.debug("Cannot unpack " + archive)
+            log.debug("Status: %d, stdout: %s, stderr: %s"
+                       % (p.returncode, str(stdout), str(stderr)))
+        return p.returncode == 0
 
     @staticmethod
     def check_rpmlint_errors(out, log):
