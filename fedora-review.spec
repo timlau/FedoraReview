@@ -14,6 +14,7 @@ BuildRequires:  python-bugzilla
 BuildRequires:  python-straight-plugin
 BuildRequires:  python2-devel
 BuildRequires:  rpm-python
+BuildRequires:  python-argparse
 
 Requires:       fedora-packager
 Requires:       python-BeautifulSoup
@@ -22,6 +23,7 @@ Requires:       python-kitchen
 Requires:       python-straight-plugin
 Requires:       rpm-python
 Requires:       rpmdevtools
+Requires:       python-argparse
 
 # Let's be consistent with the name used on fedorahosted
 provides:       FedoraReview = %{version}-%{release}
@@ -72,8 +74,9 @@ ln -s %{_datadir}/%{name}/plugins \
 
 %changelog
 * Tue Sep 25 2012 Stanislav Ochotnicky <sochotnicky@redhat.com> - 0.3.1-1
-- Update to lastest upstream (0.3.0)
+- Update to lastest upstream (0.3.1)
 - Fix loading of system-wide plugins
+- Add back suport for EL6
 
 * Mon Sep 24 2012 Stanislav Ochotnicky <sochotnicky@redhat.com> - 0.3.0-1
 - Update to lastest upstream (0.3.0)
