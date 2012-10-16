@@ -997,6 +997,22 @@ class CheckLicenseField(GenericCheckBase):
                 for path in sorted(files_by_license[license_]):
                     f.write(path + '\n')
 
+    @staticmethod
+    def _get_source_dir():
+        ''' Decide which directory to run licensecheck on. This can be
+        either patched sources, or we use vanilla unpacked upstream
+        tarballs if first option fails '''
+        s = Mock.get_builddir('BUILD') + '/*'
+        globs = glob(s)
+        if globs:
+            msg = 'Checking patched sources after %prep for licenses.'
+            source_dir = globs
+        else:
+            msg = 'There is no build directory. Running licensecheck ' \
+                   'on vanilla upstream sources.'
+            source_dir = ReviewDirs.upstream_unpacked
+        return (source_dir, msg)
+
     def run(self):
 
         def license_is_valid(_license):
@@ -1026,10 +1042,7 @@ class CheckLicenseField(GenericCheckBase):
             return files_by_license
 
         try:
-            msg = ''
-            s = Mock.get_builddir('BUILD') + '/*'
-            source_dir = glob(s)[0]
-            msg += 'Checking patched sources after %prep for licenses.'
+            source_dir, msg = self._get_source_dir()
             self.log.debug("Scanning sources in " + source_dir)
             licenses = []
             if os.path.exists(source_dir):
