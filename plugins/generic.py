@@ -1919,6 +1919,234 @@ class CheckSourcedirMacroUse(GenericCheckBase):
             self.set_passed(self.NA)
 
 
+class CheckUpdateMimeDatabase(GenericCheckBase):
+    ''' Check that update-mime-database is run if required. '''
+
+    def __init__(self, base):
+        GenericCheckBase.__init__(self, base)
+        self.url = 'http://fedoraproject.org/wiki/Packaging' \
+                   ':ScriptletSnippets#mimeinfo'
+        self.text = 'update-mime-database is invoked as required'
+        self.automatic = True
+        self.type = 'SHOULD'
+
+    def run(self):
+        using = []
+        failed = False
+        for pkg in self.spec.packages:
+            if self.rpms.has_files('/usr/share/mime/packages/*', pkg):
+                using.append(pkg)
+                rpm_pkg = self.rpms.get(pkg)
+                if not _in_list('update-mime-database',
+                                [rpm_pkg.post, rpm_pkg.postun]):
+                    failed = True
+        if not using:
+            self.set_passed(self.NA)
+            return
+        text = "mimeinfo files in: " + ', '.join(using)
+        self.set_passed(self.FAIL if failed else self.PENDING, text)
+
+
+class CheckUpdateIconCache(GenericCheckBase):
+    ''' Check that gtk-update-icon-cache is run if required. '''
+
+    def __init__(self, base):
+        GenericCheckBase.__init__(self, base)
+        self.url = 'http://fedoraproject.org/wiki/Packaging' \
+                   ':ScriptletSnippets#Icon_Cache'
+        self.text = 'gtk-update-icon-cache is invoked when required'
+        self.automatic = True
+        self.type = 'MUST'
+
+    def run(self):
+        using = []
+        failed = False
+        for pkg in self.spec.packages:
+            if self.rpms.has_files('/usr/share/icons/*', pkg):
+                using.append(pkg)
+                rpm_pkg = self.rpms.get(pkg)
+                if not _in_list('gtk-update-icon-cache',
+                                [rpm_pkg.postun, rpm_pkg.posttrans]):
+                    failed = True
+        if not using:
+            self.set_passed(self.NA)
+            return
+        text = "icons in " + ', '.join(using)
+        self.set_passed(self.FAIL if failed else self.PENDING, text)
+
+
+class CheckUpdateDesktopDatabase(GenericCheckBase):
+    ''' Check that update-desktop-database is run if required. '''
+
+    def __init__(self, base):
+        GenericCheckBase.__init__(self, base)
+        self.url = 'http://fedoraproject.org/wiki/Packaging' \
+                   ':ScriptletSnippets#Icon_Cache'
+        self.text = 'update-desktop-database is invoked when required'
+        self.automatic = True
+        self.type = 'MUST'
+
+    def run(self):
+        using = []
+        failed = False
+        for pkg in self.spec.packages:
+            if self.rpms.has_files('*.desktop', pkg):
+                using.append(pkg)
+                rpm_pkg = self.rpms.get(pkg)
+                if not _in_list('update-desktop-database',
+                                [rpm_pkg.post, rpm_pkg.postun]):
+                    failed = True
+        if not using:
+            self.set_passed(self.NA)
+            return
+        text = "desktop file(s) in " + ', '.join(using)
+        self.set_passed(self.FAIL if failed else self.PENDING, text)
+
+
+class CheckGioQueryModules(GenericCheckBase):
+    ''' Check that update-desktop-database is run if required. '''
+
+    def __init__(self, base):
+        GenericCheckBase.__init__(self, base)
+        self.url = 'http://fedoraproject.org/wiki/Packaging' \
+                   ':ScriptletSnippets#GIO_modules'
+        self.text = 'gio-querymodules is invoked as required'
+        self.automatic = True
+        self.type = 'MUST'
+
+    def run(self):
+        using = []
+        failed = False
+        libdir = Mock.rpm_eval('%{_libdir}')
+        gio_pattern = os.path.join(libdir, 'gio/modules/', '*')
+        for pkg in self.spec.packages:
+            if self.rpms.has_files(gio_pattern, pkg):
+                using.append(pkg)
+                rpmpkg = self.rpms.get(pkg)
+                if not _in_list('gio-querymodules',
+                                [rpmpkg.post, rpmpkg.postun]):
+                    failed = True
+        if not using:
+            self.set_passed(self.NA)
+            return
+        text = "gio module file(s) in " + ', '.join(using)
+        self.set_passed(self.FAIL if failed else self.PENDING, text)
+
+
+class CheckGtkQueryModules(GenericCheckBase):
+    ''' Check that gtk-query-immodules is run if required. '''
+
+    def __init__(self, base):
+        GenericCheckBase.__init__(self, base)
+        self.url = 'http://fedoraproject.org/wiki/Packaging' \
+                   ':ScriptletSnippets#GIO_modules'
+        self.text = 'gtk-query-immodules is invoked when required'
+        self.automatic = True
+        self.type = 'MUST'
+
+    def run(self):
+        using = []
+        failed = False
+        libdir = Mock.rpm_eval('%{_libdir}')
+        pattern = os.path.join(libdir, 'gtk-3.0/', '*')
+        for pkg in self.spec.packages:
+            if self.rpms.has_files(pattern, pkg):
+                using.append(pkg)
+                rpmpkg = self.rpms.get(pkg)
+                if not _in_list('gtk-query-immodules',
+                                [rpmpkg.postun, rpmpkg.posttrans]):
+                    failed = True
+        if not using:
+            self.set_passed(self.NA)
+            return
+        text = "Gtk module file(s) in " + ', '.join(using)
+        self.set_passed(self.FAIL if failed else self.PENDING, text)
+
+
+class CheckGlibCompileSchemas(GenericCheckBase):
+    ''' Check that glib-compile-schemas is run if required. '''
+
+    def __init__(self, base):
+        GenericCheckBase.__init__(self, base)
+        self.url = 'http://fedoraproject.org/wiki/Packaging' \
+                   ':ScriptletSnippets#GSettings_Schema'
+        self.text = 'glib-compile-schemas is run if required'
+        self.automatic = True
+        self.type = 'MUST'
+
+    def run(self):
+        using = []
+        failed = False
+        for pkg in self.spec.packages:
+            if self.rpms.has_files('*.gschema.xml', pkg):
+                using.append(pkg)
+                rpm_pkg = self.rpms.get(pkg)
+                if not _in_list('glib-compile-schemas',
+                                [rpm_pkg.postun, rpm_pkg.posttrans]):
+                    failed = True
+        if not using:
+            self.set_passed(self.NA)
+            return
+        text = 'gschema file(s) in ' + ', '.join(using)
+        self.set_passed(self.FAIL if failed else self.PENDING, text)
+
+
+class CheckGconfSchemaInstall(GenericCheckBase):
+    ''' Check that gconf schemas are properly installed. '''
+
+    def __init__(self, base):
+        GenericCheckBase.__init__(self, base)
+        self.url = 'http://fedoraproject.org/wiki/Packaging' \
+                   ':ScriptletSnippets#GConf'
+        self.text = 'GConf schemas are properly installed'
+        self.automatic = True
+        self.type = 'MUST'
+
+    def run(self):
+        using = []
+        failed = False
+        for pkg in self.spec.packages:
+            if self.rpms.has_files('/etc/gconf/schemas/*.schemas', pkg):
+                using.append(pkg)
+                rpm_pkg = self.rpms.get(pkg)
+                if not _in_list('%gconf_schema',
+                                [rpm_pkg.post, rpm_pkg.pre]):
+                    failed = True
+        if not using:
+            self.set_passed(self.NA)
+            return
+        text = 'gconf file(s) in ' + ', '.join(using)
+        self.set_passed(self.FAIL if failed else self.PENDING, text)
+
+
+class CheckInfoInstall(GenericCheckBase):
+    ''' Check that info files are properly installed. '''
+
+    def __init__(self, base):
+        GenericCheckBase.__init__(self, base)
+        self.url = 'http://fedoraproject.org/wiki/Packaging' \
+                   ':ScriptletSnippets#Texinfo'
+        self.text = 'Texinfo files are properly installed'
+        self.automatic = True
+        self.type = 'MUST'
+
+    def run(self):
+        using = []
+        failed = False
+        for pkg in self.spec.packages:
+            if self.rpms.has_files('/usr/share/info/*', pkg):
+                using.append(pkg)
+                rpm_pkg = self.rpms.get(pkg)
+                if not _in_list('install-info',
+                                [rpm_pkg.post, rpm_pkg.preun]):
+                    failed = True
+        if not using:
+            self.set_passed(self.NA)
+            return
+        text = 'Texinfo .info file(s) in ' + ', '.join(using)
+        self.set_passed(self.FAIL if failed else self.PENDING, text)
+
+
 
 #
 # vim: set expandtab: ts=4:sw=4:
