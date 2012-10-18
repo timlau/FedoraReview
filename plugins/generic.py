@@ -1006,7 +1006,7 @@ class CheckLicenseField(GenericCheckBase):
         globs = glob(s)
         if globs:
             msg = 'Checking patched sources after %prep for licenses.'
-            source_dir = globs
+            source_dir = globs[0]
         else:
             msg = 'There is no build directory. Running licensecheck ' \
                    'on vanilla upstream sources.'
