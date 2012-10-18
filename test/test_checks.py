@@ -199,6 +199,41 @@ class TestChecks(FR_TestCase):
                         ('pass', 'java-check-bundled-jars')]
        self.run_spec(spec)
 
+    def test_scriptlets_fail(self):
+       spec = Testspec()
+       spec.testcase = 'scriptlets-fail'
+       spec.workdir = 'scriptlets-fail'
+       spec.args = ['-x', 'CheckPackageInstalls,CheckUTF8Filenames' ]
+       spec.groups_ok = ['Setup', 'Generic']
+       spec.expected = [('fail', 'CheckGconfSchemaInstall'),
+                        ('fail', 'CheckGtkQueryModules'),
+                        ('fail', 'CheckGioQueryModules'),
+                        ('fail', 'CheckUpdateIconCache'),
+                        ('fail', 'CheckInfoInstall'),
+                        ('fail', 'CheckGlibCompileSchemas'),
+                        ('fail', 'CheckUpdateMimeDatabase'),
+                        ('pending', 'CheckBundledFonts'),
+                        ('pending', 'CheckSourcedirMacroUse'),
+                        ('pending', 'CheckTmpfiles')]
+       self.run_spec(spec)
+
+    def test_scriptlets_ok(self):
+       spec = Testspec()
+       spec.testcase = 'scriptlets-ok'
+       spec.workdir = 'scriptlets-ok'
+       spec.args = ['-x', 'CheckPackageInstalls,CheckUTF8Filenames' ]
+       spec.groups_ok = ['Setup', 'Generic']
+       spec.expected = [('pending', 'CheckGconfSchemaInstall'),
+                        ('pending', 'CheckGtkQueryModules'),
+                        ('pending', 'CheckGioQueryModules'),
+                        ('pending', 'CheckUpdateIconCache'),
+                        ('pending', 'CheckInfoInstall'),
+                        ('pending', 'CheckGlibCompileSchemas'),
+                        ('pending', 'CheckUpdateMimeDatabase'),
+                        ('pending', 'CheckBundledFonts'),
+                        ('pending', 'CheckSourcedirMacroUse'),
+                        ('pending', 'CheckTmpfiles')]
+       self.run_spec(spec)
 
     def test_FreeSOLID(self):
        spec = Testspec()
