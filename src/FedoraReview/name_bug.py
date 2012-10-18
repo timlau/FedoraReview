@@ -49,7 +49,8 @@ class NameBug(AbstractBug):
             if os.path.isfile(self.name):
                 self.srpm_url = 'file://' + os.path.abspath(self.name)
                 return
-        pattern = os.path.join(os.getcwd(), self.name + '*.src.rpm')
+        pattern = os.path.join(ReviewDirs.startdir,
+                               self.name + '*.src.rpm')
         srpms = glob(pattern)
         if len(srpms) == 0:
             raise self.BugError("Cannot find srpm: " + pattern)

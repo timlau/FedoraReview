@@ -132,6 +132,55 @@ class _ReviewDirs(object):
     results = property(lambda self: os.path.join(self.wdir, RESULTS))
 
 
-ReviewDirs = _ReviewDirs()
+class _ReviewDirsFixture(_ReviewDirs):
+    ''' Simple test mockup.Uses wdir unconditionally, don't
+    care about reuse and such things.
+    '''
+    # pylint: disable=W0231
+    def __init__(self):
+        ''' Setup.... '''
+        self.wdir = None
+        self.startdir = None
+
+    def init(self, workdir, startdir):
+        '''
+        Create fixture. params:
+          - startdir: where f-r is invoked, and looks fo r-p stuff.
+          - wdir: the review_dir f-r works in, must exist.
+        '''
+        self.startdir = os.path.abspath(startdir)
+        self.wdir = os.path.abspath(workdir)
+        os.chdir(self.wdir)
+        for d in self.WD_DIRS:
+            if not os.path.exists(d):
+                os.makedirs(d)
+        src_path = os.path.join(os.getcwd(), 'BUILD')
+        if not os.path.exists(src_path):
+            try:
+                os.makedirs(
+                    os.path.join(os.getcwd(), '..', 'dummy', 'pkg-1.0'))
+            except OSError:
+                pass
+            try:
+                os.symlink(os.path.join(os.getcwd(), '..', 'dummy'),
+                           src_path)
+            except OSError:
+                pass
+
+    def workdir_setup(self, wd, reuse='Ignored'):
+        ''' Lazy init while testing. wd: the review dir '''
+        if reuse == 'testing':
+            self.init(wd, os.getcwd())
+
+    def reset(self, startdir=None):
+        ''' Ignored while testing. '''
+        pass
+
+
+try:
+    import test_env   # pylint: disable=W0611,F0401
+    ReviewDirs = _ReviewDirsFixture()
+except ImportError:
+    ReviewDirs = _ReviewDirs()
 
 # vim: set expandtab: ts=4:sw=4:
