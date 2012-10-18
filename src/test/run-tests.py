@@ -20,6 +20,10 @@
 #     $ export REVIEW_FAST_TEST=1
 #     $ ./run-tests.py
 #
+# To display a 'git status' after each test:
+#     $ export REVIEW_TEST_GIT_STATUS=1
+#     $ ./run-tests.py
+#
 # Running a single test file:
 #     $ python -m unittest test_misc
 #

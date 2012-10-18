@@ -26,6 +26,8 @@ sys.path.insert(0,os.path.abspath('../'))
 import unittest2 as unittest
 import os
 import shutil
+import subprocess
+import sys
 
 from urllib import urlopen
 
@@ -57,6 +59,10 @@ class  FR_TestCase(unittest.TestCase):
         self.startdir = os.getcwd()
 
     def tearDown(self):
+        if 'REVIEW_TEST_GIT_STATUS' in os.environ:
+            print
+            subprocess.call('git status -uno | grep  "modified:"',
+                            shell=True)
         os.chdir(self.startdir)
 
     def init_test(self, cd, argv=[], wd=None,
