@@ -22,6 +22,7 @@ import os.path
 
 from glob import glob
 from settings import Settings
+from review_dirs import ReviewDirs
 from urlparse import urlparse
 
 from abstract_bug import AbstractBug
@@ -49,7 +50,8 @@ class NameBug(AbstractBug):
             if os.path.isfile(self.name):
                 self.srpm_url = 'file://' + os.path.abspath(self.name)
                 return
-        pattern = os.path.join(os.getcwd(), self.name + '*.src.rpm')
+        pattern = os.path.join(ReviewDirs.startdir,
+                               self.name + '*.src.rpm')
         srpms = glob(pattern)
         if len(srpms) == 0:
             raise self.BugError("Cannot find srpm: " + pattern)
@@ -60,7 +62,7 @@ class NameBug(AbstractBug):
 
     def find_spec_url(self):
         """ Retrieve the page and parse for spec url. """
-        pattern = os.path.join(os.getcwd(), self.name + '*.spec')
+        pattern = os.path.join(ReviewDirs.startdir, self.name + '*.spec')
         specs = glob(pattern)
         if len(specs) == 0:
             raise self.BugError("Cannot find spec: " + pattern)
