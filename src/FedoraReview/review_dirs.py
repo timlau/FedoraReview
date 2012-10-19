@@ -26,8 +26,8 @@ import os.path
 import shutil
 import tempfile
 
-from FedoraReview.review_error import ReviewError
-from FedoraReview.settings     import Settings
+from review_error import ReviewError
+from settings     import Settings
 
 SRPM              = 'srpm'
 SRPM_UNPACKED     = 'srpm-unpacked'
@@ -82,7 +82,7 @@ class _ReviewDirs(object):
                 for d in self.WD_DIRS:
                     shutil.move(os.path.join(wd, d), cache)
                 try:
-                    buildlink = os.readlink('BUILD')
+                    buildlink = os.readlink(os.path.join(wd, 'BUILD'))
                 except  OSError:
                     buildlink = None
             logging.info("Clearing old review directory: " + wd)
@@ -91,8 +91,11 @@ class _ReviewDirs(object):
             if Settings.cache:
                 for d in self.WD_DIRS:
                     shutil.move(os.path.join(cache, d), wd)
-                    if buildlink:
-                        shutil.symlink(buildlink, 'BUILD')
+                if buildlink:
+                    oldwd = os.getcwd()
+                    os.chdir(wd)
+                    os.symlink(buildlink, 'BUILD')
+                    os.chdir(oldwd)
                 shutil.rmtree(cache)
         if not os.path.exists(wd):
             os.mkdir(wd)
@@ -127,6 +130,7 @@ class _ReviewDirs(object):
                                      os.path.join(self.wdir,
                                                   UPSTREAM_UNPACKED))
     results = property(lambda self: os.path.join(self.wdir, RESULTS))
+
 
 ReviewDirs = _ReviewDirs()
 
