@@ -66,7 +66,7 @@ class Source(HelpersMixin):
                 cached = os.path.join(ReviewDirs.upstream,
                                       url.rsplit('/', 1)[1])
                 if os.path.exists(cached):
-                    self.log.info( "Using cached upstream: " + cached)
+                    self.log.info("Using cached upstream: " + cached)
                     self.filename = cached
                     return
                 self.log.warning(
