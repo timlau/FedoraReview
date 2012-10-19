@@ -218,6 +218,7 @@ class _Settings(object):                         # pylint: disable=R0902
         self.configdir = None
         self.log_level = None
         self.verbose = False
+        self.name = None
 
     def __getitem__(self, key):
         my_key = self._get_hash(key)
