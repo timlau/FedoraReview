@@ -22,10 +22,14 @@ Tools for helping Fedora package reviewers
 import sys
 import os.path
 
-from FedoraReview import  BugzillaBug, Checks, ChecksLister, ReviewDirs, \
-                          ReviewError, NameBug, Settings, UrlBug
-
-from FedoraReview import __version__, BUILD_FULL
+from bugzilla_bug import BugzillaBug
+from checks import Checks, ChecksLister
+from name_bug import NameBug
+from review_dirs import ReviewDirs
+from review_error import ReviewError
+from settings import Settings
+from url_bug import UrlBug
+from version import __version__, BUILD_FULL
 
 
 def _print_version():
@@ -48,11 +52,6 @@ class ReviewHelper(object):
         self.verbose = False
         self.outfile = None
         self.prebuilt = False
-
-    def __download_sources(self):
-        ''' Download and extract all upstream sources. '''
-        self.sources.extract_all()
-        return True
 
     def __do_report(self):
         ''' Create a review report'''
@@ -81,8 +80,6 @@ class ReviewHelper(object):
         else:
             self.outfile = ReviewDirs.report_path(self.checks.spec.name)
         with open(self.outfile, "w") as output:
-            if Settings.nobuild:
-                self.checks.srpm.is_build = True
             self.log.info('Running checks and generate report\n')
             self.checks.run_checks(output=output,
                                    writedown=not Settings.no_report)

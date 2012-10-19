@@ -168,7 +168,7 @@ class AbstractBug(HelpersMixin):
         ''' Extract spec from srpm and update self.spec_url. '''
         path = urlparse(self.srpm_url).path
         name = os.path.basename(path).rsplit('-', 2)[0]
-        ReviewDirs.workdir_setup(self.get_dirname())
+        ReviewDirs.workdir_setup(name, Settings.cache)
         self.do_download_srpm()
 
         SRPMFile(self.srpm_file).unpack()
