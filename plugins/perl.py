@@ -28,7 +28,7 @@ class PerlCheckBuildRequires(PerlCheckBase):
         PerlCheckBase.__init__(self, checks)
         self.url = 'http://fedoraproject.org/wiki/Packaging:Perl'
         self.text = 'Package contains the mandatory BuildRequires' \
-                    ' and Reguires:.'
+                    ' and Requires:.'
         self.automatic = True
 
     def run_on_applicable(self):
