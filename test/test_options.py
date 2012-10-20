@@ -22,7 +22,7 @@ Unit tests for bugzilla bug handling
 
 import sys
 import os.path
-sys.path.insert(0,os.path.abspath('..'))
+sys.path.insert(0,os.path.abspath('../src'))
 
 import unittest2 as unittest
 import os
@@ -112,7 +112,7 @@ class TestOptions(FR_TestCase):
 
     def test_display(self):
         """ test -d/--display option. """
-        cmd = '../fedora-review --display-checks'
+        cmd = '../src/fedora-review --display-checks'
         output = check_output(cmd, shell=True)
         output = output.decode('utf-8')
         self.assertTrue(len(output) > 20)
@@ -142,7 +142,7 @@ class TestOptions(FR_TestCase):
 
     def test_version(self):
         """ test --version option. """
-        cmd = '../fedora-review --version'
+        cmd = '../src/fedora-review --version'
         output = check_output(cmd, shell=True)
         output = output.decode('utf-8')
         self.assertIn('fedora-review', output)
