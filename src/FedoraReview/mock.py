@@ -60,6 +60,7 @@ class _Mock(HelpersMixin):
         self.log = Settings.get_logger()
         self.build_failed = None
         self.mock_root = None
+        self._rpmlint_output = None
 
     def _get_root(self):
         '''Return mock's root according to Settings. '''
@@ -117,6 +118,17 @@ class _Mock(HelpersMixin):
         """
         p = self._get_dir('root/builddir/build')
         return os.path.join(p, subdir) if subdir else p
+
+    def _get_rpmlint_output(self):
+        ''' Return output from last rpmlint, list of lines. '''
+        if not self._rpmlint_output:
+            if os.path.exists('rpmlint.txt'):
+                with open('rpmlint.txt') as f:
+                    self._rpmlint_output = f.readlines()
+        return self._rpmlint_output
+
+    # Last (cached?) output from rpmlint, list of lines.
+    rpmlint_output = property(_get_rpmlint_output)
 
     # The directory where mock leaves built rpms and logs
     resultdir = property(get_resultdir)
