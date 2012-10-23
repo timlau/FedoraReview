@@ -172,49 +172,31 @@ class _Flags(dict):
             self[optarg].set_active()
 
 
-class Checks(object):
-    '''
-    Interface class to load, select and run checks.
+class _ChecksLoader(object):
+    """
+    Interface class to load  and select checks.
     Properties:
-        checkdict: A dictionary of all tests by name (deprecated
-                   removed).
-    '''
+       - checkdict: checks by name, all loaded (not deprecated) checks.
+    """
+
     class Data(object):
         ''' Simple DataSource stuff container. '''
         pass
 
-    def __init__(self, spec_file, srpm_file):
-        ''' Create a Checks set. srpm_file and spec_file are required,
-        unless invoked from ChecksLister.
-        '''
-
+    def __init__(self):
+        ''' Create a Checks, load checkdict. '''
         self.log = Settings.get_logger()
         self.checkdict = None
         self.flags = _Flags()
         self.groups = None
-        self.data = self.Data()
-        if isinstance(self, ChecksLister):
-            self.data.srpm = None
-            self.data.spec = None
-            self.data.rpms = None
-        else:
-            self.spec = SpecFile(spec_file)
-            self.srpm = SRPMFile(srpm_file)
-            self.data.rpms = RpmDataSource(self.spec)
-            self.data.buildsrc = BuildFilesSource()
-            self.data.sources = SourcesDataSource(self.spec)
-        self.add_check_classes()
+        self._load_checks()
         if Settings.single:
             self.set_single_check(Settings.single)
         elif Settings.exclude:
             self.exclude_checks(Settings.exclude)
-        self.update_flags()
+        self._update_flags()
 
-    rpms = property(lambda self: self.data.rpms)
-    sources = property(lambda self: self.data.sources)
-    buildsrc = property(lambda self: self.data.buildsrc)
-
-    def update_flags(self):
+    def _update_flags(self):
         ''' Update registered flags with user -D settings. '''
         for flag_opt in Settings.flags:
             try:
@@ -227,9 +209,9 @@ class Checks(object):
             except KeyError:
                 raise ReviewError(key + ': No such flag')
 
-    def add_check_classes(self):
+    def _load_checks(self):
         """
-        Get all check classes in FedoraReview.checks + external plugin
+        Load all checks in FedoraReview.checks + external plugin
         directories and add them to self.checkdict
         """
 
@@ -263,7 +245,8 @@ class Checks(object):
                 continue
             for plugin in os.listdir(ext_dir):
                 full_path = os.path.join(ext_dir, plugin)
-                if os.path.isfile(full_path) and os.access(full_path, os.X_OK):
+                if os.path.isfile(full_path) and os.access(full_path,
+                                                           os.X_OK):
                     if full_path.endswith('.py'):
                         continue
                     self.log.debug('Add external module: %s' % full_path)
@@ -290,28 +273,69 @@ class Checks(object):
         ''' Return the Checkdict instance holding all checks. '''
         return self.checkdict
 
+
+class ChecksLister(_ChecksLoader):
+    ''' A class only exporting get_checks() and checkdict. '''
+
+    def __init__(self):
+        self.spec = None
+        self.srpm = None
+        self.data = self.Data()
+        self.data.rpms = None
+        self.data.buildsrc = None
+        self.data.sources = None
+        _ChecksLoader.__init__(self)
+
+
+class Checks(_ChecksLoader):
+    ''' Interface class to run checks.  '''
+
+    def __init__(self, spec_file, srpm_file):
+        ''' Create a Checks set. srpm_file and spec_file are required,
+        unless invoked from ChecksLister.
+        '''
+        self.spec = SpecFile(spec_file)
+        self.srpm = SRPMFile(srpm_file)
+        self.data = self.Data()
+        self.data.rpms = RpmDataSource(self.spec)
+        self.data.buildsrc = BuildFilesSource()
+        self.data.sources = SourcesDataSource(self.spec)
+        _ChecksLoader.__init__(self)
+
+    rpms = property(lambda self: self.data.rpms)
+    sources = property(lambda self: self.data.sources)
+    buildsrc = property(lambda self: self.data.buildsrc)
+
+    @staticmethod
+    def _write_testdata(results):
+        ''' Write hidden file usable when writing tests. '''
+        with open('.testlog.txt', 'w') as f:
+            for r in results:
+                f.write('\n' + 24 * ' '
+                        + "('%s', '%s')," % (r.state, r.name))
+
+    def _ready_to_run(self, name):
+        """
+        Check that check 'name' havn't already run and that all checks
+        listed in 'needs' have run i. e., it's ready to run.
+        """
+        check = self.checkdict[name]
+        if check.is_run:
+            return False
+        for dep in check.needs:
+            if not dep in self.checkdict:
+                self.log.warning('%s depends on deprecated %s' %
+                                    (name, dep))
+                self.log.warning('Removing %s, cannot resolve deps' %
+                                 name)
+                del(self.checkdict[name])
+                return True
+            elif not self.checkdict[dep].is_run:
+                return False
+        return True
+
     def run_checks(self, output=sys.stdout, writedown=True):
         ''' Run all checks. '''
-
-        def ready_to_run(name):
-            """
-            Check if all checks listed in 'needs' have run and not
-            already run.
-            """
-            check = self.checkdict[name]
-            if check.is_run:
-                return False
-            for dep in check.needs:
-                if not dep in self.checkdict:
-                    self.log.warning('%s depends on deprecated %s' %
-                                        (name, dep))
-                    self.log.warning('Removing %s, cannot resolve deps' %
-                                     name)
-                    del(self.checkdict[name])
-                    return True
-                elif not self.checkdict[dep].is_run:
-                    return False
-            return True
 
         def run_check(name):
             """ Run check. Update results, attachments and issues. """
@@ -334,11 +358,11 @@ class Checks(object):
 
         names = list(self.checkdict.iterkeys())
 
-        tests_to_run = filter(ready_to_run, names)
+        tests_to_run = filter(self._ready_to_run, names)
         while tests_to_run != []:
             for name in tests_to_run:
                 run_check(name)
-            tests_to_run = filter(ready_to_run, names)
+            tests_to_run = filter(self._ready_to_run, names)
 
         if writedown:
             key_getter = attrgetter('group', 'type', 'name')
@@ -346,6 +370,11 @@ class Checks(object):
                              sorted(results, key=key_getter),
                              issues,
                              attachments)
+        else:
+            with open('.testlog.txt', 'w') as f:
+                for r in results:
+                    f.write('\n' + 24 * ' '
+                            + "('%s', '%s')," % (r.state, r.name))
 
     @staticmethod
     def show_output(output, results, issues, attachments):
@@ -394,11 +423,5 @@ class Checks(object):
         output.write('Buildroot used: %s\n' % Mock.buildroot)
         output.write('Command line :' + ' '.join(sys.argv) + '\n')
 
-
-class ChecksLister(Checks):
-    """ A Checks instance only capable of get_checks. """
-
-    def __init__(self):
-        Checks.__init__(self, None, None)
 
 # vim: set expandtab: ts=4:sw=4:
