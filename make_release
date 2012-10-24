@@ -3,16 +3,22 @@
 # upload to fedorahosted
 #
 # Options: -b  Batch mode, don't ask for fedorahosted upload
+#          -q  Quick: disable test, implies -b.
 
-newdir=`mktemp --tmpdir -d fedora-review-release-XXXXX`
+startdir=$PWD
+cd $( dirname $( readlink -fn $0 ))
+branch=$( git branch | awk '/^*/ {print $2}' )
+commit=$( git log --oneline | cut -d' ' -f1 )
+echo "Using branch: $branch"
+echo "Last commit : $(git log --oneline -1)"
 
-git clone $( dirname $( readlink -fn $0 )) $newdir
-
-cd ${newdir}
-
-
-status=$( git status --short )
+status=$( git status --short -uno)
 [ -n "$status" ] && echo 'Warning: there are uncommitted changes' >&2
+
+echo
+newdir=$( mktemp --tmpdir -d fedora-review-release-XXXXX )
+git clone -b $branch . $newdir
+cd $newdir
 
 badlinks=$( find . -type l ! -execdir test -e '{}' \; -print | nl )
 [ -n "$badlinks" ] && echo "Warning: unresolved  symlinks: $badlinks" >&2
@@ -21,7 +27,6 @@ badlinks=$( find . -type l ! -execdir test -e '{}' \; -print | nl )
 
 source src/FedoraReview/version
 dfile="dist/fedora-review-$__version__.tar.gz"
-
 [ -f ${dfile} ] && echo Removing: $dfile
 rm -f $dfile
 
@@ -33,17 +38,26 @@ if [ ! -e "$dfile" ];  then
 fi
 echo "Created: $dfile"
 
-echo "Running tests on tarball before finalizing release"
-tar -xf $dfile && pushd fedora-review-$__version__
-REVIEW_LOGLEVEL=error src/test/run-tests.py
-if [ $? -ne 0 ]; then
-    echo "Some tests failed. Review test logs and fix all problems"
-    echo "before doing a release. Aborting"
-    exit 1
+if [ ! "$1" = '-q' ]; then
+    echo "Running tests on tarball before finalizing release"
+    tar -xf $dfile && pushd fedora-review-$__version__
+    cd test
+    REVIEW_LOGLEVEL=error python -m unittest discover
+    if [ $? -ne 0 ]; then
+        echo "Some tests failed. Review test logs and fix all problems"
+        echo "before doing a release."
+        echo "Aborting. Temporary files left in $newdir"
+        exit 1
+    fi
 fi
-popd
-[ "$1" = '-b' ] && exit 0
 
+
+if [[ "$1" = '-b' || "$1" = '-q' ]]; then
+    rm -rf $newdir
+    exit
+fi
+
+cd $startdir
 read -i 'n' -e -p "Do you want to upload file $dfile to fedorahosted? (y/n): "
 if [ "$REPLY" = "y" ];then
     scp "${dfile}" fedorahosted.org:FedoraReview
@@ -57,3 +71,4 @@ if [ "$REPLY" = "y" ];then
     echo "      5. Announce!"
     echo "      6. (nice to have) Update trac queries for new milestone"
 fi
+rm -rf $newdir
