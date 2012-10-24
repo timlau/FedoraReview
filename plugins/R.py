@@ -84,7 +84,7 @@ class RCheckBuildRequires(RCheckBase):
 
     def run_on_applicable(self):
         """ Run the check """
-        brs = self.spec.get_build_requires()
+        brs = self.spec.build_requires
         tocheck = ['R-devel', 'tex(latex)']
         if set(tocheck).intersection(set(brs)):
             self.set_passed(True)
@@ -127,12 +127,12 @@ class RCheckDoc(RCheckBase):
         """ Run the check """
         doc_found = []
         for doc in self.DOCS:
-            if self.srpm and self.has_files("*" + doc):
+            if self.checks.rpms.has_files("*" + doc):
                 doc_found.append(doc)
         docs = self.spec.find_all(re.compile("%doc.*"))
         self.text += ", ".join(doc_found)
         for entry in docs:
-            entry = os.path.basename(entry.group(0)).strip()
+            entry = os.path.basename(entry).strip()
             if str(entry) in doc_found:
                 doc_found.remove(entry)
         self.set_passed(doc_found == [])
@@ -153,7 +153,7 @@ class RCheckLatestVersionIsPackaged(RCheckBase):
 
     def run_on_applicable(self):
         """ Run the check """
-        cur_version = self.spec.find_tag('Version')[0]
+        cur_version = self.spec.expand_tag('Version')
         up_version = self.get_upstream_r_package_version()
         if up_version is None:
             self.set_passed('inconclusive',

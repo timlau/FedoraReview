@@ -23,12 +23,12 @@ Unit tests for bugzilla bug handling
 
 import sys
 import os.path
-sys.path.insert(0,os.path.abspath('../'))
+sys.path.insert(0,os.path.abspath('..'))
 
 import os
 import unittest2 as unittest
 
-from FedoraReview import BugzillaBug
+from FedoraReview.bugzilla_bug import BugzillaBug
 
 from fr_testcase import FR_TestCase, NO_NET
 

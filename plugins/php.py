@@ -2,7 +2,7 @@
 
 """ PHP specifics checks """
 
-from FedoraReview import CheckBase, Settings, RegistryBase
+from FedoraReview import CheckBase, RegistryBase, Settings
 
 
 class Registry(RegistryBase):

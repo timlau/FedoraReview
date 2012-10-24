@@ -22,19 +22,18 @@ Unit tests for bugzilla bug handling
 
 import sys
 import os.path
-sys.path.insert(0,os.path.abspath('../'))
-sys.path.insert(0,os.path.abspath('../FedoraReview'))
+sys.path.insert(0,os.path.abspath('..'))
 
-import glob
-import unittest2 as unittest
+import unittest
 import os
 import re
 import subprocess
 
 from FedoraReview.helpers_mixin import HelpersMixin
-from checks import _CheckDict
+from FedoraReview.checks import _CheckDict
+
 from FedoraReview import AbstractCheck, Checks, \
-     Sources, Source, ReviewDirs, SRPMFile, SpecFile, Mock, Settings
+     Source, ReviewDirs, SRPMFile, SpecFile, Mock, Settings
 from FedoraReview import BugzillaBug, NameBug
 from FedoraReview import ReviewError
 
@@ -62,7 +61,6 @@ class TestRegressions(FR_TestCase):
         """
         self.init_test('test_regressions',
                        argv=['-rn', self.srpm_file])
-        ReviewDirs.reset(os.getcwd())
         spec = SpecFile(self.spec_file)
         regex = re.compile('initial fedora')
         self.assertEqual(len(spec.find_all(regex)), 2)
@@ -75,7 +73,6 @@ class TestRegressions(FR_TestCase):
         """
         self.init_test('test_regressions',
                        argv=['-rn', self.srpm_file, '--cache'])
-        ReviewDirs.reset(os.getcwd())
         bug = NameBug(self.srpm_file)
         check = self.run_single_check(bug, 'CheckNoConfigInUsr')
         self.assertTrue(check.is_failed)
@@ -88,7 +85,6 @@ class TestRegressions(FR_TestCase):
                                       'test_107_2-1.0-1.fc17.src.rpm')
         self.init_test('test_regressions',
                        argv=['-rn', srpm_file, '--cache'])
-        ReviewDirs.reset(os.getcwd())
         bug = NameBug(srpm_file)
         bug.find_urls()
         self.assertNotEqual(None, bug.srpm_file)

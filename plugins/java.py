@@ -12,7 +12,8 @@ class Registry(RegistryBase):
 
     def is_applicable(self):
         ''' Return true if this is a java package. '''
-        return self.has_files("*.jar") or self.has_files("*.pom")
+        rpms = self.checks.rpms
+        return rpms.has_files("*.jar") or rpms.has_files("*.pom")
 
 
 class JavaCheckBase(CheckBase):
@@ -24,10 +25,9 @@ class JavaCheckBase(CheckBase):
     def _get_javadoc_sub(self):
         """Returns name of javadoc rpm or None if no such subpackage
         exists"""
-        rpm_files = self.srpm.get_files_rpms()
-        for rpm in rpm_files:
-            if '-javadoc' in rpm:
-                return rpm
+        for pkg in self.spec.packages:
+            if pkg.endswith('-javadoc'):
+                return pkg
         return None
 
     def _search_previous_line(self, section, trigger, pivot, judge):
@@ -89,19 +89,16 @@ class CheckJavadoc(JavaCheckBase):
 
     def run_on_applicable(self):
         """ run check for java packages """
-        files = self.get_files_by_pattern("/usr/share/javadoc/%s/*.html" %
-                                          self.spec.name)
-        key = self._get_javadoc_sub()
-        if not key:
+        pkg = self._get_javadoc_sub()
+        if not pkg:
             self.set_passed(False, "No javadoc subpackage present")
             return
 
         # and now look for at least one html file
-        for html in files[key]:
-            if '.html' in html:
-                self.set_passed(True)
-                return
-        self.set_passed(False, "No javadoc html files found in %s" % key)
+        if self.rpms.find('*.html', pkg):
+            self.set_passed(True)
+            return
+        self.set_passed(False, "No javadoc html files found in %s" % pkg)
 
 
 class CheckJavadocdirName(JavaCheckBase):
@@ -117,28 +114,24 @@ class CheckJavadocdirName(JavaCheckBase):
 
     def run_on_applicable(self):
         """ run check for java packages """
-        name = self.get_files_by_pattern(
-                                "/usr/share/javadoc/%s" % self.spec.name)
-        name_ver = self.get_files_by_pattern("/usr/share/javadoc/%s-%s" %
-                                         (self.spec.name, self.spec.version))
-        key = self._get_javadoc_sub()
-        if not key:
+        pkg = self._get_javadoc_sub()
+        if not pkg:
             self.set_passed(False, "No javadoc subpackage present")
             return
-
-        paths = name[key]
-        paths_ver = name_ver[key]
+        name_pattern = "/usr/share/javadoc/%s" % self.spec.name
+        name_ver_pattern = "/usr/share/javadoc/%s-%s" \
+                                       % (self.spec.name, self.spec.version)
+        paths = self.rpms.find(name_pattern, pkg)
+        paths_ver = self.rpms.find_all(name_ver_pattern, pkg)
         if len(paths_ver) != 0:
             self.set_passed(False,
                             "Found deprecated versioned javadoc path %s" %
                             paths_ver[0])
             return
-
         if len(paths) != 1:
             self.set_passed(False,
                             "No /usr/share/javadoc/%s found" % self.spec.name)
             return
-
         self.set_passed(True)
 
 
@@ -154,7 +147,7 @@ class CheckJPackageRequires(JavaCheckBase):
 
     def run_on_applicable(self):
         """ run check for java packages """
-        brs = self.spec.get_build_requires()
+        brs = self.spec.build_requires
         requires = self.spec.get_requires()
         br_found = False
         r_found = False
@@ -181,8 +174,16 @@ class CheckJavadocJPackageRequires(JavaCheckBase):
 
     def run_on_applicable(self):
         """ run check for java packages """
-        brs = self.spec.find_tag('Requires', '%package javadoc')
-        self.set_passed('jpackage-utils' in brs)
+        pkgs = [pkg for pkg in self.spec.packages
+                     if pkg.endswith('-javadoc')]
+        if len(pkgs) == 0:
+            self.set_passed(self.NA)
+        elif len(pkgs) > 1:
+            self.set_passed(self.PENDING,
+                            'More than one javadoc package')
+        else:
+            ok = 'jpackage-utils' in self.spec.get_requires(pkgs[0])
+            self.set_passed(self.PASS if ok else self.FAIL)
 
 
 class CheckJavaFullVerReqSub(JavaCheckBase):
@@ -190,6 +191,7 @@ class CheckJavaFullVerReqSub(JavaCheckBase):
     except javadoc subpackage that doesn't have this requirement"""
 
     deprecates = ['CheckFullVerReqSub']
+    MSG = "Missing: Requires: %{name} = %{version}-%{release} in"
 
     def __init__(self, base):
         JavaCheckBase.__init__(self, base)
@@ -200,20 +202,15 @@ class CheckJavaFullVerReqSub(JavaCheckBase):
         self.type = 'MUST'
 
     def run_on_applicable(self):
-        """ run check for java packages """
+        """ Run check for java packages """
         regex = re.compile(r'Requires:\s*%{name}\s*=\s*%{version}-%{release}')
-        sections = self.spec.get_section("%package")
         bad_ones = []
         extra = None
-        for section in sections:
-            if section == "%package javadoc":
+        for pkg in self.spec.packages:
+            if pkg.endswith("-javadoc"):
                 continue
-            passed = False
-            for line in sections[section]:
-                if regex.search(line):
-                    passed = True
-            if not passed:
-                bad_ones.append(section)
+            if not self.rpms.find_re(regex, pkg):
+                bad_ones.append(pkg)
         if bad_ones:
             extra = "Missing: 'Requires: %%{name} =' in: " + \
                         ', '.join(bad_ones)
@@ -252,7 +249,7 @@ class CheckAddMavenDepmap(JavaCheckBase):
         self.regex = re.compile(r'^\s*%add_maven_depmap\s+.*')
 
     def run(self):
-        if not self.has_files("*.pom"):
+        if not self.rpms.find("*.pom"):
             self.set_passed('not_applicable')
             return
         if not self.spec.find(self.regex):
@@ -279,7 +276,7 @@ class CheckUseMavenpomdirMacro(JavaCheckBase):
         self.regex = re.compile(r'%{_datadir}/maven2/poms')
 
     def run(self):
-        if not self.has_files("*.pom"):
+        if not self.rpms.find("*.pom"):
             self.set_passed('not_applicable')
             return
         self.set_passed(not self.spec.find(self.regex))
@@ -300,7 +297,7 @@ class CheckUpdateDepmap(JavaCheckBase):
         self.regex = re.compile(r'^\s*%update_maven_depmap\s+.*')
 
     def run(self):
-        if not self.has_files("*.pom"):
+        if not self.rpms.find("*.pom"):
             self.set_passed('not_applicable')
             return
         self.set_passed(not self.spec.find(self.regex))
@@ -323,7 +320,7 @@ class CheckNoRequiresPost(JavaCheckBase):
             re.compile(r'^\s*Requires\((post|postun)\):\s*jpackage-utils.*')
 
     def run(self):
-        if not self.has_files("*.pom"):
+        if not self.rpms.find("*.pom"):
             self.set_passed('not_applicable')
             return
         self.set_passed(not self.spec.find(self.regex))
@@ -346,17 +343,12 @@ class CheckTestSkip(JavaCheckBase):
         skip_regex = re.compile(r'^\s+-Dmaven.test.skip.*')
         mvn_regex = re.compile(r'^\s*mvn-rpmbuild\s+')
         comment_regex = re.compile(r'^\s*#.*')
-        build_sec = ''
-        if self.spec:
-            try:
-                build_sec = self.spec.get_section('%build')['%build']
-            except KeyError:
-                pass
+        build_sec = self.spec.get_section('%build')
 
-        if not self.spec.find(skip_regex):
-            self.set_passed('not_applicable')
+        if not self.spec.find(skip_regex) or not build_sec:
+            self.set_passed(self.NA)
             return
-        result = self._search_previous_line(build_sec,
+        result = self._search_previous_line(build_sec.split('\n'),
                                             skip_regex,
                                             mvn_regex,
                                             comment_regex)
@@ -390,14 +382,8 @@ class CheckLocalDepmap(JavaCheckBase):
         depmap_regex = re.compile(r'^\s+-Dmaven.local.depmap.*')
         mvn_regex = re.compile(r'^\s*mvn-rpmbuild\s+')
         comment_regex = re.compile(r'^\s*#.*')
-        build_sec = ''
-        if self.spec:
-            try:
-                build_sec = self.spec.get_section('%build')['%build']
-            except KeyError:
-                pass
-
-        if not self.spec.find(depmap_regex):
+        build_sec = self.spec.get_section('%build')
+        if not self.spec.find(depmap_regex) or not build_sec:
             self.set_passed('not_applicable')
             return
         result = self._search_previous_line(build_sec,

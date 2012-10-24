@@ -21,14 +21,16 @@ Unit tests for utilities
 '''
 import sys
 import os.path
-sys.path.insert(0,os.path.abspath('../'))
+sys.path.insert(0,os.path.abspath('..'))
 
 import os
 import unittest2 as unittest
 
 from subprocess import check_call
 
-from FedoraReview import Checks, ReviewDirs, NameBug
+from FedoraReview import Checks, ReviewDirs
+from FedoraReview.checks import _CheckDict
+from FedoraReview.name_bug import NameBug
 
 from fr_testcase import FR_TestCase
 
@@ -60,17 +62,20 @@ class TestExt(FR_TestCase):
 
     def test_exclude(self):
         ''' Test  -x test cli option. '''
-        self.init_test('test_ext',argv=['-b', '1'])
-        check_call('../../fedora-review -n python-test'
-                   '  -x unittest-test1'
-                   ' --cache --no-build  >/dev/null',
+        self.init_test('test_ext',argv=['-b', '1'], wd='review-python-test')
+        os.chdir('..')
+        check_call('../../fedora-review -n python-test' +
+                   '  -x unittest-test1' +
+                   ' -m ' + self.BUILDROOT +
+                   ' --cache --no-build >/dev/null',
                    shell=True)
 
     def test_sh_api(self):
         ''' Basic shell API test. '''
         self.init_test('test_ext',
                        argv=['-pn','python-test', '--cache',
-                              '--no-build'])
+                              '--no-build'],
+                       wd='review-python-test')
         bug = NameBug('python-test')
         bug.find_urls()
         bug.download_files()
@@ -85,7 +90,6 @@ class TestExt(FR_TestCase):
 
         self.init_test('test_ext',
                        argv=['-rn','python-test', '--no-build'])
-        ReviewDirs.reset(os.getcwd())
         bug = NameBug('python-test')
         bug.find_urls()
         bug.download_files()
@@ -108,11 +112,12 @@ class TestExt(FR_TestCase):
         self.init_test('srv-opt',
                        argv=['-rn','dummy', '--cache',
                               '--no-build'])
-        ReviewDirs.reset(os.getcwd())
+        os.chdir('..')
         bug = NameBug('dummy')
         bug.find_urls()
         bug.download_files()
         checks = Checks(bug.spec_file, bug.srpm_file)
+        check = checks.checkdict['CheckBuildCompleted'].run()
         check = checks.checkdict['CreateEnvCheck'].run()
         check = checks.checkdict['check-srv-opt-local']
         check.run()

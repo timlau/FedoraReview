@@ -14,178 +14,66 @@
 #    with this program; if not, write to the Free Software Foundation, Inc.,
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
-# (C) 2011 - Tim Lauridsen <timlau@fedoraproject.org>
 
 '''
-Tools for helping Fedora package reviewers
+Spec file management.
 '''
 
 import re
 import rpm
 
-from subprocess import Popen, PIPE, CalledProcessError
-try:
-    from subprocess import check_output
-except ImportError:
-    from FedoraReview.el_compat import check_output
-
-
-from review_error import ReviewError
-
 from settings import Settings
 
-SECTIONS = ['build', 'changelog', 'check', 'clean', 'description', 'files',
-               'install', 'package', 'prep', 'pre', 'post', 'preun', 'postun',
-               'trigger', 'triggerin', 'triggerun', 'triggerprein',
-               'triggerpostun', 'pretrans', 'posttrans']
-SPEC_SECTIONS = re.compile(r"^(\%(" + "|".join(SECTIONS) + "))\s*")
-MACROS = re.compile(r"^%(define|global)\s+(\w*)\s+(.*)")
+
+def _lines_in_string(s, raw):
+    ''' Return either plain s (raw) or stripped, non-empty item list. '''
+    if raw:
+        return s
+    return [l.strip() for l in s.split('\n') if l]
 
 
 class SpecFile(object):
     '''
-    Wrapper classes for getting information from a .spec file
+    Wrapper class for getting information from a .spec file.'
+    All get_* methods operates on the python binding to the spec,
+    whereas the find_* methods works on the raw lines of spec data.
+    Properties:
+       - filename: spec path
+       - lines: all lines in spec, raw data.
+       - spec: rpm python spec object.
     '''
     # pylint: disable=W0212
 
     def __init__(self, filename):
         self.log = Settings.get_logger()
-        self._sections = {}
-        self._section_list = []
         self.filename = filename
+        self.lines = []
+        self._get_lines(filename)
+        self.spec = rpm.TransactionSet().parseSpec(self.filename)
+        self.name_vers_rel = [self.expand_tag(rpm.RPMTAG_NAME),
+                              self.expand_tag(rpm.RPMTAG_VERSION),
+                              self.expand_tag(rpm.RPMTAG_RELEASE)]
+
+    name = property(lambda self: self.name_vers_rel[0])
+    version = property(lambda self: self.name_vers_rel[1])
+    release = property(lambda self: self.name_vers_rel[2])
+
+    def _get_lines(self, filename):
+        ''' Read line from specfile, fold \ continuation lines. '''
         with open(filename, "r") as f:
-            self.lines = f.readlines()
-        ts = rpm.TransactionSet()
-        self.spec_obj = ts.parseSpec(self.filename)
-
-        self._name_vers_rel = [self.get_from_spec('name'),
-                               self.get_from_spec('version'),
-                               self.get_from_spec('release')]
-        self.process_sections()
-
-    name = property(lambda self: self._name_vers_rel[0])
-    version = property(lambda self: self._name_vers_rel[1])
-    release = property(lambda self: self._name_vers_rel[2])
-
-    def get_sources(self, _type='Source'):
-        ''' Get SourceX/PatchX lines with macros resolved '''
-        result = {}
-        for (url, num, flags) in self.spec_obj.sources:
-            # rpmspec.h, rpm.org ticket #123
-            srctype = "Source" if flags & 1 else "Patch"
-            if _type != srctype:
-                continue
-            tag = srctype + str(num)
-            result[tag] = self.spec_obj.sourceHeader.format(url)
-        return result
-
-    def has_patches(self):
-        '''Returns true if source rpm contains patch files'''
-        return len(self.get_sources('Patch')) > 0
-
-    def process_sections(self):
-        ''' Scan lines and build self._sections, self.section_list. '''
-        section_lines = []
-        cur_sec = 'main'
-        for l in self.lines:
-            # check for release
-            line = l[:-1]
-            res = SPEC_SECTIONS.search(line)
-            if res:
-                this_sec = line
-                # This is a new section, store lines in old one
-                if cur_sec != this_sec:
-                    self._section_list.append(cur_sec)
-                    self._sections[cur_sec] = section_lines
-                    section_lines = []
-                    cur_sec = this_sec
-            else:
-                if line:
-                    section_lines.append(line.strip())
-        self._section_list.append(cur_sec)
-        self._sections[cur_sec] = section_lines
-        cur_sec = this_sec
-
-    def get_from_spec(self, macro):
-        ''' Use rpm for a value for a given tag (macro is resolved)'''
-        qf = '%{' + macro.upper() + "}\n"  # The RPM tag to search for
-        # get the name
-        cmd = ['rpm', '-q', '--qf', qf, '--specfile', self.filename]
-                # Run the command
-        try:
-            proc = \
-                Popen(cmd, stdout=PIPE, stderr=PIPE, env={'LC_ALL': 'C'})
-            output, error = proc.communicate()
-            #print "output : [%s], error : [%s]" % (output, error)
-        except OSError, e:
-            self.log.error("OSError : %s" % str(e))
-            self.log.debug("OSError : %s" % str(e), exc_info=True)
-            return False
-        if output:
-            rc = output.split("\n")[0]
-            #print "RC: ", rc
-            if rc == '(none)':
-                rc = None
-            return rc
-        else:
-            # rpm dont know the tag, so it is not found
-            if 'unknown tag' in error:
-                return None
-            value = self.find_tag(macro)
-            if len(value) > 0:
-                return value
-            else:
-                self.log.warning("Error : [%s]" % (error))
-                return False
-
-    def get_expanded(self):
-        ''' Return expanded spec, as provided by rpmspec -P. '''
-        # this is not really working now, but only json is using it...phasing
-        # out
-        return self.lines
-
-    def find_tag(self, tag, section = None):
-        '''
-        Find a given tag in the spec file. Parameters:
-          - tag: tag to look for. E. g., 'Name'
-            Matches tag: (E. g. Name:) in beginning of line.
-          - section. A section corresponds to a subpackage e. g.,
-            'devel'
-
-        Returns array of strings, each string corresponds to a
-        definition line in the spec file.
-
-        '''
-        key = re.compile(r"^%s\d*\s*:\s*(.*)" % tag, re.I)
-        values = []
-        lines = self.lines
-        if section:
-            lines_by_section = self.get_section(section)
-            if lines_by_section:
-                lines = lines_by_section[section]
+            lines = f.readlines()
+        last = None
         for line in lines:
-            match = key.search(line)
-            if match:
-                values.append(match.group(1).strip())
-        return values
-
-    @staticmethod
-    def rpm_eval(expression):
-        ''' Evaluate expression using rpm --eval. '''
-        try:
-            reply = check_output(['rpm', '--eval', expression])
-        except CalledProcessError as err:
-            raise ReviewError(str(err))
-        return  reply.strip()
-
-    def get_build_requires(self):
-        ''' Return the list of build requirements. '''
-        return self.spec_obj.sourceHeader[rpm.RPMTAG_REQUIRES]
-
-    def get_requires(self, pkg_name=None):
-        ''' Return list of requirements i. e., Requires: '''
-        package = self._get_pkg_by_name(pkg_name)
-        return package.header[rpm.RPMTAG_REQUIRES]
+            line = line.strip()
+            if last:
+                self.lines[last] += line
+            else:
+                self.lines.append(line)
+            if line.endswith('\\'):
+                last = len(self.lines) - 1
+                self.lines[last] = self.lines[last][:-1]
+            else:
+                last = None
 
     def _get_pkg_by_name(self, pkg_name):
         '''
@@ -193,41 +81,156 @@ class SpecFile(object):
         -> base package, not existing name -> KeyError
         '''
         if not pkg_name:
-            return self.spec_obj.packages[0]
-        for p in self.spec_obj.packages:
+            return self.spec.packages[0]
+        for p in self.spec.packages:
             if p.header[rpm.RPMTAG_NAME] == pkg_name:
                 return p
         raise KeyError(pkg_name + ': no such package')
 
-    def get_section(self, section):
-        '''
-        get the lines in a section in the spec file
-        ex. %install, %clean etc
-        '''
-        results = {}
-        for sec in self._section_list:
-            if sec.startswith(section):
-                results[sec.strip()] = self._sections[sec]
-        return results
+    def _get_sources(self, _type='Source'):
+        ''' Get SourceX/PatchX lines with macros resolved '''
+        result = {}
+        for (url, num, flags) in self.spec.sources:
+            # rpmspec.h, rpm.org ticket #123
+            srctype = "Source" if flags & 1 else "Patch"
+            if _type != srctype:
+                continue
+            tag = srctype + str(num)
+            result[tag] = self.spec.sourceHeader.format(url)
+        return result
 
-    def find(self, regex):
-        ''' Return first line matching regex or None. '''
+    def _parse_files(self, pkg_name):
+        ''' Parse and return the %files section for pkg_name. '''
+        if not pkg_name:
+            pkg_name = self.name
+        reaping = False
+        lines = []
+        for line in [l.strip() for l in self.lines]:
+            if not reaping:
+                if line.startswith('%files'):
+                    words = line.split()
+                    if len(words) == 1 and pkg_name == self.name:
+                        reaping = True
+                    elif len(words) > 1 and pkg_name.endswith(words[1]):
+                        reaping = True
+            else:
+                if line.startswith('%{'):
+                    # breaks for %docdir instead of %{docdir}
+                    lines.append(rpm.expandMacro(line))
+                elif line.startswith('%'):
+                    token = re.split('\s|\(', line)[0]
+                    if not token in ['%ghost', '%doc', '%docdir',
+                    '%verify', '%attr', '%config', '%dir', '%defattr']:
+                        break
+                    else:
+                        lines.append(line)
+                elif line:
+                    lines.append(line)
+        return lines
+
+    @property
+    def base_package(self):
+        ''' Base package name, normally %{name} unless -n is used. '''
+        return  self.spec.packages[0].header[rpm.RPMTAG_NAME]
+
+    @property
+    def sources_by_tag(self):
+        ''' Return dict of source_url[tag]. '''
+        return self._get_sources('Source')
+
+    @property
+    def patches_by_tag(self):
+        ''' Return dict of patch_url[tag]. '''
+        return self._get_sources('Patch')
+
+    @staticmethod
+    def expand_macro(macro):
+        ''' Return expanded value or None. '''
+        return rpm.expandMacro('%{' + macro + '}')
+
+    def expand_tag(self, tag, pkg_name=None):
+        '''
+        Return value of given tag in the spec file, or None. Parameters:
+          - tag: tag as listed by rpm --querytags, case-insensitive or
+            a  constant like rpm.RPMTAG_NAME.
+          - package: A subpackage, as listed by get_packages(), defaults
+            to the  base package.
+        '''
+        if not pkg_name:
+            header = self.spec.sourceHeader
+        else:
+            header = self._get_pkg_by_name(pkg_name).header
+        try:
+            return header[tag]
+        except ValueError:
+            return None
+        except rpm._rpm.error:
+            return None
+
+    @property
+    def packages(self):
+        ''' Return list of package names built by this spec. '''
+        return [p.header[rpm.RPMTAG_NAME] for p in self.spec.packages]
+
+    @property
+    def build_requires(self):
+        ''' Return the list of build requirements. '''
+        return self.spec.sourceHeader[rpm.RPMTAG_REQUIRES]
+
+    def get_requires(self, pkg_name=None):
+        ''' Return list of requirements i. e., Requires: '''
+        package = self._get_pkg_by_name(pkg_name)
+        return package.header[rpm.RPMTAG_REQUIRES]
+
+    def get_files(self, pkg_name=None):
+        ''' Return %files section for base or specified package. '''
+        try:
+            files = self._get_pkg_by_name(pkg_name).fileList
+            return \
+                [l for l in [f.strip() for f in files.split('\n')] if l]
+        except AttributeError:
+            # No fileList attribute...
+            # https://bugzilla.redhat.com/show_bug.cgi?id=857653
+            return self._parse_files(pkg_name)
+
+    def get_section(self, section, raw=False):
+        '''
+        Get a section in the spec file ex. %install, %clean etc. If
+        raw is True, returns single string verbatim from spec.
+        Otherwise returns list of stripped and non-empty lines.
+        '''
+        if section.startswith('%'):
+            section = section[1:]
+        try:
+            section = getattr(self.spec, section)
+        except AttributeError:
+            return None
+        return _lines_in_string(section, raw)
+
+    def find(self, regex, flags=re.IGNORECASE):
+        '''
+        Return first raw line in spec matching regex or None.
+          - regex: compiled regex or string.
+          - flags: used when regex is a string to control search.
+        '''
+        if isinstance(regex, str):
+            regex = re.compile(regex, flags)
         for line in self.lines:
-            res = regex.search(line)
-            if res:
-                return res
+            if regex.search(line):
+                return line.strip()
         return None
 
     def find_all(self, regex, skip_changelog=False):
-        ''' Find all non-changelog lines matching regex. '''
+        ''' Return list of all raw lines in spec matching regex or []. '''
+        if isinstance(regex, str):
+            regex = re.compile(regex, re.IGNORECASE)
         result = []
         for line in self.lines:
             if skip_changelog:
                 if line.lower().strip().startswith('%changelog'):
                     break
-            res = regex.search(line)
-            if res:
-                result.append(res)
+            if regex.search(line):
+                result.append(line.strip())
         return result
 
 # vim: set expandtab: ts=4:sw=4:

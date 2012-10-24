@@ -20,25 +20,36 @@
 Unit tests for bugzilla bug handling
 '''
 
+import shutil
 import sys
 import os.path
-sys.path.insert(0,os.path.abspath('../'))
-sys.path.insert(0,os.path.abspath('../FedoraReview'))
+sys.path.insert(0,os.path.abspath('..'))
 
 import glob
 import unittest2 as unittest
 import os
 import re
+import rpm
 import subprocess
 
+try:
+    from subprocess import check_output
+except ImportError:
+    from FedoraReview.el_compat import check_output
+
+
+from FedoraReview import AbstractCheck, Checks, Mock, ReviewDirs
+from FedoraReview import ReviewError, Settings, Source, SpecFile
+
+from FedoraReview.datasrc import BuildFilesSource, RpmDataSource
+from FedoraReview.bugzilla_bug import BugzillaBug
+from FedoraReview.checks import _CheckDict
 from FedoraReview.helpers_mixin import HelpersMixin
-from checks import _CheckDict
-from FedoraReview import AbstractCheck, Checks, \
-     Sources, Source, ReviewDirs, SRPMFile, SpecFile, Mock, Settings
-from FedoraReview import BugzillaBug, NameBug
-from FedoraReview import ReviewError
+from FedoraReview.name_bug import NameBug
+from FedoraReview.srpm_file import SRPMFile
 
 from fr_testcase import FR_TestCase, FAST_TEST, NO_NET
+
 
 class TestMisc(FR_TestCase):
 
@@ -49,11 +60,50 @@ class TestMisc(FR_TestCase):
         self.helpers = HelpersMixin()
         self.srpm_file = os.path.join(os.path.abspath('.'),
                                       'test_misc',
-                                      'python-test-1.0-1.fc16.src.rpm')
+                                      'python-test-1.0-1.fc17.src.rpm')
         self.spec_file = os.path.join(Mock.get_builddir('SOURCES'),
                                       'python-test.spec')
         self.startdir = os.getcwd()
         Mock.reset()
+
+    def test_rpm_source(self):
+        ''' Test a rpm datasource. '''
+        self.init_test('test_misc',
+                       argv=['-rpn','python-test', '--cache',
+                             '--no-build'])
+        bug = NameBug('python-test')
+        bug.find_urls()
+        bug.download_files()
+        checks = Checks(bug.spec_file, bug.srpm_file)
+        src = RpmDataSource(checks.spec)
+        files = src.filelist()
+        self.assertEqual(len(files), 11)
+        rpms = src.get_all()
+        self.assertEqual(rpms, ['python-test'])
+        rpm = src.get('python-test')
+        self.assertEqual( rpm.header['name'], 'python-test')
+        all_files = src.find_all('*')
+        self.assertEqual(len(all_files), 11)
+
+    def test_buildsrc(self):
+        ''' Test a BuildFilesData  datasource. '''
+        self.init_test('perl',
+                       argv=['-rpn','perl-RPM-Specfile', '--no-build'],
+                       wd='perl-RPM-Specfile')
+        bug = NameBug('perl-RPM-Specfile')
+        bug.find_urls()
+        bug.download_files()
+        checks = Checks(bug.spec_file, bug.srpm_file)
+        src = BuildFilesSource()
+        files = src.filelist()
+        self.assertEqual(len(files), 8)
+        root = src.get_all()
+        expected_root = os.getcwd() +  '/BUILD/RPM-Specfile-1.51'
+        self.assertEqual(src.get_all(), [expected_root])
+        root = src.get()
+        self.assertEqual(root, expected_root)
+        all_files = src.find_all('*')
+        self.assertEqual(len(all_files), 8)
 
     def test_flags_1(self):
         ''' test a flag defined in python, set by user' '''
@@ -119,7 +169,8 @@ class TestMisc(FR_TestCase):
                          "7ef644ee4eafa62cfa773cad4056cdcea592e27dacd5ae"
                          "b4e8b11f51f5bf60d3")
 
-    def test_sources(self):
+    def test_sources_data(self):
+        ''' Test a SourcesDataSource. '''
         self.init_test('test_misc',
                        argv=['-n','python-test', '--cache',
                              '--no-build'])
@@ -168,46 +219,69 @@ class TestMisc(FR_TestCase):
 
     def test_spec_file(self):
         ''' Test the SpecFile class'''
+
+        def filter_empty(list_):
+             return [i for i in list_ if i]
+
+        def lines(s):
+             return filter_empty(s.split('\n'))
+
+        def fix_usr_link(path):
+            if not '/' in path:
+                 return path
+            lead = path.split('/')[1]
+            if lead in ['bin', 'sbin', 'lib', 'lib64']:
+                return  '/usr' + path
+            return path
+
+
         self.init_test('test_misc',
-                       argv=['-n','python-test', '--cache',
-                             '--no-build'])
+                       argv=['-n','python-test', '--no-build'])
         dest = Mock.get_builddir('SOURCES')
         if not os.path.exists(dest):
             os.makedirs(dest)
         spec = SpecFile(os.path.join(os.getcwd(), 'python-test.spec'))
-        # Test misc rpm values (Macro resolved)
         self.assertEqual(spec.name,'python-test')
         self.assertEqual(spec.version,'1.0')
-        # resolve the dist-tag
-        dist = self.helpers._run_cmd('rpm --eval %dist')[:-1]
+        dist = check_output('rpm --eval %dist', shell=True).strip()
         self.assertEqual(spec.release,'1'+dist)
-        # test misc rpm values (without macro resolve)
-        self.assertEqual(spec.find_tag('Release'), ['1%{?dist}'])
-        self.assertEqual(spec.find_tag('License'), ['GPLv2+'])
-        self.assertEqual(spec.find_tag('Group'), ['Development/Languages'])
+        self.assertEqual(spec.expand_tag('Release'), '1' + dist)
+        self.assertEqual(spec.expand_tag('License'), 'GPLv2+')
+        self.assertEqual(spec.expand_tag('Group'), 'Development/Languages')
         # Test rpm value not there
-        self.assertEqual(spec.find_tag('PreReq'), [])
+        self.assertEqual(spec.expand_tag('PreReq'), None)
         # Test get sections
-        expected = {'%clean': ['rm -rf $RPM_BUILD_ROOT']}
+        expected = ['rm -rf $RPM_BUILD_ROOT']
         self.assertEqual(spec.get_section('%clean'), expected)
-        expected = {'%build': ['%{__python} setup.py build']}
-        self.assertEqual(spec.get_section('%build'), expected)
-        expected = {'%install': ['rm -rf $RPM_BUILD_ROOT',
-                    '%{__python} setup.py install -O1 --skip-build'
-                    ' --root $RPM_BUILD_ROOT']}
-        self.assertEqual(spec.get_section('%install'),expected)
-        expected = {'%files': ['%defattr(-,root,root,-)',
-                    '%doc COPYING', '%{python_sitelib}/*']}
-        self.assertEqual(spec.get_section('%files'),expected)
+        expected = '%{__python} setup.py build'
+        expected = ['LANG=C','export LANG', 'unset DISPLAY',
+                   '/usr/bin/python setup.py build']
+
+        build = spec.get_section('%build')
+        build = map(fix_usr_link, build)
+        self.assertIn(''.join(build), ''.join(expected))
+        install = spec.get_section('%install')
+        install = map(fix_usr_link, install)
+        expected = [ 'LANG=C', 'export LANG', 'unset DISPLAY',
+                    'rm -rf $RPM_BUILD_ROOT',
+                    '/usr/bin/python setup.py install -O1 --skip-build'
+                    ' --root $RPM_BUILD_ROOT']
+        self.assertIn(''.join(install), ''.join(expected))
+
         # Test get_sources (return the Source/Patch lines with macros resolved)
         expected = {'Source0': 'http://timlau.fedorapeople.org/'
                     'files/test/review-test/python-test-1.0.tar.gz'}
-        self.assertEqual(spec.get_sources(), expected)
+        self.assertEqual(spec.sources_by_tag, expected)
+        expected = ['%defattr(-,root,root,-)',
+                    '%doc COPYING',
+                    rpm.expandMacro('%{python_sitelib}') + '/*']
+        self.assertEqual(spec.get_files(), expected)
+
         # Test find
         regex = re.compile(r'^Release\s*:\s*(.*)')
         res = spec.find(regex)
         if res:
-            self.assertEqual(res.groups(), ('1%{?dist}',))
+            self.assertEqual(res.split(':')[1].strip(), '1%{?dist}')
         else:
             self.assertTrue(False)
 
@@ -288,7 +362,8 @@ class TestMisc(FR_TestCase):
 
     @unittest.skipIf(NO_NET, 'No network available')
     def test_bugzilla_bug(self):
-        self.init_test('test_misc',
+        subprocess.check_call('mkdir -p tmp/python-test || :', shell=True)
+        self.init_test('tmp',
                        argv=['-b','817268'],
                        wd='python-test')
         bug = BugzillaBug('817268')
@@ -306,19 +381,16 @@ class TestMisc(FR_TestCase):
         self.init_test('test_misc',
                        argv=['-rn','python-test', '--cache',
                              '--no-build'])
-        ReviewDirs.reset()
         bug = NameBug('python-test')
         bug.find_urls()
-        expected = 'src/test/test_misc/python-test-1.0-1.fc16.src.rpm'
+        expected = 'test/test_misc/python-test-1.0-1.fc17.src.rpm'
         self.assertTrue(bug.srpm_url.endswith(expected))
-        expected = 'src/test/test_misc/review-python-test/srpm-unpacked/python-test.spec'
-        print bug.spec_url
+        expected = 'test/test_misc/srpm-unpacked/python-test.spec'
         self.assertTrue(bug.spec_url.endswith(expected))
 
     def test_jsonapi(self):
         self.init_test('test_misc',
                        argv=['-rpn','python-test', '--no-build'])
-        ReviewDirs.reset(os.getcwd())
         os.environ['REVIEW_EXT_DIRS'] = os.path.normpath(os.getcwd() + '/../api')
 
         bug = NameBug('python-test')
@@ -341,7 +413,6 @@ class TestMisc(FR_TestCase):
         self.init_test('md5sum-diff-ok',
                        argv=['-rpn','python-test', '--cache',
                              '--no-build'])
-        ReviewDirs.reset(os.getcwd())
         bug = NameBug('python-test')
         bug.find_urls()
         bug.download_files()
@@ -357,7 +428,6 @@ class TestMisc(FR_TestCase):
         self.init_test('md5sum-diff-fail',
                        argv=['-rpn','python-test', '--cache',
                              '--no-build'])
-        ReviewDirs.reset(os.getcwd())
         bug = NameBug('python-test')
         bug.find_urls()
         checks = Checks(bug.spec_file, bug.srpm_file).get_checks()
@@ -377,9 +447,10 @@ class TestMisc(FR_TestCase):
         checks = Checks(bug.spec_file, bug.srpm_file).get_checks()
         checks.set_single_check('CheckResultdir')
         check = checks['CheckResultdir']
-
+        if not os.path.exists('results.bak'):
+            os.makedirs('results.bak')
         for dirt in glob.glob('results/*.*'):
-            os.unlink(dirt)
+            shutil.move(dirt, 'results.bak')
         check.run()
         self.assertTrue(check.is_passed)
 
@@ -389,6 +460,8 @@ class TestMisc(FR_TestCase):
         check.run()
         self.assertTrue(check.is_passed)
         os.unlink('results/orvar.rpm')
+        for dirt in glob.glob('results.bak/*'):
+            shutil.move(dirt, 'results')
 
     def test_prebuilt_sources(self):
         self.init_test('test_misc',
@@ -399,10 +472,7 @@ class TestMisc(FR_TestCase):
         bug.download_files()
         checks = Checks(bug.spec_file, bug.srpm_file)
         subprocess.check_call('touch orvar.rpm', shell=True)
-        rpms = checks.srpm.get_used_rpms()
-        self.assertEqual(len(rpms), 2)
-        rpms = checks.srpm.get_used_rpms('.src.rpm')
-        os.unlink('orvar.rpm')
+        rpms = Mock.get_package_rpm_paths(checks.spec)
         self.assertEqual(len(rpms), 1)
 
     def test_bad_specfile(self):
@@ -448,20 +518,16 @@ class TestMisc(FR_TestCase):
         self.assertEqual(len(l), 1)
         self.assertEqual(l['test1'], c1)
 
-    def test_unversioned_so(self):
+    def test_1_unversioned_so(self):
         self.init_test('unversioned-so',
-                       argv=['-rpn','python-test', '--cache'],
-                       wd='python-test')
-        ReviewDirs.reset(os.getcwd())
+                       argv=['-rpn','python-test'])
         bug = NameBug('python-test')
         check = self.run_single_check(bug,'CheckSoFiles')
         self.assertTrue(check.is_failed)
 
-    def test_unversioned_so_private(self):
+    def test_1_unversioned_so_private(self):
         self.init_test('unversioned-so-private',
-                       argv=['-rpn', 'python-test', '--cache'],
-                       wd='python-test')
-        ReviewDirs.reset(os.getcwd())
+                       argv=['-rpn','python-test'])
         bug = NameBug('python-test')
         check = self.run_single_check(bug,'CheckSoFiles')
         self.assertTrue(check.is_pending)
@@ -471,7 +537,6 @@ class TestMisc(FR_TestCase):
         self.init_test('test_misc',
                        argv=['-rn','python-test', '--local-repo',
                              'repo', '--cache'])
-        ReviewDirs.reset(os.getcwd())
         bug = NameBug('python-test')
         bug.find_urls()
         bug.download_files()
@@ -479,12 +544,10 @@ class TestMisc(FR_TestCase):
         check = checks.checkdict['CheckPackageInstalls']
         check.run()
         self.assertTrue(check.is_passed)
-        self.assertTrue(Mock.is_installed('dummy'))
 
     def test_bad_specname(self):
         self.init_test('bad-specname',
                        argv=['-rn','python-test', '--cache'])
-        ReviewDirs.reset(os.getcwd())
         bug = NameBug('python-test')
         bug.find_urls()
         bug.download_files()
@@ -497,8 +560,7 @@ class TestMisc(FR_TestCase):
     def test_perl_module(self):
         ''' test basic perl python + shell test '''
         self.init_test('perl',
-                       argv=['-rn','perl-RPM-Specfile', '--no-build'])
-        ReviewDirs.reset(os.getcwd())
+                       argv=['-rpn','perl-RPM-Specfile', '--no-build'])
         bug = NameBug('perl-RPM-Specfile')
         bug.find_urls()
         bug.download_files()

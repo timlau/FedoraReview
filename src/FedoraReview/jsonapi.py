@@ -30,6 +30,15 @@ from check_base import TestResult, GenericCheck
 from mock import Mock
 from review_error import ReviewError
 
+def get_expanded(filename, log):
+    ''' Return expanded spec, as provided by rpmspec -P. '''
+    cmd = ['rpmspec', '-P', filename]
+    try:
+        return subprocess.checkOutput(cmd)
+    except OSError as e:
+        raise ReviewError(str(e))
+
+
 class ERR_CODE(object):
     ERR_NO_COMMAND = 1
 
@@ -51,10 +60,8 @@ class SetupPlugin(JSONAPI):
         self.release = spec.release
         self.srpm = srpm.filename
         self.spec = {"path": spec.filename,
-                     "text": spec.get_expanded()}
-        self.rpms = []
-        for rpm in srpm.get_files_rpms().keys():
-            self.rpms.append(rpm)
+                     "text": get_expanded(spec.filename, self.log)}
+        self.rpms = spec.packages()
         self.rpmlint = "\n".join(srpm.rpmlint_output)
         self.build_dir = Mock.get_builddir()
 
@@ -190,9 +197,14 @@ class JSONPlugin(HelpersMixin):
         self.plugin_path = plugin_path
         self.version = None
         self.checks = checks
-        self.spec = checks.spec
-        self.srpm = checks.srpm
-        self.sources = checks.sources
+        try:
+            self.spec = checks.spec
+            self.srpm = checks.srpm
+            self.sources = checks.sources
+        except AttributeError:
+            self.srpm = None
+            self.spec = None
+            self.sources = None
         self.encoder = ReviewJSONEncoder()
         self.decoder = JSONDecoder()
         self.plug_in = None

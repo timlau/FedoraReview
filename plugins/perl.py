@@ -11,7 +11,7 @@ class Registry(RegistryBase):
 
     def is_applicable(self):
         return self.checks.spec.name.startswith("perl-") or \
-           self.has_files('*.pm') or self.has_files('*.pl')
+            self.checks.rpms.find('*.pm') or self.checks.rpms.find('*.pl')
 
 
 class PerlCheckBase(CheckBase):
@@ -39,13 +39,13 @@ class PerlCheckBuildRequires(PerlCheckBase):
 
         perl_compat = 'perl(:MODULE_COMPAT_%(eval "`%{__perl}' \
                       ' -V:version`"; echo $version))'
-        for br in self.spec.get_build_requires():
+        for br in self.spec.build_requires:
             if br.startswith('perl-devel'):
                 self.set_passed(self.FAIL,
                                 'Explicit dependency on perl-devel'
                                 ' is not allowed')
                 return
-        compat = self.spec.rpm_eval(perl_compat)
+        compat = self.spec.expand_macro(perl_compat)
         for r in self.spec.get_requires():
             if r == compat:
                 break

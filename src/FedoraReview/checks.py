@@ -27,11 +27,11 @@ from glob import glob
 from operator import attrgetter
 from straight.plugin import load
 
+from datasrc import RpmDataSource, BuildFilesSource, SourcesDataSource
 from settings import  Settings
 from mock import Mock
 from srpm_file import  SRPMFile
 from spec_file import  SpecFile
-from sources import  Sources
 from review_dirs import ReviewDirs
 from version import  __version__, BUILD_ID, BUILD_DATE
 from review_error import ReviewError
@@ -51,6 +51,25 @@ Key:
 [ ] = Manual review needed
 
 """
+
+
+def _write_section(results, output):
+    ''' Print a {SHOULD,MUST, EXTRA} section. '''
+
+    def hdr(group):
+        ''' Return header this test is printed under. '''
+        if group == 'Setup':
+            return 'Generic'
+        return group
+
+    groups = list(set([hdr(test.group) for test in results]))
+    for group in sorted(groups):
+        res = filter(lambda t: t.group == group, results)
+        if res == []:
+            continue
+        output.write('\n' + group + ':\n')
+        for r in res:
+            output.write(r.get_text() + '\n')
 
 
 class _CheckDict(dict):
@@ -132,7 +151,7 @@ class _CheckDict(dict):
 
 
 class _Flags(dict):
-    ''' A dict storing Flag  entries with some added baheviour. '''
+    ''' A dict storing Flag  entries with some added behaviour. '''
 
     def __init__(self):
         dict.__init__(self)
@@ -160,29 +179,40 @@ class Checks(object):
         checkdict: A dictionary of all tests by name (deprecated
                    removed).
     '''
+    class Data(object):
+        ''' Simple DataSource stuff container. '''
+        pass
 
     def __init__(self, spec_file, srpm_file):
         ''' Create a Checks set. srpm_file and spec_file are required,
         unless invoked from ChecksLister.
         '''
+
         self.log = Settings.get_logger()
         self.checkdict = None
         self.flags = _Flags()
         self.groups = None
-        if hasattr(self, 'sources'):
-            # This is  a listing instance
-            self.srpm = None
-            self.spec = None
+        self.data = self.Data()
+        if isinstance(self, ChecksLister):
+            self.data.srpm = None
+            self.data.spec = None
+            self.data.rpms = None
         else:
             self.spec = SpecFile(spec_file)
-            self.sources = Sources(self.spec)
-            self.srpm = SRPMFile(srpm_file, self.spec)
+            self.srpm = SRPMFile(srpm_file)
+            self.data.rpms = RpmDataSource(self.spec)
+            self.data.buildsrc = BuildFilesSource()
+            self.data.sources = SourcesDataSource(self.spec)
         self.add_check_classes()
         if Settings.single:
             self.set_single_check(Settings.single)
         elif Settings.exclude:
             self.exclude_checks(Settings.exclude)
         self.update_flags()
+
+    rpms = property(lambda self: self.data.rpms)
+    sources = property(lambda self: self.data.sources)
+    buildsrc = property(lambda self: self.data.buildsrc)
 
     def update_flags(self):
         ''' Update registered flags with user -D settings. '''
@@ -321,17 +351,6 @@ class Checks(object):
     def show_output(output, results, issues, attachments):
         ''' Print test results on output. '''
 
-        def write_sections(results):
-            ''' Print a {SHOULD,MUST, EXTRA} section. '''
-            groups = sorted(list(set([test.group for test in results])))
-            for group in groups:
-                res = filter(lambda t: t.group == group, results)
-                if res == []:
-                    continue
-                output.write('\n' + group + ':\n')
-                for r in res:
-                    output.write(r.get_text() + '\n')
-
         def dump_local_repo():
             ''' print info on --local-repo rpms used. '''
             repodir = Settings.repo
@@ -352,15 +371,15 @@ class Checks(object):
 
         output.write("\n\n===== MUST items =====\n")
         musts = filter(lambda r: r.type == 'MUST', results)
-        write_sections(musts)
+        _write_section(musts, output)
 
         output.write("\n===== SHOULD items =====\n")
         shoulds = filter(lambda r: r.type == 'SHOULD', results)
-        write_sections(shoulds)
+        _write_section(shoulds, output)
 
         output.write("\n===== EXTRA items =====\n")
         extras = filter(lambda r: r.type == 'EXTRA', results)
-        write_sections(extras)
+        _write_section(extras, output)
 
         for a in sorted(attachments):
             output.write('\n\n')
@@ -378,8 +397,8 @@ class Checks(object):
 
 class ChecksLister(Checks):
     """ A Checks instance only capable of get_checks. """
+
     def __init__(self):
-        self.sources = None
         Checks.__init__(self, None, None)
 
 # vim: set expandtab: ts=4:sw=4:

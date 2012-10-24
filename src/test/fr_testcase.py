@@ -21,7 +21,7 @@ Base class for FedoraReview tests
 
 import sys
 import os.path
-sys.path.insert(0,os.path.abspath('../'))
+sys.path.insert(0,os.path.abspath('..'))
 
 import unittest2 as unittest
 import os
@@ -31,7 +31,7 @@ import sys
 
 from urllib import urlopen
 
-from FedoraReview import Checks, ReviewDirs,  Mock, Settings
+from FedoraReview import Checks, Mock, ReviewDirs, Settings
 
 STARTDIR = os.getcwd()
 
@@ -73,12 +73,11 @@ class  FR_TestCase(unittest.TestCase):
         #          fedora-review is prepended and mock_root appended.
         #    wd:   review directory, cleared.
         #    options: mock-options
+        cd = os.path.abspath(cd)
         os.chdir(cd)
-        if wd:
-            if os.path.exists(wd):
-                shutil.rmtree(wd)
-        ReviewDirs.reset(cd)
-        ReviewDirs.workdir_setup(os.getcwd(), True)
+        if not wd:
+            wd = os.getcwd()
+        ReviewDirs.workdir_setup(wd, 'testing')
         args = argv
         args.insert(0, 'fedora-review')
         br = buildroot if buildroot else self.BUILDROOT
@@ -92,6 +91,7 @@ class  FR_TestCase(unittest.TestCase):
             argv.append('--mock-options=' +  ' '.join(opts))
         sys.argv = argv
         Settings.init(True)
+        Mock.clear_builddir()
         Mock.reset()
 
     def run_single_check(self, bug, check_name, run_build=False):

@@ -1,0 +1,1 @@
+/var/lib/mock/fedora-16-i386/root/builddir/build/BUILD

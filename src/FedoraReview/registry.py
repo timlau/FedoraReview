@@ -21,7 +21,6 @@ Test module registration support
 
 import inspect
 
-from check_base import FileChecks
 from review_error import ReviewError
 
 
@@ -97,14 +96,13 @@ class AbstractRegistry(object):
              'abstract Registry.is_applicable() called')
 
 
-class RegistryBase(AbstractRegistry, FileChecks):
+class RegistryBase(AbstractRegistry):
     """
     Register all classes containing 'Check' and not ending with 'Base'
     """
 
     def __init__(self, checks, path=None):      # pylint: disable=W0613
         AbstractRegistry.__init__(self, checks)
-        FileChecks.__init__(self, checks)
 
     def is_applicable(self):
         return self.registry.is_applicable()
@@ -126,6 +124,14 @@ class RegistryBase(AbstractRegistry, FileChecks):
             obj.registry = self
             tests.append(obj)
         return tests
+
+    def has_files_re(self, regex):
+        ''' Files in rpms matching regex. '''
+        return self.checks.rpms.find_re(regex) != None
+
+    def has_files_(self, glob_pattern):
+        ''' Files in rpms matching glob_pattern. '''
+        return self.checks.rpms.find(glob_pattern) != None
 
 
 # vim: set expandtab: ts=4:sw=4:
