@@ -51,14 +51,18 @@ in a simple way in bash.
 %setup -q
 chmod -x api/examples/*
 
+
 %build
 %{__python} setup.py build
 
+
 %install
 %{__python} setup.py install -O1 --skip-build --root $RPM_BUILD_ROOT
+pkg_dir="$RPM_BUILD_ROOT/%{python_sitelib}/FedoraReview"
+ln -s %{_datadir}/%{name}/scripts $pkg_dir/scripts
+ln -s %{_datadir}/%{name}/plugins $pkg_dir/plugins
+ln -s %{_datadir}/%{name}/plugins $pkg_dir/json-plugins
 
-ln -s %{_datadir}/%{name}/plugins \
-      %{buildroot}%{python_sitelib}/FedoraReview/plugins
 
 %files
 %doc COPYING AUTHORS TODO README api
@@ -71,6 +75,7 @@ ln -s %{_datadir}/%{name}/plugins \
 %dir %{_datadir}/%{name}
 %{_datadir}/%{name}/plugins
 %{_datadir}/%{name}/scripts
+
 
 %changelog
 * Tue Sep 25 2012 Stanislav Ochotnicky <sochotnicky@redhat.com> - 0.3.1-1
