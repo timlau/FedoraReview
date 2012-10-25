@@ -27,17 +27,20 @@ import sys
 from glob import glob
 import unittest2 as unittest
 
+import srcpath
+
 try:
     from subprocess import check_output
 except ImportError:
     from FedoraReview.el_compat import check_output
 
-import srcpath
 from FedoraReview import Mock, ReviewDirs, Settings
+
 from FedoraReview.checks import Checks, _CheckDict
 from FedoraReview.bugzilla_bug import BugzillaBug
 from FedoraReview.name_bug import NameBug
 from FedoraReview.url_bug import UrlBug
+from FedoraReview.spec_file import SpecFile
 
 
 from fr_testcase import FR_TestCase, NO_NET, FAST_TEST, VERSION

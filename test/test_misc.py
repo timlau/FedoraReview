@@ -38,10 +38,10 @@ except ImportError:
     from FedoraReview.el_compat import check_output
 
 import srcpath
+from FedoraReview import AbstractCheck, Mock, ReviewDirs
+from FedoraReview import ReviewError, Settings
 
-from FedoraReview import Checks, Mock, ReviewDirs
-from FedoraReview import ReviewError, Settings, SpecFile
-
+from FedoraReview.checks import Checks
 from FedoraReview.datasrc import BuildFilesSource, RpmDataSource
 from FedoraReview.bugzilla_bug import BugzillaBug
 from FedoraReview.check_base import AbstractCheck
@@ -49,6 +49,7 @@ from FedoraReview.checks import _CheckDict
 from FedoraReview.helpers_mixin import HelpersMixin
 from FedoraReview.name_bug import NameBug
 from FedoraReview.source import Source
+from FedoraReview.spec_file import SpecFile
 from FedoraReview.srpm_file import SRPMFile
 
 from fr_testcase import FR_TestCase, FAST_TEST, NO_NET
@@ -201,7 +202,7 @@ class TestMisc(FR_TestCase):
 
     @unittest.skipIf(FAST_TEST, 'slow test disabled by REVIEW_FAST_TEST')
     def test_mock_uniqueext(self):
-        self.init_test('test_misc',
+        self.init_test('mock-uniqueext',
                        argv=['-n','python-test'],
                        options='--uniqueext=hugo')
         bug = NameBug('python-test')

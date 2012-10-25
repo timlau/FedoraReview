@@ -30,22 +30,21 @@ import unittest2 as unittest
 
 import srcpath
 from FedoraReview.helpers_mixin import HelpersMixin
-from FedoraReview.checks import _CheckDict
+from FedoraReview.checks import Checks, _CheckDict
+from FedoraReview.name_bug import NameBug
+from FedoraReview.bugzilla_bug import BugzillaBug
+from FedoraReview.spec_file import SpecFile
 
-from FedoraReview import AbstractCheck, Checks, \
-     Source, ReviewDirs, SRPMFile, SpecFile, Mock, Settings
-from FedoraReview import BugzillaBug, NameBug
-from FedoraReview import ReviewError
+from FedoraReview import Mock, Settings, ReviewError
 
 from fr_testcase import FR_TestCase, FAST_TEST, NO_NET
 
 class TestRegressions(FR_TestCase):
 
     def setUp(self):
+        FR_TestCase.setUp(self)
         sys.argv = ['fedora-review', '-b', '1']
-        self.startdir = os.getcwd()
         Settings.init(True)
-        self.log = Settings.get_logger()
         self.helpers = HelpersMixin()
         self.spec_file = os.path.join(os.path.abspath('.'),
                                       'test_regressions',
@@ -89,10 +88,6 @@ class TestRegressions(FR_TestCase):
         bug.find_urls()
         self.assertNotEqual(None, bug.srpm_file)
         self.assertNotEqual(None, bug.spec_file)
-
-
-
-
 
 
 if __name__ == '__main__':
