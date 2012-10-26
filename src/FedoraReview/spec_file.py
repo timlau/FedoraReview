@@ -49,10 +49,14 @@ class SpecFile(object):
         self.filename = filename
         self.lines = []
         self._get_lines(filename)
+
         self.spec = rpm.TransactionSet().parseSpec(self.filename)
         self.name_vers_rel = [self.expand_tag(rpm.RPMTAG_NAME),
                               self.expand_tag(rpm.RPMTAG_VERSION),
                               self.expand_tag(rpm.RPMTAG_RELEASE)]
+        pkg_list = [p.header[rpm.RPMTAG_NAME] for p in self.spec.packages]
+        pkg_list = [p for p in pkg_list if self.get_files(p)]
+        self._packages = pkg_list
 
     name = property(lambda self: self.name_vers_rel[0])
     version = property(lambda self: self.name_vers_rel[1])
@@ -165,7 +169,7 @@ class SpecFile(object):
     @property
     def packages(self):
         ''' Return list of package names built by this spec. '''
-        return [p.header[rpm.RPMTAG_NAME] for p in self.spec.packages]
+        return self._packages
 
     @property
     def build_requires(self):
