@@ -29,12 +29,13 @@ from glob import glob
 from StringIO import StringIO
 from subprocess import Popen, PIPE
 try:
-    from subprocess import check_output
+    from subprocess import check_output          # pylint: disable=E0611
 except ImportError:
     from FedoraReview.el_compat import check_output
 
 
-from FedoraReview import CheckBase, Mock, ReviewDirs, ReviewError
+from FedoraReview import CheckBase, Mock, ReviewDirs
+from FedoraReview import ReviewError             # pylint: disable=W0611
 from FedoraReview import RegistryBase, Settings
 
 
