@@ -260,7 +260,8 @@ class _Mock(HelpersMixin):
         cmd.append('--shell')
         script = 'rpm -i ' + os.path.basename(srpm.filename) + '; '
         script += 'rpmbuild --nodeps -bp /builddir/build/SPECS/' \
-                  + srpm.name + '.spec'
+                  + srpm.name + '.spec;'
+        script += 'chmod -R  go+r  /builddir/build/BUILD/*'
         cmd.append(script)
         errmsg = self._run_cmd(cmd)
         if  errmsg:
