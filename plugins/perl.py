@@ -1,6 +1,8 @@
 #-*- coding: utf-8 -*-
 ''' Checks for perl packages. '''
 
+import rpm
+
 from FedoraReview import CheckBase, RegistryBase
 
 
@@ -45,7 +47,7 @@ class PerlCheckBuildRequires(PerlCheckBase):
                                 'Explicit dependency on perl-devel'
                                 ' is not allowed')
                 return
-        compat = self.spec.expand_macro(perl_compat)
+        compat = rpm.expandMacro(perl_compat)
         for r in self.spec.get_requires():
             if r == compat:
                 break

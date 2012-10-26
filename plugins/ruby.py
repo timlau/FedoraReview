@@ -2,6 +2,7 @@
 ''' Checks for ruby and rubygem packages.'''
 
 import re
+import rpm
 
 from FedoraReview import CheckBase, RegistryBase
 
@@ -248,7 +249,7 @@ class GemCheckSetsGemName(GemCheckBase):
         self.automatic = True
 
     def run_on_applicable(self):
-        expanded = self.spec.expand_macro('gem_name')
+        expanded = rpm.expandMacro('%{gem_name}')
         self.set_passed(self.FAIL if '%' in expanded else self.PASS)
 
 

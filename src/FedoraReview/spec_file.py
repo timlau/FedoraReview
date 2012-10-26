@@ -143,11 +143,6 @@ class SpecFile(object):
         ''' Return dict of patch_url[tag]. '''
         return self._get_sources('Patch')
 
-    @staticmethod
-    def expand_macro(macro):
-        ''' Return expanded value or None. '''
-        return rpm.expandMacro('%{' + macro + '}')
-
     def expand_tag(self, tag, pkg_name=None):
         '''
         Return value of given tag in the spec file, or None. Parameters:
