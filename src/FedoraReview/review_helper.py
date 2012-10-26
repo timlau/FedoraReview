@@ -173,6 +173,8 @@ class ReviewHelper(object):
 
     def run(self):
         ''' Load urls, run checks and make report, '''
+        self.log.debug('fedora-review ' + __version__ + ' ' +
+                         BUILD_FULL + ' started')
         self.log.debug("Command  line: " + ' '.join(sys.argv))
         try:
             rcode = 0
