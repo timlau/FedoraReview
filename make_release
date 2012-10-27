@@ -49,6 +49,13 @@ rm -f $dfile
 # setuptools does not package symlinks...
 cd test; ./remember-links > restore-links.sh; cd $OLDPWD
 
+git ls-files | while read path; do
+    [[ $(basename $path) == .git* || -L $path ]] && continue
+    echo $path
+done > MANIFEST
+
+echo "src/FedoraReview/version" >> MANIFEST
+echo "test/restore-links.sh" >> MANIFEST
 env PYTHONPATH=src python setup.py --quiet clean
 env PYTHONPATH=src python setup.py --quiet build sdist
 if [ ! -e "$dfile" ];  then
