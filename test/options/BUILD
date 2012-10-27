@@ -1,1 +1,0 @@
-/home/leamas/tmp/FedoraReview/test/options/../dummy

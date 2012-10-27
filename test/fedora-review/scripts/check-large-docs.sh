@@ -11,6 +11,7 @@ max=1000000
 docdir='./usr/share/doc'
 
 if unpack_rpms; then
+    [ $(ls rpms-unpacked | wc -l) = '0' ] && return FR_PASS
     size=$(for rpm in rpms-unpacked/*; do
                (cd $rpm; test -d $docdir && tar c ./usr/share/doc)
            done | wc -c)
