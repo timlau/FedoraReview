@@ -55,7 +55,6 @@ if [ ! -e "$dfile" ];  then
     echo "Error: could not create $dfile"
     exit 1
 fi
-echo "Created: $dfile"
 
 if [ ! "$1" = '-q' ]; then
     echo "Running tests on tarball before finalizing release"
