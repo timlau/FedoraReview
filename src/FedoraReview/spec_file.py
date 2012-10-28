@@ -55,7 +55,7 @@ class SpecFile(object):
                               self.expand_tag(rpm.RPMTAG_VERSION),
                               self.expand_tag(rpm.RPMTAG_RELEASE)]
         pkg_list = [p.header[rpm.RPMTAG_NAME] for p in self.spec.packages]
-        pkg_list = [p for p in pkg_list if self.get_files(p)]
+        pkg_list = [p for p in pkg_list if self.get_files(p) != None]
         self._packages = pkg_list
 
     name = property(lambda self: self.name_vers_rel[0])
@@ -103,33 +103,43 @@ class SpecFile(object):
             result[tag] = self.spec.sourceHeader.format(url)
         return result
 
+    def _parse_files_pkg_name(self, line):
+        ''' Figure out the package name in a %files line. '''
+        tokens = line.split()
+        assert tokens.pop(0) == '%files'
+        while tokens:
+            token = tokens.pop(0)
+            if len(tokens) == 0:
+                return self.base_package + '-' + token
+            elif token == '-n':
+                return tokens.pop(0)
+            elif token == '-f':
+                tokens.pop(0)
+        self.log.warning("Cannot parse %files line: " + line)
+
     def _parse_files(self, pkg_name):
-        ''' Parse and return the %files section for pkg_name. '''
+        ''' Parse and return the %files section for pkg_name.
+            Return [] for empty file list, None for no matching %files.
+        '''
         if not pkg_name:
             pkg_name = self.name
-        reaping = False
-        lines = []
+        lines = None
         for line in [l.strip() for l in self.lines]:
-            if not reaping:
+            if lines == None:
                 if line.startswith('%files'):
-                    words = line.split()
-                    if len(words) == 1 and pkg_name == self.name:
-                        reaping = True
-                    elif len(words) > 1 and pkg_name.endswith(words[1]):
-                        reaping = True
-            else:
-                if line.startswith('%{'):
-                    # breaks for %docdir instead of %{docdir}
-                    lines.append(rpm.expandMacro(line))
-                elif line.startswith('%'):
-                    token = re.split('\s|\(', line)[0]
-                    if not token in ['%ghost', '%doc', '%docdir',
-                    '%verify', '%attr', '%config', '%dir', '%defattr']:
-                        break
-                    else:
-                        lines.append(line)
-                elif line:
+                    if self._parse_files_pkg_name(line) == pkg_name:
+                        lines = []
+                continue
+            line = rpm.expandMacro(line)
+            if line.startswith('%'):
+                token = re.split('\s|\(', line)[0]
+                if not token in ['%ghost', '%doc', '%docdir',
+                '%verify', '%attr', '%config', '%dir', '%defattr']:
+                    break
+                else:
                     lines.append(line)
+            elif line:
+                lines.append(line)
         return lines
 
     @property
@@ -182,7 +192,9 @@ class SpecFile(object):
         return package.header[rpm.RPMTAG_REQUIRES]
 
     def get_files(self, pkg_name=None):
-        ''' Return %files section for base or specified package. '''
+        ''' Return %files section for base or specified package.
+            Returns [] for empty section, None for not found.
+        '''
         try:
             files = self._get_pkg_by_name(pkg_name).fileList
             return \
