@@ -13,11 +13,13 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with this program; if not, write to the Free Software
-#    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA.
+#    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+#    MA  02110-1301 USA.
 #
 ''' Unit tests for creating dist '''
 
 import os
+import os.path
 import sys
 import unittest2 as unittest
 
@@ -34,7 +36,10 @@ from fr_testcase import FR_TestCase
 
 
 class TestDist(FR_TestCase):
+    ''' Test creating installation artifacts. '''
 
+    @unittest.skipIf(not os.path.exists('../make_release'),
+                     'No make-release tests on installed test package')
     def test_tarballs(self):
         ''' Test  make_release_script. '''
         os.chdir('..')
