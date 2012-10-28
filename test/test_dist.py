@@ -37,7 +37,7 @@ from fr_testcase import FR_TestCase
 class TestDist(FR_TestCase):
     ''' Test creating installation artifacts. '''
 
-    @unittest.skipIf(not os.path.exists('../make_release'),
+    @unittest.skipIf(not os.path.exists('../.git'),
                      'No make-release tests on installed test package')
     def test_tarballs(self):
         ''' Test  make_release_script. '''
