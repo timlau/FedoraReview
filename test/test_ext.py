@@ -48,13 +48,13 @@ class TestExt(FR_TestCase):
     def test_display(self):
         ''' Test  -d cli option. '''
         os.chdir('test_ext')
-        check_call('../../src/fedora-review -d | grep test1 >/dev/null',
+        check_call(srcpath.REVIEW_PATH + ' -d | grep test1 >/dev/null',
                    shell=True)
 
     def test_single(self):
         ''' Test  -s test cli option. '''
         os.chdir('test_ext')
-        check_call('../../src/fedora-review -n python-test'
+        check_call(srcpath.REVIEW_PATH + ' -n python-test'
                    ' -s unittest-test1'
                    ' --cache --no-build >/dev/null',
                    shell=True)
@@ -63,7 +63,7 @@ class TestExt(FR_TestCase):
         ''' Test  -x test cli option. '''
         self.init_test('test_ext',argv=['-b', '1'], wd='review-python-test')
         os.chdir('..')
-        check_call('../../src/fedora-review -n python-test' +
+        check_call(srcpath.REVIEW_PATH + ' -n python-test'
                    '  -x unittest-test1' +
                    ' -m ' + self.BUILDROOT +
                    ' --cache --no-build >/dev/null',

@@ -113,7 +113,7 @@ class TestOptions(FR_TestCase):
 
     def test_display(self):
         """ test -d/--display option. """
-        cmd = '../src/fedora-review --display-checks'
+        cmd = srcpath.REVIEW_PATH + ' --display-checks'
         output = check_output(cmd, shell=True)
         output = output.decode('utf-8')
         self.assertTrue(len(output) > 20)
@@ -143,7 +143,7 @@ class TestOptions(FR_TestCase):
 
     def test_version(self):
         """ test --version option. """
-        cmd = '../src/fedora-review --version'
+        cmd = srcpath.REVIEW_PATH + ' --version'
         output = check_output(cmd, shell=True)
         output = output.decode('utf-8')
         self.assertIn('fedora-review', output)

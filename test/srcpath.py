@@ -23,7 +23,9 @@ from distutils.sysconfig import get_python_lib
 
 if os.path.exists('../src'):
     SRC_PATH = os.path.abspath('../src')
+    REVIEW_PATH = os.path.abspath('../src/fedora-review')
 else:
     SRC_PATH = os.path.join(get_python_lib(), 'FedoraReview')
-    assert os.path.exists(SRC_PATH), "Can't find src path"
+    REVIEW_PATH = '/usr/bin/fedora-review'
+assert os.path.exists(SRC_PATH), "Can't find src path"
 sys.path.insert(0, SRC_PATH)
