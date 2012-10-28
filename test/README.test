@@ -40,7 +40,7 @@ Running a single test file:
 Running a single test case:
     $ python -m unittest test_misc.TestMisc.test_sources
 or (only solution on EL6, works for all test_*.py files):
-    $ ./test_dist.py dogfood
+    $ python test_dist.py dogfood
 
 Occasionally, mock is locked in a bad state, making tests
 fail.  To recover:
