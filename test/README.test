@@ -1,0 +1,49 @@
+fedora-review unit tests.
+=========================
+
+This directory contains the unit tests for fedora-review. They can be run
+either in a cloned git repository, or as installed from the
+fedora-review-test-package
+
+When using the installed package in /usr/share/fedora-review/test it must
+first be copied to an area where its writeable e. g.,
+   $ cp -ar /usr/share/fedora-review/test .
+   $ cd test
+
+This way, the installed version is tested. When running direct from git repo
+only the git repo variant is used, even if there is a instelled version.
+
+The tests could be run either by the run-scripts.py wrapper, or directly.
+   $ export REVIEW_LOGLEVEL=warning
+   $ ./run-tests.py
+or (not on EL6):
+   $ python -m unittest discover -v
+
+The REVIEW_LOGLEVEL could be given other values, and there some other
+environment variables as well. Some examples:
+
+To display lot's of data when hunting down bugs:
+    $ export REVIEW_LOGLEVEL=debug
+    $ ./run-tests.py
+
+To disable slow tests:
+    $ export REVIEW_FAST_TEST=1
+    $ ./run-tests.py
+
+To display a 'git status' after each test:
+    $ export REVIEW_TEST_GIT_STATUS=1
+    $ ./run-tests.py
+
+Running a single test file:
+    $ python -m unittest test_misc
+
+Running a single test case:
+    $ python -m unittest test_misc.TestMisc.test_sources
+or (only solution on EL6, works for all test_*.py files):
+    $ ./test_dist.py dogfood
+
+Occasionally, mock is locked in a bad state, making tests
+fail.  To recover:
+    # rm -rf /var/lib/mock/*
+    $ mock --init
+

@@ -103,6 +103,7 @@ python -m unittest discover -f
 %{_datadir}/%{name}/scripts
 
 %files tests
+%doc test/README.test
 %{_datadir}/%{name}/test
 
 

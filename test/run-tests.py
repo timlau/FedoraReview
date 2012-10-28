@@ -2,34 +2,8 @@
 #
 # Run all tests, python version
 #
-# Occasionally, mock is locked in a bad state, making tests
-# fail.  To recover:
+# See: README.test for howto
 #
-#     # rm -rf /var/lib/mock/*
-#     $ mock --init
-#
-# To filter output when running as normal:
-#     $ export REVIEW_LOGLEVEL=warning
-#     $ ./run-tests.py
-#
-# To display lot's of data when hunting down bugs:
-#     $ export REVIEW_LOGLEVEL=debug
-#     $ ./run-tests.py
-#
-# To disable slow tests:
-#     $ export REVIEW_FAST_TEST=1
-#     $ ./run-tests.py
-#
-# To display a 'git status' after each test:
-#     $ export REVIEW_TEST_GIT_STATUS=1
-#     $ ./run-tests.py
-#
-# Running a single test file:
-#     $ python -m unittest test_misc
-#
-# Running a single test case:
-#     $ python -m unittest test_misc.TestMisc.test_sources
-
 import os
 import sys
 import unittest2 as unittest
