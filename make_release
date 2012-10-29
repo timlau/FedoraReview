@@ -20,8 +20,6 @@
 #
 # All cases: run this script, find spec, tarball and srpm in dist/.
 
-set -x
-
 startdir=$PWD
 cd $( dirname $( readlink -fn $0 ))
 branch="$( git branch | awk '/^*/ {$1 = ""; print $0}' )"
@@ -34,7 +32,7 @@ status=$( git status --short -uno)
 
 echo
 newdir=$( mktemp --tmpdir -d fedora-review-release-XXXXX )
-git clone . $newdir
+git clone --quiet . $newdir
 cd $newdir
 git reset --quiet --hard $commit
 
