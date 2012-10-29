@@ -20,6 +20,7 @@
 #
 # All cases: run this script, find spec, tarball and srpm in dist/.
 
+set -x
 
 startdir=$PWD
 cd $( dirname $( readlink -fn $0 ))
@@ -40,7 +41,7 @@ git reset --quiet --hard $commit
 badlinks=$( find . -type l ! -execdir test -e '{}' \; -print | nl )
 [ -n "$badlinks" ] && echo "Warning: unresolved  symlinks: $badlinks" >&2
 
-./update-version
+env PYTHONPATH=src ./update-version
 
 source src/FedoraReview/version
 dfile="dist/fedora-review-$__version__.tar.gz"
