@@ -34,7 +34,7 @@ status=$( git status --short -uno)
 
 echo
 newdir=$( mktemp --tmpdir -d fedora-review-release-XXXXX )
-git clone --quiet . $newdir
+git clone --quiet . $newdir >/dev/null
 cd $newdir
 git reset --quiet --hard $commit
 
