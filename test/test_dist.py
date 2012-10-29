@@ -39,7 +39,7 @@ class TestDist(FR_TestCase):
 
     @unittest.skipIf(not os.path.exists('../.git'),
                      'No make-release tests on installed test package')
-    def tarballs(self):
+    def test_tarballs(self):
         ''' Test  make_release_script. '''
         os.chdir('..')
         check_call('./make_release -q >/dev/null', shell=True)

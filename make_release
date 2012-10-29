@@ -89,7 +89,10 @@ source0=${source0##*/}
 cp "$newdir/$dfile" "$startdir/dist/$source0"
 echo "Created: dist/$source0"
 
-ln -sf $PWD/dist/$source0  $( rpm --eval %_sourcedir )
+sources=$( rpm --eval %_sourcedir )
+mkdir -p $sources &>/dev/null || :
+ln -sf $PWD/dist/$source0  $sources
+
 cd dist
     evr=$( rpmspec --srpm -q --qf '%{version}-%{release}' fedora-review.spec )
     rpmbuild --quiet -bs fedora-review.spec
