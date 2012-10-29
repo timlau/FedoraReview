@@ -21,25 +21,21 @@
 # All cases: run this script, find spec, tarball and srpm in dist/.
 
 
-set -x
-
-
 startdir=$PWD
 cd $( dirname $( readlink -fn $0 ))
-                                            echo "BRANCH: $(git branch)"
-branch=$( git branch | awk '/^*/ {print $2}' )
-commit=$( git log --oneline | cut -d' ' -f1 )
+branch="$( git branch | awk '/^*/ {$1 = ""; print $0}' )"
+commit=$( git log --oneline | head -1 | cut -d' ' -f1 )
 echo "Using branch: $branch"
 echo "Last commit : $(git log --oneline -1)"
-
 
 status=$( git status --short -uno)
 [ -n "$status" ] && echo 'Warning: there are uncommitted changes' >&2
 
 echo
 newdir=$( mktemp --tmpdir -d fedora-review-release-XXXXX )
-git clone -b $branch . $newdir
+git clone . $newdir
 cd $newdir
+git reset --quiet --hard $commit
 
 badlinks=$( find . -type l ! -execdir test -e '{}' \; -print | nl )
 [ -n "$badlinks" ] && echo "Warning: unresolved  symlinks: $badlinks" >&2
