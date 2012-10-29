@@ -144,7 +144,7 @@ class TestChecks(FR_TestCase):
                         ('pending', 'CheckLatestVersionIsPackaged'),
                         ('pass', 'CheckSourcePatchPrefix'),
                         ('pending', 'CheckObsoletesForRename'),
-                        ('fail', 'CheckJavadocdirName'),
+                        ('pass', 'CheckJavadocdirName'),
                         ('pass', 'CheckClean'),
                         ('pass', 'CheckCleanBuildroot'),
                         ('pass', 'CheckDescMacros'),
