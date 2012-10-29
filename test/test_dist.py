@@ -30,15 +30,21 @@ try:
 except ImportError:
     from FedoraReview.el_compat import check_output
 
-
 from fr_testcase import FR_TestCase
+
+
+def _proper_dist_os():
+    ''' Return true if we can create a dist on this OS. '''
+    uname_r = check_output(['uname', '-r']).decode('utf-8')
+    if 'el6' in uname_r:
+        return False
+    return True
 
 
 class TestDist(FR_TestCase):
     ''' Test creating installation artifacts. '''
 
-    @unittest.skipIf(not os.path.exists('../.git'),
-                     'No make-release tests on installed test package')
+    @unittest.skipIf(not _proper_dist_os())
     def test_tarballs(self):
         ''' Test  make_release_script. '''
         os.chdir('..')
