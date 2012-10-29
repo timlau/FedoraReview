@@ -44,7 +44,8 @@ def _proper_dist_os():
 class TestDist(FR_TestCase):
     ''' Test creating installation artifacts. '''
 
-    @unittest.skipIf(not _proper_dist_os())
+    @unittest.skipIf(not _proper_dist_os(),
+                     'Cannot make a dist (bad os)')
     def test_tarballs(self):
         ''' Test  make_release_script. '''
         os.chdir('..')
