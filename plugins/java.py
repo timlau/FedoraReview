@@ -113,22 +113,19 @@ class CheckJavadocdirName(JavaCheckBase):
         self.automatic = True
 
     def run_on_applicable(self):
-        """ run check for java packages """
         pkg = self._get_javadoc_sub()
         if not pkg:
             self.set_passed(False, "No javadoc subpackage present")
             return
-        name_pattern = "/usr/share/javadoc/%s" % self.spec.name
-        name_ver_pattern = "/usr/share/javadoc/%s-%s" \
+        name_ver_pattern = "/usr/share/javadoc/%s-%s/*" \
                                        % (self.spec.name, self.spec.version)
-        paths = self.rpms.find(name_pattern, pkg)
-        paths_ver = self.rpms.find_all(name_ver_pattern, pkg)
-        if len(paths_ver) != 0:
+        if self.rpms.find_all(name_ver_pattern, pkg):
             self.set_passed(False,
-                            "Found deprecated versioned javadoc path %s" %
-                            paths_ver[0])
+                            "Found deprecated versioned javadoc paths " +
+                            name_ver_pattern)
             return
-        if len(paths) != 1:
+        name_pattern = "/usr/share/javadoc/%s/*" % self.spec.name
+        if not self.rpms.find_all(name_pattern, pkg):
             self.set_passed(False,
                             "No /usr/share/javadoc/%s found" % self.spec.name)
             return
