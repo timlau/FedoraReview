@@ -123,14 +123,14 @@ class CheckStaticLibs(CCppCheckBase):
 
     def run_on_applicable(self):
         ''' Run the test, called if is_applicable() is True. '''
-        passed = True
-        extra = ""
+        extra = []
         for pkg in self.spec.packages:
-            for path in self.get_files_by_pattern('*.a', pkg):
+            if self.rpms.has_files('*.a', pkg):
                 if not '-static' in pkg:
-                    passed = False
-                    extra += "%s : %s\n" % (pkg, path)
-        self.set_passed(passed, extra)
+                    extra.append(pkg)
+        if extra:
+            extra = 'Archive *.la files found in ' + ', '.join(extra)
+        self.set_passed(self.FAIL if extra else self.PASS, extra)
 
 
 class CheckNoStaticExecutables(CCppCheckBase):

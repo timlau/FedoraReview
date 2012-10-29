@@ -200,14 +200,14 @@ class CheckJavaFullVerReqSub(JavaCheckBase):
 
     def run_on_applicable(self):
         """ Run check for java packages """
-        regex = re.compile(r'Requires:\s*%{name}\s*=\s*%{version}-%{release}')
+        req = "%s = %s-%s" % tuple(self.spec.name_vers_rel)
         bad_ones = []
         extra = None
-        for pkg in self.spec.packages:
-            if pkg.endswith("-javadoc"):
+        for pkg_name in self.spec.packages:
+            if pkg_name.endswith("-javadoc"):
                 continue
-            if not self.rpms.find_re(regex, pkg):
-                bad_ones.append(pkg)
+            if not req in self.rpms.get(pkg_name).requires:
+                bad_ones.append(pkg_name)
         if bad_ones:
             extra = self.MSG + ', '.join(bad_ones)
         self.set_passed(self.FAIL if extra else self.PASS, extra)
@@ -269,7 +269,7 @@ class CheckUseMavenpomdirMacro(JavaCheckBase):
                     '%{_datadir}/maven2/poms'
         self.automatic = True
         self.type = 'MUST'
-        self.regex = re.compile(r'%{_datadir}/maven2/poms')
+        self.regex = re.compile('%{_datadir}/maven2/poms')
 
     def run(self):
         if not self.rpms.find("*.pom"):
@@ -316,10 +316,28 @@ class CheckNoRequiresPost(JavaCheckBase):
             re.compile(r'^\s*Requires\((post|postun)\):\s*jpackage-utils.*')
 
     def run(self):
+
+        def _find(what, where):
+            ''' True if what is part of the list where. '''
+            for item in where:
+                if not item:
+                    continue
+                if what in item:
+                    return True
+            return False
+
         if not self.rpms.find("*.pom"):
             self.set_passed('not_applicable')
             return
-        self.set_passed(not self.spec.find(self.regex))
+        bad_ones = []
+        txt = ''
+        for pkg_name in self.spec.packages:
+            rpm_pkg = self.rpms.get(pkg_name)
+            if _find('jpackage-utils', [rpm_pkg.post, rpm_pkg.postun]):
+                bad_ones.append(pkg_name)
+        if bad_ones:
+            txt = 'jpackage-utils post/postun in ' + ', '.join(bad_ones)
+        self.set_passed(self.FAIL if txt else self.PASS, txt)
 
 
 class CheckTestSkip(JavaCheckBase):
@@ -344,7 +362,7 @@ class CheckTestSkip(JavaCheckBase):
         if not self.spec.find(skip_regex) or not build_sec:
             self.set_passed(self.NA)
             return
-        result = self._search_previous_line(build_sec.split('\n'),
+        result = self._search_previous_line(build_sec,
                                             skip_regex,
                                             mvn_regex,
                                             comment_regex)
@@ -352,13 +370,11 @@ class CheckTestSkip(JavaCheckBase):
             # weird. It has skip regex but no maven call?
             self.set_passed(True)
         else:
-            if result:
-                self.set_passed("inconclusive", "Some comment is used "
-                                   "before mvn-rpmbuild command. Please"
-                                   " verify it explains use of "
-                                   "-Dmaven.test.skip")
-            else:
-                self.set_passed(False)
+            self.set_passed("inconclusive", "Some comment is used "
+                               "before mvn-rpmbuild command. Please"
+                               " verify it explains use of "
+                               "-Dmaven.test.skip")
+            self.set_passed(False)
 
 
 class CheckLocalDepmap(JavaCheckBase):
@@ -386,16 +402,13 @@ class CheckLocalDepmap(JavaCheckBase):
                                             depmap_regex,
                                             mvn_regex,
                                             comment_regex)
-        if result == None:
+        if not result:
             # weird. It has skip regex but no maven call?
             self.set_passed(True)
         else:
-            if result:
-                self.set_passed("inconclusive", """Some comment is
-        used before mvn-rpmbuild command. Please verify it explains
-        use of -Dmaven.local.depmap""")
-            else:
-                self.set_passed(False)
+            self.set_passed("inconclusive", """Some comment is
+                used before mvn-rpmbuild command. Please verify
+                it explains use of -Dmaven.local.depmap""")
 
 
 class CheckBundledJars(JavaCheckBase):

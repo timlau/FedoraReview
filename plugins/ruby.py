@@ -276,13 +276,12 @@ class GemCheckDoesntHaveNonGemSubpackage(GemCheckBase):
         self.automatic = True
 
     def run_on_applicable(self):
-        subpackage_re = re.compile(r'^%package\s+-n\s+ruby-.*')
-        self.set_passed(True)
-
-        for line in self.spec.lines:
-            if subpackage_re.match(line):
-                self.set_passed(False)
+        for pkg in self.spec.packages:
+            if pkg.startswith('ruby-'):
+                self.set_passed(self.FAIL)
                 break
+        else:
+            self.set_passed(self.PASS)
 
 
 class GemCheckRequiresRubygems(GemCheckBase):
