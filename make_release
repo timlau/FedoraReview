@@ -21,12 +21,15 @@
 # All cases: run this script, find spec, tarball and srpm in dist/.
 
 
+set -x
+
 startdir=$PWD
 cd $( dirname $( readlink -fn $0 ))
 branch=$( git branch | awk '/^*/ {print $2}' )
 commit=$( git log --oneline | cut -d' ' -f1 )
 echo "Using branch: $branch"
 echo "Last commit : $(git log --oneline -1)"
+
 
 status=$( git status --short -uno)
 [ -n "$status" ] && echo 'Warning: there are uncommitted changes' >&2
