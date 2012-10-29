@@ -188,7 +188,7 @@ class CheckJavaFullVerReqSub(JavaCheckBase):
     except javadoc subpackage that doesn't have this requirement"""
 
     deprecates = ['CheckFullVerReqSub']
-    MSG = "Missing: Requires: %{name} = %{version}-%{release} in"
+    MSG = "Missing: Requires: %{name} = %{version}-%{release} in "
 
     def __init__(self, base):
         JavaCheckBase.__init__(self, base)
@@ -209,8 +209,7 @@ class CheckJavaFullVerReqSub(JavaCheckBase):
             if not self.rpms.find_re(regex, pkg):
                 bad_ones.append(pkg)
         if bad_ones:
-            extra = "Missing: 'Requires: %%{name} =' in: " + \
-                        ', '.join(bad_ones)
+            extra = self.MSG + ', '.join(bad_ones)
         self.set_passed(self.FAIL if extra else self.PASS, extra)
 
 
