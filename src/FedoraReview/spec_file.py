@@ -115,7 +115,7 @@ class SpecFile(object):
                 return tokens.pop(0)
             elif token == '-f':
                 tokens.pop(0)
-        self.log.warning("Cannot parse %files line: " + line)
+        return self.base_package
 
     def _parse_files(self, pkg_name):
         ''' Parse and return the %files section for pkg_name.
