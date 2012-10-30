@@ -277,7 +277,7 @@ class GemCheckDoesntHaveNonGemSubpackage(GemCheckBase):
 
     def run_on_applicable(self):
         for pkg in self.spec.packages:
-            if pkg.startswith('ruby-'):
+            if '-ruby-' in pkg or pkg.startswith('ruby-'):
                 self.set_passed(self.FAIL)
                 break
         else:
