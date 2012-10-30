@@ -1,12 +1,12 @@
 #invoke with "--without tests" to disable tests
 %bcond_without tests
 
-# See notes in make_release
-%global     git_tag  .dd754de
+# See notes in make_release which patches this.
+%global     git_tag  .fa1afe1
 
 Name:       fedora-review
 Version:    0.3.1
-Release:    2%{?git_tag}%{?dist}
+Release:    3%{?git_tag}%{?dist}
 Summary:    Review tool for fedora rpm packages
 
 License:    GPLv2+
@@ -51,6 +51,7 @@ The tool is composed of a plugins, one for each supported language.
 As of today, there is plugins for C/C++, Ruby, java, R, perl and
 python.  There is also support for external tests that can be written
 in a simple way in bash.
+
 
 %package tests
 Summary: Test and test data files for fedora-review
@@ -108,9 +109,15 @@ python -m unittest discover -f
 
 
 %changelog
-* Fri Oct 11 2012 Alec Leamas <leamas@nowhere.net> - 0.3.1-2.dd754de
-- Merge version-info branch -> post-release capabilities
-- Fix symlinking of plugin/script dirs
+* Tue Oct 30 2012 Alec Leamas <leamas@nowhere.net> - 0.3.1-3.fa1afe1
+- Provisionary post-release placeholder (nothing yet really released)
+- Post-release capabilities using make_release script and %%git_tag
+- Update symlinking of plugin/script dirs (from 3.1.1 release branch)
+- Add test subpackage
+- Added %%check and %%bcond tests
+
+* Thu Oct 25 2012 Stanislav Ochotnicky <sochotnicky@redhat.com> - 0.3.1-2
+- Add symlink to scripts directory so they are loaded
 
 * Tue Sep 25 2012 Stanislav Ochotnicky <sochotnicky@redhat.com> - 0.3.1-1
 - Update to lastest upstream (0.3.1)
@@ -130,10 +137,6 @@ python -m unittest discover -f
 
 * Wed Jul 11 2012 Stanislav Ochotnicky <sochotnicky@redhat.com> - 0.2.0-1
 - Update to latest release (0.2.0)
-
-* Tue Jun 26 2012 Alec Leamas <alec.leamas@nowhere.net> - 0.2.0-1
-- Added support for git post-release %%git_tag
-- Adjusted file section to include missing entries
 
 * Fri Feb 24 2012 Stanislav Ochotnicky <sochotnicky@redhat.com> - 0.1.3-1
 - Update to latest bugfix release
@@ -156,3 +159,5 @@ python -m unittest discover -f
 
 * Thu Nov 10 2011 Pierre-Yves Chibon <pingou@pingoured.fr> - 0.1.0-1
 - Initial packaging work for Fedora
+
+
