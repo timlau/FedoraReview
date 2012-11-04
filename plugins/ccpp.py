@@ -129,7 +129,7 @@ class CheckStaticLibs(CCppCheckBase):
                 if not '-static' in pkg:
                     extra.append(pkg)
         if extra:
-            extra = 'Archive *.la files found in ' + ', '.join(extra)
+            extra = 'Archive *.a files found in ' + ', '.join(extra)
         self.set_passed(self.FAIL if extra else self.PASS, extra)
 
 
