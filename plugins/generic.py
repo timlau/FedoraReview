@@ -24,6 +24,7 @@ This module contains automatic test for Fedora Packaging guidelines
 import os
 import os.path
 import re
+import rpm
 
 from glob import glob
 from StringIO import StringIO
@@ -253,14 +254,12 @@ class CheckClean(GenericCheckBase):
 
     def run(self):
         has_clean = False
-        sec_clean = self.spec.get_section('%clean')
+        sec_clean = self.spec.find('%clean')
         if sec_clean:
-            regex = re.compile('^(rm|%{__rm})\s+\-rf\s+(%{buildroot}|'
-                               '\$RPM_BUILD_ROOT)\s*$')
-            for line in sec_clean:
-                if regex.search(line):
-                    has_clean = True
-                    break
+            sec_clean = self.spec.get_section('%clean', raw=True)
+            regex = 'rm\s+\-[rf][rf]\s+(%{buildroot}|$RPM_BUILD_ROOT)'
+            regex = rpm.expandMacro(regex)
+            has_clean = re.search(regex, sec_clean)
         if self.flags['EPEL5']:
             self.text = 'EPEL5 requires explicit %clean with rm -rf' \
                              ' %{buildroot} (or $RPM_BUILD_ROOT)'
@@ -361,10 +360,10 @@ class CheckCleanBuildroot(GenericCheckBase):
 
     def run(self):
         has_clean = False
-        regex = re.compile('^(rm|%{__rm})\s\-rf\s(%{buildroot}|'
-                           '\$RPM_BUILD_ROOT)\s*$')
+        regex = 'rm\s+\-[rf][rf]\s+(%{buildroot}|$RPM_BUILD_ROOT)'
+        regex  = rpm.expandMacro(regex)
         install_sec = self.spec.get_section('%install', raw=True)
-        has_clean = install_sec and regex.search(install_sec)
+        has_clean = install_sec and re.search(regex, install_sec)
         if self.flags['EPEL5']:
             self.text = 'EPEL5: Package does run rm -rf %{buildroot}' \
                   ' (or $RPM_BUILD_ROOT) at the beginning of %install.'
