@@ -163,7 +163,7 @@ class SpecFile(object):
           - tag: tag as listed by rpm --querytags, case-insensitive or
             a  constant like rpm.RPMTAG_NAME.
           - package: A subpackage, as listed by get_packages(), defaults
-            to the  base package.
+            to the source package.
         '''
         if not pkg_name:
             header = self.spec.sourceHeader

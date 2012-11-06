@@ -1329,6 +1329,12 @@ class CheckRelocatable(GenericCheckBase):
         self.automatic = False
         self.type = 'MUST'
 
+    def run_on_applicable(self):
+        if self.spec.find_re('^Prefix:'):
+            self.set_passed(self.FAIL, 'Package has a "Prefix:" tag')
+        else:
+            self.set_passed(self.PASS)
+
 
 class CheckReqPkgConfig(GenericCheckBase):
     '''
