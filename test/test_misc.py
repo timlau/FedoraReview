@@ -291,9 +291,7 @@ class TestMisc(FR_TestCase):
     @unittest.skipIf(FAST_TEST, 'slow test disabled by REVIEW_FAST_TEST')
     def test_mockbuild(self):
         """ Test the SRPMFile class """
-        self.init_test('test_misc',
-                       argv=['-n','python-test', '--cache',
-                             '--no-build'])
+        self.init_test('mockbuild', argv=['-rn','python-test'])
         srpm = SRPMFile(self.srpm_file)
         # install the srpm
         srpm.unpack()
