@@ -1993,12 +1993,12 @@ class CheckUpdateDesktopDatabase(GenericCheckBase):
     def run(self):
         using = []
         failed = False
+        install = self.spec.get_section('%install', raw=True)
         for pkg in self.spec.packages:
             if self.rpms.find('*.desktop', pkg):
                 using.append(pkg)
-                rpm_pkg = self.rpms.get(pkg)
-                if not _in_list('update-desktop-database',
-                                [rpm_pkg.post, rpm_pkg.postun]):
+                if not 'update-desktop-database' in install and \
+                not 'desktop-file-validate' in install:
                     failed = True
         if not using:
             self.set_passed(self.NA)
