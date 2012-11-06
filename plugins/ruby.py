@@ -23,7 +23,7 @@ def _is_gem(spec):
 def _has_extension(check):
     """ Return True if the package contains native extension """
     # TODO: will need altering for jruby .jar files
-    return check.rpms.has_files_re(r'.*\.c(?:pp)')
+    return check.rpms.find_re(r'.*\.c(?:pp)')
 
 
 def _gl_uri():

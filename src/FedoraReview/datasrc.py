@@ -94,22 +94,6 @@ class AbstractDataSource():
                     return f
         return None
 
-    def has_files(self, glob_pattern, container=None):
-        ''' True if there's at least one matching file. '''
-        if container and not container in self.containers:
-            raise ValueError('DataSource: bad source: ' + container)
-        if hasattr(glob_pattern, 'match'):
-            return self.has_files_re(glob_pattern, container)
-        return self.find(glob_pattern, container) != None
-
-    def has_files_re(self, regex, container=None):
-        ''' True if there's at least one matching file. '''
-        if container and not container in self.containers:
-            raise ValueError('DataSource: bad source: ' + container)
-        if isinstance(regex, str):
-            regex = re.compile(regex, re.IGNORECASE)
-        return self.find_re(regex, container) != None
-
     def find_all(self, glob_pattern, container=None):
         ''' List of all files matching glob_pattern. '''
         if container and not container in self.containers:

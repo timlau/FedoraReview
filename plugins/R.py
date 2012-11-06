@@ -127,7 +127,7 @@ class RCheckDoc(RCheckBase):
         """ Run the check """
         doc_found = []
         for doc in self.DOCS:
-            if self.checks.rpms.has_files("*" + doc):
+            if self.checks.rpms.find("*" + doc):
                 doc_found.append(doc)
         docs = self.spec.find_all_re("%doc.*")
         self.text += ", ".join(doc_found)

@@ -17,11 +17,11 @@ class Registry(RegistryBase):
         if len(archs) == 1 and archs[0].lower() == 'noarch':
             return False
         rpms = self.checks.rpms
-        if rpms.has_files_re('/usr/(lib|lib64)/[\w\-]*\.so\.[0-9]') or \
-        rpms.has_files('*.h') or rpms.has_files('*.a') or \
-        self.checks.buildsrc.has_files('*.c') or \
-        self.checks.buildsrc.has_files('*.C') or \
-        self.checks.buildsrc.has_files('*.cpp'):
+        if rpms.find_re('/usr/(lib|lib64)/[\w\-]*\.so\.[0-9]') or \
+        rpms.find('*.h') or rpms.find('*.a') or \
+        self.checks.buildsrc.find('*.c') or \
+        self.checks.buildsrc.find('*.C') or \
+        self.checks.buildsrc.find('*.cpp'):
             return True
         return False
 
@@ -57,7 +57,7 @@ class CheckLDConfig(CCppCheckBase):
         bad_pkgs = []
         for pkg in self.spec.packages:
             rpm = RpmFile(pkg, self.spec.version, self.spec.release)
-            if not self.rpms.has_files_re(self.sofiles_regex, pkg):
+            if not self.rpms.find_re(self.sofiles_regex, pkg):
                 continue
             if not rpm.post  or not '/sbin/ldconfig' in rpm.post or \
             not rpm.postun or not '/sbin/ldconfig' in  rpm.postun:
@@ -85,7 +85,7 @@ class CheckHeaderFiles(CCppCheckBase):
 
     def is_applicable(self):
         ''' check if this test is applicable '''
-        return self.rpms.has_files('*.h')
+        return self.rpms.find('*.h')
 
     def run_on_applicable(self):
         ''' Run the test, called if is_applicable() is True. '''
@@ -119,13 +119,13 @@ class CheckStaticLibs(CCppCheckBase):
 
     def is_applicable(self):
         ''' check if this test is applicable '''
-        return self.rpms.has_files('*.a')
+        return self.rpms.find('*.a')
 
     def run_on_applicable(self):
         ''' Run the test, called if is_applicable() is True. '''
         extra = []
         for pkg in self.spec.packages:
-            if self.rpms.has_files('*.a', pkg):
+            if self.rpms.find('*.a', pkg):
                 if not '-static' in pkg:
                     extra.append(pkg)
         if extra:
@@ -165,7 +165,7 @@ class CheckSoFiles(CCppCheckBase):
 
     def run(self):
         ''' Run the test, always called '''
-        if not self.rpms.has_files('*.so'):
+        if not self.rpms.find('*.so'):
             self.set_passed('not_applicable')
             return
         passed = 'pass'
@@ -217,7 +217,7 @@ class CheckLibToolArchives(CCppCheckBase):
 
     def run_on_applicable(self):
         ''' Run the test, called if is_applicable() is True. '''
-        if not self.rpms.has_files('*.la'):
+        if not self.rpms.find('*.la'):
             self.set_passed(True)
         else:
             extra = ""

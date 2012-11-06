@@ -458,7 +458,7 @@ class CheckDesktopFile(GenericCheckBase):
         self.type = 'MUST'
 
     def run(self):
-        have_desktop = self.rpms.has_files('*.desktop')
+        have_desktop = self.rpms.find('*.desktop')
         self.set_passed(True if have_desktop else 'inconclusive')
 
 
@@ -480,7 +480,7 @@ class CheckDesktopFileInstall(GenericCheckBase):
         self.type = 'MUST'
 
     def run(self):
-        if not self.rpms.has_files('*.desktop'):
+        if not self.rpms.find('*.desktop'):
             self.set_passed('not_applicable')
             return
         pattern = r'(desktop-file-install|desktop-file-validate)' \
@@ -972,7 +972,7 @@ class CheckLocale(GenericCheckBase):
         self.type = 'MUST'
 
     def is_applicable(self):
-        return self.rpms.has_files('/usr/share/locale/*/LC_MESSAGES/*.mo')
+        return self.rpms.find('/usr/share/locale/*/LC_MESSAGES/*.mo')
 
 
 class CheckLicenseUpstream(GenericCheckBase):
@@ -1053,7 +1053,7 @@ class CheckManPages(GenericCheckBase):
         self.type = 'SHOULD'
 
     def is_applicable(self):
-        return self.rpms.has_files('[/usr]/[s]bin/*')
+        return self.rpms.find('[/usr]/[s]bin/*')
 
 
 class CheckMultipleLicenses(GenericCheckBase):
@@ -1347,7 +1347,7 @@ class CheckReqPkgConfig(GenericCheckBase):
         self.type = 'MUST'
 
     def run(self):
-        if not self.rpms.has_files('*.pc') or not self.flags['EPEL5']:
+        if not self.rpms.find('*.pc') or not self.flags['EPEL5']:
             self.set_passed('not_applicable')
             return
         result = self.FAIL
@@ -1865,7 +1865,7 @@ class CheckTmpfiles(GenericCheckBase):
             self.set_passed(self.NA)
             return
         for p in ['/run/*', '/var/run/*', '/var/lock/*', '/run/lock/*']:
-            if self.rpms.has_files(p):
+            if self.rpms.find(p):
                 self.set_passed(self.PENDING)
                 break
         else:
@@ -1888,7 +1888,7 @@ class CheckBundledFonts(GenericCheckBase):
             self.set_passed(self.NA)
             return
         for p in ['*.pfb', '*.pfa', '*.afm', '*.ttf', '*.otf']:
-            if self.rpms.has_files(p):
+            if self.rpms.find(p):
                 self.set_passed(self.PENDING,
                                 'Package contains font files')
                 break
@@ -1932,7 +1932,7 @@ class CheckUpdateMimeDatabase(GenericCheckBase):
         using = []
         failed = False
         for pkg in self.spec.packages:
-            if self.rpms.has_files('/usr/share/mime/packages/*', pkg):
+            if self.rpms.find('/usr/share/mime/packages/*', pkg):
                 using.append(pkg)
                 rpm_pkg = self.rpms.get(pkg)
                 if not _in_list('update-mime-database',
@@ -1960,7 +1960,7 @@ class CheckUpdateIconCache(GenericCheckBase):
         using = []
         failed = False
         for pkg in self.spec.packages:
-            if self.rpms.has_files('/usr/share/icons/*', pkg):
+            if self.rpms.find('/usr/share/icons/*', pkg):
                 using.append(pkg)
                 rpm_pkg = self.rpms.get(pkg)
                 if not _in_list('gtk-update-icon-cache',
@@ -1988,7 +1988,7 @@ class CheckUpdateDesktopDatabase(GenericCheckBase):
         using = []
         failed = False
         for pkg in self.spec.packages:
-            if self.rpms.has_files('*.desktop', pkg):
+            if self.rpms.find('*.desktop', pkg):
                 using.append(pkg)
                 rpm_pkg = self.rpms.get(pkg)
                 if not _in_list('update-desktop-database',
@@ -2018,7 +2018,7 @@ class CheckGioQueryModules(GenericCheckBase):
         libdir = Mock.rpm_eval('%{_libdir}')
         gio_pattern = os.path.join(libdir, 'gio/modules/', '*')
         for pkg in self.spec.packages:
-            if self.rpms.has_files(gio_pattern, pkg):
+            if self.rpms.find(gio_pattern, pkg):
                 using.append(pkg)
                 rpmpkg = self.rpms.get(pkg)
                 if not _in_list('gio-querymodules',
@@ -2048,7 +2048,7 @@ class CheckGtkQueryModules(GenericCheckBase):
         libdir = Mock.rpm_eval('%{_libdir}')
         pattern = os.path.join(libdir, 'gtk-3.0/', '*')
         for pkg in self.spec.packages:
-            if self.rpms.has_files(pattern, pkg):
+            if self.rpms.find(pattern, pkg):
                 using.append(pkg)
                 rpmpkg = self.rpms.get(pkg)
                 if not _in_list('gtk-query-immodules',
@@ -2076,7 +2076,7 @@ class CheckGlibCompileSchemas(GenericCheckBase):
         using = []
         failed = False
         for pkg in self.spec.packages:
-            if self.rpms.has_files('*.gschema.xml', pkg):
+            if self.rpms.find('*.gschema.xml', pkg):
                 using.append(pkg)
                 rpm_pkg = self.rpms.get(pkg)
                 if not _in_list('glib-compile-schemas',
@@ -2104,7 +2104,7 @@ class CheckGconfSchemaInstall(GenericCheckBase):
         using = []
         failed = False
         for pkg in self.spec.packages:
-            if self.rpms.has_files('/etc/gconf/schemas/*.schemas', pkg):
+            if self.rpms.find('/etc/gconf/schemas/*.schemas', pkg):
                 using.append(pkg)
                 rpm_pkg = self.rpms.get(pkg)
                 if not _in_list('%gconf_schema',
@@ -2132,7 +2132,7 @@ class CheckInfoInstall(GenericCheckBase):
         using = []
         failed = False
         for pkg in self.spec.packages:
-            if self.rpms.has_files('/usr/share/info/*', pkg):
+            if self.rpms.find('/usr/share/info/*', pkg):
                 using.append(pkg)
                 rpm_pkg = self.rpms.get(pkg)
                 if not _in_list('install-info',

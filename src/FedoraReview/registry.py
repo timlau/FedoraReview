@@ -125,13 +125,13 @@ class RegistryBase(AbstractRegistry):
             tests.append(obj)
         return tests
 
-    def has_files_re(self, regex):
+    def find_re(self, regex):
         ''' Files in rpms matching regex. '''
-        return self.checks.rpms.find_re(regex) != None
+        return self.checks.rpms.find_re(regex)
 
-    def has_files_(self, glob_pattern):
+    def find(self, glob_pattern):
         ''' Files in rpms matching glob_pattern. '''
-        return self.checks.rpms.find(glob_pattern) != None
+        return self.checks.rpms.find(glob_pattern)
 
 
 # vim: set expandtab: ts=4:sw=4:

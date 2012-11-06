@@ -13,7 +13,7 @@ class Registry(RegistryBase):
     def is_applicable(self):
         ''' Return true if this is a python package. '''
         return self.checks.spec.name.startswith("python") or \
-           self.checks.rpms.has_files('*.pyc')
+           self.checks.rpms.find('*.pyc')
 
 
 class PythonCheckBase(CheckBase):
