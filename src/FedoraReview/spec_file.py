@@ -218,7 +218,7 @@ class SpecFile(object):
             return None
         return _lines_in_string(section, raw)
 
-    def find(self, regex, flags=re.IGNORECASE):
+    def find_re(self, regex, flags=re.IGNORECASE):
         '''
         Return first raw line in spec matching regex or None.
           - regex: compiled regex or string.
@@ -231,7 +231,7 @@ class SpecFile(object):
                 return line.strip()
         return None
 
-    def find_all(self, regex, skip_changelog=False):
+    def find_all_re(self, regex, skip_changelog=False):
         ''' Return list of all raw lines in spec matching regex or []. '''
         if isinstance(regex, str):
             regex = re.compile(regex, re.IGNORECASE)

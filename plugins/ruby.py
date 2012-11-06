@@ -262,7 +262,7 @@ class GemCheckProperName(GemCheckBase):
         self.automatic = True
 
     def run_on_applicable(self):
-        name = self.spec.find('^Name\s*:')
+        name = self.spec.find_re('^Name\s*:')
         self.set_passed('rubygem-%{gem_name}' in name)
 
 

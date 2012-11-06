@@ -150,7 +150,7 @@ class CheckBuildroot(GenericCheckBase):
         self.type = 'SHOULD'
 
     def run(self):
-        br_tags = self.spec.find_all('^BuildRoot')
+        br_tags = self.spec.find_all_re('^BuildRoot')
         if len(br_tags) == 0:
             if self.flags['EPEL5']:
                 self.set_passed(self.FAIL,
@@ -254,7 +254,7 @@ class CheckClean(GenericCheckBase):
 
     def run(self):
         has_clean = False
-        sec_clean = self.spec.find('%clean')
+        sec_clean = self.spec.find_re('%clean')
         if sec_clean:
             sec_clean = self.spec.get_section('%clean', raw=True)
             regex = 'rm\s+\-[rf][rf]\s+(%{buildroot}|$RPM_BUILD_ROOT)'
@@ -288,7 +288,7 @@ class CheckDistTag(GenericCheckBase):
         self.type = 'SHOULD'
 
     def run(self):
-        rel_tags = self.spec.find_all('^Release\s*:')
+        rel_tags = self.spec.find_all_re('^Release\s*:')
         if len(rel_tags) > 1:
             self.set_passed(False, 'Multiple Release tags found')
             return
@@ -485,7 +485,7 @@ class CheckDesktopFileInstall(GenericCheckBase):
             return
         pattern = r'(desktop-file-install|desktop-file-validate)' \
                    '.*(desktop|SOURCE)'
-        found = self.spec.find(re.compile(pattern))
+        found = self.spec.find_re(re.compile(pattern))
         self.set_passed(self.PASS if found else self.FAIL)
 
 
@@ -1007,10 +1007,8 @@ class CheckMacros(GenericCheckBase):
         self.type = 'MUST'
 
     def run(self):
-        br_tag1 = self.spec.find_all(re.compile('.*%{buildroot}.*'),
-                                     True)
-        br_tag2 = self.spec.find_all(re.compile('.*\$RPM_BUILD_ROOT.*'),
-                                     True)
+        br_tag1 = self.spec.find_all_re('.*%{buildroot}.*', True)
+        br_tag2 = self.spec.find_all_re('.*\$RPM_BUILD_ROOT.*', True)
         if br_tag1 and br_tag2:
             self.set_passed(False,
                             'Using both %{buildroot} and $RPM_BUILD_ROOT')
@@ -1031,7 +1029,7 @@ class CheckMakeinstall(GenericCheckBase):
 
     def is_applicable(self):
         regex = re.compile(r'^(%makeinstall.*)')
-        res = self.spec.find(regex)
+        res = self.spec.find_re(regex)
         if res:
             self.set_passed(False, res.group(0))
             return True
@@ -1390,7 +1388,7 @@ class CheckScriptletSanity(GenericCheckBase):
 
     def is_applicable(self):
         regex = re.compile('%(post|postun|posttrans|preun|pretrans|pre)\s+')
-        return self.spec.find(regex)
+        return self.spec.find_re(regex)
 
 
 class CheckSourceComment(GenericCheckBase):
@@ -1808,7 +1806,7 @@ class CheckUseGlobal(GenericCheckBase):
 
     def run(self):
         regex = re.compile('(\%define.*)')
-        result = self.spec.find_all(regex, skip_changelog=True)
+        result = self.spec.find_all_re(regex, skip_changelog=True)
         if result:
             extra = ''
             for res in result:

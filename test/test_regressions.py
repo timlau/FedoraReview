@@ -61,8 +61,8 @@ class TestRegressions(FR_TestCase):
                        argv=['-rn', self.srpm_file])
         spec = SpecFile(self.spec_file)
         regex = re.compile('initial fedora')
-        self.assertEqual(len(spec.find_all(regex)), 2)
-        self.assertEqual(len(spec.find_all(regex, True)), 1)
+        self.assertEqual(len(spec.find_all_re(regex)), 2)
+        self.assertEqual(len(spec.find_all_re(regex, True)), 1)
 
 
     def test_107_no_space_config(self):

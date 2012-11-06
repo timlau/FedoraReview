@@ -129,7 +129,7 @@ class RCheckDoc(RCheckBase):
         for doc in self.DOCS:
             if self.checks.rpms.has_files("*" + doc):
                 doc_found.append(doc)
-        docs = self.spec.find_all(re.compile("%doc.*"))
+        docs = self.spec.find_all_re("%doc.*")
         self.text += ", ".join(doc_found)
         for entry in docs:
             entry = os.path.basename(entry).strip()
@@ -197,7 +197,7 @@ class RCheckDir(RCheckBase):
     def dont_run_on_applicable(self):
         # Disabled, does not call set_passed -> errors.
         """ Run the check """
-        #dirs = self.spec.find_tag('%dir')
+        #dirs = self.spec.find_tag_re('%dir')
         #print dirs
         pass
 

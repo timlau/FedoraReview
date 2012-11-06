@@ -228,7 +228,7 @@ class CheckNoOldMavenDepmap(JavaCheckBase):
 
     def run_on_applicable(self):
         """ run check for java packages """
-        self.set_passed(not self.spec.find(self.regex))
+        self.set_passed(not self.spec.find_re(self.regex))
 
 
 class CheckAddMavenDepmap(JavaCheckBase):
@@ -248,7 +248,7 @@ class CheckAddMavenDepmap(JavaCheckBase):
         if not self.rpms.find("*.pom"):
             self.set_passed('not_applicable')
             return
-        if not self.spec.find(self.regex):
+        if not self.spec.find_re(self.regex):
             self.set_passed(False,
                             "No add_maven_depmap calls found but pom"
                                  " files present")
@@ -275,7 +275,7 @@ class CheckUseMavenpomdirMacro(JavaCheckBase):
         if not self.rpms.find("*.pom"):
             self.set_passed('not_applicable')
             return
-        self.set_passed(not self.spec.find(self.regex))
+        self.set_passed(not self.spec.find_re(self.regex))
 
 
 class CheckUpdateDepmap(JavaCheckBase):
@@ -296,7 +296,7 @@ class CheckUpdateDepmap(JavaCheckBase):
         if not self.rpms.find("*.pom"):
             self.set_passed('not_applicable')
             return
-        self.set_passed(not self.spec.find(self.regex))
+        self.set_passed(not self.spec.find_re(self.regex))
 
 
 class CheckNoRequiresPost(JavaCheckBase):
@@ -359,7 +359,7 @@ class CheckTestSkip(JavaCheckBase):
         comment_regex = re.compile(r'^\s*#.*')
         build_sec = self.spec.get_section('%build')
 
-        if not self.spec.find(skip_regex) or not build_sec:
+        if not self.spec.find_re(skip_regex) or not build_sec:
             self.set_passed(self.NA)
             return
         result = self._search_previous_line(build_sec,
@@ -395,7 +395,7 @@ class CheckLocalDepmap(JavaCheckBase):
         mvn_regex = re.compile(r'^\s*mvn-rpmbuild\s+')
         comment_regex = re.compile(r'^\s*#.*')
         build_sec = self.spec.get_section('%build')
-        if not self.spec.find(depmap_regex) or not build_sec:
+        if not self.spec.find_re(depmap_regex) or not build_sec:
             self.set_passed('not_applicable')
             return
         result = self._search_previous_line(build_sec,

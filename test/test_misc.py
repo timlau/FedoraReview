@@ -282,7 +282,7 @@ class TestMisc(FR_TestCase):
 
         # Test find
         regex = re.compile(r'^Release\s*:\s*(.*)')
-        res = spec.find(regex)
+        res = spec.find_re(regex)
         if res:
             self.assertEqual(res.split(':')[1].strip(), '1%{?dist}')
         else:
