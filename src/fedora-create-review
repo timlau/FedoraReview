@@ -226,13 +226,9 @@ class ReviewRequest(object):
         """ Fill the spec and src.rpm urls into the info table using the
         info in the settings.
         """
-        try:
-            fasusername = fedora_cert.read_user_cert()
-        except:
-            self.log.debug('Could not read Fedora cert, using login name')
-            fasusername = raw_input('FAS username: ')
         complement_url = self.settings.upload_target.split('public_html/')[1]
-        url = 'http://%s.fedorapeople.org/%s/' % (fasusername, complement_url)
+        url = 'http://%s.fedorapeople.org/%s/' % (
+            self.username, complement_url)
         self.info['specurl'] = url + os.path.basename(self.specfile)
         self.info['srpmurl'] = url + os.path.basename(self.srpmfile)
 
@@ -279,6 +275,14 @@ class ReviewRequest(object):
             bzurl = 'https://bugzilla.redhat.com'
         else:
             bzurl = 'https://partner-bugzilla.redhat.com'
+
+        self.username = args.username
+        if not self.username
+            try:
+                self.username = fedora_cert.read_user_cert()
+            except:
+                self.log.debug('Could not read Fedora cert, using login name')
+                self.username = raw_input('FAS username: ')
 
         self.bzclient = RHBugzilla(url="%s/xmlrpc.cgi" % bzurl)
         self.srpmfile = os.path.expanduser(args.srpmfile)
@@ -329,8 +333,9 @@ class ReviewRequest(object):
         fedorapeople.org."""
         print 'Uploading files into fedorapeople'
         self.log.debug('Target: %s' % self.settings.upload_target)
+
         cmd = ['scp', self.specfile, self.srpmfile,
-            self.settings.upload_target]
+            self.username + "@" + self.settings.upload_target]
         self.log.debug(cmd)
         try:
             proc = Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
