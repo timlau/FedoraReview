@@ -11,9 +11,11 @@ docdir='./usr/share/doc'
 
 if unpack_rpms; then
     size=$(for rpm in rpms-unpacked/*; do
-               (cd $rpm; test -d $docdir && tar c ./usr/share/doc)
+               [[ $rpm = *doc ]] && continue
+               (cd $rpm; test -d $docdir && tar c $docdir)
            done | wc -c)
     count=$(for rpm in rpms-unpacked/*; do
+               [[ $rpm = *doc ]] && continue
                (cd $rpm; test -d $docdir && find $docdir -type f)
             done | wc -l)
 

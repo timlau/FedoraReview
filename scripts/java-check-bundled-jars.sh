@@ -6,7 +6,7 @@
 # @text: Bundled jar/class files should be removed before build
 
 cd BUILD
-jars="$jars $( find . -name \*.jar -o -name \*.class )"
+jars="$( find . -name \*.jar -o -name \*.class )"
 test -z "$jars" && exit $FR_PASS
 echo "Jar files in source (see attachment)"
 echo  "$jars" | attach 8 "Jar and class files in source"

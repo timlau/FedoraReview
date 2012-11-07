@@ -1,0 +1,20 @@
+#!/bin/bash
+
+IGNORE=E221,E251
+
+FILES=$(git diff --cached --name-status | grep -v ^D | awk '$1 $2 { print $2}' | grep -e .py$)
+if [ -n "$FILES" ]; then
+    pep8 --ignore $IGNORE $FILES
+    if [ $? -ne 0 ]; then
+        echo "pep8 failed. Fix your code!"
+        echo "*If* you know what you are doing, use 'git commit --no-verify'"
+        exit 1
+    fi
+    export PYTHONPATH=src/
+    pylint --rcfile=pylint.conf -f text $FILES > pylint.log
+    if [ $? -ne 0 ]; then
+        echo "pylint failed (logs in pylint.log). Fix your code!"
+        echo "*If* you know what you are doing, use 'git commit --no-verify'"
+        exit 1
+    fi
+fi

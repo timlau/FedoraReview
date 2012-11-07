@@ -1,0 +1,7 @@
+#!/bin/bash
+echo 'startdir=$PWD'
+find . -type l | while read link; do
+    echo "cd $(dirname $link)"
+    echo "ln -sf $(readlink $link) $(basename $link)"
+    echo 'cd $startdir'
+done

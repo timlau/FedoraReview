@@ -62,6 +62,16 @@ class Source(HelpersMixin):
         if is_url:  # This is a URL, Download it
             self.url = url
             self.local = False
+            if Settings.cache:
+                cached = os.path.join(ReviewDirs.upstream,
+                                      url.rsplit('/', 1)[1])
+                if os.path.exists(cached):
+                    self.log.info("Using cached upstream: " + cached)
+                    self.filename = cached
+                    return
+                self.log.warning(
+                    "No cache found for %s, downloading anyway."
+                    % cached)
             try:
                 self.filename = self._get_file(url,
                                                ReviewDirs.upstream,
@@ -115,10 +125,16 @@ class Source(HelpersMixin):
             could be extracted e. g., plain files are copied to the
             extract-dir.
         '''
+        if not os.path.isfile(self.filename):
+            raise ReviewError("%s file %s is missing in src.rpm."
+                    " Conditional source inclusion?" %
+                    (self.tag, self.filename))
+
         self.extract_dir = os.path.join(ReviewDirs.upstream_unpacked,
                                         self.tag)
-        if not os.path.exists(self.extract_dir):
-            os.mkdir(self.extract_dir)
+        if os.path.exists(self.extract_dir):
+            return
+        os.mkdir(self.extract_dir)
         if self.downloaded:
             if not self.rpmdev_extract(self.filename, self.extract_dir):
                 shutil.copy(self.filename, self.extract_dir)

@@ -1,0 +1,5 @@
+Licensing:
+ - lib/FlashVideo/JSON.pm is in Public Domain
+ - lib/FlashVideo/Site/Zshare.pm is GPLv3+
+ - All other files are ASL 2.0
+

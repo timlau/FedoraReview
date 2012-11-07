@@ -32,9 +32,9 @@ import sys
 from review_error import ReviewError
 from xdg_dirs import XdgDirs
 
-SYS_PLUGIN_DIR  = "/usr/share/fedora-review/plugins:%s"
-MY_PLUGIN_DIR   = "~/.config/fedora-review/plugins"
-
+SYS_JSON_PLUGIN_DIR  = os.path.abspath(os.path.join(__file__,
+                                               '../../../json-plugins'))
+MY_JSON_PLUGIN_DIR   = os.path.expanduser("~/.config/fedora-review/plugins")
 
 PARSER_SECTION = 'review'
 
@@ -59,8 +59,9 @@ def _add_modes(modes):
     modes.add_argument('-b', '--bug', metavar='<bug>',
                 help='Operate on fedora bugzilla using its bug number.')
     modes.add_argument('-n', '--name', metavar='<name>',
-                help='Use local files <name>.spec and'
-                     ' <name>*.src.rpm in current dir.')
+                help='Use local files <name>.spec and <name>*.src.rpm'
+                     ' in current dir or, when using --rpm-spec, use'
+                     ' <name> as path to srpm.')
     modes.add_argument('-u', '--url', default = None, dest='url',
                 metavar='<url>',
                  help='Use another bugzilla, using complete'
@@ -144,6 +145,39 @@ def _make_log_dir():
                       'Cannot create log directory: ' + SESSION_LOG)
 
 
+class ColoredFormatter(logging.Formatter):
+    ''' Formatter usable for colorizing terminal output acccording to presets
+    '''
+    BLACK = "\033[1;30m"
+    RED = "\033[1;31m"
+    GREEN = "\033[1;32m"
+    YELLOW = "\033[1;33m"
+    BLUE = "\033[1;34m"
+    MAGENTA = "\033[1;35m"
+    CYAN = "\033[1;36m"
+    WHITE = "\033[1;37m"
+    RESET = "\033[0m"
+
+    COLORS = {
+        'WARNING': YELLOW,
+        'CRITICAL': YELLOW,
+        'ERROR': RED
+    }
+
+    def __init__(self, fmt=None, datefmt=None, use_color=True):
+        logging.Formatter.__init__(self, fmt, datefmt)
+        self.use_color = use_color
+
+    def format(self, record):
+        lname = record.levelname
+        ret = logging.Formatter.format(self, record)
+        if self.use_color and lname in self.COLORS:
+            ret = self.COLORS[lname] + \
+                  ret + \
+                  self.RESET
+        return ret
+
+
 class _Settings(object):                         # pylint: disable=R0902
     """
     FedoraReview singleton Config Setting based on command line options.
@@ -162,8 +196,7 @@ class _Settings(object):                         # pylint: disable=R0902
             ReviewError.__init__(self, 'Bad options!!', 2, True)
 
     defaults = {
-        'ext_dirs': ':'.join([os.path.expanduser(MY_PLUGIN_DIR),
-                                                     SYS_PLUGIN_DIR]),
+        'ext_dirs': [MY_JSON_PLUGIN_DIR, SYS_JSON_PLUGIN_DIR],
         'bz_url': 'https://bugzilla.redhat.com',
     }
 
@@ -185,6 +218,7 @@ class _Settings(object):                         # pylint: disable=R0902
         self.configdir = None
         self.log_level = None
         self.verbose = False
+        self.name = None
 
     def __getitem__(self, key):
         my_key = self._get_hash(key)
@@ -285,7 +319,10 @@ class _Settings(object):                         # pylint: disable=R0902
         for k, v in vars(self).iteritems():
             if k in ['_dict', 'mock_config_options', 'log']:
                 continue
-            self.log.debug("    " + k + ": " + v.__str__())
+            try:
+                self.log.debug("    " + k + ": " + v.__str__())
+            except AttributeError:
+                self.log.debug("    " + k + ": not printable")
 
     def do_logger_setup(self, lvl=None):
         ''' Setup Python logging. lvl is a logging.* thing like
@@ -321,7 +358,7 @@ class _Settings(object):                         # pylint: disable=R0902
         # define a Handler which writes INFO  or higher to sys.stderr
         console = logging.StreamHandler()
         console.setLevel(lvl)
-        formatter = logging.Formatter('%(message)s', "%H:%M:%S")
+        formatter = ColoredFormatter('%(message)s', "%H:%M:%S")
         console.setFormatter(formatter)
         if self._con_handler:
             self.log.removeHandler(self._con_handler)

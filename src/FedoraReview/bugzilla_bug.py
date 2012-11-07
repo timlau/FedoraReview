@@ -17,67 +17,24 @@
 Tools for helping Fedora package reviewers
 '''
 import os.path
-import re
 
-from bugzilla import Bugzilla
-
+from url_bug import UrlBug
 from settings import Settings
 from abstract_bug import AbstractBug
 
 
-class BugzillaBug(AbstractBug):
-    """ This class handles interaction with bugzilla using
-    xmlrpc.
-    """
+class BugzillaBug(UrlBug):
+    ''' Bugzilla handling, a special case of the url_bug case. '''
 
     def __init__(self, bug):
         """ Constructor.
         :arg bug, the bug number on bugzilla
         """
-        AbstractBug.__init__(self)
         self.check_options()
         self.bug_num = bug
-        bz_url = os.path.join(Settings.current_bz_url, 'xmlrpc.cgi')
-        self.bugzilla = Bugzilla(url=bz_url)
-
-        self.log.info("Trying bugzilla cookies for authentication")
-        self.bug = self.bugzilla.getbug(self.bug_num)
-
-    def _find_urls(self):
-        """ Reads the page on bugzilla, search for all urls and extract
-        the last urls for the spec and the srpm.
-        """
-        urls = []
-        if self.bug.longdescs:
-            for cat in self.bug.longdescs:
-                body = cat['body']
-
-                # workaround for bugzilla/xmlrpc bug. When comment
-                # text is pure number it converts to number type (duh)
-                if type(body) != str and type(body) != unicode:
-                    continue
-                urls.extend(re.findall('(?:ht|f)tp[s]?://'
-                    '(?:[a-zA-Z]|[0-9]|[$-_@.&+~]|[!*\(\),]|'
-                    '(?:%[0-9a-fA-F~\.][0-9a-fA-F]))+', body))
-        return urls
-
-    def find_spec_url(self):
-        urls = self._find_urls()
-        urls = filter(lambda u: '.spec' in u, urls)
-        if len(urls) == 0:
-            raise self.BugException(
-                 'No spec file URL found in bug #%s' % self.bug_num)
-        url = urls[-1]
-        self.spec_url = url
-
-    def find_srpm_url(self):
-        urls = self._find_urls()
-        urls = filter(lambda u: '.src.rpm' in u, urls)
-        if len(urls) == 0:
-            raise self.BugException(
-                 'No srpm file URL found in bug #%s' % self.bug_num)
-        url = urls[-1]
-        self.srpm_url = url
+        url = os.path.join(Settings.current_bz_url,
+                           'show_bug.cgi?id=' + str(bug))
+        UrlBug.__init__(self, url)
 
     def get_location(self):
         return Settings.bug
@@ -92,10 +49,6 @@ class BugzillaBug(AbstractBug):
     def check_options(self):                    # pylint: disable=R0201
         ''' Raise SettingsError if Settings combinations is invalid. '''
         AbstractBug.do_check_options('--bug', ['prebuilt'])
-
-    def handle_xmlrpc_err(self, exception):
-        ''' Log a xmlrpc error.'''
-        self.log.error("Server error: %s" % str(exception))
 
 
 # vim: set expandtab: ts=4:sw=4:

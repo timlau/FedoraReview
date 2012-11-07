@@ -3,7 +3,8 @@
 
 import re
 
-from FedoraReview import CheckBase, RegistryBase
+from FedoraReview import CheckBase, Mock, RpmFile, RegistryBase
+
 
 class Registry(RegistryBase):
     """ Register all checks in this file. """
@@ -12,12 +13,15 @@ class Registry(RegistryBase):
 
     def is_applicable(self):
         """Need more comprehensive check and return True in valid cases"""
-        if self.has_files_re('/usr/(lib|lib64)/[\w\-]*\.so\.[0-9]') or \
-            self.has_files('*.h') or \
-            self.has_files('*.a') or \
-            self.sources_have_files('*.c') or \
-            self.sources_have_files('*.C') or \
-            self.sources_have_files('*.cpp') :
+        archs = self.checks.spec.expand_tag('BuildArchs')
+        if len(archs) == 1 and archs[0].lower() == 'noarch':
+            return False
+        rpms = self.checks.rpms
+        if rpms.find_re('/usr/(lib|lib64)/[\w\-]*\.so\.[0-9]') or \
+        rpms.find('*.h') or rpms.find('*.a') or \
+        self.checks.buildsrc.find('*.c') or \
+        self.checks.buildsrc.find('*.C') or \
+        self.checks.buildsrc.find('*.cpp'):
             return True
         return False
 
@@ -42,36 +46,29 @@ class CheckLDConfig(CCppCheckBase):
         self.text = 'ldconfig called in %post and %postun if required.'
         self.automatic = True
         self.type = 'MUST'
-
+        self.sofiles_regex = '/usr/(lib|lib64)/[\w\-]*\.so\.[0-9]'
 
     def is_applicable(self):
         ''' check if this test is applicable '''
-        return self.has_files_re('/usr/(lib|lib64)/[\w\-]*\.so\.[0-9]')
-
+        return self.rpms.find_re(self.sofiles_regex) != None
 
     def run_on_applicable(self):
         ''' Run the test, called if is_applicable() is True. '''
+        bad_pkgs = []
+        for pkg in self.spec.packages:
+            rpm = RpmFile(pkg, self.spec.version, self.spec.release)
+            if not self.rpms.find_re(self.sofiles_regex, pkg):
+                continue
+            if not rpm.post  or not '/sbin/ldconfig' in rpm.post or \
+            not rpm.postun or not '/sbin/ldconfig' in  rpm.postun:
+                bad_pkgs.append(pkg)
+        if bad_pkgs:
+            self.set_passed(self.FAIL,
+                            '/sbin/ldconfig not called in '
+                            + ', '.join(bad_pkgs))
+        else:
+            self.set_passed(self.PASS)
 
-        sources = ['%post','%postun']
-        for source in sources:
-            passed = False
-            sections = self.spec.get_section(source)
-
-            for seckey, section in sections.iteritems():
-                if '/sbin/ldconfig' in seckey:
-                    passed = True
-                elif '/sbin/ldconfig' in section:
-                    passed = True
-                else:
-                    for line in section:
-                        if '/sbin/ldconfig' in line:
-                            passed = True
-                            break
-            if not passed:
-                self.set_passed(False,
-                                '/sbin/ldconfig not called in %s' % source)
-                return
-        self.set_passed(True)
 
 class CheckHeaderFiles(CCppCheckBase):
     '''
@@ -88,25 +85,23 @@ class CheckHeaderFiles(CCppCheckBase):
 
     def is_applicable(self):
         ''' check if this test is applicable '''
-        return self.has_files('*.h')
+        return self.rpms.find('*.h')
 
     def run_on_applicable(self):
         ''' Run the test, called if is_applicable() is True. '''
-        files = self.get_files_by_pattern('*.h')
         passed = True
         extra = ""
-        for rpm in files:
-            for path in files[rpm]:
+        for pkg in self.spec.packages:
+            for path in self.rpms.find_all('*.h', pkg):
                 # header files (.h) under /usr/src/debug/* will be in
                 #  the -debuginfo package.
-                if  path.startswith('/usr/src/debug/') and '-debuginfo' in rpm:
+                if  path.startswith('/usr/src/debug/') and '-debuginfo' in pkg:
                     continue
                 # All other .h files should be in a -devel package.
-                if not '-devel' in rpm:
+                if not '-devel' in pkg:
                     passed = False
-                    extra += "%s : %s\n" % (rpm, path)
+                    extra += "%s : %s\n" % (pkg, path)
         self.set_passed(passed, extra)
-
 
 
 class CheckStaticLibs(CCppCheckBase):
@@ -124,21 +119,18 @@ class CheckStaticLibs(CCppCheckBase):
 
     def is_applicable(self):
         ''' check if this test is applicable '''
-        return self.has_files('*.a')
+        return self.rpms.find('*.a')
 
     def run_on_applicable(self):
         ''' Run the test, called if is_applicable() is True. '''
-        files = self.get_files_by_pattern('*.a')
-        passed = True
-        extra = ""
-        for rpm in files:
-            for path in files[rpm]:
-                if not '-static' in rpm:
-                    passed = False
-                    extra += "%s : %s\n" % (rpm, path)
-        self.set_passed(passed, extra)
-
-
+        extra = []
+        for pkg in self.spec.packages:
+            if self.rpms.find('*.a', pkg):
+                if not '-static' in pkg:
+                    extra.append(pkg)
+        if extra:
+            extra = 'Archive *.a files found in ' + ', '.join(extra)
+        self.set_passed(self.FAIL if extra else self.PASS, extra)
 
 
 class CheckNoStaticExecutables(CCppCheckBase):
@@ -152,10 +144,12 @@ class CheckNoStaticExecutables(CCppCheckBase):
         self.automatic = False
         self.type = 'MUST'
 
+
 class CheckSoFiles(CCppCheckBase):
     '''
-    MUST: If a package contains library files with a suffix (e.g. libfoo.so.1.1),
-    then library files that end in .so (without suffix) must go in a -devel package.
+    MUST: If a package contains library files with a suffix (e.g.
+    libfoo.so.1.1), then library files that end in .so (without suffix)
+    must go in a -devel package.
     http://fedoraproject.org/wiki/Packaging/Guidelines#DevelPackages
     '''
     def __init__(self, base):
@@ -171,7 +165,7 @@ class CheckSoFiles(CCppCheckBase):
 
     def run(self):
         ''' Run the test, always called '''
-        if not self.has_files('*.so'):
+        if not self.rpms.find('*.so'):
             self.set_passed('not_applicable')
             return
         passed = 'pass'
@@ -180,12 +174,11 @@ class CheckSoFiles(CCppCheckBase):
         bad_list = []
         attachments = []
         extra = None
-        files_by_rpm = self.get_files_by_pattern('*.so')
-        non_devel_rpms = filter(lambda r: not '-devel' in r,
-                                files_by_rpm.iterkeys())
-        for rpm in non_devel_rpms:
-            for path in files_by_rpm[rpm]:
-                bad_list.append("%s: %s" % (rpm, path))
+        for pkg in self.spec.packages:
+            if pkg.endswith('-devel'):
+                continue
+            for path in self.rpms.find_all('*.so', pkg):
+                bad_list.append("%s: %s" % (pkg, path))
                 if self.bad_re.search(path):
                     in_libdir = True
                 else:
@@ -207,6 +200,7 @@ class CheckSoFiles(CCppCheckBase):
 
         self.set_passed(passed, extra, attachments)
 
+
 class CheckLibToolArchives(CCppCheckBase):
     '''
     MUST: Packages must NOT contain any .la libtool archives,
@@ -223,14 +217,13 @@ class CheckLibToolArchives(CCppCheckBase):
 
     def run_on_applicable(self):
         ''' Run the test, called if is_applicable() is True. '''
-        if not self.has_files('*.la'):
+        if not self.rpms.find('*.la'):
             self.set_passed(True)
         else:
             extra = ""
-            files = self.get_files_by_pattern('*.la')
-            for rpm in files:
-                for path in files:
-                    extra += "%s : %s\n" % (rpm, path)
+            for pkg in self.spec.packages:
+                for path in self.rpms.find_all('*.la', pkg):
+                    extra += "%s : %s\n" % (pkg, path)
             self.set_passed(False, extra)
 
 
@@ -248,12 +241,11 @@ class CheckRPATH(CCppCheckBase):
 
     def run_on_applicable(self):
         ''' Run the test, called if is_applicable() is True. '''
-        for line in self.srpm.rpmlint_output:
+        for line in Mock.rpmlint_output:
             if 'binary-or-shlib-defines-rpath' in line:
-                self.set_passed(False, 'See rpmlint output')
+                self.set_passed(self.PENDING, 'See rpmlint output')
                 return
         self.set_passed(True)
-
 
 
 class CheckNoKernelModules(CCppCheckBase):

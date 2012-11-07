@@ -27,14 +27,16 @@ from glob import glob
 from operator import attrgetter
 from straight.plugin import load
 
+from datasrc import RpmDataSource, BuildFilesSource, SourcesDataSource
 from settings import  Settings
+from mock import Mock
 from srpm_file import  SRPMFile
 from spec_file import  SpecFile
-from sources import  Sources
 from review_dirs import ReviewDirs
 from version import  __version__, BUILD_ID, BUILD_DATE
 from review_error import ReviewError
 from jsonapi import JSONPlugin
+from xdg_dirs import XdgDirs
 
 
 HEADER = """
@@ -42,12 +44,32 @@ Package Review
 ==============
 
 Key:
-- = N/A
-x = Pass
-! = Fail
-? = Not evaluated
+[x] = Pass
+[!] = Fail
+[-] = Not applicable
+[?] = Not evaluated
+[ ] = Manual review needed
 
 """
+
+
+def _write_section(results, output):
+    ''' Print a {SHOULD,MUST, EXTRA} section. '''
+
+    def hdr(group):
+        ''' Return header this test is printed under. '''
+        if group == 'Setup':
+            return 'Generic'
+        return group
+
+    groups = list(set([hdr(test.group) for test in results]))
+    for group in sorted(groups):
+        res = filter(lambda t: t.group == group, results)
+        if res == []:
+            continue
+        output.write('\n' + group + ':\n')
+        for r in res:
+            output.write(r.get_text() + '\n')
 
 
 class _CheckDict(dict):
@@ -71,7 +93,7 @@ class _CheckDict(dict):
 
         def log_kill(victim, killer):
             ''' Log test skipped due to deprecation. '''
-            self.log.info("Skipping %s in %s, deprecated by %s in %s" %
+            self.log.debug("Skipping %s in %s, deprecated by %s in %s" %
                               (victim.name, victim.defined_in,
                                killer.name, killer.defined_in))
 
@@ -127,8 +149,9 @@ class _CheckDict(dict):
         self.extend(needed)
         delattr(self[check_name], 'result')
 
+
 class _Flags(dict):
-    ''' A dict storing Flag  entries with some added baheviour. '''
+    ''' A dict storing Flag  entries with some added behaviour. '''
 
     def __init__(self):
         dict.__init__(self)
@@ -149,40 +172,31 @@ class _Flags(dict):
             self[optarg].set_active()
 
 
-
-
-class Checks(object):
-    '''
-    Interface class to load, select and run checks.
+class _ChecksLoader(object):
+    """
+    Interface class to load  and select checks.
     Properties:
-        checkdict: A dictionary of all tests by name (deprecated
-                   removed).
-    '''
+       - checkdict: checks by name, all loaded (not deprecated) checks.
+    """
 
-    def __init__(self, spec_file, srpm_file):
-        ''' Create a Checks set. srpm_file and spec_file are required,
-        unless invoked from ChecksLister.
-        '''
+    class Data(object):
+        ''' Simple DataSource stuff container. '''
+        pass
+
+    def __init__(self):
+        ''' Create a Checks, load checkdict. '''
         self.log = Settings.get_logger()
         self.checkdict = None
         self.flags = _Flags()
         self.groups = None
-        if hasattr(self, 'sources'):
-            # This is  a listing instance
-            self.srpm = None
-            self.spec = None
-        else:
-            self.spec = SpecFile(spec_file)
-            self.sources = Sources(self.spec)
-            self.srpm = SRPMFile(srpm_file, self.spec)
-        self.add_check_classes()
+        self._load_checks()
         if Settings.single:
             self.set_single_check(Settings.single)
         elif Settings.exclude:
             self.exclude_checks(Settings.exclude)
-        self.update_flags()
+        self._update_flags()
 
-    def update_flags(self):
+    def _update_flags(self):
         ''' Update registered flags with user -D settings. '''
         for flag_opt in Settings.flags:
             try:
@@ -195,34 +209,46 @@ class Checks(object):
             except KeyError:
                 raise ReviewError(key + ': No such flag')
 
-    def add_check_classes(self):
+    def _load_checks(self):
         """
-        Get all check classes in FedoraReview.checks + external plugin
+        Load all checks in FedoraReview.checks + external plugin
         directories and add them to self.checkdict
         """
 
         self.checkdict = _CheckDict()
         self.groups = {}
 
+        # appdir gets used when running from git
         appdir = os.path.abspath(os.path.join(__file__, '../../..'))
+        # sysappdir gets used when running from /usr.  We expect pluings
+        # directory to be symlinked in same directory as this __file__
+        sysappdir = os.path.abspath(os.path.dirname(__file__))
+        sys.path.insert(0, sysappdir)
         sys.path.insert(0, appdir)
+        sys.path.insert(0, XdgDirs.app_datadir)
         plugins = load('plugins')
         for plugin in plugins:
             registry = plugin.Registry(self)
             tests = registry.register(plugin)
             self.checkdict.extend(tests)
             self.groups[registry.group] = registry
+        sys.path.remove(XdgDirs.app_datadir)
+        sys.path.remove(appdir)
+        sys.path.remove(sysappdir)
 
         ext_dirs = []
         if "REVIEW_EXT_DIRS" in os.environ:
             ext_dirs = os.environ["REVIEW_EXT_DIRS"].split(":")
-        ext_dirs.extend(Settings.ext_dirs.split(":"))
+        ext_dirs.extend(Settings.ext_dirs)
         for ext_dir in ext_dirs:
             if not os.path.isdir(ext_dir):
                 continue
             for plugin in os.listdir(ext_dir):
                 full_path = os.path.join(ext_dir, plugin)
-                if os.path.isfile(full_path) and os.access(full_path, os.X_OK):
+                if os.path.isfile(full_path) and os.access(full_path,
+                                                           os.X_OK):
+                    if full_path.endswith('.py'):
+                        continue
                     self.log.debug('Add external module: %s' % full_path)
                     pl = JSONPlugin(self, full_path)
                     tests = pl.register()
@@ -247,28 +273,69 @@ class Checks(object):
         ''' Return the Checkdict instance holding all checks. '''
         return self.checkdict
 
+
+class ChecksLister(_ChecksLoader):
+    ''' A class only exporting get_checks() and checkdict. '''
+
+    def __init__(self):
+        self.spec = None
+        self.srpm = None
+        self.data = self.Data()
+        self.data.rpms = None
+        self.data.buildsrc = None
+        self.data.sources = None
+        _ChecksLoader.__init__(self)
+
+
+class Checks(_ChecksLoader):
+    ''' Interface class to run checks.  '''
+
+    def __init__(self, spec_file, srpm_file):
+        ''' Create a Checks set. srpm_file and spec_file are required,
+        unless invoked from ChecksLister.
+        '''
+        self.spec = SpecFile(spec_file)
+        self.srpm = SRPMFile(srpm_file)
+        self.data = self.Data()
+        self.data.rpms = RpmDataSource(self.spec)
+        self.data.buildsrc = BuildFilesSource()
+        self.data.sources = SourcesDataSource(self.spec)
+        _ChecksLoader.__init__(self)
+
+    rpms = property(lambda self: self.data.rpms)
+    sources = property(lambda self: self.data.sources)
+    buildsrc = property(lambda self: self.data.buildsrc)
+
+    @staticmethod
+    def _write_testdata(results):
+        ''' Write hidden file usable when writing tests. '''
+        with open('.testlog.txt', 'w') as f:
+            for r in results:
+                f.write('\n' + 24 * ' '
+                        + "('%s', '%s')," % (r.state, r.name))
+
+    def _ready_to_run(self, name):
+        """
+        Check that check 'name' havn't already run and that all checks
+        listed in 'needs' have run i. e., it's ready to run.
+        """
+        check = self.checkdict[name]
+        if check.is_run:
+            return False
+        for dep in check.needs:
+            if not dep in self.checkdict:
+                self.log.warning('%s depends on deprecated %s' %
+                                    (name, dep))
+                self.log.warning('Removing %s, cannot resolve deps' %
+                                 name)
+                del(self.checkdict[name])
+                return True
+            elif not self.checkdict[dep].is_run:
+                return False
+        return True
+
     def run_checks(self, output=sys.stdout, writedown=True):
         ''' Run all checks. '''
-
-        def ready_to_run(name):
-            """
-            Check if all checks listed in 'needs' have run and not
-            already run.
-            """
-            check = self.checkdict[name]
-            if check.is_run:
-                return False
-            for dep in check.needs:
-                if not dep in self.checkdict:
-                    self.log.warning('%s depends on deprecated %s' %
-                                        (name, dep))
-                    self.log.warning('Removing %s, cannot resolve deps' %
-                                     name)
-                    del(self.checkdict[name])
-                    return True
-                elif not self.checkdict[dep].is_run:
-                    return False
-            return True
 
         def run_check(name):
             """ Run check. Update results, attachments and issues. """
@@ -291,11 +358,11 @@ class Checks(object):
 
         names = list(self.checkdict.iterkeys())
 
-        tests_to_run = filter(ready_to_run, names)
+        tests_to_run = filter(self._ready_to_run, names)
         while tests_to_run != []:
             for name in tests_to_run:
                 run_check(name)
-            tests_to_run = filter(ready_to_run, names)
+            tests_to_run = filter(self._ready_to_run, names)
 
         if writedown:
             key_getter = attrgetter('group', 'type', 'name')
@@ -303,21 +370,15 @@ class Checks(object):
                              sorted(results, key=key_getter),
                              issues,
                              attachments)
+        else:
+            with open('.testlog.txt', 'w') as f:
+                for r in results:
+                    f.write('\n' + 24 * ' '
+                            + "('%s', '%s')," % (r.state, r.name))
 
     @staticmethod
     def show_output(output, results, issues, attachments):
         ''' Print test results on output. '''
-
-        def write_sections(results):
-            ''' Print a {SHOULD,MUST, EXTRA} section. '''
-            groups = sorted(list(set([test.group for test in results])))
-            for group in groups:
-                res = filter(lambda t: t.group == group, results)
-                if res == []:
-                    continue
-                output.write('\n' + group + ':\n')
-                for r in res:
-                    output.write(r.get_text() + '\n')
 
         def dump_local_repo():
             ''' print info on --local-repo rpms used. '''
@@ -339,15 +400,15 @@ class Checks(object):
 
         output.write("\n\n===== MUST items =====\n")
         musts = filter(lambda r: r.type == 'MUST', results)
-        write_sections(musts)
+        _write_section(musts, output)
 
         output.write("\n===== SHOULD items =====\n")
         shoulds = filter(lambda r: r.type == 'SHOULD', results)
-        write_sections(shoulds)
+        _write_section(shoulds, output)
 
         output.write("\n===== EXTRA items =====\n")
         extras = filter(lambda r: r.type == 'EXTRA', results)
-        write_sections(extras)
+        _write_section(extras, output)
 
         for a in sorted(attachments):
             output.write('\n\n')
@@ -359,13 +420,8 @@ class Checks(object):
         output.write('\n\nGenerated by fedora-review'
                      ' %s (%s) last change: %s\n' %
                      (__version__, BUILD_ID, BUILD_DATE))
+        output.write('Buildroot used: %s\n' % Mock.buildroot)
         output.write('Command line :' + ' '.join(sys.argv) + '\n')
 
-
-class ChecksLister(Checks):
-    """ A Checks instance only capable of get_checks. """
-    def __init__(self):
-        self.sources = None
-        Checks.__init__(self, None, None)
 
 # vim: set expandtab: ts=4:sw=4:

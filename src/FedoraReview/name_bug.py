@@ -21,6 +21,8 @@ import os
 import os.path
 
 from glob import glob
+from review_dirs import ReviewDirs
+from settings import Settings
 from urlparse import urlparse
 
 from abstract_bug import AbstractBug
@@ -40,23 +42,34 @@ class NameBug(AbstractBug):
         self.name = name
 
     def get_location(self):
-        return 'Local files in ' + os.getcwd()
+        return 'Local files in ' + ReviewDirs.startdir
 
     def find_srpm_url(self):
-        """ Retrieve the page and parse for srpm and spec url. """
-
-        pattern = os.path.join(os.getcwd(), self.name + '*.src.rpm')
+        """ Retrieve the page and parse for srpm url. """
+        if Settings.rpm_spec:
+            if os.path.isfile(self.name):
+                self.srpm_url = 'file://' + os.path.abspath(self.name)
+                return
+        pattern = os.path.join(ReviewDirs.startdir,
+                               self.name + '*.src.rpm')
         srpms = glob(pattern)
-        if len(srpms) != 1:
+        if len(srpms) == 0:
             raise self.BugError("Cannot find srpm: " + pattern)
+        elif len(srpms) > 1:
+            raise self.BugError("More than one srpm found for: "
+                                + pattern)
         self.srpm_url = 'file://' + srpms[0]
 
     def find_spec_url(self):
-        """ Retrieve the page and parse for srpm and spec url. """
-        pattern = os.path.join(os.getcwd(), self.name + '*.spec')
+        """ Retrieve the page and parse for spec url. """
+        pattern = os.path.join(ReviewDirs.startdir,
+                               self.name + '*.spec')
         specs = glob(pattern)
-        if len(specs) != 1:
+        if len(specs) == 0:
             raise self.BugError("Cannot find spec: " + pattern)
+        elif len(specs) > 1:
+            raise self.BugError("More than one spec found for: "
+                                + pattern)
         self.spec_url = 'file://' + specs[0]
 
     def check_options(self):

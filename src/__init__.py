@@ -1,1 +1,2 @@
-# Required to make python import from top directory
+''' Required to make python import from top directory '''
+pass

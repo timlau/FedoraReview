@@ -2,7 +2,7 @@
 
 """ PHP specifics checks """
 
-from FedoraReview import CheckBase, Settings, RegistryBase
+from FedoraReview import CheckBase, RegistryBase, Settings
 
 
 class Registry(RegistryBase):
@@ -46,7 +46,3 @@ class PhpCheckPhpRequire(PhpCheckBase):
                 "Package should require php-common rather than php.")
         else:
             self.set_passed('php-common' in brs)
-
-
-
-
