@@ -32,7 +32,7 @@ from FedoraReview import AbstractRegistry, GenericCheck
 from FedoraReview import ReviewDirs, Settings, XdgDirs
 
 ENVIRON_TEMPLATE = """
-unset $(env | sed 's/=.*//')
+unset $(env | sed -n 's/=.*//p')
 PATH=/bin:/usr/bin:/sbin/:/usr/sbin
 
 FR_FLAGS_generator
