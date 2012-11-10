@@ -207,7 +207,7 @@ class _Mock(HelpersMixin):
     def rpm_eval(self, arg):
         ''' Run rpm --eval <arg> inside mock, return output. '''
         cmd = self._mock_cmd()
-        cmd.extend(['--quiet', '--shell', 'rpm --eval "' + arg + '"'])
+        cmd.extend(['--quiet', '--shell', 'rpm --eval \\"' + arg + '\\"'])
         return check_output(cmd).decode('utf-8').strip()
 
     @staticmethod

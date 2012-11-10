@@ -23,6 +23,7 @@ import re
 import rpm
 
 from settings import Settings
+from mock import Mock
 
 
 def _lines_in_string(s, raw):
@@ -45,11 +46,20 @@ class SpecFile(object):
     # pylint: disable=W0212
 
     def __init__(self, filename):
+
+        def update_macros():
+            ''' Update build macros from mock target configuration. '''
+            macros = ['%rhel', '%fedora', '%_build_arch', '%_arch']
+            expanded = Mock.rpm_eval(' '.join(macros)).split()
+            for i in range(0, len(macros)):
+                if not expanded[i].startswith('%'):
+                    rpm.addMacro(macros[i][1:], expanded[i])
+
         self.log = Settings.get_logger()
         self.filename = filename
         self.lines = []
         self._get_lines(filename)
-
+        update_macros()
         self.spec = rpm.TransactionSet().parseSpec(self.filename)
         self.name_vers_rel = [self.expand_tag(rpm.RPMTAG_NAME),
                               self.expand_tag(rpm.RPMTAG_VERSION),
