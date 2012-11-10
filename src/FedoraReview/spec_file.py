@@ -55,6 +55,11 @@ class SpecFile(object):
                 if not expanded[i].startswith('%'):
                     rpm.addMacro(macros[i][1:], expanded[i])
 
+        def get_packages():
+            ''' Return list of all packages, except empty ones. '''
+            pkgs = [p.header[rpm.RPMTAG_NAME] for p in self.spec.packages]
+            return [p for p in pkgs if self.get_files(p) != None]
+
         self.log = Settings.get_logger()
         self.filename = filename
         self.lines = []
@@ -64,9 +69,7 @@ class SpecFile(object):
         self.name_vers_rel = [self.expand_tag(rpm.RPMTAG_NAME),
                               self.expand_tag(rpm.RPMTAG_VERSION),
                               self.expand_tag(rpm.RPMTAG_RELEASE)]
-        pkg_list = [p.header[rpm.RPMTAG_NAME] for p in self.spec.packages]
-        pkg_list = [p for p in pkg_list if self.get_files(p) != None]
-        self._packages = pkg_list
+        self._packages = get_packages()
 
     name = property(lambda self: self.name_vers_rel[0])
     version = property(lambda self: self.name_vers_rel[1])
