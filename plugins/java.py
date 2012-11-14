@@ -206,6 +206,8 @@ class CheckJavaFullVerReqSub(JavaCheckBase):
         for pkg_name in self.spec.packages:
             if pkg_name.endswith("-javadoc"):
                 continue
+            if pkg_name == self.spec.base_package:
+                continue
             if not req in self.rpms.get(pkg_name).requires:
                 bad_ones.append(pkg_name)
         if bad_ones:
