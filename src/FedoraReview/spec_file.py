@@ -229,7 +229,7 @@ class SpecFile(object):
             section = getattr(self.spec, section)
         except AttributeError:
             return None
-        return _lines_in_string(section, raw)
+        return _lines_in_string(section, raw) if section else None
 
     def find_re(self, regex, flags=re.IGNORECASE):
         '''
