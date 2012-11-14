@@ -244,13 +244,12 @@ class CheckAddMavenDepmap(JavaCheckBase):
         self.text = 'Pom files have correct add_maven_depmap call'
         self.automatic = True
         self.type = 'MUST'
-        self.regex = re.compile(r'^\s*%add_maven_depmap\s+.*')
 
     def run(self):
         if not self.rpms.find("*.pom"):
             self.set_passed('not_applicable')
             return
-        if not self.spec.find_re(self.regex):
+        if not self.spec.find_re('[^#]*%add_maven_depmap'):
             self.set_passed(False,
                             "No add_maven_depmap calls found but pom"
                                  " files present")
