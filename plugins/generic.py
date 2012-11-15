@@ -820,7 +820,7 @@ class CheckLicenseField(GenericCheckBase):
         tarballs if first option fails '''
         s = Mock.get_builddir('BUILD') + '/*'
         globs = glob(s)
-        if globs:
+        if globs and len(globs) > 0:
             msg = 'Checking patched sources after %prep for licenses.'
             source_dir = globs[0]
         else:
