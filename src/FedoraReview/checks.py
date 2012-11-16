@@ -35,7 +35,6 @@ from spec_file import  SpecFile
 from review_dirs import ReviewDirs
 from version import  __version__, BUILD_ID, BUILD_DATE
 from review_error import ReviewError
-from jsonapi import JSONPlugin
 from xdg_dirs import XdgDirs
 
 
@@ -218,7 +217,7 @@ class _ChecksLoader(object):
         self.checkdict = _CheckDict()
         self.groups = {}
 
-        appdir = os.path.abspath(os.path.join(__file__, '../..'))
+        appdir = os.path.realpath(os.path.join(__file__, '../..'))
         sys.path.insert(0, appdir)
         sys.path.insert(0, XdgDirs.app_datadir)
         plugins = load('plugins')
@@ -229,24 +228,6 @@ class _ChecksLoader(object):
             self.groups[registry.group] = registry
         sys.path.remove(XdgDirs.app_datadir)
         sys.path.remove(appdir)
-
-        ext_dirs = []
-        if "REVIEW_EXT_DIRS" in os.environ:
-            ext_dirs = os.environ["REVIEW_EXT_DIRS"].split(":")
-        ext_dirs.extend(Settings.ext_dirs)
-        for ext_dir in ext_dirs:
-            if not os.path.isdir(ext_dir):
-                continue
-            for plugin in os.listdir(ext_dir):
-                full_path = os.path.join(ext_dir, plugin)
-                if os.path.isfile(full_path) and os.access(full_path,
-                                                           os.X_OK):
-                    if full_path.endswith('.py'):
-                        continue
-                    self.log.debug('Add external module: %s' % full_path)
-                    pl = JSONPlugin(self, full_path)
-                    tests = pl.register()
-                    self.checkdict.extend(tests)
 
     def exclude_checks(self, exclude_arg):
         ''' Mark all checks in exclude_arg (string) as already done. '''

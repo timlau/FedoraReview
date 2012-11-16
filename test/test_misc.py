@@ -402,27 +402,6 @@ class TestMisc(FR_TestCase):
         expected = 'test/test_misc/srpm-unpacked/python-test.spec'
         self.assertTrue(bug.spec_url.endswith(expected))
 
-    def test_jsonapi(self):
-        ''' Test the JSON api. '''
-        self.init_test('test_misc',
-                       argv=['-rpn', 'python-test', '--no-build'])
-        os.environ['REVIEW_EXT_DIRS'] = \
-            os.path.normpath(os.getcwd() + '/../api')
-        bug = NameBug('python-test')
-        bug.find_urls()
-        bug.download_files()
-        checks = Checks(bug.spec_file, bug.srpm_file).get_checks()
-        test1 = checks['test1']
-        test2 = checks['ExtShellTest2']
-        self.assertEqual(test1.group, 'Generic')
-        self.assertEqual(test1.type, 'EXTRA')
-        self.assertEqual(test1.text, 'A check solely for test purposes.')
-
-        self.assertEqual(test2.group, 'Generic')
-        self.assertEqual(test2.type, 'EXTRA')
-        self.assertEqual(test2.text,
-                         'A second check solely for test purposes.')
-
     def test_md5sum_diff_ok(self):
         ''' Complete MD5sum test expected to pass. '''
         self.init_test('md5sum-diff-ok',

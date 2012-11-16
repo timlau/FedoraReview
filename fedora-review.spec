@@ -75,7 +75,6 @@ chmod -x api/examples/*
 pkg_dir="$RPM_BUILD_ROOT/%{python_sitelib}/FedoraReview"
 ln -s %{_datadir}/%{name}/scripts $pkg_dir/scripts
 ln -s %{_datadir}/%{name}/plugins $pkg_dir/plugins
-ln -s %{_datadir}/%{name}/plugins $pkg_dir/json-plugins
 cd test
 bash < restore-links.sh
 rm restore-links.sh remember-links

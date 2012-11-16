@@ -71,8 +71,7 @@ class AbstractCheck(object):
       - version version of api, defaults to 0.1
       - group: 'Generic', 'C/C++', 'PHP': binds the test to a
                 Registry.
-      - implementation: 'json'|'python'|'shell', defaults to
-        'python'.
+      - implementation: 'python'|'shell', defaults to 'python'.
 
     Properties:
       - name: Unique string.

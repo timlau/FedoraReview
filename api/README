@@ -12,7 +12,3 @@ As of 0.3, fedora-review has three plugin interfaces:
    This is a small interface designed to make it possible to write
    simple tests in plain bash. This is covered in the wiki, at
    https://fedorahosted.org/FedoraReview/wiki/ScriptsApi
-
- * The json interface. Language-independent interface to make small
-   tests. NOTE: as of 0.3, this is deprecated. This is covered in
-   README.json
