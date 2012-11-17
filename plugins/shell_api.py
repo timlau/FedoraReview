@@ -307,7 +307,7 @@ class Registry(AbstractRegistry):
         def _get_plugin_dirs():
             ''' Return list of dirs to scan for scripts. '''
             dir_list = []
-            plugindir = os.path.dirname(__file__)
+            plugindir = os.path.realpath(os.path.dirname(__file__))
             plugindir = os.path.join(plugindir, '../scripts')
             plugindir = os.path.normpath(plugindir)
             dir_list.append(plugindir)
