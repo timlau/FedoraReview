@@ -15,6 +15,7 @@
 #    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #    MA  02110-1301 USA.
 #
+# pylint: disable=C0103,R0904,R0913
 # (C) 2011 - Tim Lauridsen <timlau@fedoraproject.org>
 '''
 Unit tests for bugzilla bug handling
@@ -26,8 +27,7 @@ import sys
 
 import unittest2 as unittest
 
-import srcpath
-from FedoraReview.checks import Checks
+import srcpath                                   # pylint: disable=W0611
 from FedoraReview.name_bug import NameBug
 from FedoraReview.spec_file import SpecFile
 
@@ -37,6 +37,7 @@ from fr_testcase import FR_TestCase
 
 
 class TestRegressions(FR_TestCase):
+    ''' Test some regressions. '''
 
     def setUp(self):
         FR_TestCase.setUp(self)

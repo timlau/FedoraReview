@@ -4,11 +4,15 @@
 #
 # See: README.test for howto
 #
+# pylint: disable=C0103,W0611
+
+''' Run tests wrapper module. '''
+
 import os
 import sys
 import unittest2 as unittest
 
-import srcpath
+import srcpath                                   # pylint: disable=W0611
 from FedoraReview import Mock
 
 from test_misc     import TestMisc

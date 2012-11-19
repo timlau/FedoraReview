@@ -15,6 +15,7 @@
 #    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #    MA  02110-1301 USA.
 #
+# pylint: disable=C0103,R0904,R0913,W0201
 '''
 Unit checks for automatic test of fedora R review guidelines
 '''
@@ -22,7 +23,7 @@ Unit checks for automatic test of fedora R review guidelines
 import sys
 import unittest2 as unittest
 
-import srcpath
+import srcpath                                   # pylint: disable=W0611
 from FedoraReview.checks import Checks
 from FedoraReview.name_bug import NameBug
 
@@ -30,6 +31,7 @@ from fr_testcase import FR_TestCase, FAST_TEST
 
 
 class TestRChecks(FR_TestCase):
+    ''' Some R specific tests. '''
 
     R_TEST_SRPM = 'https://fedorahosted.org/releases/F/e' \
                   '/FedoraReview/R-Rdummypkg-1.0-2.fc15.src.rpm'

@@ -15,6 +15,7 @@
 #    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #    MA  02110-1301 USA.
 #
+# pylint: disable=C0103,R0904,R0913,W0212
 # (C) 2011 - Tim Lauridsen <timlau@fedoraproject.org>
 '''
 Unit tests for bugzilla bug handling
@@ -30,14 +31,12 @@ import subprocess
 import sys
 import unittest2 as unittest
 
-from  subprocess import check_call
-
 try:
     from subprocess import check_output
 except ImportError:
     from FedoraReview.el_compat import check_output
 
-import srcpath
+import srcpath                                   # pylint: disable=W0611
 from FedoraReview import AbstractCheck, Mock, ReviewDirs
 from FedoraReview import ReviewError, Settings
 
@@ -56,6 +55,7 @@ from fr_testcase import FR_TestCase, FAST_TEST, NO_NET
 
 
 class TestMisc(FR_TestCase):
+    ''' Low-level, true unit tests. '''
 
     def setUp(self):
         sys.argv = ['fedora-review', '-b', '1']
@@ -84,8 +84,8 @@ class TestMisc(FR_TestCase):
         self.assertEqual(len(files), 11)
         rpms = src.get_all()
         self.assertEqual(rpms, ['python-test'])
-        rpm = src.get('python-test')
-        self.assertEqual(rpm.header['name'], 'python-test')
+        rpm_pkg = src.get('python-test')
+        self.assertEqual(rpm_pkg.header['name'], 'python-test')
         all_files = src.find_all('*')
         self.assertEqual(len(all_files), 11)
 
@@ -97,7 +97,7 @@ class TestMisc(FR_TestCase):
         bug = NameBug('perl-RPM-Specfile')
         bug.find_urls()
         bug.download_files()
-        checks = Checks(bug.spec_file, bug.srpm_file)
+        checks = Checks(bug.spec_file, bug.srpm_file)  # pylint: disable=W0612
         src = BuildFilesSource()
         files = src.filelist()
         self.assertEqual(len(files), 8)
@@ -141,6 +141,7 @@ class TestMisc(FR_TestCase):
         bug.find_urls()
         bug.download_files()
         with  self.assertRaises(ReviewError):
+            # pylint: disable=W0612
             checks = Checks(bug.spec_file, bug.srpm_file)
 
     def test_flags_4(self):
@@ -192,6 +193,7 @@ class TestMisc(FR_TestCase):
         self.assertTrue(check.is_passed)
 
     def test_mock_configdir(self):
+        ''' Test internal scanning of --configdir option. '''
         self.init_test('test_misc',
                        argv=['-n', 'python-test'],
                        buildroot='default',
@@ -202,6 +204,7 @@ class TestMisc(FR_TestCase):
 
     @unittest.skipIf(FAST_TEST, 'slow test disabled by REVIEW_FAST_TEST')
     def test_mock_uniqueext(self):
+        ''' Test --uniqueext option. '''
         self.init_test('mock-uniqueext',
                        argv=['-cn', 'python-test'],
                        options='--uniqueext=hugo')
@@ -223,13 +226,8 @@ class TestMisc(FR_TestCase):
     def test_spec_file(self):
         ''' Test the SpecFile class'''
 
-        def filter_empty(list_):
-            return [i for i in list_ if i]
-
-        def lines(s):
-            return filter_empty(s.split('\n'))
-
         def fix_usr_link(path):
+            ''' Convert absolute paths to /usr/path. '''
             if not '/' in path:
                 return path
             lead = path.split('/')[1]
@@ -306,6 +304,7 @@ class TestMisc(FR_TestCase):
         self.assertEqual(1, len(rpms))
 
     def test_checksum_command_line(self):
+        ''' Default checksum test. '''
         sys.argv = ['fedora-review', '-b', '1', '-k', 'sha1']
         Settings.init(True)
         helpers = HelpersMixin()
@@ -313,6 +312,7 @@ class TestMisc(FR_TestCase):
         self.assertEqual(checksum, '5315b33321883c15c19445871cd335f7f698a2aa')
 
     def test_md5(self):
+        ''' MD5 checksum test. '''
         sys.argv = ['fedora-review', '-b', '1']
         Settings.init(True)
         Settings.checksum = 'md5'
@@ -321,6 +321,7 @@ class TestMisc(FR_TestCase):
         self.assertEqual(checksum, '4a1c937e62192753c550221876613f86')
 
     def test_sha1(self):
+        ''' SHA1 checksum test. '''
         sys.argv = ['fedora-review', '-b', '1']
         Settings.init(True)
         Settings.checksum = 'sha1'
@@ -329,6 +330,7 @@ class TestMisc(FR_TestCase):
         self.assertEqual(checksum, '5315b33321883c15c19445871cd335f7f698a2aa')
 
     def test_sha224(self):
+        ''' SHA2 checksum test. '''
         sys.argv = ['fedora-review', '-b', '1']
         Settings.init(True)
         Settings.checksum = 'sha224'
@@ -338,6 +340,7 @@ class TestMisc(FR_TestCase):
             '01959559db8ef8d596ff824fe207fc0345be67df6b8a51942214adb7')
 
     def test_sha256(self):
+        ''' SHA2 checksum test. '''
         sys.argv = ['fedora-review', '-b', '1']
         Settings.init(True)
         Settings.checksum = 'sha256'
@@ -347,6 +350,7 @@ class TestMisc(FR_TestCase):
             'd8669d49c8557ac47681f9b85e322849fa84186a8683c93959a590d6e7b9ae29')
 
     def test_sha384(self):
+        ''' SHA3 checksum test. '''
         sys.argv = ['fedora-review', '-b', '1']
         Settings.init(True)
         Settings.checksum = 'sha384'
@@ -357,6 +361,7 @@ class TestMisc(FR_TestCase):
            'c01a17c67b88bf77283f784b4e8dacac6572050df8c948e')
 
     def test_sha512(self):
+        ''' SHA5 checksum test. '''
         sys.argv = ['fedora-review', '-b', '1']
         Settings.init(True)
         Settings.checksum = 'sha512'
@@ -369,6 +374,7 @@ class TestMisc(FR_TestCase):
 
     @unittest.skipIf(NO_NET, 'No network available')
     def test_bugzilla_bug(self):
+        ''' Scanning of bugzilla bugpage test. '''
         subprocess.check_call('mkdir -p tmp/python-test || :', shell=True)
         self.init_test('tmp',
                        argv=['-b', '817268'],
@@ -385,6 +391,7 @@ class TestMisc(FR_TestCase):
         self.assertEqual(None, bug.srpm_file)
 
     def test_rpm_spec(self):
+        ''' Internal -r check. '''
         self.init_test('test_misc',
                        argv=['-rn', 'python-test', '--cache',
                              '--no-build'])
@@ -396,6 +403,7 @@ class TestMisc(FR_TestCase):
         self.assertTrue(bug.spec_url.endswith(expected))
 
     def test_jsonapi(self):
+        ''' Test the JSON api. '''
         self.init_test('test_misc',
                        argv=['-rpn', 'python-test', '--no-build'])
         os.environ['REVIEW_EXT_DIRS'] = \
@@ -416,6 +424,7 @@ class TestMisc(FR_TestCase):
                          'A second check solely for test purposes.')
 
     def test_md5sum_diff_ok(self):
+        ''' Complete MD5sum test expected to pass. '''
         self.init_test('md5sum-diff-ok',
                        argv=['-rpn', 'python-test', '--cache',
                              '--no-build'])
@@ -431,6 +440,7 @@ class TestMisc(FR_TestCase):
         self.assertTrue(expected in check.result.attachments[0].text)
 
     def test_md5sum_diff_fail(self):
+        ''' Complete MD5sum test expected to fail. '''
         self.init_test('md5sum-diff-fail',
                        argv=['-rpn', 'python-test', '--cache',
                              '--no-build'])
@@ -445,6 +455,7 @@ class TestMisc(FR_TestCase):
         self.assertTrue(expected in check.result.attachments[0].text)
 
     def test_dirty_resultdir(self):
+        ''' Test that non-empty resultdir quits. '''
         self.init_test('test_misc',
                        argv=['-n', 'python-test', '--cache'])
         bug = NameBug('python-test')
@@ -470,6 +481,7 @@ class TestMisc(FR_TestCase):
             shutil.move(dirt, 'results')
 
     def test_prebuilt_sources(self):
+        ''' Local built RPM:s (-n) test. '''
         self.init_test('test_misc',
                        argv=['-cn', 'python-test', '--prebuilt'])
         ReviewDirs.startdir = os.getcwd()
@@ -482,6 +494,7 @@ class TestMisc(FR_TestCase):
         self.assertEqual(len(rpms), 1)
 
     def test_bad_specfile(self):
+        ''' Specfile with syntactic errors test. '''
         self.init_test('bad-spec',
                        argv=['-n', 'python-test', '-p', '--cache',
                              '--no-build'])
@@ -491,6 +504,8 @@ class TestMisc(FR_TestCase):
         self.assertTrue('#TestTag' in check.result.attachments[0].text)
 
     def test_desktop_file_bug(self):
+        ''' desktop file handling test. '''
+
         self.init_test('desktop-file',
                        argv=['-n', 'python-test', '--cache',
                              '--no-build'])
@@ -499,13 +514,17 @@ class TestMisc(FR_TestCase):
         self.assertTrue(check.is_passed)
 
     def test_check_dict(self):
+        ''' CheckDict component test. '''
 
         class TestCheck(AbstractCheck):
-
+            ''' Check mockup. '''
             def run(self):
                 pass
 
-            def name(self):
+            @staticmethod
+            # pylint: disable=E0202
+            def name():
+                ''' return test's name.'''
                 return 'foo'
 
         c = TestCheck('a-sourcefile')
@@ -529,6 +548,7 @@ class TestMisc(FR_TestCase):
         self.assertEqual(l['test1'], c1)
 
     def test_1_unversioned_so(self):
+        ''' Handling unversioned-sofile, expected to fail. '''
         self.init_test('unversioned-so',
                        argv=['-rpn', 'python-test'])
         bug = NameBug('python-test')
@@ -536,6 +556,7 @@ class TestMisc(FR_TestCase):
         self.assertTrue(check.is_failed)
 
     def test_1_unversioned_so_private(self):
+        ''' Handling unversioned-sofile, expected to fail. '''
         self.init_test('unversioned-so-private',
                        argv=['-rpn', 'python-test'])
         bug = NameBug('python-test')
@@ -544,6 +565,7 @@ class TestMisc(FR_TestCase):
 
     @unittest.skipIf(FAST_TEST, 'slow test disabled by REVIEW_FAST_TEST')
     def test_local_repo(self):
+        ''' Local repo with prebuilt rpms test. '''
         self.init_test('test_misc',
                        argv=['-rn', 'python-test', '--local-repo',
                              'repo', '--cache'])
@@ -556,6 +578,7 @@ class TestMisc(FR_TestCase):
         self.assertTrue(check.is_passed)
 
     def test_bad_specname(self):
+        ''' Specfile with bad name test. '''
         self.init_test('bad-specname',
                        argv=['-rn', 'python-test', '--cache'])
         bug = NameBug('python-test')

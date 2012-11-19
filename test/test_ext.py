@@ -15,6 +15,7 @@
 #    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #    MA  02110-1301 USA.
 #
+# pylint: disable=C0103,R0904,R0913
 # (C) 2011 - Tim Lauridsen <timlau@fedoraproject.org>
 '''
 Unit tests for utilities
@@ -26,7 +27,7 @@ import unittest2 as unittest
 
 from subprocess import check_call
 
-import srcpath
+import srcpath                                   # pylint: disable=W0611
 from FedoraReview.checks import Checks
 from FedoraReview.name_bug import NameBug
 
@@ -34,6 +35,7 @@ from fr_testcase import FR_TestCase
 
 
 class TestExt(FR_TestCase):
+    ''' Tests for externally loaded plugins and scripts. '''
 
     def setUp(self):
         FR_TestCase.setUp(self)
@@ -45,13 +47,15 @@ class TestExt(FR_TestCase):
         del os.environ['REVIEW_EXT_DIRS']
         FR_TestCase.tearDown(self)
 
-    def test_display(self):
+    @staticmethod
+    def test_display():
         ''' Test  -d cli option. '''
         os.chdir('test_ext')
         check_call(srcpath.REVIEW_PATH + ' -d | grep test1 >/dev/null',
                    shell=True)
 
-    def test_single(self):
+    @staticmethod
+    def test_single():
         ''' Test  -s test cli option. '''
         os.chdir('test_ext')
         check_call(srcpath.REVIEW_PATH + ' -n python-test'

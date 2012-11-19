@@ -15,6 +15,7 @@
 #    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #    MA  02110-1301 USA.
 #
+# pylint: disable=C0103,R0904,R0913
 '''
 Base class for FedoraReview tests
 '''
@@ -27,7 +28,7 @@ import unittest2 as unittest
 
 from urllib import urlopen
 
-import srcpath
+import srcpath                                   # pylint: disable=W0611
 from FedoraReview import Mock, ReviewDirs, Settings
 from FedoraReview.checks import Checks
 from FedoraReview.name_bug import NameBug
@@ -39,18 +40,21 @@ VERSION = '0.3.1'
 try:
     urlopen('http://bugzilla.redhat.com')
     NO_NET = False
-except:
+except IOError:
     NO_NET = True
 
 FAST_TEST = 'REVIEW_FAST_TEST' in os.environ
 
 
 class  FR_TestCase(unittest.TestCase):
+    ''' Common base class for all tests. '''
 
     BUILDROOT = "fedora-17-i386"
     BASE_URL  = 'https://fedorahosted.org/releases/F/e/FedoraReview/'
 
-    def abs_file_url(self, path):
+    @staticmethod
+    def abs_file_url(path):
+        ''' Absolute path -> file: url. '''
         return 'file://' + os.path.abspath(path)
 
     def setUp(self):
@@ -64,19 +68,23 @@ class  FR_TestCase(unittest.TestCase):
                             shell=True)
         os.chdir(self.startdir)
 
-    def init_test(self, cd, argv=[], wd=None,
+    def init_test(self, cd, argv=None, wd=None,
                   buildroot=None, options=None):
-        # Initiate a test which runs in directory cd
-        # kwargs:
-        #    argv: fed to sys.argv and eventually to Settings
-        #          fedora-review is prepended and mock_root appended.
-        #    wd:   review directory, cleared.
-        #    options: mock-options
+        '''
+        Initiate a test which runs in directory cd
+        kwargs:
+           argv: fed to sys.argv and eventually to Settings
+                 fedora-review is prepended and mock_root appended.
+           wd:   review directory, cleared.
+           options: mock-options'''
+
         cd = os.path.abspath(cd)
         os.chdir(cd)
         if not wd:
             wd = os.getcwd()
         ReviewDirs.workdir_setup(wd, 'testing')
+        if not argv:
+            argv = []
         args = argv
         args.insert(0, 'fedora-review')
         br = buildroot if buildroot else self.BUILDROOT
@@ -93,8 +101,9 @@ class  FR_TestCase(unittest.TestCase):
         Mock.clear_builddir()
         Mock.reset()
 
-    def run_single_check(self, bug, check_name, run_build=False):
-        # Run a single check, return check.
+    @staticmethod
+    def run_single_check(bug, check_name, run_build=False):
+        ''' Run a single check, return check.'''
         bug.find_urls()
         bug.download_files()
         checks = Checks(bug.spec_file, bug.srpm_file).get_checks()

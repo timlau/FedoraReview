@@ -15,6 +15,7 @@
 #    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #    MA  02110-1301 USA.
 #
+# pylint: disable=C0103,R0904,R0913
 ''' Unit tests for creating dist '''
 
 import os
@@ -57,7 +58,8 @@ class TestDist(FR_TestCase):
         self.assertIn('0 error', lint)
         self.assertIn('0 warning', lint)
 
-    def dogfood(self):
+    @staticmethod
+    def dogfood():
         '''
         Run fedora-review on itself (not found by discover et. al.)
         '''

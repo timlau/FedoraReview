@@ -15,6 +15,7 @@
 #    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #    MA  02110-1301 USA.
 #
+# pylint: disable=C0103,R0904,R0913
 # (C) 2011 - Tim Lauridsen <timlau@fedoraproject.org>
 '''
 Unit tests for bugzilla bug handling
@@ -25,21 +26,23 @@ import os.path
 import sys
 import unittest2 as unittest
 
-import srcpath
+import srcpath                                   # pylint: disable=W0611
+
 from FedoraReview.bugzilla_bug import BugzillaBug
 
 from fr_testcase import FR_TestCase, NO_NET
 
 
 class TestBugzilla(FR_TestCase):
+    ''' Test the bugzilla-specific parts. '''
     TEST_BUG = '672280'
 
     @unittest.skipIf(NO_NET, 'No network available')
     def test_find_urls(self):
+        ''' See that we can find URLs in bugzilla's bug page. '''
         self.init_test('bugzilla',
                        argv=['-b', self.TEST_BUG], wd='python-test')
         self.bug = BugzillaBug(self.TEST_BUG)
-        ''' Test that we can get the urls from a bugzilla report'''
         rc = self.bug.find_urls()
         self.assertTrue(rc)
         home = 'http://timlau.fedorapeople.org/files/test/review-test'
@@ -51,12 +54,12 @@ class TestBugzilla(FR_TestCase):
 
     @unittest.skipIf(NO_NET, 'No network available')
     def test_download_files(self):
-        self.init_test('bugzilla',
-                       argv=['-b', self.TEST_BUG], wd='python-test')
-        self.bug = BugzillaBug(self.TEST_BUG)
         '''
         Test that we can download the spec and srpm from a bugzilla report
         '''
+        self.init_test('bugzilla',
+                       argv=['-b', self.TEST_BUG], wd='python-test')
+        self.bug = BugzillaBug(self.TEST_BUG)    # pylint: disable=W0201
         self.bug.find_urls()
         rc = self.bug.download_files()
         self.assertTrue(rc)
@@ -79,7 +82,7 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         suite = unittest.TestSuite()
         for test in sys.argv[1:]:
-            suite.addTest(TestExt(test))
+            suite.addTest(TestBugzilla(test))
     else:
         suite = unittest.TestLoader().loadTestsFromTestCase(TestBugzilla)
     unittest.TextTestRunner(verbosity=2).run(suite)

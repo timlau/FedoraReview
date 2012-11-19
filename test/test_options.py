@@ -15,6 +15,7 @@
 #    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #    MA  02110-1301 USA.
 #
+# pylint: disable=C0103,R0904,R0913,W0212
 # (C) 2011 - Tim Lauridsen <timlau@fedoraproject.org>
 '''
 Unit tests for bugzilla bug handling
@@ -27,7 +28,7 @@ import sys
 from glob import glob
 import unittest2 as unittest
 
-import srcpath
+import srcpath                                   # pylint: disable=W0611
 
 try:
     from subprocess import check_output
@@ -45,9 +46,12 @@ from fr_testcase import FR_TestCase, NO_NET, FAST_TEST, VERSION
 
 
 class TestOptions(FR_TestCase):
+    ''' One test per command line option. '''
 
-    def init_opt_test(self, argv= [], cd=None, wd=None, root=None):
+    def init_opt_test(self, argv=None, cd=None, wd=None, root=None):
+        ''' Setup an options test. '''
         cd = cd if cd else 'options'
+        argv = argv if argv else []
         FR_TestCase.init_test(self, cd, argv, wd, buildroot=root)
 
     def test_name(self):
@@ -59,13 +63,13 @@ class TestOptions(FR_TestCase):
         expected = self.abs_file_url('./python-test-1.0-1.fc17.src.rpm')
         self.assertEqual(expected, bug.srpm_url)
         expected = self.abs_file_url('./python-test.spec')
-        self.assertEqual(expected, bug.spec_url),
+        self.assertEqual(expected, bug.spec_url)
 
         bug.download_files()
         expected = os.path.abspath('./python-test-1.0-1.fc17.src.rpm')
-        self.assertEqual(expected, bug.srpm_file),
+        self.assertEqual(expected, bug.srpm_file)
         expected = os.path.abspath('./python-test.spec')
-        self.assertEqual(expected, bug.spec_file),
+        self.assertEqual(expected, bug.spec_file)
 
     @unittest.skipIf(NO_NET, 'No network available')
     def test_bug(self):
@@ -79,12 +83,12 @@ class TestOptions(FR_TestCase):
                                 'openerp-client-6.1-2.fc16.src.rpm')
         self.assertEqual(expected, bug.srpm_url)
         expected = os.path.join(home, 'openerp-client.spec')
-        self.assertEqual(expected, bug.spec_url),
+        self.assertEqual(expected, bug.spec_url)
 
         bug.download_files()
         expected = os.path.abspath(
                              'srpm/openerp-client-6.1-2.fc16.src.rpm')
-        self.assertEqual(expected, bug.srpm_file),
+        self.assertEqual(expected, bug.srpm_file)
         expected = os.path.abspath('srpm/openerp-client.spec')
         self.assertEqual(expected, bug.spec_file)
 
@@ -101,12 +105,12 @@ class TestOptions(FR_TestCase):
                 'get-flash-videos-1.24-4.20120409gita965329.fc16.src.rpm')
         self.assertEqual(expected, bug.srpm_url)
         expected = os.path.join(home, 'get-flash-videos.spec')
-        self.assertEqual(expected, bug.spec_url),
+        self.assertEqual(expected, bug.spec_url)
 
         bug.download_files()
         expected = os.path.abspath(
             'srpm/get-flash-videos-1.24-4.20120409gita965329.fc16.src.rpm')
-        self.assertEqual(expected, bug.srpm_file),
+        self.assertEqual(expected, bug.srpm_file)
         expected = os.path.abspath('srpm/get-flash-videos.spec')
         self.assertEqual(expected, bug.spec_file)
 
@@ -151,7 +155,9 @@ class TestOptions(FR_TestCase):
     @unittest.skipIf(NO_NET, 'No network available')
     @unittest.skipIf(FAST_TEST, 'slow test disabled by REVIEW_FAST_TEST')
     def test_cache(self):
+        ''' --cache option test. '''
         def get_mtime(pattern):
+            '''¸Return mtime for first path matching pattern. '''
             pattern = os.path.join(os.getcwd(), pattern)
             path = glob(pattern)[0]
             return os.stat(path).st_mtime
@@ -217,13 +223,13 @@ class TestOptions(FR_TestCase):
         expected = self.abs_file_url('python-test-1.0-1.fc17.src.rpm')
         self.assertEqual(expected, bug.srpm_url)
         expected = self.abs_file_url('srpm-unpacked/python-test.spec')
-        self.assertEqual(expected, bug.spec_url),
+        self.assertEqual(expected, bug.spec_url)
 
         bug.download_files()
         expected = os.path.abspath('python-test-1.0-1.fc17.src.rpm')
-        self.assertEqual(expected, bug.srpm_file),
+        self.assertEqual(expected, bug.srpm_file)
         expected = os.path.abspath('srpm-unpacked/python-test.spec')
-        self.assertEqual(expected, bug.spec_file),
+        self.assertEqual(expected, bug.spec_file)
 
     def test_single(self):
         ''' test --single/-s option '''

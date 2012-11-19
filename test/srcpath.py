@@ -14,6 +14,7 @@
 #    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #    MA 02110-1301 USA.
 #
+# pylint: disable=C0103,R0904,R0913
 ''' Insert path to package into sys.path. '''
 
 import os

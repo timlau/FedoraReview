@@ -15,6 +15,7 @@
 #    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #    MA  02110-1301 USA.
 #
+# pylint: disable=C0103,R0904,R0913,W0201
 # (C) 2011 - Tim Lauridsen <timlau@fedoraproject.org>
 '''
 Unit checks for automatic test of fedora review guidelines
@@ -23,7 +24,7 @@ Unit checks for automatic test of fedora review guidelines
 import sys
 import unittest2 as unittest
 
-import srcpath
+import srcpath                                   # pylint: disable=W0611
 
 from fr_testcase import FR_TestCase
 
@@ -34,6 +35,7 @@ class Testspec():
 
 
 class TestChecks(FR_TestCase):
+    ''' Some complete tests, all results checked.'''
 
     def test_ruby_racc(self):
         ''' Run automated generic + ruby tests. '''
@@ -199,6 +201,7 @@ class TestChecks(FR_TestCase):
         self.run_spec(spec)
 
     def test_scriptlets_fail(self):
+        ''' Scriptlet tests mostly expected to file. '''
         spec = Testspec()
         spec.testcase = 'scriptlets-fail'
         spec.workdir = 'scriptlets-fail'
@@ -217,6 +220,7 @@ class TestChecks(FR_TestCase):
         self.run_spec(spec)
 
     def test_scriptlets_ok(self):
+        ''' Scriptlet tests mostly expected to pass (or pending). '''
         spec = Testspec()
         spec.testcase = 'scriptlets-ok'
         spec.workdir = 'scriptlets-ok'
@@ -235,6 +239,7 @@ class TestChecks(FR_TestCase):
         self.run_spec(spec)
 
     def test_FreeSOLID(self):
+        ''' Test the FreeSOLID spec. '''
         spec = Testspec()
         spec.args = []
         spec.testcase = 'FreeSOLID'
