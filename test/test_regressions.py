@@ -20,24 +20,20 @@
 Unit tests for bugzilla bug handling
 '''
 
-import os
 import os.path
 import re
-import subprocess
 import sys
 
 import unittest2 as unittest
 
 import srcpath
-from FedoraReview.helpers_mixin import HelpersMixin
-from FedoraReview.checks import Checks, _CheckDict
+from FedoraReview.checks import Checks
 from FedoraReview.name_bug import NameBug
-from FedoraReview.bugzilla_bug import BugzillaBug
 from FedoraReview.spec_file import SpecFile
 
-from FedoraReview import Mock, Settings, ReviewError
+from FedoraReview import Mock, Settings
 
-from fr_testcase import FR_TestCase, FAST_TEST, NO_NET
+from fr_testcase import FR_TestCase
 
 
 class TestRegressions(FR_TestCase):
@@ -46,7 +42,6 @@ class TestRegressions(FR_TestCase):
         FR_TestCase.setUp(self)
         sys.argv = ['fedora-review', '-b', '1']
         Settings.init(True)
-        self.helpers = HelpersMixin()
         self.spec_file = os.path.join(os.path.abspath('.'),
                                       'test_regressions',
                                       'test_107_1.spec')

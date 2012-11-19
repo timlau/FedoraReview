@@ -21,7 +21,6 @@ Base class for FedoraReview tests
 
 import os
 import os.path
-import shutil
 import subprocess
 import sys
 import unittest2 as unittest

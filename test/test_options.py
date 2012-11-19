@@ -34,13 +34,12 @@ try:
 except ImportError:
     from FedoraReview.el_compat import check_output
 
-from FedoraReview import Mock, ReviewDirs, Settings
+from FedoraReview import Mock, Settings
 
-from FedoraReview.checks import Checks, _CheckDict
+from FedoraReview.checks import Checks
 from FedoraReview.bugzilla_bug import BugzillaBug
 from FedoraReview.name_bug import NameBug
 from FedoraReview.url_bug import UrlBug
-from FedoraReview.spec_file import SpecFile
 
 from fr_testcase import FR_TestCase, NO_NET, FAST_TEST, VERSION
 

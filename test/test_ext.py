@@ -27,8 +27,7 @@ import unittest2 as unittest
 from subprocess import check_call
 
 import srcpath
-from FedoraReview import ReviewDirs
-from FedoraReview.checks import Checks, _CheckDict
+from FedoraReview.checks import Checks
 from FedoraReview.name_bug import NameBug
 
 from fr_testcase import FR_TestCase

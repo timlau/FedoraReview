@@ -20,13 +20,10 @@
 Unit checks for automatic test of fedora review guidelines
 '''
 
-import os.path
 import sys
 import unittest2 as unittest
 
 import srcpath
-from FedoraReview.checks import Checks
-from FedoraReview.name_bug import NameBug
 
 from fr_testcase import FR_TestCase
 

@@ -23,7 +23,6 @@ import sys
 import unittest2 as unittest
 
 import srcpath
-from FedoraReview import ReviewDirs
 from FedoraReview.checks import Checks
 from FedoraReview.name_bug import NameBug
 
