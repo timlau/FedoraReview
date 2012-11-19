@@ -322,13 +322,8 @@ class GemCheckExcludesGemCache(GemCheckBase):
     def run_on_applicable(self):
         # it seems easier to check whether .gem is not present in rpms
         # than to examine %files
-        gemfile_re = re.compile(r'.*\.gem$')
-        rc = self.PASS
-        for f in self.checks.rpms.filelist():
-            if gemfile_re.match(f):
-                rc = self.FAIL
-                break
-        self.set_passed(rc)
+        self.set_passed(
+            self.FAIL if self.rpms.find('*.gem') else self.PASS)
 
 
 class GemCheckUsesMacros(GemCheckBase):
