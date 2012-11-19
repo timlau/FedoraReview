@@ -181,6 +181,7 @@ class NonGemCheckUsesMacros(NonGemCheckBase):
         self.set_passed(False)
         vendorarchdir_re = re.compile('%{vendorarchdir}', re.I)
         vendorlibdir_re = re.compile('%{vendorlibdir}', re.I)
+        #FIXME: get_files returns expanded macros, not'%{whatever}'
 
         for pkg in self.spec.packages:
             for line in self.spec.get_files(pkg):
