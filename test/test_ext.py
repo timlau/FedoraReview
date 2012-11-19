@@ -12,7 +12,8 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with this program; if not, write to the Free Software
-#    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA.
+#    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+#    MA  02110-1301 USA.
 #
 # (C) 2011 - Tim Lauridsen <timlau@fedoraproject.org>
 '''
@@ -31,6 +32,7 @@ from FedoraReview.checks import Checks, _CheckDict
 from FedoraReview.name_bug import NameBug
 
 from fr_testcase import FR_TestCase
+
 
 class TestExt(FR_TestCase):
 
@@ -60,7 +62,7 @@ class TestExt(FR_TestCase):
 
     def test_exclude(self):
         ''' Test  -x test cli option. '''
-        self.init_test('test_ext',argv=['-b', '1'], wd='review-python-test')
+        self.init_test('test_ext', argv=['-b', '1'], wd='review-python-test')
         os.chdir('..')
         check_call(srcpath.REVIEW_PATH + ' -n python-test'
                    '  -x unittest-test1' +
@@ -71,7 +73,7 @@ class TestExt(FR_TestCase):
     def test_sh_api(self):
         ''' Basic shell API test. '''
         self.init_test('test_ext',
-                       argv=['-pn','python-test', '--cache',
+                       argv=['-pn', 'python-test', '--cache',
                               '--no-build'],
                        wd='review-python-test')
         bug = NameBug('python-test')
@@ -87,7 +89,7 @@ class TestExt(FR_TestCase):
         ''' Test shell attachments. '''
 
         self.init_test('test_ext',
-                       argv=['-rn','python-test', '--no-build'])
+                       argv=['-rn', 'python-test', '--no-build'])
         bug = NameBug('python-test')
         bug.find_urls()
         bug.download_files()
@@ -96,19 +98,19 @@ class TestExt(FR_TestCase):
         check = checks['test-attachments']
         check.run()
         self.assertEqual(len(check.result.attachments), 2)
-        a1 = filter( lambda a: 'attachment 1' in a.text,
-                     check.result.attachments)[0]
-        a2 = filter( lambda a: 'attachment 2' in a.text,
-                     check.result.attachments)[0]
-        self.assertEqual('Heading 1',  a1.header)
-        self.assertEqual(8,  a1.order_hint)
-        self.assertEqual('Heading 2',  a2.header)
-        self.assertEqual(9,  a2.order_hint)
+        a1 = filter(lambda a: 'attachment 1' in a.text,
+                    check.result.attachments)[0]
+        a2 = filter(lambda a: 'attachment 2' in a.text,
+                    check.result.attachments)[0]
+        self.assertEqual('Heading 1', a1.header)
+        self.assertEqual(8, a1.order_hint)
+        self.assertEqual('Heading 2', a2.header)
+        self.assertEqual(9, a2.order_hint)
 
     def test_srv_opt(self):
         ''' Test check of no files in /srv, /opt and /usr/local. '''
         self.init_test('srv-opt',
-                       argv=['-rn','dummy', '--cache',
+                       argv=['-rn', 'dummy', '--cache',
                               '--no-build'])
         os.chdir('..')
         bug = NameBug('dummy')
@@ -119,9 +121,9 @@ class TestExt(FR_TestCase):
         check = checks.checkdict['CreateEnvCheck'].run()
         check = checks.checkdict['check-srv-opt-local']
         check.run()
-        self.assertTrue( '/srv' in check.result.output_extra)
-        self.assertTrue( '/opt' in check.result.output_extra)
-        self.assertTrue( '/usr/local' in check.result.output_extra)
+        self.assertTrue('/srv' in check.result.output_extra)
+        self.assertTrue('/opt' in check.result.output_extra)
+        self.assertTrue('/usr/local' in check.result.output_extra)
 
 if __name__ == '__main__':
     if len(sys.argv) > 1:

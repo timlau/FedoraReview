@@ -12,7 +12,8 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with this program; if not, write to the Free Software
-#    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA.
+#    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+#    MA  02110-1301 USA.
 #
 # (C) 2011 - Tim Lauridsen <timlau@fedoraproject.org>
 '''
@@ -37,6 +38,7 @@ from FedoraReview.spec_file import SpecFile
 from FedoraReview import Mock, Settings, ReviewError
 
 from fr_testcase import FR_TestCase, FAST_TEST, NO_NET
+
 
 class TestRegressions(FR_TestCase):
 
@@ -63,7 +65,6 @@ class TestRegressions(FR_TestCase):
         regex = re.compile('initial fedora')
         self.assertEqual(len(spec.find_all_re(regex)), 2)
         self.assertEqual(len(spec.find_all_re(regex, True)), 1)
-
 
     def test_107_no_space_config(self):
         """ Test the case when there is no space in %config line between
@@ -95,5 +96,5 @@ if __name__ == '__main__':
         for test in sys.argv[1:]:
             suite.addTest(TestRegressions(test))
     else:
-        suite =  unittest.TestLoader().loadTestsFromTestCase(TestRegressions)
+        suite = unittest.TestLoader().loadTestsFromTestCase(TestRegressions)
     unittest.TextTestRunner(verbosity=2).run(suite)

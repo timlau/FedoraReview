@@ -12,7 +12,8 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with this program; if not, write to the Free Software
-#    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA.
+#    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+#    MA  02110-1301 USA.
 #
 # (C) 2011 - Tim Lauridsen <timlau@fedoraproject.org>
 '''
@@ -48,7 +49,6 @@ class TestBugzilla(FR_TestCase):
         self.assertEqual(self.bug.spec_url,
                          os.path.join(home, 'python-test.spec'))
 
-
     @unittest.skipIf(NO_NET, 'No network available')
     def test_download_files(self):
         self.init_test('bugzilla',
@@ -68,8 +68,8 @@ class TestBugzilla(FR_TestCase):
                           'review-test/python-test.spec')
 
         cd = os.path.abspath('./srpm')
-        srpm = os.path.join(cd,  'python-test-1.0-1.fc14.src.rpm')
-        spec = os.path.join(cd,  'python-test.spec')
+        srpm = os.path.join(cd, 'python-test-1.0-1.fc14.src.rpm')
+        spec = os.path.join(cd, 'python-test.spec')
         self.assertEqual(self.bug.srpm_file, srpm)
         self.assertEqual(self.bug.spec_file, spec)
         self.assertTrue(os.path.exists(srpm))

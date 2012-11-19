@@ -12,7 +12,8 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with this program; if not, write to the Free Software
-#    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA.
+#    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+#    MA  02110-1301 USA.
 #
 # (C) 2011 - Tim Lauridsen <timlau@fedoraproject.org>
 '''
@@ -29,20 +30,22 @@ from FedoraReview.name_bug import NameBug
 
 from fr_testcase import FR_TestCase
 
+
 class Testspec():
     ''' Simple container for testdata. '''
     pass
 
+
 class TestChecks(FR_TestCase):
 
     def test_ruby_racc(self):
-       ''' Run automated generic + ruby tests. '''
-       spec = Testspec()
-       spec.args = []
-       spec.testcase = 'ruby-racc'
-       spec.workdir = 'ruby-racc'
-       spec.groups_ok = ['Setup', 'Generic', 'Ruby']
-       spec.expected = [('pass', 'CheckResultdir'),
+        ''' Run automated generic + ruby tests. '''
+        spec = Testspec()
+        spec.args = []
+        spec.testcase = 'ruby-racc'
+        spec.workdir = 'ruby-racc'
+        spec.groups_ok = ['Setup', 'Generic', 'Ruby']
+        spec.expected = [('pass', 'CheckResultdir'),
                         ('pending', 'CheckBuild'),
                         ('pass', 'CheckRpmlint'),
                         ('pass', 'CheckPackageInstalls'),
@@ -110,137 +113,137 @@ class TestChecks(FR_TestCase):
                         ('pending', 'CheckChangelogFormat'),
                         ('pass', 'check-large-data'),
                         ('pass', 'check-srv-opt-local')]
-       self.run_spec(spec)
+        self.run_spec(spec)
 
     def test_logback(self):
-       ''' Run automated generic+ java tests. '''
-       spec = Testspec()
-       spec.args = []
-       spec.testcase = 'logback'
-       spec.workdir = 'logback'
-       spec.groups_ok = ['Setup', 'Generic', 'Java', 'Maven']
-       spec.expected = [('pass', 'CheckResultdir'),
-                        ('pending', 'CheckBuild'),
-                        ('pass', 'CheckRpmlint'),
-                        ('pass', 'CheckPackageInstalls'),
-                        ('pass', 'CheckRpmlintInstalled'),
-                        ('pending', 'CheckUpstremBuildMethod'),
-                        ('pass', 'CheckNoOldMavenDepmap'),
-                        ('pending', 'CheckObeysFHS'),
-                        ('pass', 'CheckFileRequires'),
-                        ('pass', 'CheckNoRequiresPost'),
-                        ('pass', 'CheckUTF8Filenames'),
-                        ('pending', 'CheckNoConflicts'),
-                        ('pending', 'CheckDirectoryRequire'),
-                        ('pass', 'CheckUseMavenpomdirMacro'),
-                        ('pending', 'CheckTestSuites'),
-                        ('pass', 'CheckBuildroot'),
-                        ('pending', 'CheckNaming'),
-                        ('pending', 'CheckFinalRequiresProvides'),
-                        ('pass', 'CheckDistTag'),
-                        ('pass', 'CheckUpdateDepmap'),
-                        ('pending', 'CheckSupportAllArchs'),
-                        ('pass', 'CheckFilePermissions'),
-                        ('pending', 'CheckLatestVersionIsPackaged'),
-                        ('pass', 'CheckSourcePatchPrefix'),
-                        ('pending', 'CheckObsoletesForRename'),
-                        ('pass', 'CheckJavadocdirName'),
-                        ('pass', 'CheckClean'),
-                        ('pass', 'CheckCleanBuildroot'),
-                        ('pass', 'CheckDescMacros'),
-                        ('pending', 'CheckSpecDescTranslation'),
-                        ('pass', 'CheckUseGlobal'),
-                        ('pass', 'CheckDefattr'),
-                        ('pending', 'CheckMultipleLicenses'),
-                        ('pending', 'CheckGuidelines'),
-                        ('pass', 'CheckSourceUrl'),
-                        ('pending', 'CheckExcludeArch'),
-                        ('pending', 'CheckAddMavenDepmap'),
-                        ('pending', 'CheckLicenseInSubpackages'),
-                        ('pending', 'CheckOwnOther'),
-                        ('pass', 'CheckFullVerReqSub'),
-                        ('pending', 'CheckApprovedLicense'),
-                        ('pending', 'CheckDocRuntime'),
-                        ('pass', 'CheckFileDuplicates'),
-                        ('pass', 'CheckSourceMD5'),
-                        ('pending', 'CheckBundledLibs'),
-                        ('fail', 'CheckBuildInMock'),
-                        ('pending', 'CheckBuildRequires'),
-                        ('pending', 'CheckOwnDirs'),
-                        ('fail', 'CheckJavaFullVerReqSub'),
-                        ('pass', 'CheckSourceComment'),
-                        ('pending', 'CheckTimeStamps'),
-                        ('pass', 'CheckRelocatable'),
-                        ('pending', 'CheckLicenseUpstream'),
-                        ('pending', 'CheckSystemdScripts'),
-                        ('pending', 'CheckMacros'),
-                        ('pending', 'CheckFunctionAsDescribed'),
-                        ('pass', 'CheckLicensInDoc'),
-                        ('pending', 'CheckRequires'),
-                        ('pending', 'CheckCodeAndContent'),
-                        ('pass', 'CheckNameCharset'),
-                        ('pending', 'CheckPomInstalled'),
-                        ('pass', 'CheckIllegalSpecTags'),
-                        ('pass', 'CheckSpecName'),
-                        ('pass', 'CheckJPackageRequires'),
-                        ('pass', 'CheckJavadoc'),
-                        ('pending', 'CheckDevelFilesInDevel'),
-                        ('pending', 'CheckSpecLegibility'),
-                        ('na', 'CheckBuildCompilerFlags'),
-                        ('pass', 'CheckJavadocJPackageRequires'),
-                        ('pending', 'CheckContainsLicenseText'),
-                        ('pending', 'CheckDesktopFile'),
-                        ('pending', 'CheckLicenseField'),
-                        ('pending', 'CheckPatchComments'),
-                        ('pending', 'CheckChangelogFormat'),
-                        ('pass', 'check-large-data'),
-                        ('pass', 'check-srv-opt-local'),
-                        ('pass', 'java-check-bundled-jars')]
-       self.run_spec(spec)
+        ''' Run automated generic+ java tests. '''
+        spec = Testspec()
+        spec.args = []
+        spec.testcase = 'logback'
+        spec.workdir = 'logback'
+        spec.groups_ok = ['Setup', 'Generic', 'Java', 'Maven']
+        spec.expected = [('pass', 'CheckResultdir'),
+                         ('pending', 'CheckBuild'),
+                         ('pass', 'CheckRpmlint'),
+                         ('pass', 'CheckPackageInstalls'),
+                         ('pass', 'CheckRpmlintInstalled'),
+                         ('pending', 'CheckUpstremBuildMethod'),
+                         ('pass', 'CheckNoOldMavenDepmap'),
+                         ('pending', 'CheckObeysFHS'),
+                         ('pass', 'CheckFileRequires'),
+                         ('pass', 'CheckNoRequiresPost'),
+                         ('pass', 'CheckUTF8Filenames'),
+                         ('pending', 'CheckNoConflicts'),
+                         ('pending', 'CheckDirectoryRequire'),
+                         ('pass', 'CheckUseMavenpomdirMacro'),
+                         ('pending', 'CheckTestSuites'),
+                         ('pass', 'CheckBuildroot'),
+                         ('pending', 'CheckNaming'),
+                         ('pending', 'CheckFinalRequiresProvides'),
+                         ('pass', 'CheckDistTag'),
+                         ('pass', 'CheckUpdateDepmap'),
+                         ('pending', 'CheckSupportAllArchs'),
+                         ('pass', 'CheckFilePermissions'),
+                         ('pending', 'CheckLatestVersionIsPackaged'),
+                         ('pass', 'CheckSourcePatchPrefix'),
+                         ('pending', 'CheckObsoletesForRename'),
+                         ('pass', 'CheckJavadocdirName'),
+                         ('pass', 'CheckClean'),
+                         ('pass', 'CheckCleanBuildroot'),
+                         ('pass', 'CheckDescMacros'),
+                         ('pending', 'CheckSpecDescTranslation'),
+                         ('pass', 'CheckUseGlobal'),
+                         ('pass', 'CheckDefattr'),
+                         ('pending', 'CheckMultipleLicenses'),
+                         ('pending', 'CheckGuidelines'),
+                         ('pass', 'CheckSourceUrl'),
+                         ('pending', 'CheckExcludeArch'),
+                         ('pending', 'CheckAddMavenDepmap'),
+                         ('pending', 'CheckLicenseInSubpackages'),
+                         ('pending', 'CheckOwnOther'),
+                         ('pass', 'CheckFullVerReqSub'),
+                         ('pending', 'CheckApprovedLicense'),
+                         ('pending', 'CheckDocRuntime'),
+                         ('pass', 'CheckFileDuplicates'),
+                         ('pass', 'CheckSourceMD5'),
+                         ('pending', 'CheckBundledLibs'),
+                         ('fail', 'CheckBuildInMock'),
+                         ('pending', 'CheckBuildRequires'),
+                         ('pending', 'CheckOwnDirs'),
+                         ('fail', 'CheckJavaFullVerReqSub'),
+                         ('pass', 'CheckSourceComment'),
+                         ('pending', 'CheckTimeStamps'),
+                         ('pass', 'CheckRelocatable'),
+                         ('pending', 'CheckLicenseUpstream'),
+                         ('pending', 'CheckSystemdScripts'),
+                         ('pending', 'CheckMacros'),
+                         ('pending', 'CheckFunctionAsDescribed'),
+                         ('pass', 'CheckLicensInDoc'),
+                         ('pending', 'CheckRequires'),
+                         ('pending', 'CheckCodeAndContent'),
+                         ('pass', 'CheckNameCharset'),
+                         ('pending', 'CheckPomInstalled'),
+                         ('pass', 'CheckIllegalSpecTags'),
+                         ('pass', 'CheckSpecName'),
+                         ('pass', 'CheckJPackageRequires'),
+                         ('pass', 'CheckJavadoc'),
+                         ('pending', 'CheckDevelFilesInDevel'),
+                         ('pending', 'CheckSpecLegibility'),
+                         ('na', 'CheckBuildCompilerFlags'),
+                         ('pass', 'CheckJavadocJPackageRequires'),
+                         ('pending', 'CheckContainsLicenseText'),
+                         ('pending', 'CheckDesktopFile'),
+                         ('pending', 'CheckLicenseField'),
+                         ('pending', 'CheckPatchComments'),
+                         ('pending', 'CheckChangelogFormat'),
+                         ('pass', 'check-large-data'),
+                         ('pass', 'check-srv-opt-local'),
+                         ('pass', 'java-check-bundled-jars')]
+        self.run_spec(spec)
 
     def test_scriptlets_fail(self):
-       spec = Testspec()
-       spec.testcase = 'scriptlets-fail'
-       spec.workdir = 'scriptlets-fail'
-       spec.args = ['-x', 'CheckPackageInstalls,CheckUTF8Filenames' ]
-       spec.groups_ok = ['Setup', 'Generic']
-       spec.expected = [('fail', 'CheckGconfSchemaInstall'),
-                        ('fail', 'CheckGtkQueryModules'),
-                        ('fail', 'CheckGioQueryModules'),
-                        ('fail', 'CheckUpdateIconCache'),
-                        ('fail', 'CheckInfoInstall'),
-                        ('fail', 'CheckGlibCompileSchemas'),
-                        ('fail', 'CheckUpdateMimeDatabase'),
-                        ('pending', 'CheckBundledFonts'),
-                        ('pending', 'CheckSourcedirMacroUse'),
-                        ('pending', 'CheckTmpfiles')]
-       self.run_spec(spec)
+        spec = Testspec()
+        spec.testcase = 'scriptlets-fail'
+        spec.workdir = 'scriptlets-fail'
+        spec.args = ['-x', 'CheckPackageInstalls,CheckUTF8Filenames']
+        spec.groups_ok = ['Setup', 'Generic']
+        spec.expected = [('fail', 'CheckGconfSchemaInstall'),
+                         ('fail', 'CheckGtkQueryModules'),
+                         ('fail', 'CheckGioQueryModules'),
+                         ('fail', 'CheckUpdateIconCache'),
+                         ('fail', 'CheckInfoInstall'),
+                         ('fail', 'CheckGlibCompileSchemas'),
+                         ('fail', 'CheckUpdateMimeDatabase'),
+                         ('pending', 'CheckBundledFonts'),
+                         ('pending', 'CheckSourcedirMacroUse'),
+                         ('pending', 'CheckTmpfiles')]
+        self.run_spec(spec)
 
     def test_scriptlets_ok(self):
-       spec = Testspec()
-       spec.testcase = 'scriptlets-ok'
-       spec.workdir = 'scriptlets-ok'
-       spec.args = ['-x', 'CheckPackageInstalls,CheckUTF8Filenames' ]
-       spec.groups_ok = ['Setup', 'Generic']
-       spec.expected = [('pending', 'CheckGconfSchemaInstall'),
-                        ('pending', 'CheckGtkQueryModules'),
-                        ('pending', 'CheckGioQueryModules'),
-                        ('pending', 'CheckUpdateIconCache'),
-                        ('pending', 'CheckInfoInstall'),
-                        ('pending', 'CheckGlibCompileSchemas'),
-                        ('pending', 'CheckUpdateMimeDatabase'),
-                        ('pending', 'CheckBundledFonts'),
-                        ('pending', 'CheckSourcedirMacroUse'),
-                        ('pending', 'CheckTmpfiles')]
-       self.run_spec(spec)
+        spec = Testspec()
+        spec.testcase = 'scriptlets-ok'
+        spec.workdir = 'scriptlets-ok'
+        spec.args = ['-x', 'CheckPackageInstalls,CheckUTF8Filenames']
+        spec.groups_ok = ['Setup', 'Generic']
+        spec.expected = [('pending', 'CheckGconfSchemaInstall'),
+                         ('pending', 'CheckGtkQueryModules'),
+                         ('pending', 'CheckGioQueryModules'),
+                         ('pending', 'CheckUpdateIconCache'),
+                         ('pending', 'CheckInfoInstall'),
+                         ('pending', 'CheckGlibCompileSchemas'),
+                         ('pending', 'CheckUpdateMimeDatabase'),
+                         ('pending', 'CheckBundledFonts'),
+                         ('pending', 'CheckSourcedirMacroUse'),
+                         ('pending', 'CheckTmpfiles')]
+        self.run_spec(spec)
 
     def test_FreeSOLID(self):
-       spec = Testspec()
-       spec.args = []
-       spec.testcase = 'FreeSOLID'
-       spec.workdir = 'FreeSOLID'
-       spec.groups_ok = ['Setup', 'Generic', 'C/C++']
-       spec.expected = [ ('pass', 'CheckResultdir'),
+        spec = Testspec()
+        spec.args = []
+        spec.testcase = 'FreeSOLID'
+        spec.workdir = 'FreeSOLID'
+        spec.groups_ok = ['Setup', 'Generic', 'C/C++']
+        spec.expected = [('pass', 'CheckResultdir'),
                          ('pending', 'CheckBuild'),
                          ('pass', 'CheckRpmlint'),
                          ('pass', 'CheckPackageInstalls'),
@@ -315,7 +318,7 @@ class TestChecks(FR_TestCase):
                          ('pending', 'CheckChangelogFormat'),
                          ('pass', 'check-large-data'),
                          ('pass', 'check-srv-opt-local')]
-       self.run_spec(spec)
+        self.run_spec(spec)
 
 
 if __name__ == '__main__':

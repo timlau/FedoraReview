@@ -12,7 +12,8 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with this program; if not, write to the Free Software
-#    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA.
+#    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+#    MA  02110-1301 USA.
 #
 '''
 Base class for FedoraReview tests
@@ -51,7 +52,7 @@ class  FR_TestCase(unittest.TestCase):
     BASE_URL  = 'https://fedorahosted.org/releases/F/e/FedoraReview/'
 
     def abs_file_url(self, path):
-        return 'file://' +  os.path.abspath(path)
+        return 'file://' + os.path.abspath(path)
 
     def setUp(self):
         self.log = Settings.get_logger()
@@ -87,7 +88,7 @@ class  FR_TestCase(unittest.TestCase):
         if options:
             opts.append(options)
         if opts:
-            argv.append('--mock-options=' +  ' '.join(opts))
+            argv.append('--mock-options=' + ' '.join(opts))
         sys.argv = argv
         Settings.init(True)
         Mock.clear_builddir()
@@ -118,7 +119,7 @@ class  FR_TestCase(unittest.TestCase):
         checks = Checks(bug.spec_file, bug.srpm_file)
         Mock.clear_builddir()
         if os.path.exists('BUILD'):
-             os.unlink('BUILD')
+            os.unlink('BUILD')
         checks.run_checks(writedown=False)
         checkdict = checks.get_checks()
         for check in checkdict.itervalues():
@@ -139,4 +140,3 @@ class  FR_TestCase(unittest.TestCase):
                               checkdict[check].attachments[0].text)
             else:
                 self.assertFalse(what)
-

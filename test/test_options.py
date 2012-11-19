@@ -12,7 +12,8 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with this program; if not, write to the Free Software
-#    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA.
+#    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+#    MA  02110-1301 USA.
 #
 # (C) 2011 - Tim Lauridsen <timlau@fedoraproject.org>
 '''
@@ -41,18 +42,18 @@ from FedoraReview.name_bug import NameBug
 from FedoraReview.url_bug import UrlBug
 from FedoraReview.spec_file import SpecFile
 
-
 from fr_testcase import FR_TestCase, NO_NET, FAST_TEST, VERSION
+
 
 class TestOptions(FR_TestCase):
 
-    def init_opt_test(self, argv= [], cd=None, wd=None,root=None):
+    def init_opt_test(self, argv= [], cd=None, wd=None, root=None):
         cd = cd if cd else 'options'
         FR_TestCase.init_test(self, cd, argv, wd, buildroot=root)
 
     def test_name(self):
         """ Test -name option """
-        self.init_opt_test(['-n','python-test', '--cache'])
+        self.init_opt_test(['-n', 'python-test', '--cache'])
         bug = NameBug(Settings.name)
 
         bug.find_urls()
@@ -70,13 +71,13 @@ class TestOptions(FR_TestCase):
     @unittest.skipIf(NO_NET, 'No network available')
     def test_bug(self):
         """ Test -bug option """
-        self.init_opt_test(['-b','818805'])
+        self.init_opt_test(['-b', '818805'])
         bug = BugzillaBug(Settings.bug)
 
         bug.find_urls()
         home = 'http://leamas.fedorapeople.org/openerp-client'
-        expected = os.path.join( home,
-                                 'openerp-client-6.1-2.fc16.src.rpm')
+        expected = os.path.join(home,
+                                'openerp-client-6.1-2.fc16.src.rpm')
         self.assertEqual(expected, bug.srpm_url)
         expected = os.path.join(home, 'openerp-client.spec')
         self.assertEqual(expected, bug.spec_url),
@@ -92,12 +93,12 @@ class TestOptions(FR_TestCase):
     def test_url(self):
         """ Test -url option """
         self.init_opt_test(
-            ['-u','https://bugzilla.rpmfusion.org/show_bug.cgi?id=2200'])
+            ['-u', 'https://bugzilla.rpmfusion.org/show_bug.cgi?id=2200'])
         bug = UrlBug(Settings.url)
 
         bug.find_urls()
         home = 'https://dl.dropbox.com/u/17870887/get-flash-videos'
-        expected = os.path.join( home,
+        expected = os.path.join(home,
                 'get-flash-videos-1.24-4.20120409gita965329.fc16.src.rpm')
         self.assertEqual(expected, bug.srpm_url)
         expected = os.path.join(home, 'get-flash-videos.spec')
@@ -156,7 +157,7 @@ class TestOptions(FR_TestCase):
             path = glob(pattern)[0]
             return os.stat(path).st_mtime
 
-        self.init_opt_test(['-b','818805'], 'options')
+        self.init_opt_test(['-b', '818805'], 'options')
         bug = BugzillaBug(Settings.bug)
         bug.find_urls()
         bug.download_files()
@@ -166,7 +167,7 @@ class TestOptions(FR_TestCase):
         del bug
 
         os.chdir(self.startdir)
-        self.init_opt_test(['-cb','818805'], 'options')
+        self.init_opt_test(['-cb', '818805'], 'options')
         bug = BugzillaBug(Settings.bug)
         bug.find_urls()
         bug.download_files()
@@ -180,9 +181,9 @@ class TestOptions(FR_TestCase):
     def test_mock_options(self):
         ''' test -o/--mock-options and -m/mock-config '''
         v = '16' if '17' in self.BUILDROOT else '17'
-        buildroot='fedora-%s-i386' % v
+        buildroot = 'fedora-%s-i386' % v
         self.init_test('mock-options',
-                       argv=['-n','python-test','--cache'],
+                       argv = ['-n', 'python-test', '--cache'],
                        options='--resultdir=results --uniqueext=foo',
                        buildroot=buildroot)
         bug = NameBug('python-test')
@@ -190,7 +191,7 @@ class TestOptions(FR_TestCase):
         bug.download_files()
         mock_cmd = ' '.join(Mock._mock_cmd())
         Mock._get_root()
-        self.assertIn( '-r ' + buildroot, mock_cmd)
+        self.assertIn('-r ' + buildroot, mock_cmd)
         self.assertEqual(Mock.mock_root, buildroot + '-foo')
 
     def test_prebuilt(self):
@@ -227,7 +228,7 @@ class TestOptions(FR_TestCase):
 
     def test_single(self):
         ''' test --single/-s option '''
-        self.init_opt_test(['-n','python-test', '-s', 'CheckRequires',
+        self.init_opt_test(['-n', 'python-test', '-s', 'CheckRequires',
                             '--cache'])
         bug = NameBug(Settings.name)
         bug.find_urls()
@@ -238,7 +239,7 @@ class TestOptions(FR_TestCase):
 
     def test_exclude(self):
         ''' test --exclude/-x option. '''
-        self.init_opt_test(['-n','python-test', '-x', 'CheckRequires',
+        self.init_opt_test(['-n', 'python-test', '-x', 'CheckRequires',
                             '--cache'])
         bug = NameBug(Settings.name)
         bug.find_urls()

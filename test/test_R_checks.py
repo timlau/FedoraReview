@@ -12,12 +12,12 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with this program; if not, write to the Free Software
-#    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA.
+#    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+#    MA  02110-1301 USA.
 #
 '''
 Unit checks for automatic test of fedora R review guidelines
 '''
-
 
 import sys
 import unittest2 as unittest
@@ -29,10 +29,11 @@ from FedoraReview.name_bug import NameBug
 
 from fr_testcase import FR_TestCase, FAST_TEST
 
+
 class TestRChecks(FR_TestCase):
 
-    R_TEST_SRPM =            'https://fedorahosted.org/releases/F/e' \
-                             '/FedoraReview/R-Rdummypkg-1.0-2.fc15.src.rpm'
+    R_TEST_SRPM = 'https://fedorahosted.org/releases/F/e' \
+                  '/FedoraReview/R-Rdummypkg-1.0-2.fc15.src.rpm'
     R_TEST_SPEC = FR_TestCase.BASE_URL + 'R-Rdummypkg.spec'
     R_TEST_SRC  = FR_TestCase.BASE_URL + 'Rdummypkg_1.0.tar.gz'
 
@@ -40,7 +41,7 @@ class TestRChecks(FR_TestCase):
     def test_all_checks(self):
         ''' Run all automated review checks'''
         self.init_test('test-R',
-                        argv=['-rpn','R-Rdummypkg', '--no-build'])
+                        argv=['-rpn', 'R-Rdummypkg', '--no-build'])
         self.bug = NameBug('R-Rdummypkg')
         self.bug.find_urls()
         self.bug.download_files()
