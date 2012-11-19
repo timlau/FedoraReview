@@ -146,7 +146,7 @@ class SpecFile(object):
             line = rpm.expandMacro(line)
             if line.startswith('%'):
                 token = re.split('\s|\(', line)[0]
-                if not token in ['%ghost', '%doc', '%docdir',
+                if not token in ['%ghost', '%doc', '%docdir', '%license',
                 '%verify', '%attr', '%config', '%dir', '%defattr']:
                     break
                 else:
