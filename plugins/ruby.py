@@ -22,6 +22,7 @@ def _is_gem(spec):
 
 def _has_extension(check):
     """ Return True if the package contains native extension """
+    # pylint: disable=W0511
     # TODO: will need altering for jruby .jar files
     return check.rpms.find_re(r'.*\.c(?:pp)')
 
@@ -100,7 +101,7 @@ class RubyCheckBuildArchitecture(RubyCheckBase):
         arch = self.spec.expand_tag('arch')
         if  _has_extension(self):
             self.set_passed('noarch' not in arch,
-                            "Package with binary extension can't be built" \
+                            "Package with binary extension can't be built"
                             " as noarch.")
         else:
             self.set_passed('noarch' in arch)
@@ -112,7 +113,8 @@ class RubyCheckPlatformSpecificFilePlacement(RubyCheckBase):
     def __init__(self, base):
         RubyCheckBase.__init__(self, base)
         self.url = _gl_fmt_uri({'section':
-                    'Ruby_packages_with_binary_content.2Fshared_libraries'})
+                                'Ruby_packages_with_binary_content.'
+                                '2Fshared_libraries'})
         self.text = 'Platform specific files must be located under ' \
                     '/usr/lib[64]'
         self.automatic = True
@@ -193,7 +195,7 @@ class NonGemCheckFilePlacement(NonGemCheckBase):
     def __init__(self, base):
         NonGemCheckBase.__init__(self, base)
         self.url = _gl_fmt_uri({'section':
-                                    'Build_Architecture_and_File_Placement'})
+                                'Build_Architecture_and_File_Placement'})
         self.text = 'Platform dependent files must go under ' \
             '%{ruby_vendorarchdir}, platform independent under ' \
             '%{ruby_vendorlibdir}.'
@@ -224,7 +226,7 @@ class GemCheckRequiresProperDevel(GemCheckBase):
         self.set_passed('rubygems-devel' in br)
         if _has_extension(self):
             self.set_passed('ruby-devel' in br,
-                            'The Gem package must have BuildRequires: ' \
+                            'The Gem package must have BuildRequires: '
                             'ruby-devel if the Gem contains binary extension.')
 
 
@@ -362,7 +364,7 @@ class GemCheckUsesMacros(GemCheckBase):
         err_message = []
         # construct the error message for all non-present macros
         for key, value in re_dict.iteritems():
-            if value == False:
+            if value is False:
                 err_message.append(key.pattern.replace('\\s+', ' '))
 
         if len(err_message) == 0:
