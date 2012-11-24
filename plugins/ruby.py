@@ -324,7 +324,7 @@ class GemCheckExcludesGemCache(GemCheckBase):
         # than to examine %files
         gemfile_re = re.compile(r'.*\.gem$')
         rc = self.PASS
-        for f in self.checks.rpms.filelist:
+        for f in self.checks.rpms.filelist():
             if gemfile_re.match(f):
                 rc = self.FAIL
                 break
