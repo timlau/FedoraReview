@@ -299,7 +299,7 @@ class GemCheckRequiresRubygems(GemCheckBase):
         # it seems easier to check whether .gem is not present in rpms
         # than to examine %files
         failed = []
-        for pkg_name in self.spec_packages:
+        for pkg_name in self.spec.packages:
             rpm_pkg = self.rpms.get(pkg_name)
             if not 'rubygems' in rpm_pkg.requires:
                 failed.append(pkg_name)
