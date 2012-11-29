@@ -16,12 +16,8 @@ import os
 import os.path
 import sys
 import subprocess 
-try:
-    from subprocess import check_output
-except ImportError:
-    from FedoraReview.el_compat import check_output
-
 main_dir = os.path.dirname(os.path.realpath(__file__))
+
 # let's setup a proper git commit hooks so people don't commit ugly code
 # accidentally
 devnull = open('/dev/null', 'w')
@@ -31,6 +27,12 @@ subprocess.call(['ln', '-s', '../../git-hooks/pre-commit',
 
 pkg_dir = os.path.join(main_dir, 'src')
 sys.path.insert(0, pkg_dir)
+
+try:
+    from subprocess import check_output
+except ImportError:
+    from FedoraReview.el_compat import check_output
+
 
 from FedoraReview.review_helper import ReviewHelper
 
