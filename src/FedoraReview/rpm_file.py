@@ -55,8 +55,11 @@ class RpmFile(object):
     def _scriptlet(self, prog_tag, script_tag):
         ''' Return inline -p script, script or None. '''
         self.init()
-        # RPMTAG_POSTTRANSPROG are given as list
-        prog = ' '.join(self.header[prog_tag])
+        # RPMTAG_POSTTRANSPROG are given as list on F18, but not before
+        if self.header[prog_tag] is list:
+            prog = ' '.join(self.header[prog_tag])
+        else:
+            prog = self.header[prog_tag]
         script = self.header[script_tag]
         if prog and script:
             return prog + script
