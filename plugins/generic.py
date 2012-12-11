@@ -915,9 +915,9 @@ class CheckLicensInDoc(GenericCheckBase):
         licenses = []
         for potentialfile in ['COPYING', 'LICEN', 'copying', 'licen']:
             pattern = '*' + potentialfile + '*'
-            for pkg in self.spec.packages:
-                licenses.extend(
-                            self.rpms.find_all(pattern, pkg))
+            licenses.extend(self.rpms.find_all(pattern))
+        licenses = filter(lambda l: not self.rpms.find(l + '/*'),
+                          licenses)
         licenses = map(lambda f: f.split('/')[-1], licenses)
         if licenses == []:
             self.set_passed('inconclusive')
