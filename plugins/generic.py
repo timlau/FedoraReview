@@ -1526,33 +1526,6 @@ class CheckSourceMD5(GenericCheckBase):
             self.set_passed(passed, msg, attachments)
 
 
-class CheckSourcePatchPrefix(GenericCheckBase):
-    '''
-    http://fedoraproject.org/wiki/Packaging/SourceURL
-    '''
-    def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
-        self.url = 'http://fedoraproject.org/wiki/Packaging/SourceURL'
-        self.text = 'SourceX / PatchY prefixed with %{name}.'
-        self.automatic = True
-        self.type = 'SHOULD'
-
-    def run(self):
-        sources = self.spec.sources_by_tag
-        sources.update(self.spec.patches_by_tag)
-        extra = ''
-        passed = True
-        if len(sources) == 0:
-            passed = False
-            extra = 'No SourceX/PatchX tags found'
-        for tag, path in sources.iteritems():
-            basename = os.path.basename(path)
-            if not basename.startswith(self.spec.name):
-                passed = False
-                extra += '%s (%s)\n' % (tag, basename)
-        self.set_passed(passed, extra if extra != '' else None)
-
-
 class CheckSourceUrl(GenericCheckBase):
     '''
     http://fedoraproject.org/wiki/Packaging/SourceURL
