@@ -192,7 +192,7 @@ class ReviewHelper(object):
             rcode = err.exitcode
             self.log.debug("ReviewError: " + str(err), exc_info=True)
             if not err.silent:
-                msg = 'Error: ' + str(err)
+                msg = 'ERROR: ' + str(err)
                 if err.show_logs:
                     msg += ' (logs in ~/.cache/fedora-review.log)'
                 self.log.error(msg)
