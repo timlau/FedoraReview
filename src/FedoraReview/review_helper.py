@@ -74,6 +74,15 @@ class ReviewHelper(object):
 
     def __run_checks(self, spec, srpm):
         ''' Register and run all checks. '''
+
+        def red(s):
+            ''' Return string printed in red. '''
+            return '\033[91m' + s + '\033[0m'
+
+        def green(s):
+            ''' Return string printed in green. '''
+            return '\033[92m' + s + '\033[0m'
+
         self.checks = Checks(spec, srpm)
         if Settings.no_report:
             self.outfile = '/dev/null'
@@ -85,11 +94,11 @@ class ReviewHelper(object):
                                    writedown=not Settings.no_report)
             output.close()
         if not Settings.no_report:
-            print "\033[92mReview template in: %s\033[0m" % self.outfile
-            print "\033[91mfedora-review is automated tool, but *YOU* " \
+            print green("Review template in: " + self.outfile)
+            print red("fedora-review is automated tool, but *YOU* " \
                   "are responsible for manually reviewing the results " \
                   "and finishing the review. Do not just copy-paste the " \
-                  "results without understanding them.\033[0m"
+                  "results without understanding them.")
 
     @staticmethod
     def _list_flags():
