@@ -2,30 +2,41 @@
 
 IGNORE=E221,E251
 
-FILES=$(git diff --cached --name-status | grep -v ^D | awk '$1 $2 { print $2}' | grep -e .py$)
-if [ -n "$FILES" ]; then
-    pep8 --ignore $IGNORE $FILES
+ALL_FILES=$(git diff --cached --name-status |
+              grep -v ^D | awk '$1 $2 { print $2}' | grep -e .py$)
+
+if [ -n "$ALL_FILES" ]; then
+    pep8 --ignore $IGNORE $ALL_FILES
     if [ $? -ne 0 ]; then
         echo "pep8 failed. Fix your code!"
         echo "*If* you know what you are doing, use 'git commit --no-verify'"
         exit 1
     fi
 
-set -x
-
+    SRC_FILES=''
+    TEST_FILES=''
+    for file in $( echo $ALL_FILES ); do
+        if [[ $file == test/* ]]; then
+            TEST_FILES="$TEST_FILES ${file##test/}"
+        else
+            SRC_FILES="$SRC_FILES $file"
+        fi
+    done
     export PYTHONPATH=src/
-    echo $FILES | grep '\btest/'
-    if [ $? -eq 0 ]; then
-        # if we are modifying tests add tests to pythonpath for checking
-        # ideally we'd run two separate pylints (one for files in src, one for
-        # tests) with different pythonpaths
-        export PYTHONPATH=$PYTHONPATH:test/
+    if [ "$TEST_FILES" ]; then
+        cd test
+        pylint --rcfile=../pylint.conf -f text $TEST_FILES > pylint.log || {
+            echo "Pylint failed for test files, log in test/pylint.log"
+            echo "Fix test code or use --no-verify."
+            exit 3
+        }
+        cd $OLDPWD
     fi
-    echo $PYTHONPATH
-    pylint --rcfile=pylint.conf -f text $FILES > pylint.log
-    if [ $? -ne 0 ]; then
-        echo "pylint failed (logs in pylint.log). Fix your code!"
-        echo "*If* you know what you are doing, use 'git commit --no-verify'"
-        exit 1
+    if [ "$SRC_FILES" ]; then
+        pylint --rcfile=pylint.conf -f text $SRC_FILES > pylint.log || {
+            echo "Pylint failed, log in pylint.log."
+            echo "Fix code or use --no-verify."
+            exit 3
+        }
     fi
 fi
