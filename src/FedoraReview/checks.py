@@ -384,6 +384,7 @@ class Checks(_ChecksLoader):
             for fail in issues:
                 output.write(fail.get_text() + "\n")
                 output.write("See: %s\n" % fail.url)
+            results = [r for r in results if not r in issues]
 
         output.write("\n\n===== MUST items =====\n")
         musts = filter(lambda r: r.type == 'MUST', results)
