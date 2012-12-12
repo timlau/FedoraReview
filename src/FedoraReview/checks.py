@@ -383,7 +383,7 @@ class Checks(_ChecksLoader):
             output.write("\nIssues:\n=======\n")
             for fail in issues:
                 output.write(fail.get_text() + "\n")
-                output.write("See: %s\n" % fail.url)
+                output.write("     See: %s\n" % fail.url)
             results = [r for r in results if not r in issues]
 
         output.write("\n\n===== MUST items =====\n")
