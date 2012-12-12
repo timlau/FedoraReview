@@ -299,6 +299,8 @@ class _Mock(HelpersMixin):
             return None
         else:
             self.log.info('Build failed rc = ' + rc)
+            self.log.error('Build failed, build log in ' + self.resultdir
+                            + '/build.log')
             raise ReviewError('Mock build failed.')
 
     def install(self, packages):
