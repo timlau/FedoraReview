@@ -10,7 +10,16 @@ if [ -n "$FILES" ]; then
         echo "*If* you know what you are doing, use 'git commit --no-verify'"
         exit 1
     fi
+
     export PYTHONPATH=src/
+    echo $FILES | grep '\btest/'
+    if [ $? -eq 0 ]; then
+        # if we are modifying tests add tests to pythonpath for checking
+        # ideally we'd run two separate pylints (one for files in src, one for
+        # tests) with different pythonpaths
+        export PYTHONPATH=$PYTHONPATH:test/
+    fi
+    echo $PYTHONPATH
     pylint --rcfile=pylint.conf -f text $FILES > pylint.log
     if [ $? -ne 0 ]; then
         echo "pylint failed (logs in pylint.log). Fix your code!"
