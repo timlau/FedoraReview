@@ -245,12 +245,12 @@ class TestResult(object):
         self.check = check
         self.text = re.sub("\s+", " ", check.text) if check.text else ''
         self.result = result
+        self._leader = self.TEST_STATES[result] + ': '
         self.output_extra = output_extra
         self.attachments = attachments if attachments else []
         if self.output_extra:
             self.output_extra = re.sub("\s+", " ", self.output_extra)
-        self.wrapper = TextWrapper(width=78, subsequent_indent=" " * 5,
-                                   break_long_words=False, )
+        self.set_indent(5)
 
     url = property(lambda self: self.check.url)
     name = property(lambda self: self.check.name)
@@ -260,16 +260,27 @@ class TestResult(object):
 
     state = property(lambda self: self.result)
 
+    def set_indent(self, indent):
+        ''' Set indentation level for get_text (int, defaults to 5). '''
+        # pylint: disable=W0201
+        self.wrapper = TextWrapper(width = 78,
+                                   subsequent_indent = " " * indent,
+                                   break_long_words = False, )
+
+    def set_leader(self, leader):
+        ''' Set the leading string, defaults to [!], [ ], [-], etc. '''
+        self._leader = leader
+
     def get_text(self):
         ''' Return printable representation of test. '''
         strbuf = StringIO.StringIO()
-        main_lines = self.wrapper.wrap(
-            "%s: %s" % (self.TEST_STATES[self.result], self.text))
-        strbuf.write("%s" % '\n'.join(main_lines))
+        main_lines = self.wrapper.wrap(self._leader + self.text)
+        strbuf.write('\n'.join(main_lines))
         if self.output_extra and self.output_extra != "":
             strbuf.write("\n")
-            extra_lines = self.wrapper.wrap("     Note: %s" %
-                                            self.output_extra)
+            extra_lines = self.wrapper.wrap(
+                              self.wrapper.subsequent_indent +
+                              "Note: " + self.output_extra)
             strbuf.write('\n'.join(extra_lines))
 
         return strbuf.getvalue()
