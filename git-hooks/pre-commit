@@ -2,19 +2,18 @@
 
 IGNORE=E221,E251
 
-ALL_FILES=$(git diff --cached --name-status |
-              grep -v ^D | awk '$1 $2 { print $2}' | grep -e .py$)
+ALL_FILES=$( git diff --cached --name-status |
+              grep -v ^D | awk '$1 $2 { print $2}' | grep -e '.py$' )
 
 if [ -z "$ALL_FILES" ]; then
     exit 0
 fi
 
-pep8 --ignore $IGNORE $ALL_FILES
-if [ $? -ne 0 ]; then
+pep8 --ignore $IGNORE $ALL_FILES || {
     echo "pep8 failed. Fix your code!"
     echo "*If* you know what you are doing, use 'git commit --no-verify'"
     exit 1
-fi
+}
 
 SRC_FILES=''
 TEST_FILES=''
@@ -26,9 +25,9 @@ for file in $( echo $ALL_FILES ); do
     fi
 done
 
-export PYTHONPATH=src/
 if [ "$TEST_FILES" ]; then
     cd test
+    export PYTHONPATH=../src
     pylint --rcfile=../pylint.conf -f text $TEST_FILES > pylint.log || {
         echo "Pylint failed for test files, log in test/pylint.log"
         echo "Fix test code or use --no-verify."
@@ -37,6 +36,7 @@ if [ "$TEST_FILES" ]; then
     cd $OLDPWD
 fi
 if [ "$SRC_FILES" ]; then
+    export PYTHONPATH=src
     pylint --rcfile=pylint.conf -f text $SRC_FILES > pylint.log || {
         echo "Pylint failed, log in pylint.log."
         echo "Fix code or use --no-verify."
