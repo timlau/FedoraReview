@@ -61,11 +61,23 @@ def _write_section(results, output):
             return 'Generic'
         return group
 
+    def result_key(result):
+        ''' Return key used to sort results. '''
+        if result.check.is_failed:
+            return '0'
+        elif result.check.is_pending:
+            return '1'
+        elif result.check.is_passed:
+            return '2'
+        else:
+            return '3'
+
     groups = list(set([hdr(test.group) for test in results]))
     for group in sorted(groups):
         res = filter(lambda t: t.group == group, results)
-        if res == []:
+        if not res:
             continue
+        res = sorted(res, key=result_key)
         output.write('\n' + group + ':\n')
         for r in res:
             output.write(r.get_text() + '\n')
