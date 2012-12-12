@@ -43,7 +43,7 @@ class TestChecks(FR_TestCase):
         spec.args = []
         spec.testcase = 'ruby-racc'
         spec.workdir = 'ruby-racc'
-        spec.groups_ok = ['Setup', 'Generic', 'Ruby']
+        spec.groups_ok = ['Setup', 'Generic', 'Generic-should', 'Ruby']
         spec.expected = [('pass', 'CheckResultdir'),
                         ('pending', 'CheckBuild'),
                         ('pass', 'CheckRpmlint'),
@@ -120,6 +120,8 @@ class TestChecks(FR_TestCase):
         spec.testcase = 'logback'
         spec.workdir = 'logback'
         spec.groups_ok = ['Setup', 'Generic', 'Java', 'Maven']
+        spec.groups_ok = ['Setup', 'Generic', 'Generic-should',
+                          'Java', 'Maven']
         spec.expected = [('pass', 'CheckResultdir'),
                          ('pending', 'CheckBuild'),
                          ('pass', 'CheckRpmlint'),
@@ -199,12 +201,12 @@ class TestChecks(FR_TestCase):
         self.run_spec(spec)
 
     def test_scriptlets_fail(self):
-        ''' Scriptlet tests mostly expected to file. '''
+        ''' Scriptlet tests mostly expected to fail. '''
         spec = Testspec()
         spec.testcase = 'scriptlets-fail'
         spec.workdir = 'scriptlets-fail'
         spec.args = ['-x', 'CheckPackageInstalls,CheckUTF8Filenames']
-        spec.groups_ok = ['Setup', 'Generic']
+        spec.groups_ok = ['Setup', 'Generic-should', 'Generic']
         spec.expected = [('fail', 'CheckGconfSchemaInstall'),
                          ('fail', 'CheckGtkQueryModules'),
                          ('fail', 'CheckGioQueryModules'),
@@ -223,7 +225,7 @@ class TestChecks(FR_TestCase):
         spec.testcase = 'scriptlets-ok'
         spec.workdir = 'scriptlets-ok'
         spec.args = ['-x', 'CheckPackageInstalls,CheckUTF8Filenames']
-        spec.groups_ok = ['Setup', 'Generic']
+        spec.groups_ok = ['Setup', 'Generic-should', 'Generic']
         spec.expected = [('pending', 'CheckGconfSchemaInstall'),
                          ('pending', 'CheckGtkQueryModules'),
                          ('pending', 'CheckGioQueryModules'),
@@ -242,7 +244,8 @@ class TestChecks(FR_TestCase):
         spec.args = []
         spec.testcase = 'FreeSOLID'
         spec.workdir = 'FreeSOLID'
-        spec.groups_ok = ['Setup', 'Generic', 'C/C++']
+        spec.groups_ok = ['Setup', 'Generic-should', 'Generic',
+                          'C/C++']
         spec.expected = [('pass', 'CheckResultdir'),
                          ('pending', 'CheckBuild'),
                          ('pass', 'CheckRpmlint'),

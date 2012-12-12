@@ -17,9 +17,7 @@
 # (C) 2011 - Tim Lauridsen <timlau@fedoraproject.org>
 
 
-'''
-This module contains automatic test for Fedora Packaging guidelines
-'''
+''' Generic MUST checks, default Generic group. '''
 
 import os
 import os.path
@@ -40,7 +38,7 @@ from FedoraReview import ReviewError             # pylint: disable=W0611
 from FedoraReview import RegistryBase, Settings
 
 
-def _in_list(what, list_):
+def in_list(what, list_):
     ''' test if 'what' is in each item in list_. '''
     for item in list_:
         if not item:
@@ -62,21 +60,21 @@ class Registry(RegistryBase):
         return True
 
 
-class GenericCheckBase(CheckBase):
+class GenericMustCheckbase(CheckBase):
     ''' Base class for all generic tests. '''
 
     def __init__(self, checks):
         CheckBase.__init__(self, checks, __file__)
 
 
-class CheckApprovedLicense(GenericCheckBase):
+class CheckApprovedLicense(GenericMustCheckbase):
     '''
     MUST: The package must be licensed with a Fedora approved license and
     meet the Licensing Guidelines .
     http://fedoraproject.org/wiki/Packaging/LicensingGuidelines
     '''
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
                    'Packaging/LicensingGuidelines'
         self.text = 'Package is licensed with an open-source'       \
@@ -87,12 +85,12 @@ class CheckApprovedLicense(GenericCheckBase):
         self.type = 'MUST'
 
 
-class CheckBundledLibs(GenericCheckBase):
+class CheckBundledLibs(GenericMustCheckbase):
     '''
     MUST: Packages must NOT bundle copies of system libraries.
     '''
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
                    'Packaging:Guidelines#Duplication_of_system_libraries'
         self.text = 'Package contains no bundled libraries.'
@@ -100,12 +98,12 @@ class CheckBundledLibs(GenericCheckBase):
         self.type = 'MUST'
 
 
-class CheckBuildCompilerFlags(GenericCheckBase):
+class CheckBuildCompilerFlags(GenericMustCheckbase):
     '''
     http://fedoraproject.org/wiki/Packaging/Guidelines#Compiler_flags
     '''
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
                    'Packaging/Guidelines#Compiler_flags'
         self.text = '%build honors applicable compiler flags or ' \
@@ -121,68 +119,7 @@ class CheckBuildCompilerFlags(GenericCheckBase):
         self.set_passed(self.PENDING)
 
 
-class CheckBuildInMock(GenericCheckBase):
-    '''
-    SHOULD: The reviewer should test that the package builds in mock.
-    http://fedoraproject.org/wiki/PackageMaintainers/MockTricks
-    '''
-    def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
-        self.url = 'http://fedoraproject.org/wiki/' \
-                   'PackageMaintainers/MockTricks'
-        self.text = 'Reviewer should test that the package builds in mock.'
-        self.automatic = True
-        self.type = 'SHOULD'
-
-    def run(self):
-        self.set_passed(self.checks.checkdict['CheckBuild'].is_passed)
-
-
-class CheckBuildroot(GenericCheckBase):
-    ''' Is buildroot defined as appropriate? '''
-
-    def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
-        self.url = 'http://fedoraproject.org/wiki/' \
-                   'Packaging/Guidelines#BuildRoot_tag'
-        self.text = 'Buildroot is not present'
-        self.automatic = True
-        self.type = 'SHOULD'
-
-    def run(self):
-        br_tags = self.spec.find_all_re('^BuildRoot')
-        if len(br_tags) == 0:
-            if self.flags['EPEL5']:
-                self.set_passed(self.FAIL,
-                                'Missing buildroot (required for EPEL5)')
-            else:
-                self.set_passed(self.PASS)
-            return
-        elif len(br_tags) > 1:
-            self.set_passed(self.FAIL,
-                            'Multiple BuildRoot definitions found')
-            return
-
-        try:
-            br = br_tags[0].split(':')[1].strip()
-        except IndexError:
-            br = 'Illegal buildroot line:' + br_tags[0]
-        legal_buildroots = [
-        '%(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)',
-        '%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)',
-        '%{_tmppath}/%{name}-%{version}-%{release}-root']
-        if br in legal_buildroots:
-            if self.flags['EPEL5']:
-                self.set_passed(self.PASS)
-            else:
-                self.set_passed(self.PENDING,
-                               'Buildroot: present but not needed')
-        else:
-            self.set_passed(self.FAIL,
-                            'Invalid buildroot found: %s' % br)
-
-
-class CheckBuildRequires(GenericCheckBase):
+class CheckBuildRequires(GenericMustCheckbase):
     '''
     MUST: All build dependencies must be listed in BuildRequires,
     except for any that are listed in the exceptions section of the
@@ -191,7 +128,7 @@ class CheckBuildRequires(GenericCheckBase):
     http://fedoraproject.org/wiki/Packaging/Guidelines#Exceptions_2
     '''
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
                    'Packaging/Guidelines#Exceptions_2'
         self.text = 'All build dependencies are listed in BuildRequires,' \
@@ -226,12 +163,12 @@ class CheckBuildRequires(GenericCheckBase):
                             ' missing BR')
 
 
-class CheckChangelogFormat(GenericCheckBase):
+class CheckChangelogFormat(GenericMustCheckbase):
     '''
     http://fedoraproject.org/wiki/Packaging/Guidelines#Changelogs
     '''
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
                    'Packaging/Guidelines#Changelogs'
         self.text = 'Changelog in prescribed format.'
@@ -239,70 +176,13 @@ class CheckChangelogFormat(GenericCheckBase):
         self.type = 'MUST'
 
 
-class CheckClean(GenericCheckBase):
-    '''
-    http://fedoraproject.org/wiki/Packaging/Guidelines#.25clean
-    '''
-    def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
-        self.url = 'http://fedoraproject.org/wiki/' \
-                   'Packaging/Guidelines#.25clean'
-        self.text = 'Package has no %clean section with rm -rf' \
-                    ' %{buildroot} (or $RPM_BUILD_ROOT)'
-        self.automatic = True
-        self.type = 'SHOULD'
-
-    def run(self):
-        has_clean = False
-        sec_clean = self.spec.find_re('%clean')
-        if sec_clean:
-            sec_clean = self.spec.get_section('%clean', raw=True)
-            regex = 'rm\s+\-[rf][rf]\s+(%{buildroot}|$RPM_BUILD_ROOT)'
-            regex = rpm.expandMacro(regex)
-            has_clean = re.search(regex, sec_clean)
-        if self.flags['EPEL5']:
-            self.text = 'EPEL5 requires explicit %clean with rm -rf' \
-                             ' %{buildroot} (or $RPM_BUILD_ROOT)'
-            self.type = 'MUST'
-            if has_clean:
-                self.set_passed(self.PASS)
-            else:
-                self.set_passed(self.FAIL)
-        else:
-            if has_clean:
-                self.set_passed(self.PENDING,
-                                '%clean present but not required')
-            else:
-                self.set_passed(self.PASS)
-
-
-class CheckDistTag(GenericCheckBase):
-    '''
-    http://fedoraproject.org/wiki/DistTag
-    '''
-    def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
-        self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
-        self.text = 'Dist tag is present.'
-        self.automatic = True
-        self.type = 'SHOULD'
-
-    def run(self):
-        rel_tags = self.spec.find_all_re('^Release\s*:')
-        if len(rel_tags) > 1:
-            self.set_passed(False, 'Multiple Release tags found')
-            return
-        rel = rel_tags[0]
-        self.set_passed(rel.endswith('%{?dist}'))
-
-
-class CheckCodeAndContent(GenericCheckBase):
+class CheckCodeAndContent(GenericMustCheckbase):
     '''
     MUST: The package must contain code, or permissable content.
     http://fedoraproject.org/wiki/Packaging/Guidelines#CodeVsContent
     '''
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
                    'Packaging/Guidelines#CodeVsContent'
         self.text = 'Sources contain only permissible' \
@@ -311,12 +191,12 @@ class CheckCodeAndContent(GenericCheckBase):
         self.type = 'MUST'
 
 
-class CheckConfigNoReplace(GenericCheckBase):
+class CheckConfigNoReplace(GenericMustCheckbase):
     '''
     http://fedoraproject.org/wiki/Packaging/Guidelines#Configuration_files
     '''
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
                    'Packaging/Guidelines#Configuration_files'
         self.text = '%config files are marked noreplace or the reason' \
@@ -337,23 +217,10 @@ class CheckConfigNoReplace(GenericCheckBase):
         self.set_passed(self.FAIL if extra else rc, extra)
 
 
-class CheckContainsLicenseText(GenericCheckBase):
-    ''' Handle missing license info.  '''
-    def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
-        self.url = 'http://fedoraproject.org/wiki/' \
-                   'Packaging/LicensingGuidelines#License_Text'
-        self.text = 'If the source package does not include license' \
-                    ' text(s) as a separate file from upstream, the' \
-                    ' packager SHOULD query upstream to include it.'
-        self.automatic = False
-        self.type = 'SHOULD'
-
-
-class CheckCleanBuildroot(GenericCheckBase):
+class CheckCleanBuildroot(GenericMustCheckbase):
     ''' Check that buildroot is cleaned as appropriate. '''
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.text = 'Package does not run rm -rf %{buildroot}' \
                     ' (or $RPM_BUILD_ROOT) at the beginning of %install.'
         self.automatic = True
@@ -378,7 +245,7 @@ class CheckCleanBuildroot(GenericCheckBase):
             self.set_passed(self.PASS)
 
 
-class CheckDefattr(GenericCheckBase):
+class CheckDefattr(GenericMustCheckbase):
     '''
     MUST: Permissions on files must be set properly.  Executables
     should be set with executable permissions, for example.  Every
@@ -387,7 +254,7 @@ class CheckDefattr(GenericCheckBase):
     Update: 29-04-2011 This is only for pre rpm 4.4 that this is needed
     '''
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
                    'Packaging/Guidelines#FilePermissions'
         self.text = 'Each %files section contains %defattr if rpm < 4.4'
@@ -415,10 +282,10 @@ class CheckDefattr(GenericCheckBase):
             self.set_passed(self.PASS)
 
 
-class CheckDescMacros(GenericCheckBase):
+class CheckDescMacros(GenericMustCheckbase):
     ''' Macros is description etc. should be expandable. '''
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
                    'Packaging/Guidelines#Source_RPM_Buildtime_Macros'
         self.text = 'Macros in Summary, %description expandable at' \
@@ -440,7 +307,7 @@ class CheckDescMacros(GenericCheckBase):
             self.set_passed(self.PASS)
 
 
-class CheckDesktopFile(GenericCheckBase):
+class CheckDesktopFile(GenericMustCheckbase):
     '''
     MUST: Packages containing GUI applications must include a
     %{name}.desktop file. If you feel that your packaged GUI
@@ -449,7 +316,7 @@ class CheckDesktopFile(GenericCheckBase):
     http://fedoraproject.org/wiki/Packaging/Guidelines#desktop
     '''
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
                    'Packaging/Guidelines#desktop'
         self.text = 'Package contains desktop file if it is a GUI' \
@@ -462,7 +329,7 @@ class CheckDesktopFile(GenericCheckBase):
         self.set_passed(True if have_desktop else 'inconclusive')
 
 
-class CheckDesktopFileInstall(GenericCheckBase):
+class CheckDesktopFileInstall(GenericMustCheckbase):
     '''
     MUST: Packages containing GUI applications must include a
     %{name}.desktop file, and that file must be properly installed
@@ -470,7 +337,7 @@ class CheckDesktopFileInstall(GenericCheckBase):
     http://fedoraproject.org/wiki/Packaging/Guidelines#desktop
     '''
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
                    'Packaging/Guidelines#desktop'
         self.text = 'Package installs a  %{name}.desktop using' \
@@ -489,13 +356,13 @@ class CheckDesktopFileInstall(GenericCheckBase):
         self.set_passed(self.PASS if found else self.FAIL)
 
 
-class CheckDevelFilesInDevel(GenericCheckBase):
+class CheckDevelFilesInDevel(GenericMustCheckbase):
     '''
     MUST: Development files must be in a -devel package
     '''
 
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
                    'Packaging/Guidelines#DevelPackages'
         self.text = 'Development files must be in a -devel package'
@@ -503,17 +370,17 @@ class CheckDevelFilesInDevel(GenericCheckBase):
         self.type = 'MUST'
 
 
-class CheckDirectoryRequire(GenericCheckBase):
+class CheckDirectoryRequire(GenericMustCheckbase):
     ''' Package should require directories it uses. '''
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
         self.text = 'Package requires other packages for directories it uses.'
         self.automatic = False
         self.type = 'MUST'
 
 
-class CheckDocRuntime(GenericCheckBase):
+class CheckDocRuntime(GenericMustCheckbase):
     '''
     MUST: If a package includes something as %doc, it must not affect
     the runtime of the application.  To summarize: If it is in %doc,
@@ -521,7 +388,7 @@ class CheckDocRuntime(GenericCheckBase):
     http://fedoraproject.org/wiki/Packaging/Guidelines#PackageDocumentation
     '''
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
                    'Packaging/Guidelines#PackageDocumentation'
         self.text = 'Package uses nothing in %doc for runtime.'
@@ -529,7 +396,7 @@ class CheckDocRuntime(GenericCheckBase):
         self.type = 'MUST'
 
 
-class CheckExcludeArch(GenericCheckBase):
+class CheckExcludeArch(GenericMustCheckbase):
     '''
     MUST: If the package does not successfully compile, build or work
     on an architecture, then those architectures should be listed in
@@ -540,7 +407,7 @@ class CheckExcludeArch(GenericCheckBase):
     ExcludeArch line.
     '''
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
                    'Packaging/Guidelines#Architecture_Build_Failures'
         self.text = 'Package is not known to require ExcludeArch.'
@@ -548,7 +415,7 @@ class CheckExcludeArch(GenericCheckBase):
         self.type = 'MUST'
 
 
-class CheckFileDuplicates(GenericCheckBase):
+class CheckFileDuplicates(GenericMustCheckbase):
     '''
     MUST: A Fedora package must not list a file more than once in the
     spec file's %files listings.  (Notable exception: license texts in
@@ -556,7 +423,7 @@ class CheckFileDuplicates(GenericCheckBase):
     http://fedoraproject.org/wiki/Packaging/Guidelines#DuplicateFiles
     '''
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
                    'Packaging/Guidelines#DuplicateFiles'
         self.text = 'Package does not contain duplicates in %files.'
@@ -579,7 +446,7 @@ class CheckFileDuplicates(GenericCheckBase):
         self.set_passed(True)
 
 
-class CheckFilePermissions(GenericCheckBase):
+class CheckFilePermissions(GenericMustCheckbase):
     '''
     MUST: Permissions on files must be set properly.  Executables
     should be set with executable permissions, for example. Every
@@ -587,7 +454,7 @@ class CheckFilePermissions(GenericCheckBase):
     http://fedoraproject.org/wiki/Packaging/Guidelines#FilePermissions
     '''
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
                    'Packaging/Guidelines#FilePermissions'
         self.text = 'Permissions on files are set properly.'
@@ -602,80 +469,7 @@ class CheckFilePermissions(GenericCheckBase):
         self.set_passed(True)
 
 
-class CheckFileRequires(GenericCheckBase):
-    '''
-    SHOULD: If the package has file dependencies outside of /etc,
-    /bin, /sbin, /usr/bin, or /usr/sbin consider requiring the package
-    which provides the file instead of the file itself.
-    http://fedoraproject.org/wiki/Packaging/Guidelines#FileDeps
-    '''
-    def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
-        self.url = 'http://fedoraproject.org/wiki/' \
-                   'Packaging/Guidelines#FileDeps'
-        self.text = 'No file requires outside of' \
-                    ' /etc, /bin, /sbin, /usr/bin, /usr/sbin.'
-        self.automatic = True
-        self.type = 'SHOULD'
-
-    def run(self):
-
-        def is_acceptable(req):
-            ''' Is a requiremetn acceptable? '''
-            for acceptable in ['/usr/bin/', '/etc/', '/bin/', '/sbin/',
-                               '/usr/sbin/']:
-                if req.startswith(acceptable):
-                    return True
-            return not req.startswith('/')
-
-        def get_requires(rpm_name, requires):
-            ''' Return printable requirements for a rpm. '''
-            requires = filter(lambda s: not 'rpmlib' in s, requires)
-            requires = filter(lambda s: not 'GLIBC' in s, requires)
-            requires = sorted(list(set(requires)))
-            hdr = rpm_name + ' (rpmlib, GLIBC filtered):'
-            requires.insert(0, hdr)
-            return '\n    '.join(requires) + '\n'
-
-        def get_provides(rpm_name, provides):
-            ''' Return printable Provides:  for a rpm. '''
-            provides = sorted(list(set(provides)))
-            provides.insert(0, rpm_name + ':')
-            return '\n    '.join(provides) + '\n'
-
-        wrong_req = []
-        req_txt = ''
-        prov_txt = ''
-        for pkg in self.rpms.get_keys():
-            rpm_pkg = self.rpms.get(pkg)
-            requires = rpm_pkg.requires
-            for req in requires:
-                if not is_acceptable(req):
-                    wrong_req.append(req)
-            req_txt += get_requires(pkg, requires) + '\n'
-            prov_txt += get_provides(pkg, rpm_pkg.provides) + '\n'
-        attachments = [self.Attachment('Requires', req_txt, 10),
-                       self.Attachment('Provides', prov_txt, 10)]
-        if len(wrong_req) == 0:
-            self.set_passed(True, None, attachments)
-        else:
-            text = "Incorrect Requires : %s " % (', '.join(wrong_req))
-            self.set_passed(False, text, attachments)
-
-
-class CheckFinalRequiresProvides(GenericCheckBase):
-    ''' Final Requires: and Provides: should be sane. '''
-
-    def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
-        self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
-        self.text = 'Final provides and requires are sane' \
-                    ' (rpm -q --provides and rpm -q --requires).'
-        self.automatic = False
-        self.type = 'SHOULD'
-
-
-class CheckFullVerReqSub(GenericCheckBase):
+class CheckFullVerReqSub(GenericMustCheckbase):
     '''
     MUST: In the vast majority of cases, devel packages must require the base
     package using a fully versioned dependency:
@@ -686,7 +480,7 @@ class CheckFullVerReqSub(GenericCheckBase):
     REGEX = r'Requires:\s*%{name}\s*=\s*%{version}-%{release}'
 
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
                    'Packaging/Guidelines#RequiringBasePackage'
         self.text = 'Fully versioned dependency in subpackages,' \
@@ -710,38 +504,25 @@ class CheckFullVerReqSub(GenericCheckBase):
             self.set_passed(self.PASS)
 
 
-class CheckFunctionAsDescribed(GenericCheckBase):
-    '''
-    SHOULD: The reviewer should test that the package functions as described.
-    A package should not segfault instead of running, for example.
-    '''
-    def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
-        self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
-        self.text = 'Package functions as described.'
-        self.automatic = False
-        self.type = 'SHOULD'
-
-
-class CheckGuidelines(GenericCheckBase):
+class CheckGuidelines(GenericMustCheckbase):
     '''
     MUST: The package complies to the Packaging Guidelines.
     http://fedoraproject.org/wiki/Packaging:Guidelines
     '''
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging:Guidelines'
         self.text = 'Package complies to the Packaging Guidelines'
         self.automatic = False
         self.type = 'MUST'
 
 
-class CheckIllegalSpecTags(GenericCheckBase):
+class CheckIllegalSpecTags(GenericMustCheckbase):
     '''
     http://fedoraproject.org/wiki/Packaging/Guidelines#Tags
     '''
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.text = 'Spec file lacks Packager, Vendor, PreReq tags.'
         self.automatic = True
 
@@ -759,7 +540,7 @@ class CheckIllegalSpecTags(GenericCheckBase):
             self.set_passed(passed)
 
 
-class CheckLargeDocs(GenericCheckBase):
+class CheckLargeDocs(GenericMustCheckbase):
     '''
     MUST: Large documentation files must go in a -doc subpackage.
     (The definition of large is left up to the packager's best
@@ -768,7 +549,7 @@ class CheckLargeDocs(GenericCheckBase):
     http://fedoraproject.org/wiki/Packaging/Guidelines#PackageDocumentation
     '''
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
                    'Packaging/Guidelines#PackageDocumentation'
         self.text = 'Large documentation files are in a -doc' \
@@ -777,25 +558,14 @@ class CheckLargeDocs(GenericCheckBase):
         self.type = 'MUST'
 
 
-class CheckLatestVersionIsPackaged(GenericCheckBase):
-    ''' We package latest version, don't we? '''
-
-    def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
-        self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
-        self.text = 'Latest version is packaged.'
-        self.automatic = False
-        self.type = 'SHOULD'
-
-
-class CheckLicenseField(GenericCheckBase):
+class CheckLicenseField(GenericMustCheckbase):
 
     '''
     MUST: The License field in the package spec file must match the
     actual license.
     '''
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/' \
                    'LicensingGuidelines#ValidLicenseShortNames'
         self.text = 'License field in the package spec file' \
@@ -888,7 +658,7 @@ class CheckLicenseField(GenericCheckBase):
             self.set_passed('inconclusive', msg)
 
 
-class CheckLicensInDoc(GenericCheckBase):
+class CheckLicensInDoc(GenericMustCheckbase):
     '''
     MUST: If (and only if) the source package includes the text of the
     license(s) in its own file, then that file, containing the text of
@@ -897,7 +667,7 @@ class CheckLicensInDoc(GenericCheckBase):
     '''
 
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
                    'Packaging/LicensingGuidelines#License_Text'
         self.text = 'If (and only if) the source package includes' \
@@ -941,10 +711,10 @@ class CheckLicensInDoc(GenericCheckBase):
         self.set_passed(True)
 
 
-class CheckLicenseInSubpackages(GenericCheckBase):
+class CheckLicenseInSubpackages(GenericMustCheckbase):
     ''' License should always be installed when subpackages.'''
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
                    'Packaging/LicensingGuidelines#Subpackage_Licensing'
         self.text = 'License file installed when any subpackage' \
@@ -957,14 +727,14 @@ class CheckLicenseInSubpackages(GenericCheckBase):
         return len(self.spec.packages) > 1
 
 
-class CheckLocale(GenericCheckBase):
+class CheckLocale(GenericMustCheckbase):
     '''
     MUST: The spec file MUST handle locales properly.  This is done by
     using the %find_lang macro. Using %{_datadir}/locale/* is strictly
     forbidden.
     '''
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
                    'Packaging/Guidelines#Handling_Locale_Files'
         self.text = 'The spec file handles locales properly.'
@@ -975,30 +745,14 @@ class CheckLocale(GenericCheckBase):
         return self.rpms.find('/usr/share/locale/*/LC_MESSAGES/*.mo')
 
 
-class CheckLicenseUpstream(GenericCheckBase):
-    '''
-    SHOULD: If the source package does not include license text(s)
-    as a separate file from upstream, the packager SHOULD query upstream
-    to include it.
-    '''
-    def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
-        self.url = 'http://fedoraproject.org/wiki/' \
-                   'Packaging/LicensingGuidelines#License_Text'
-        self.text = 'Package does not include license text files' \
-                    ' separate from upstream.'
-        self.automatic = False
-        self.type = 'SHOULD'
-
-
-class CheckMacros(GenericCheckBase):
+class CheckMacros(GenericMustCheckbase):
     '''
     MUST: Each package must consistently use macros.
     http://fedoraproject.org/wiki/Packaging/Guidelines#macros
     http://fedoraproject.org/wiki/Packaging:RPMMacros
     '''
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/' \
                    'wiki/Packaging/Guidelines#macros'
         self.text = 'Package consistently uses macro' \
@@ -1016,10 +770,10 @@ class CheckMacros(GenericCheckBase):
             self.set_passed('inconclusive')
 
 
-class CheckMakeinstall(GenericCheckBase):
+class CheckMakeinstall(GenericMustCheckbase):
     ''' Thou shall not use %makeinstall. '''
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines' \
                    '#Why_the_.25makeinstall_macro_should_not_be_used'
         self.text = "Package use %makeinstall only when make install' \
@@ -1037,30 +791,11 @@ class CheckMakeinstall(GenericCheckBase):
             return False
 
 
-class CheckManPages(GenericCheckBase):
-    '''
-    SHOULD: your package should contain man pages for binaries or
-    scripts.  If it doesn't, work with upstream to add them where they
-    make sense.
-    http://fedoraproject.org/wiki/Packaging/Guidelines#Man_pages
-    '''
-    def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
-        self.url = 'http://fedoraproject.org/wiki/' \
-                   'Packaging/Guidelines#Man_pages'
-        self.text = 'Man pages included for all executables.'
-        self.automatic = False
-        self.type = 'SHOULD'
-
-    def is_applicable(self):
-        return self.rpms.find('[/usr]/[s]bin/*')
-
-
-class CheckMultipleLicenses(GenericCheckBase):
+class CheckMultipleLicenses(GenericMustCheckbase):
     ''' If multiple licenses, we should provide a break-down. '''
 
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
                    'Packaging/LicensingGuidelines#Multiple_Licensing_Scenarios'
         self.text = 'If the package is under multiple licenses, the licensing'\
@@ -1073,13 +808,13 @@ class CheckMultipleLicenses(GenericCheckBase):
         return 'and' in license_ or 'or' in license_
 
 
-class CheckNameCharset(GenericCheckBase):
+class CheckNameCharset(GenericMustCheckbase):
     '''
     MUST:all Fedora packages must be named using only the following
          ASCII characters...
     '''
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/NamingGuidelines'
         self.text = 'Package is named using only allowed ASCII characters.'
         self.automatic = True
@@ -1102,14 +837,14 @@ class CheckNameCharset(GenericCheckBase):
             self.set_passed(passed, '%s\n%s' % (self.spec.name, output))
 
 
-class CheckNaming(GenericCheckBase):
+class CheckNaming(GenericMustCheckbase):
     '''
     MUST: The package must be named according to the Package Naming
     Guidelines.
     http://fedoraproject.org/wiki/Packaging/NamingGuidelines
     '''
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/NamingGuidelines'
         self.text = 'Package is named according to the Package Naming' \
                     ' Guidelines.'
@@ -1117,12 +852,12 @@ class CheckNaming(GenericCheckBase):
         self.type = 'MUST'
 
 
-class CheckNoConfigInUsr(GenericCheckBase):
+class CheckNoConfigInUsr(GenericMustCheckbase):
     '''
     http://fedoraproject.org/wiki/Packaging/Guidelines#Configuration_files
     '''
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
                    'Packaging/Guidelines#Configuration_files'
         self.text = 'No %config files under /usr.'
@@ -1151,7 +886,7 @@ class CheckNoConfigInUsr(GenericCheckBase):
         self.set_passed(passed, extra)
 
 
-class CheckNoConflicts(GenericCheckBase):
+class CheckNoConflicts(GenericMustCheckbase):
     '''
     Whenever possible, Fedora packages should avoid conflicting
     with each other
@@ -1159,7 +894,7 @@ class CheckNoConflicts(GenericCheckBase):
     http://fedoraproject.org/wiki/Packaging:Conflicts
     '''
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/' \
                    'wiki/Packaging/Guidelines#Conflicts'
         self.text = 'Package does not generate any conflict.'
@@ -1176,13 +911,13 @@ class CheckNoConflicts(GenericCheckBase):
                             'Package contains no Conflicts: tag(s)')
 
 
-class CheckObeysFHS(GenericCheckBase):
+class CheckObeysFHS(GenericMustCheckbase):
     '''
     http://fedoraproject.org/wiki/Packaging/Guidelines#Filesystem_Layout
     http://www.pathname.com/fhs/
     '''
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
                    'Packaging/Guidelines#Filesystem_Layout'
         self.text = 'Package obeys FHS, except libexecdir and /usr/target.'
@@ -1190,11 +925,11 @@ class CheckObeysFHS(GenericCheckBase):
         self.type = 'MUST'
 
 
-class CheckObsoletesForRename(GenericCheckBase):
+class CheckObsoletesForRename(GenericMustCheckbase):
     ''' If package is a rename, we should provide Obsoletes: etc. '''
 
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines' \
                    'Renaming.2FReplacing_Existing_Packages'
         self.text = 'If the package is a rename of another package, proper' \
@@ -1203,14 +938,14 @@ class CheckObsoletesForRename(GenericCheckBase):
         self.type = 'MUST'
 
 
-class CheckOwnDirs(GenericCheckBase):
+class CheckOwnDirs(GenericMustCheckbase):
     '''
     MUST: A package must own all directories that it creates.  If it
     does not create a directory that it uses, then it should require a
     package which does create that directory.
     '''
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
                    'Packaging/Guidelines#FileAndDirectoryOwnership'
         self.text = 'Package must own all directories that it creates.'
@@ -1218,7 +953,7 @@ class CheckOwnDirs(GenericCheckBase):
         self.type = 'MUST'
 
 
-class CheckOwnOther(GenericCheckBase):
+class CheckOwnOther(GenericMustCheckbase):
     '''
     MUST: Packages must not own files or directories already owned by
     other packages.  The rule of thumb here is that the first package
@@ -1231,7 +966,7 @@ class CheckOwnOther(GenericCheckBase):
     time.
     '''
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
                    'Packaging/Guidelines#FileAndDirectoryOwnership'
         self.text = 'Package does not own files or directories' \
@@ -1240,80 +975,7 @@ class CheckOwnOther(GenericCheckBase):
         self.type = 'MUST'
 
 
-class CheckParallelMake(GenericCheckBase):
-    ''' Thou shall use parallell make. '''
-
-    def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
-        self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
-        self.text = 'Uses parallel make.'
-        self.automatic = False
-        self.type = 'SHOULD'
-
-    def run(self):
-        rc = self.NA
-        build_sec = self.spec.get_section('build')
-        if build_sec:
-            for line in build_sec:
-                if line.startswith('make'):
-                    ok = '%{?_smp_mflags}' in line
-                    rc = self.PASS if ok else self.FAIL
-        self.set_passed(rc)
-
-
-class CheckPatchComments(GenericCheckBase):
-    ''' Patches should have comments. '''
-
-    def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
-        self.url = 'https://fedoraproject.org/wiki/' \
-                   'Packaging:Guidelines'
-        self.text = 'Patches link to upstream bugs/comments/lists' \
-                    ' or are otherwise justified.'
-        self.automatic = False
-        self.type = 'SHOULD'
-
-    def is_applicable(self):
-        return len(self.spec.patches_by_tag) > 0
-
-
-class CheckPkgConfigFiles(GenericCheckBase):
-    '''
-    SHOULD: The placement of pkgconfig(.pc) files depends on their
-    usecase, and this is usually for development purposes, so should
-    be placed in a -devel pkg.  A reasonable exception is that the
-    main pkg itself is a devel tool not installed in a user runtime,
-    e.g. gcc or gdb.
-    http://fedoraproject.org/wiki/Packaging/Guidelines#PkgconfigFiles
-    '''
-    def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
-        self.url = 'http://fedoraproject.org/wiki/' \
-                   'Packaging/Guidelines#PkgconfigFiles'
-        self.text = 'The placement of pkgconfig(.pc) files are correct.'
-        self.automatic = True
-        self.type = 'SHOULD'
-
-    def run(self):
-        files_by_pkg = {}
-        for pkg in self.spec.packages:
-            file_list = self.rpms.find_all('*.pc', pkg)
-            if file_list:
-                files_by_pkg[pkg] = file_list
-        if files_by_pkg == {}:
-            self.set_passed('not_applicable')
-            return
-        passed = 'pass'
-        extra = ''
-        for pkg in files_by_pkg.iterkeys():
-            for fn in files_by_pkg[pkg]:
-                if not '-devel' in pkg:
-                    passed = 'pending'
-                    extra += '%s : %s\n' % (pkg, fn)
-        self.set_passed(passed, extra)
-
-
-class CheckRelocatable(GenericCheckBase):
+class CheckRelocatable(GenericMustCheckbase):
     '''
     MUST: If the package is designed to be relocatable,
     the packager must state this fact in the request for review,
@@ -1322,7 +984,7 @@ class CheckRelocatable(GenericCheckBase):
     http://fedoraproject.org/wiki/Packaging/Guidelines#RelocatablePackages
     '''
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
                    'Packaging/Guidelines#RelocatablePackages'
         self.text = 'Package is not relocatable.'
@@ -1336,7 +998,7 @@ class CheckRelocatable(GenericCheckBase):
             self.set_passed(self.PASS)
 
 
-class CheckReqPkgConfig(GenericCheckBase):
+class CheckReqPkgConfig(GenericMustCheckbase):
     '''
     rpm in EPEL5 and below does not automatically create dependencies
     for pkgconfig files.  Packages containing pkgconfig(.pc) files
@@ -1344,7 +1006,7 @@ class CheckReqPkgConfig(GenericCheckBase):
     http://fedoraproject.org/wiki/EPEL/GuidelinesAndPolicies#EL5
     '''
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
                    'EPEL/GuidelinesAndPolicies#EL5'
         self.text = 'EPEL5: Package requires pkgconfig, if .pc files' \
@@ -1364,12 +1026,12 @@ class CheckReqPkgConfig(GenericCheckBase):
         self.set_passed(result)
 
 
-class CheckRequires(GenericCheckBase):
+class CheckRequires(GenericMustCheckbase):
     '''
     http://fedoraproject.org/wiki/Packaging/Guidelines#Requires
     '''
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
                    'Packaging/Guidelines#Requires'
         self.text = 'Requires correct, justified where necessary.'
@@ -1377,49 +1039,7 @@ class CheckRequires(GenericCheckBase):
         self.type = 'MUST'
 
 
-class CheckScriptletSanity(GenericCheckBase):
-    '''
-    SHOULD: If scriptlets are used, those scriptlets must be sane.
-    This is vague, and left up to the reviewers judgement to determine
-    sanity.
-    http://fedoraproject.org/wiki/Packaging/Guidelines#Scriptlets
-    '''
-    def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
-        self.url = 'http://fedoraproject.org/wiki/' \
-                   'Packaging/Guidelines#Scriptlets'
-        self.text = 'Scriptlets must be sane, if used.'
-        self.automatic = False
-        self.type = 'SHOULD'
-
-    def is_applicable(self):
-        regex = re.compile('%(post|postun|posttrans|preun|pretrans|pre)\s+')
-        return self.spec.find_re(regex)
-
-
-class CheckSourceComment(GenericCheckBase):
-    ''' Source tarballs shoud have comment on how to generate it. '''
-    def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
-        self.url = 'http://fedoraproject.org/wiki/Packaging:SourceURL'
-        self.text = 'SourceX tarball generation or download is documented.'
-        self.automatic = True
-        self.type = 'SHOULD'
-
-    def run(self):
-        passed = True
-        for source in self.sources.get_all():
-            if source.local and source.is_archive():
-                passed = False
-
-        if passed:
-            self.set_passed(True)
-        else:
-            self.set_passed('inconclusive',
-                'Package contains tarball without URL, check comments')
-
-
-class CheckSourceMD5(GenericCheckBase):
+class CheckSourceMD5(GenericMustCheckbase):
     '''
     MUST: The sources used to build the package must match the
     upstream source, as provided in the spec URL. Reviewers should use
@@ -1429,7 +1049,7 @@ class CheckSourceMD5(GenericCheckBase):
     http://fedoraproject.org/wiki/Packaging/SourceURL
     '''
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/SourceURL'
         self.text = 'Sources used to build the package match the' \
                     ' upstream source, as provided in the spec URL.'
@@ -1526,84 +1146,7 @@ class CheckSourceMD5(GenericCheckBase):
             self.set_passed(passed, msg, attachments)
 
 
-class CheckSourceUrl(GenericCheckBase):
-    '''
-    http://fedoraproject.org/wiki/Packaging/SourceURL
-    '''
-    def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
-        self.url = 'http://fedoraproject.org/wiki/Packaging/SourceURL'
-        self.text = 'SourceX is a working URL.'
-        self.automatic = True
-        self.type = 'SHOULD'
-
-    def run(self):
-        passed = True
-        output = ''
-        for source in self.sources.get_all():
-            if not source.url.startswith('file:'):
-                if not source.downloaded:
-                    passed = False
-                    output += '%s\n' % source.url
-
-        if passed:
-            self.set_passed(True)
-        else:
-            self.set_passed(False, output)
-
-
-class CheckSpecAsInSRPM(GenericCheckBase):
-    '''
-    SHOULD: Not in guidelines, buth the spec in the spec URL should
-    be the same as the one in the srpm.
-    '''
-
-    def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
-        self.text = 'Spec file according to URL is the same as in SRPM.'
-        self.automatic = True
-        self.type = 'EXTRA'
-
-    def run(self):
-        self.srpm.unpack()
-        pattern = os.path.join(ReviewDirs.srpm_unpacked, '*.spec')
-        spec_files = glob(pattern)
-        if len(spec_files) != 1:
-            self.set_passed(self.FAIL,
-                            '0 or more than one spec file in srpm(!)')
-            return
-        srpm_spec_file = spec_files[0]
-        pkg_name = \
-             os.path.basename(self.srpm.filename).rsplit('-', 2)[0]
-        if os.path.basename(srpm_spec_file) != pkg_name + '.spec':
-            self.set_passed(self.FAIL,
-                            "Bad spec filename: " + srpm_spec_file)
-            return
-        if Settings.rpm_spec:
-            self.set_passed(self.NA)
-            return
-        url_spec_file = self.spec.filename
-        cmd = ["diff", '-U2', url_spec_file, srpm_spec_file]
-        try:
-            p = Popen(cmd, stdout=PIPE, stderr=PIPE)
-            output = p.communicate()[0]
-        except OSError:
-            self.log.error("Cannot run diff", exc_info=True)
-            self.set_passed(self.FAIL, "OS error runnning diff")
-            return
-        if output and len(output) > 0:
-            a = self.Attachment("Diff spec file in url and in SRPM",
-                                output,
-                                8)
-            text = ('Spec file as given by url is not the same as in '
-                    'SRPM (see attached diff).')
-            self.set_passed(self.FAIL, text, [a])
-        else:
-            self.set_passed(self.PASS)
-        return
-
-
-class CheckSpecLegibility(GenericCheckBase):
+class CheckSpecLegibility(GenericMustCheckbase):
     '''
     MUST: The spec file must be written in American English
     http://fedoraproject.org/wiki/Packaging/Guidelines#summary
@@ -1612,7 +1155,7 @@ class CheckSpecLegibility(GenericCheckBase):
     http://fedoraproject.org/wiki/Packaging/Guidelines#Spec_Legibility
     '''
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
                    'Packaging/Guidelines#Spec_Legibility'
         self.text = 'Spec file is legible and written in American English.'
@@ -1620,14 +1163,14 @@ class CheckSpecLegibility(GenericCheckBase):
         self.type = 'MUST'
 
 
-class CheckSpecName(GenericCheckBase):
+class CheckSpecName(GenericMustCheckbase):
     '''
     MUST: The spec file name must match the base package %{name},
     in the format %{name}.spec unless your package has an exemption.
     http://fedoraproject.org/wiki/Packaging/NamingGuidelines#Spec_file_name
     '''
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
                     'Packaging/NamingGuidelines#Spec_file_name'
         self.text = 'Spec file name must match the spec package' \
@@ -1643,97 +1186,25 @@ class CheckSpecName(GenericCheckBase):
                 (os.path.basename(self.spec.filename), spec_name))
 
 
-class CheckSpecDescTranslation(GenericCheckBase):
-    '''
-    SHOULD: The description and summary sections in the package spec file
-    should contain translations for supported Non-English languages,
-    if available.
-    http://fedoraproject.org/wiki/Packaging/Guidelines#summary
-    '''
-    def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
-        self.url = 'http://fedoraproject.org/wiki/' \
-                   'Packaging/Guidelines#summary'
-        self.text = 'Description and summary sections in the' \
-                    ' package spec file contains translations' \
-                    ' for supported Non-English languages, if available.'
-        self.automatic = False
-        self.type = 'SHOULD'
-
-
-class CheckSupportAllArchs(GenericCheckBase):
-    '''
-    SHOULD: The package should compile and build into binary rpms on
-    all supported architectures.
-    http://fedoraproject.org/wiki/Packaging/Guidelines#ArchitectureSupport
-    '''
-    def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
-        self.url = 'http://fedoraproject.org/wiki/' \
-                   'Packaging/Guidelines#ArchitectureSupport'
-        self.text = 'Package should compile and build into binary' \
-                    ' rpms on all supported architectures.'
-        self.automatic = True
-        self.type = 'SHOULD'
-
-    def run(self):
-        build_ok = self.checks.checkdict['CheckBuild'].is_passed
-
-        arch = self.spec.expand_tag('BuildArch')
-        noarch = arch and arch[0].lower() == 'noarch'
-        one_arch = self.spec.expand_tag('ExclusiveArch')
-        if build_ok and (one_arch or noarch):
-            self.set_passed(self.PASS)
-        else:
-            self.set_passed(self.PENDING)
-
-
-class CheckSystemdScripts(GenericCheckBase):
+class CheckSystemdScripts(GenericMustCheckbase):
     '''
     http://fedoraproject.org/wiki/Packaging:Systemd
     '''
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
         self.text = 'Package contains  systemd file(s) if in need.'
         self.automatic = False
         self.type = 'MUST'
 
 
-class CheckTestSuites(GenericCheckBase):
-    '''
-    http://fedoraproject.org/wiki/Packaging/Guidelines#Test_Suites
-    '''
-    def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
-        self.url = 'http://fedoraproject.org/wiki/' \
-                   'Packaging/Guidelines#Test_Suites'
-        self.text = '%check is present and all tests pass.'
-        self.automatic = False
-        self.type = 'SHOULD'
-
-
-class CheckTimeStamps(GenericCheckBase):
-    '''
-    http://fedoraproject.org/wiki/Packaging/Guidelines#Timestamps
-    '''
-    def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
-        self.url = 'http://fedoraproject.org/wiki/' \
-                   'Packaging/Guidelines#Timestamps'
-        self.text = 'Packages should try to preserve timestamps of' \
-                    ' original installed files.'
-        self.automatic = False
-        self.type = 'SHOULD'
-
-
-class CheckUTF8Filenames(GenericCheckBase):
+class CheckUTF8Filenames(GenericMustCheckbase):
     '''
     MUST: All filenames in rpm packages must be valid UTF-8.
     http://fedoraproject.org/wiki/Packaging/Guidelines#FilenameEncoding
     '''
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
                    'Packaging/Guidelines#FilenameEncoding'
         self.text = 'File names are valid UTF-8.'
@@ -1748,7 +1219,7 @@ class CheckUTF8Filenames(GenericCheckBase):
         self.set_passed(True)
 
 
-class CheckUsefulDebuginfo(GenericCheckBase):
+class CheckUsefulDebuginfo(GenericMustCheckbase):
     '''
     Packages should produce useful -debuginfo packages, or explicitly
     disable them when it is not possible to generate a useful one but
@@ -1759,7 +1230,7 @@ class CheckUsefulDebuginfo(GenericCheckBase):
     http://fedoraproject.org/wiki/Packaging:Debuginfo
     '''
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
                    'Packaging/Guidelines#Debuginfo_packages'
         self.text = 'Useful -debuginfo package or justification' \
@@ -1774,34 +1245,12 @@ class CheckUsefulDebuginfo(GenericCheckBase):
         return False
 
 
-class CheckUseGlobal(GenericCheckBase):
-    ''' Thou shall not use %define. '''
-    def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
-        self.url = 'http://fedoraproject.org/wiki/Packaging/' \
-                   'Guidelines#.25global_preferred_over_.25define'
-        self.text = 'Spec use %global instead of %define.'
-        self.automatic = True
-        self.type = 'SHOULD'
-
-    def run(self):
-        regex = re.compile('(\%define.*)')
-        result = self.spec.find_all_re(regex, skip_changelog=True)
-        if result:
-            extra = ''
-            for res in result:
-                extra += res + '\n'
-            self.set_passed(False, extra)
-        else:
-            self.set_passed(True)
-
-
-class CheckNoNameConflict(GenericCheckBase):
+class CheckNoNameConflict(GenericMustCheckbase):
     '''
     Check that there isn't already a package with this name.
     '''
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = "https://fedoraproject.org/wiki/Packaging/" \
                    "NamingGuidelines#Conflicting_Package_Names"
         self.text = 'Package do not use a name that already exist'
@@ -1827,60 +1276,11 @@ class CheckNoNameConflict(GenericCheckBase):
                             "Couldn't connect to PackageDB, check manually")
 
 
-class CheckTmpfiles(GenericCheckBase):
-    '''
-    Check for files in /run, /var/run etc, candidates for tmpfiles.d
-    '''
-
-    def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
-        self.url = 'https://fedoraproject.org/wiki/Packaging:Tmpfiles.d'
-        self.text = 'Files in /run, var/run and /var/lock uses tmpfiles.d' \
-                    ' when appropriate'
-        self.automatic = True
-        self.type = 'SHOULD'
-
-    def run(self):
-        if self.flags['EPEL5']:
-            self.set_passed(self.NA)
-            return
-        for p in ['/run/*', '/var/run/*', '/var/lock/*', '/run/lock/*']:
-            if self.rpms.find(p):
-                self.set_passed(self.PENDING)
-                break
-        else:
-            self.set_passed(self.NA)
-
-
-class CheckBundledFonts(GenericCheckBase):
-    ''' Check for bundled font files '''
-
-    def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
-        self.url = 'http://fedoraproject.org/wiki/Packaging:Guidelines' \
-                   '#Avoid_bundling_of_fonts_in_other_packages'
-        self.text = 'Avoid bundling fonts in non-fonts packages. '
-        self.automatic = True
-        self.type = 'SHOULD'
-
-    def run(self):
-        if self.spec.name.endswith('-fonts'):
-            self.set_passed(self.NA)
-            return
-        for p in ['*.pfb', '*.pfa', '*.afm', '*.ttf', '*.otf']:
-            if self.rpms.find(p):
-                self.set_passed(self.PENDING,
-                                'Package contains font files')
-                break
-        else:
-            self.set_passed(self.NA)
-
-
-class CheckSourcedirMacroUse(GenericCheckBase):
+class CheckSourcedirMacroUse(GenericMustCheckbase):
     ''' Check for usage of %_sourcedir macro. '''
 
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging:Guidelines' \
                    '#Improper_use_of_.25_sourcedir'
         self.text = 'Only use %_sourcedir in very specific situations.'
@@ -1897,39 +1297,11 @@ class CheckSourcedirMacroUse(GenericCheckBase):
             self.set_passed(self.NA)
 
 
-class CheckUpdateMimeDatabase(GenericCheckBase):
-    ''' Check that update-mime-database is run if required. '''
-
-    def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
-        self.url = 'http://fedoraproject.org/wiki/Packaging' \
-                   ':ScriptletSnippets#mimeinfo'
-        self.text = 'update-mime-database is invoked as required'
-        self.automatic = True
-        self.type = 'SHOULD'
-
-    def run(self):
-        using = []
-        failed = False
-        for pkg in self.spec.packages:
-            if self.rpms.find('/usr/share/mime/packages/*', pkg):
-                using.append(pkg)
-                rpm_pkg = self.rpms.get(pkg)
-                if not _in_list('update-mime-database',
-                                [rpm_pkg.post, rpm_pkg.postun]):
-                    failed = True
-        if not using:
-            self.set_passed(self.NA)
-            return
-        text = "mimeinfo files in: " + ', '.join(using)
-        self.set_passed(self.FAIL if failed else self.PENDING, text)
-
-
-class CheckUpdateIconCache(GenericCheckBase):
+class CheckUpdateIconCache(GenericMustCheckbase):
     ''' Check that gtk-update-icon-cache is run if required. '''
 
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging' \
                    ':ScriptletSnippets#Icon_Cache'
         self.text = 'gtk-update-icon-cache is invoked when required'
@@ -1943,7 +1315,7 @@ class CheckUpdateIconCache(GenericCheckBase):
             if self.rpms.find('/usr/share/icons/*', pkg):
                 using.append(pkg)
                 rpm_pkg = self.rpms.get(pkg)
-                if not _in_list('gtk-update-icon-cache',
+                if not in_list('gtk-update-icon-cache',
                                 [rpm_pkg.postun, rpm_pkg.posttrans]):
                     failed = True
         if not using:
@@ -1953,11 +1325,11 @@ class CheckUpdateIconCache(GenericCheckBase):
         self.set_passed(self.FAIL if failed else self.PENDING, text)
 
 
-class CheckUpdateDesktopDatabase(GenericCheckBase):
+class CheckUpdateDesktopDatabase(GenericMustCheckbase):
     ''' Check that update-desktop-database is run if required. '''
 
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging' \
                    ':ScriptletSnippets#Icon_Cache'
         self.text = 'update-desktop-database is invoked when required'
@@ -1981,11 +1353,11 @@ class CheckUpdateDesktopDatabase(GenericCheckBase):
         self.set_passed(self.FAIL if failed else self.PENDING, text)
 
 
-class CheckGioQueryModules(GenericCheckBase):
+class CheckGioQueryModules(GenericMustCheckbase):
     ''' Check that update-desktop-database is run if required. '''
 
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging' \
                    ':ScriptletSnippets#GIO_modules'
         self.text = 'gio-querymodules is invoked as required'
@@ -2001,7 +1373,7 @@ class CheckGioQueryModules(GenericCheckBase):
             if self.rpms.find(gio_pattern, pkg):
                 using.append(pkg)
                 rpmpkg = self.rpms.get(pkg)
-                if not _in_list('gio-querymodules',
+                if not in_list('gio-querymodules',
                                 [rpmpkg.post, rpmpkg.postun]):
                     failed = True
         if not using:
@@ -2011,11 +1383,11 @@ class CheckGioQueryModules(GenericCheckBase):
         self.set_passed(self.FAIL if failed else self.PENDING, text)
 
 
-class CheckGtkQueryModules(GenericCheckBase):
+class CheckGtkQueryModules(GenericMustCheckbase):
     ''' Check that gtk-query-immodules is run if required. '''
 
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging' \
                    ':ScriptletSnippets#GIO_modules'
         self.text = 'gtk-query-immodules is invoked when required'
@@ -2031,7 +1403,7 @@ class CheckGtkQueryModules(GenericCheckBase):
             if self.rpms.find(pattern, pkg):
                 using.append(pkg)
                 rpmpkg = self.rpms.get(pkg)
-                if not _in_list('gtk-query-immodules',
+                if not in_list('gtk-query-immodules',
                                 [rpmpkg.postun, rpmpkg.posttrans]):
                     failed = True
         if not using:
@@ -2041,11 +1413,11 @@ class CheckGtkQueryModules(GenericCheckBase):
         self.set_passed(self.FAIL if failed else self.PENDING, text)
 
 
-class CheckGlibCompileSchemas(GenericCheckBase):
+class CheckGlibCompileSchemas(GenericMustCheckbase):
     ''' Check that glib-compile-schemas is run if required. '''
 
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging' \
                    ':ScriptletSnippets#GSettings_Schema'
         self.text = 'glib-compile-schemas is run if required'
@@ -2059,7 +1431,7 @@ class CheckGlibCompileSchemas(GenericCheckBase):
             if self.rpms.find('*.gschema.xml', pkg):
                 using.append(pkg)
                 rpm_pkg = self.rpms.get(pkg)
-                if not _in_list('glib-compile-schemas',
+                if not in_list('glib-compile-schemas',
                                 [rpm_pkg.postun, rpm_pkg.posttrans]):
                     failed = True
         if not using:
@@ -2069,11 +1441,11 @@ class CheckGlibCompileSchemas(GenericCheckBase):
         self.set_passed(self.FAIL if failed else self.PENDING, text)
 
 
-class CheckGconfSchemaInstall(GenericCheckBase):
+class CheckGconfSchemaInstall(GenericMustCheckbase):
     ''' Check that gconf schemas are properly installed. '''
 
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging' \
                    ':ScriptletSnippets#GConf'
         self.text = 'GConf schemas are properly installed'
@@ -2087,7 +1459,7 @@ class CheckGconfSchemaInstall(GenericCheckBase):
             if self.rpms.find('/etc/gconf/schemas/*.schemas', pkg):
                 using.append(pkg)
                 rpm_pkg = self.rpms.get(pkg)
-                if not _in_list('%gconf_schema',
+                if not in_list('%gconf_schema',
                                 [rpm_pkg.post, rpm_pkg.pre]):
                     failed = True
         if not using:
@@ -2097,11 +1469,11 @@ class CheckGconfSchemaInstall(GenericCheckBase):
         self.set_passed(self.FAIL if failed else self.PENDING, text)
 
 
-class CheckInfoInstall(GenericCheckBase):
+class CheckInfoInstall(GenericMustCheckbase):
     ''' Check that info files are properly installed. '''
 
     def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
+        GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging' \
                    ':ScriptletSnippets#Texinfo'
         self.text = 'Texinfo files are properly installed'
@@ -2115,7 +1487,7 @@ class CheckInfoInstall(GenericCheckBase):
             if self.rpms.find('/usr/share/info/*', pkg):
                 using.append(pkg)
                 rpm_pkg = self.rpms.get(pkg)
-                if not _in_list('install-info',
+                if not in_list('install-info',
                                 [rpm_pkg.post, rpm_pkg.preun]):
                     failed = True
         if not using:

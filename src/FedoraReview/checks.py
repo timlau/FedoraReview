@@ -57,7 +57,7 @@ def _write_section(results, output):
 
     def hdr(group):
         ''' Return header this test is printed under. '''
-        if group == 'Setup':
+        if group in ['Setup', 'Generic-should']:
             return 'Generic'
         return group
 

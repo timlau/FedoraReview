@@ -50,7 +50,8 @@ class TestRChecks(FR_TestCase):
         self.checks.run_checks(writedown=False)
         for check in self.checks.checkdict.itervalues():
             if check.is_passed or check.is_pending or check.is_failed:
-                self.assertIn(check.group, ['Setup', 'Generic', 'R'])
+                ok_groups = ['Setup', 'Generic', 'Generic-should', 'R']
+                self.assertIn(check.group, ok_groups)
 
 
 if __name__ == '__main__':
