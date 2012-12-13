@@ -1,4 +1,6 @@
 #!/bin/bash
+#
+# fedora-review git pre-commit hook: run pep8 and pylint
 
 IGNORE=E221,E251
 

@@ -29,20 +29,6 @@ License
 fedora-review is licensed under GPLv2+, for more details check COPYING.
 
 
-Dependencies
-------------
-
-Install dependencies:
-
-    # yum install python-straight-plugin python-BeautifulSoup \
-          python-bugzilla  python-requests python-kitchen \
-          fedora-packager rpmdevtools mock git python-fedora
-
-The mock requirement is not hard, it's possible to use fedora-review
-without mock when always using the --prebuilt/-p option. This means
-that packages must be built using other tools e. g., koji. Generally,
-installing without mock is not recommended.
-
 
 Download
 --------
@@ -54,6 +40,19 @@ Alternative repository for users wishing to use github:
 git://github.com/timlau/FedoraReview.git. You might consider cloning
 another branch e. g., a release branch. However, 'master' branch is
 probably not what you want.
+
+Dependencies
+------------
+
+Install dependencies:
+
+    # yum install mock
+    # yum-builddep fedora-review.spec
+
+The mock requirement is not hard, it's possible to use fedora-review
+without mock when always using the --prebuilt/-p option. This means
+that packages must be built using other tools e. g., koji. Generally,
+installing without mock is not recommended.
 
 
 Running from git
