@@ -57,8 +57,8 @@ def _write_section(results, output):
 
     def hdr(group):
         ''' Return header this test is printed under. '''
-        if group in ['Setup', 'Generic-should']:
-            return 'Generic'
+        if '.' in group:
+            return group.split('.')[0]
         return group
 
     def result_key(result):
@@ -74,7 +74,7 @@ def _write_section(results, output):
 
     groups = list(set([hdr(test.group) for test in results]))
     for group in sorted(groups):
-        res = filter(lambda t: t.group == group, results)
+        res = filter(lambda t: hdr(t.group) == group, results)
         if not res:
             continue
         res = sorted(res, key=result_key)

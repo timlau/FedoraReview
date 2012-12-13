@@ -37,10 +37,10 @@ from FedoraReview import RegistryBase, ReviewError
 class Registry(RegistryBase):
     ''' Module registration, register all checks in group Setup. '''
 
-    group = 'Setup'
+    group = 'Generic.build'
 
     def is_applicable(self):
-        return True
+        return self.checks.groups['Generic'].is_applicable()
 
 
 class BuildCheckBase(CheckBase):

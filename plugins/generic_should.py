@@ -39,14 +39,15 @@ class Registry(RegistryBase):
     Module registration, register all checks, supplements MUST module.
     '''
 
-    group = 'Generic-should'
+    group = 'Generic.should'
 
     def is_applicable(self):
         return True
+        #return self.checks.groups['Generic'].is_applicable()
 
 
 class GenericShouldCheckbase(CheckBase):
-    ''' Base class for all generic tests. '''
+    ''' Base class for all generic SHOULD + EXTRA tests. '''
 
     def __init__(self, checks):
         CheckBase.__init__(self, checks, __file__)
