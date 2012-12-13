@@ -16,9 +16,7 @@
 #
 # (C) 2011 - Tim Lauridsen <timlau@fedoraproject.org>
 
-'''
-This module contains automatic test for Fedora Packaging guidelines
-'''
+''' Basic definitions: AbstractCheck + descendants, TestResult.  '''
 
 import re
 import StringIO
@@ -145,19 +143,18 @@ class AbstractCheck(object):
 
 
 class GenericCheck(AbstractCheck):
-
     """
     Common interface inherited by all Check implementations.
 
     Properties:
       - text: free format user info on test, one line.
       - description: longer, multiline free format text info.
-      - type: 'MUST'|'SHOULD'|'EXTRA'|'UNDEFINED', defaults to
-        'MUST'
+      - type: 'MUST'|'SHOULD'|'EXTRA', defaults to 'MUST'.
       - url: Usually guidelines url, possibly None.
       - checks: Checks instance which created this check.
       - registry: Defining Registry, set by Registry.register()
     """
+
     registry = None
 
     class Attachment(_Attachment):
@@ -188,8 +185,8 @@ class GenericCheck(AbstractCheck):
 
     def set_passed(self, result, output_extra=None, attachments=None):
         '''
-        Set if the test is passed, failed or N/A
-        and set optional extra output to be shown in repost
+        Set if the test is passed, failed or N/A and set optional
+        extra output and/or attachments to be shown in repost.
         '''
         if result in ['not_applicable', self.NA, None]:
             self.result = None
@@ -227,7 +224,9 @@ class CheckBase(GenericCheck, HelpersMixin):
         self.set_passed(self.PENDING)
 
     def run(self):
-        ''' By default, a manual test returning 'inconclusive'.'''
+        '''
+        Default implementation, returns run_on_applicable() or self.NA.
+        '''
         if self.is_applicable():
             self.run_on_applicable()
         else:
@@ -237,7 +236,7 @@ class CheckBase(GenericCheck, HelpersMixin):
 
 
 class TestResult(object):
-    ''' The outcome of a test, stored in check.result. '''
+    ''' The printable outcome of a test, stored in check.result. '''
 
     TEST_STATES = {
          'pending': '[ ]', 'pass': '[x]', 'fail': '[!]', 'na': '[-]'}
