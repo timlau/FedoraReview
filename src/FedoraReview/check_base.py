@@ -177,6 +177,7 @@ class GenericCheck(AbstractCheck):
     flags      = property(lambda self: self.checks.flags)
     srpm       = property(lambda self: self.checks.srpm)
     sources    = property(lambda self: self.checks.sources)
+    buildsrc   = property(lambda self: self.checks.buildsrc)
     log        = property(lambda self: self.checks.log)
     rpms       = property(lambda self: self.checks.rpms)
 
