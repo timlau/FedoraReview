@@ -31,7 +31,7 @@ from FedoraReview import CheckBase, ReviewDirs
 from FedoraReview import ReviewError             # pylint: disable=W0611
 from FedoraReview import RegistryBase, Settings
 
-from generic_must import in_list
+from generic import in_list
 
 
 class Registry(RegistryBase):
