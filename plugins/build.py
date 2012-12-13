@@ -123,7 +123,7 @@ class CheckResultdir(BuildCheckBase):
         if len(glob.glob(os.path.join(Mock.resultdir, '*.*'))) != 0 \
             and not  (Settings.nobuild or Settings.prebuilt):
                 raise self.NotEmptyError()       # pylint: disable=W0311
-        self.set_passed(True)
+        self.set_passed(self.PASS)
 
 
 class CheckBuild(BuildCheckBase):
@@ -180,9 +180,9 @@ class CheckRpmlint(BuildCheckBase):
             text = 'No rpmlint messages.' if no_errors else \
                         'There are rpmlint messages (see attachment).'
             attachments = [self.Attachment('Rpmlint', retval, 5)]
-            self.set_passed(True, text, attachments)
+            self.set_passed(self.PASS, text, attachments)
         else:
-            self.set_passed(False, 'Mock build failed')
+            self.set_passed(self.FAIL, 'Mock build failed')
 
 
 class CheckPackageInstalls(BuildCheckBase):
@@ -256,9 +256,9 @@ class CheckRpmlintInstalled(BuildCheckBase):
             attachments = \
                 [self.Attachment('Rpmlint (installed packages)',
                                  retcode + '\n', 5)]
-            self.set_passed(True, text, attachments)
+            self.set_passed(self.PASS, text, attachments)
         else:
-            self.set_passed(False, 'Mock build failed')
+            self.set_passed(self.FAIL, 'Mock build failed')
 
 
 class CheckBuildCompleted(BuildCheckBase):
@@ -285,7 +285,7 @@ class CheckBuildCompleted(BuildCheckBase):
             Mock.rpmbuild_bp(self.srpm)
         if not os.path.exists('BUILD'):
             os.symlink(Mock.get_builddir('BUILD'), 'BUILD')
-        self.set_passed('not_applicable')
+        self.set_passed(self.NA)
 
 ## End of startup sequence
 

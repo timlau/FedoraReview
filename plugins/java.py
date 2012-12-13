@@ -59,7 +59,7 @@ class JavaCheckBase(CheckBase):
                 if judge.search(line):
                     return True
                 else:
-                    self.set_passed(False)
+                    self.set_passed(self.FAIL)
                     return False
 
         return None
@@ -91,14 +91,14 @@ class CheckJavadoc(JavaCheckBase):
         """ run check for java packages """
         pkg = self._get_javadoc_sub()
         if not pkg:
-            self.set_passed(False, "No javadoc subpackage present")
+            self.set_passed(self.FAIL, "No javadoc subpackage present")
             return
 
         # and now look for at least one html file
         if self.rpms.find('*.html', pkg):
-            self.set_passed(True)
+            self.set_passed(self.PASS)
             return
-        self.set_passed(False, "No javadoc html files found in %s" % pkg)
+        self.set_passed(self.FAIL, "No javadoc html files found in %s" % pkg)
 
 
 class CheckJavadocdirName(JavaCheckBase):
@@ -115,21 +115,21 @@ class CheckJavadocdirName(JavaCheckBase):
     def run_on_applicable(self):
         pkg = self._get_javadoc_sub()
         if not pkg:
-            self.set_passed(False, "No javadoc subpackage present")
+            self.set_passed(self.FAIL, "No javadoc subpackage present")
             return
         name_ver_pattern = "/usr/share/javadoc/%s-%s/*" \
                                        % (self.spec.name, self.spec.version)
         if self.rpms.find_all(name_ver_pattern, pkg):
-            self.set_passed(False,
+            self.set_passed(self.FAIL,
                             "Found deprecated versioned javadoc paths " +
                             name_ver_pattern)
             return
         name_pattern = "/usr/share/javadoc/%s/*" % self.spec.name
         if not self.rpms.find_all(name_pattern, pkg):
-            self.set_passed(False,
+            self.set_passed(self.FAIL,
                             "No /usr/share/javadoc/%s found" % self.spec.name)
             return
-        self.set_passed(True)
+        self.set_passed(self.PASS)
 
 
 class CheckJPackageRequires(JavaCheckBase):
@@ -247,14 +247,14 @@ class CheckAddMavenDepmap(JavaCheckBase):
 
     def run(self):
         if not self.rpms.find("*.pom"):
-            self.set_passed('not_applicable')
+            self.set_passed(self.NA)
             return
         if not self.spec.find_re('[^#]*%add_maven_depmap'):
-            self.set_passed(False,
+            self.set_passed(self.FAIL,
                             "No add_maven_depmap calls found but pom"
                                  " files present")
         else:
-            self.set_passed("inconclusive", """Some add_maven_depmap
+            self.set_passed(self.PENDING, """Some add_maven_depmap
         calls found. Please check if they are correct""")
 
 
@@ -274,7 +274,7 @@ class CheckUseMavenpomdirMacro(JavaCheckBase):
 
     def run(self):
         if not self.rpms.find("*.pom"):
-            self.set_passed('not_applicable')
+            self.set_passed(self.NA)
             return
         self.set_passed(not self.spec.find_re(self.regex))
 
@@ -295,7 +295,7 @@ class CheckUpdateDepmap(JavaCheckBase):
 
     def run(self):
         if not self.rpms.find("*.pom"):
-            self.set_passed('not_applicable')
+            self.set_passed(self.NA)
             return
         self.set_passed(not self.spec.find_re(self.regex))
 
@@ -328,7 +328,7 @@ class CheckNoRequiresPost(JavaCheckBase):
             return False
 
         if not self.rpms.find("*.pom"):
-            self.set_passed('not_applicable')
+            self.set_passed(self.NA)
             return
         bad_ones = []
         txt = ''
@@ -369,13 +369,13 @@ class CheckTestSkip(JavaCheckBase):
                                             comment_regex)
         if result == None:
             # weird. It has skip regex but no maven call?
-            self.set_passed(True)
+            self.set_passed(self.PASS)
         else:
-            self.set_passed("inconclusive", "Some comment is used "
+            self.set_passed(self.PENDING, "Some comment is used "
                                "before mvn-rpmbuild command. Please"
                                " verify it explains use of "
                                "-Dmaven.test.skip")
-            self.set_passed(False)
+            self.set_passed(self.FAIL)
 
 
 class CheckLocalDepmap(JavaCheckBase):
@@ -397,7 +397,7 @@ class CheckLocalDepmap(JavaCheckBase):
         comment_regex = re.compile(r'^\s*#.*')
         build_sec = self.spec.get_section('%build')
         if not self.spec.find_re(depmap_regex) or not build_sec:
-            self.set_passed('not_applicable')
+            self.set_passed(self.NA)
             return
         result = self._search_previous_line(build_sec,
                                             depmap_regex,
@@ -405,9 +405,9 @@ class CheckLocalDepmap(JavaCheckBase):
                                             comment_regex)
         if not result:
             # weird. It has skip regex but no maven call?
-            self.set_passed(True)
+            self.set_passed(self.PASS)
         else:
-            self.set_passed("inconclusive", """Some comment is
+            self.set_passed(self.PENDING, """Some comment is
                 used before mvn-rpmbuild command. Please verify
                 it explains use of -Dmaven.local.depmap""")
 

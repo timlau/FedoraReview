@@ -178,7 +178,7 @@ class NonGemCheckUsesMacros(NonGemCheckBase):
         self.type = 'SHOULD'
 
     def run_on_applicable(self):
-        self.set_passed(False)
+        self.set_passed(self.FAIL)
         vendorarchdir_re = re.compile('%{vendorarchdir}', re.I)
         vendorlibdir_re = re.compile('%{vendorlibdir}', re.I)
         #FIXME: get_files returns expanded macros, not'%{whatever}'
@@ -186,9 +186,9 @@ class NonGemCheckUsesMacros(NonGemCheckBase):
         for pkg in self.spec.packages:
             for line in self.spec.get_files(pkg):
                 if _has_extension(self) and vendorarchdir_re.match(line):
-                    self.set_passed(True)
+                    self.set_passed(self.PASS)
                 if not _has_extension(self) and vendorlibdir_re.match(line):
-                    self.set_passed(True)
+                    self.set_passed(self.PASS)
 
 
 class NonGemCheckFilePlacement(NonGemCheckBase):
@@ -364,9 +364,9 @@ class GemCheckUsesMacros(GemCheckBase):
                 err_message.append(key.pattern.replace('\\s+', ' '))
 
         if len(err_message) == 0:
-            self.set_passed(True)
+            self.set_passed(self.PASS)
         else:
-            self.set_passed(False,
+            self.set_passed(self.FAIL,
                             'The specfile doesn\'t use these macros: %s'
                             % ', '.join(err_message))
 

@@ -164,7 +164,7 @@ class CheckDistTag(GenericShouldCheckbase):
     def run(self):
         rel_tags = self.spec.find_all_re('^Release\s*:')
         if len(rel_tags) > 1:
-            self.set_passed(False, 'Multiple Release tags found')
+            self.set_passed(self.FAIL, 'Multiple Release tags found')
             return
         rel = rel_tags[0]
         self.set_passed(rel.endswith('%{?dist}'))
@@ -238,10 +238,10 @@ class CheckFileRequires(GenericShouldCheckbase):
         attachments = [self.Attachment('Requires', req_txt, 10),
                        self.Attachment('Provides', prov_txt, 10)]
         if len(wrong_req) == 0:
-            self.set_passed(True, None, attachments)
+            self.set_passed(self.PASS, None, attachments)
         else:
             text = "Incorrect Requires : %s " % (', '.join(wrong_req))
-            self.set_passed(False, text, attachments)
+            self.set_passed(self.FAIL, text, attachments)
 
 
 class CheckFinalRequiresProvides(GenericShouldCheckbase):
@@ -376,7 +376,7 @@ class CheckPkgConfigFiles(GenericShouldCheckbase):
             if file_list:
                 files_by_pkg[pkg] = file_list
         if files_by_pkg == {}:
-            self.set_passed('not_applicable')
+            self.set_passed(self.NA)
             return
         passed = 'pass'
         extra = ''
@@ -424,9 +424,9 @@ class CheckSourceComment(GenericShouldCheckbase):
                 passed = False
 
         if passed:
-            self.set_passed(True)
+            self.set_passed(self.PASS)
         else:
-            self.set_passed('inconclusive',
+            self.set_passed(self.PENDING,
                 'Package contains tarball without URL, check comments')
 
 
@@ -451,9 +451,9 @@ class CheckSourceUrl(GenericShouldCheckbase):
                     output += '%s\n' % source.url
 
         if passed:
-            self.set_passed(True)
+            self.set_passed(self.PASS)
         else:
-            self.set_passed(False, output)
+            self.set_passed(self.FAIL, output)
 
 
 class CheckSpecAsInSRPM(GenericShouldCheckbase):
@@ -596,9 +596,9 @@ class CheckUseGlobal(GenericShouldCheckbase):
             extra = ''
             for res in result:
                 extra += res + '\n'
-            self.set_passed(False, extra)
+            self.set_passed(self.FAIL, extra)
         else:
-            self.set_passed(True)
+            self.set_passed(self.PASS)
 
 
 class CheckTmpfiles(GenericShouldCheckbase):

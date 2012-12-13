@@ -166,7 +166,7 @@ class CheckSoFiles(CCppCheckBase):
     def run(self):
         ''' Run the test, always called '''
         if not self.rpms.find('*.so'):
-            self.set_passed('not_applicable')
+            self.set_passed(self.NA)
             return
         passed = 'pass'
         in_libdir = False
@@ -218,13 +218,13 @@ class CheckLibToolArchives(CCppCheckBase):
     def run_on_applicable(self):
         ''' Run the test, called if is_applicable() is True. '''
         if not self.rpms.find('*.la'):
-            self.set_passed(True)
+            self.set_passed(self.PASS)
         else:
             extra = ""
             for pkg in self.spec.packages:
                 for path in self.rpms.find_all('*.la', pkg):
                     extra += "%s : %s\n" % (pkg, path)
-            self.set_passed(False, extra)
+            self.set_passed(self.FAIL, extra)
 
 
 class CheckRPATH(CCppCheckBase):
@@ -245,7 +245,7 @@ class CheckRPATH(CCppCheckBase):
             if 'binary-or-shlib-defines-rpath' in line:
                 self.set_passed(self.PENDING, 'See rpmlint output')
                 return
-        self.set_passed(True)
+        self.set_passed(self.PASS)
 
 
 class CheckNoKernelModules(CCppCheckBase):

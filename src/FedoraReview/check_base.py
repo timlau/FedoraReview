@@ -230,7 +230,7 @@ class CheckBase(GenericCheck, HelpersMixin):
         if self.is_applicable():
             self.run_on_applicable()
         else:
-            self.set_passed('not_applicable')
+            self.set_passed(self.NA)
 
     group = property(lambda self: self.registry.group)
 

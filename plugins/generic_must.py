@@ -140,7 +140,7 @@ class CheckBuildRequires(GenericMustCheckbase):
     def run(self):
 
         if  self.checks.checkdict['CheckBuild'].is_pending:
-            self.set_passed('pending', 'Using prebuilt rpms.')
+            self.set_passed(self.PENDING, 'Using prebuilt rpms.')
         elif self.checks.checkdict['CheckBuild'].is_passed:
             brequires = self.spec.build_requires
             pkg_by_default = ['bash', 'bzip2', 'coreutils', 'cpio',
@@ -151,12 +151,12 @@ class CheckBuildRequires(GenericMustCheckbase):
                 'which', 'xz']
             intersec = list(set(brequires).intersection(set(pkg_by_default)))
             if intersec:
-                self.set_passed(False, 'These BR are not needed: %s' % (
+                self.set_passed(self.FAIL, 'These BR are not needed: %s' % (
                 ' '.join(intersec)))
             else:
-                self.set_passed(True)
+                self.set_passed(self.PASS)
         else:
-            self.set_passed(False,
+            self.set_passed(self.FAIL,
                             'The package did not build '
                             'BR could therefore not be checked or the'
                             ' package failed to build because of'
@@ -326,7 +326,7 @@ class CheckDesktopFile(GenericMustCheckbase):
 
     def run(self):
         have_desktop = self.rpms.find('*.desktop')
-        self.set_passed(True if have_desktop else 'inconclusive')
+        self.set_passed(True if have_desktop else self.PENDING)
 
 
 class CheckDesktopFileInstall(GenericMustCheckbase):
@@ -348,7 +348,7 @@ class CheckDesktopFileInstall(GenericMustCheckbase):
 
     def run(self):
         if not self.rpms.find('*.desktop'):
-            self.set_passed('not_applicable')
+            self.set_passed(self.NA)
             return
         pattern = r'(desktop-file-install|desktop-file-validate)' \
                    '.*(desktop|SOURCE)'
@@ -435,15 +435,15 @@ class CheckFileDuplicates(GenericMustCheckbase):
         try:
             stream = open(filename)
         except IOError:
-            self.set_passed('inconclusive')
+            self.set_passed(self.PENDING)
             return
         content = stream.read()
         stream.close()
         for line in content.split('\n'):
             if 'File listed twice' in line:
-                self.set_passed(False, line)
+                self.set_passed(self.FAIL, line)
                 return
-        self.set_passed(True)
+        self.set_passed(self.PASS)
 
 
 class CheckFilePermissions(GenericMustCheckbase):
@@ -464,9 +464,9 @@ class CheckFilePermissions(GenericMustCheckbase):
     def run(self):
         for line in Mock.rpmlint_output:
             if 'non-standard-executable-perm' in line:
-                self.set_passed(False, 'See rpmlint output')
+                self.set_passed(self.FAIL, 'See rpmlint output')
                 return
-        self.set_passed(True)
+        self.set_passed(self.PASS)
 
 
 class CheckFullVerReqSub(GenericMustCheckbase):
@@ -645,17 +645,17 @@ class CheckLicenseField(GenericMustCheckbase):
             if not licenses:
                 msg += ' No licenses found.'
                 msg += ' Please check the source files for licenses manually.'
-                self.set_passed(False, msg)
+                self.set_passed(self.FAIL, msg)
             else:
                 msg += ' Licenses found: "' \
                          + '", "'.join(licenses.iterkeys()) + '".'
                 msg += ' %d files have unknown license.' % len(licenses)
                 msg += ' Detailed output of licensecheck in ' + filename
-                self.set_passed('inconclusive', msg)
+                self.set_passed(self.PENDING, msg)
         except OSError, e:
             self.log.error('OSError: %s' % str(e))
             msg = ' Programmer error: ' + e.strerror
-            self.set_passed('inconclusive', msg)
+            self.set_passed(self.PENDING, msg)
 
 
 class CheckLicensInDoc(GenericMustCheckbase):
@@ -690,7 +690,7 @@ class CheckLicensInDoc(GenericMustCheckbase):
                           licenses)
         licenses = map(lambda f: f.split('/')[-1], licenses)
         if licenses == []:
-            self.set_passed('inconclusive')
+            self.set_passed(self.PENDING)
             return
 
         docs = []
@@ -705,10 +705,10 @@ class CheckLicensInDoc(GenericMustCheckbase):
             if not _license in docs:
                 self.log.debug("Cannot find " + _license +
                                " in doclist")
-                self.set_passed(False,
+                self.set_passed(self.FAIL,
                                 "Cannot find %s in rpm(s)" % _license)
                 return
-        self.set_passed(True)
+        self.set_passed(self.PASS)
 
 
 class CheckLicenseInSubpackages(GenericMustCheckbase):
@@ -764,10 +764,10 @@ class CheckMacros(GenericMustCheckbase):
         br_tag1 = self.spec.find_all_re('.*%{buildroot}.*', True)
         br_tag2 = self.spec.find_all_re('.*\$RPM_BUILD_ROOT.*', True)
         if br_tag1 and br_tag2:
-            self.set_passed(False,
+            self.set_passed(self.FAIL,
                             'Using both %{buildroot} and $RPM_BUILD_ROOT')
         else:
-            self.set_passed('inconclusive')
+            self.set_passed(self.PENDING)
 
 
 class CheckMakeinstall(GenericMustCheckbase):
@@ -785,7 +785,7 @@ class CheckMakeinstall(GenericMustCheckbase):
         regex = re.compile(r'^(%makeinstall.*)')
         res = self.spec.find_re(regex)
         if res:
-            self.set_passed(False, res.group(0))
+            self.set_passed(self.FAIL, res.group(0))
             return True
         else:
             return False
@@ -903,11 +903,11 @@ class CheckNoConflicts(GenericMustCheckbase):
 
     def run(self):
         if self.spec.expand_tag('Conflicts'):
-            self.set_passed(False,
+            self.set_passed(self.FAIL,
                             'Package contains Conflicts: tag(s)'
                             ' needing fix or justification.')
         else:
-            self.set_passed('inconclusive',
+            self.set_passed(self.PENDING,
                             'Package contains no Conflicts: tag(s)')
 
 
@@ -1016,7 +1016,7 @@ class CheckReqPkgConfig(GenericMustCheckbase):
 
     def run(self):
         if not self.rpms.find('*.pc') or not self.flags['EPEL5']:
-            self.set_passed('not_applicable')
+            self.set_passed(self.NA)
             return
         result = self.FAIL
         for line in self.spec.get_requires():
@@ -1180,9 +1180,9 @@ class CheckSpecName(GenericMustCheckbase):
     def run(self):
         spec_name = '%s.spec' % self.spec.name
         if os.path.basename(self.spec.filename) == spec_name:
-            self.set_passed(True)
+            self.set_passed(self.PASS)
         else:
-            self.set_passed(False, '%s should be %s ' %
+            self.set_passed(self.FAIL, '%s should be %s ' %
                 (os.path.basename(self.spec.filename), spec_name))
 
 
@@ -1215,8 +1215,8 @@ class CheckUTF8Filenames(GenericMustCheckbase):
         for line in Mock.rpmlint_output:
             if 'wrong-file-end-of-line-encoding' in line or \
             'file-not-utf8' in line:
-                self.set_passed(False)
-        self.set_passed(True)
+                self.set_passed(self.FAIL)
+        self.set_passed(self.PASS)
 
 
 class CheckUsefulDebuginfo(GenericMustCheckbase):
