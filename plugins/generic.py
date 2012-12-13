@@ -93,7 +93,8 @@ class CheckBundledLibs(GenericMustCheckbase):
         GenericMustCheckbase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
                    'Packaging:Guidelines#Duplication_of_system_libraries'
-        self.text = 'Package contains no bundled libraries.'
+        self.text = 'Package contains no bundled libraries without' \
+                    ' FESCO exception.'
         self.automatic = False
         self.type = 'MUST'
 

@@ -248,6 +248,31 @@ class CheckRPATH(CCppCheckBase):
         self.set_passed(self.PASS)
 
 
+class CheckBundledGnulib(CCppCheckBase):
+    ''' Make sure there is a Provides: matching bundled gnulib. '''
+
+    def __init__(self, base):
+        CCppCheckBase.__init__(self, base)
+        self.url = 'http://fedoraproject.org/wiki/Packaging:' \
+                   'No_Bundled_Libraries#Requirement_if_you_bundle'
+        self.text = 'Provides: bundled(gnulib) in place as required.'
+        self.automatic = True
+        self.type = 'MUST'
+
+    def run_on_applicable(self):
+        if not self.buildsrc.find('*00gnulib.m4'):
+            self.set_passed(self.NA)
+            return
+        for pkg in self.spec.packages:
+            if 'bundled(gnulib)' in self.rpms.get(pkg).provides:
+                self.set_passed(self.PASS)
+                break
+        else:
+            self.set_passed(self.FAIL,
+                            'Bundled gnulib but no '
+                            'Provides: bundled(gnulib)')
+
+
 class CheckNoKernelModules(CCppCheckBase):
     '''
     At one point (pre Fedora 8), packages containing "addon" kernel modules
