@@ -131,7 +131,7 @@ class CheckClean(GenericShouldCheckbase):
         sec_clean = self.spec.find_re('%clean')
         if sec_clean:
             sec_clean = self.spec.get_section('%clean', raw=True)
-            regex = 'rm\s+\-[rf][rf]\s+(%{buildroot}|$RPM_BUILD_ROOT)'
+            regex = r'rm\s+\-[rf][rf]\s+(%{buildroot}|\$RPM_BUILD_ROOT)'
             regex = rpm.expandMacro(regex)
             has_clean = re.search(regex, sec_clean)
         if self.flags['EPEL5']:
