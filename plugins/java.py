@@ -6,12 +6,12 @@ from FedoraReview import CheckBase, RegistryBase
 
 
 class Registry(RegistryBase):
-    ''' Register all checks in this fiel in group 'Java' '''
+    ''' Register all checks in this file in group 'Java'. '''
 
     group = 'Java'
 
     def is_applicable(self):
-        ''' Return true if this is a java package. '''
+        ''' Return True if this is a java package. '''
         rpms = self.checks.rpms
         return rpms.find("*.jar") or rpms.find("*.pom")
 
@@ -24,7 +24,7 @@ class JavaCheckBase(CheckBase):
 
     def _get_javadoc_sub(self):
         """Returns name of javadoc rpm or None if no such subpackage
-        exists"""
+        exists."""
         for pkg in self.spec.packages:
             if pkg.endswith('-javadoc'):
                 return pkg
