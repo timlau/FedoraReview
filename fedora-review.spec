@@ -63,7 +63,6 @@ Tests are packaged separately due to space concerns.
 
 %prep
 %setup -q
-chmod -x api/examples/*
 
 
 %build
