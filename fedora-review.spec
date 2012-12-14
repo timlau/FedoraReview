@@ -61,6 +61,16 @@ Requires: %{name} = %{version}-%{release}
 Tests are packaged separately due to space concerns.
 
 
+%package php-phpci
+Summary:  Run phpci static analyzer on php packages
+Requires: %{name} = %{version}-%{release}
+Requires: php-bartlett-PHP-CompatInfo
+
+%description php-phpci
+Bash plugin running the phpci static analyzer on php packages,
+see http://php5.laurent-laville.org/compatinfo/.
+
+
 %prep
 %setup -q
 
@@ -90,7 +100,7 @@ python -m unittest discover -f
 
 
 %files
-%doc COPYING AUTHORS TODO README api
+%doc COPYING AUTHORS TODO README
 %{python_sitelib}/*
 %{_bindir}/fedora-review
 %{_bindir}/fedora-create-review
@@ -100,10 +110,14 @@ python -m unittest discover -f
 %dir %{_datadir}/%{name}
 %{_datadir}/%{name}/plugins
 %{_datadir}/%{name}/scripts
+%exclude %{_datadir}/%{name}/scripts/php-phpci.sh
 
 %files tests
 %doc test/README.test
 %{_datadir}/%{name}/test
+
+%files php-phpci
+%{_datadir}/%{name}/scripts/php-phpci.sh
 
 
 %changelog
