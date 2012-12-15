@@ -52,15 +52,19 @@ class RpmFile(object):
         os.close(fd)
         self._inited = True
 
+    # RPMTAG_POSTTRANSPROG are given as list on F18, but not before
+    def header_to_str(self, tag):
+        ''' Convert header in a string, to cope with API changes in F18'''
+        if isinstance(self.header[tag], dict):
+            return ' '.join(self.header[tag])
+        else:
+            return self.header[tag]
+
     def _scriptlet(self, prog_tag, script_tag):
         ''' Return inline -p script, script or None. '''
         self.init()
-        # RPMTAG_POSTTRANSPROG are given as list on F18, but not before
-        if self.header[prog_tag] is list:
-            prog = ' '.join(self.header[prog_tag])
-        else:
-            prog = self.header[prog_tag]
-        script = self.header[script_tag]
+        prog = self.header_to_str(prog_tag)
+        script = self.header_to_str(script_tag)
         if prog and script:
             return prog + script
         if prog:
