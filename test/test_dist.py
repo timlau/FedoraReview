@@ -47,6 +47,8 @@ class TestDist(FR_TestCase):
 
     @unittest.skipIf(not _proper_dist_os(),
                      'Cannot make a dist (bad os)')
+    @unittest.skipIf('MAKE_RELEASE' in os.environ,
+                 'Skipping make_release test when called from make_release')
     def test_tarballs(self):
         ''' Test  make_release_script. '''
         os.chdir('..')

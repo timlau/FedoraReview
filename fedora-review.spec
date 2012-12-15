@@ -95,6 +95,7 @@ cp -ar test "$RPM_BUILD_ROOT%{_datadir}/%{name}"
 %if %{with tests}
 cd test
 export REVIEW_LOGLEVEL=warning
+export MAKE_RELEASE=1
 python -m unittest discover -f
 %endif
 
