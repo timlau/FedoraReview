@@ -302,7 +302,8 @@ class GemCheckRequiresRubygems(GemCheckBase):
         failed = []
         for pkg_name in self.spec.packages:
             rpm_pkg = self.rpms.get(pkg_name)
-            if not 'rubygems' in rpm_pkg.requires:
+            if not 'rubygems' in rpm_pkg.requires and \
+                    not 'ruby(rubygems)' in rpm_pkg.requires:
                 failed.append(pkg_name)
         if failed:
             text = 'Requires: rubygems missing in ' + ', '.join(failed)
