@@ -67,6 +67,7 @@ class GenericMustCheckbase(CheckBase):
         CheckBase.__init__(self, checks, __file__)
 
 
+
 class CheckApprovedLicense(GenericMustCheckbase):
     '''
     MUST: The package must be licensed with a Fedora approved license and
@@ -604,7 +605,7 @@ class CheckLicenseField(GenericMustCheckbase):
 
         def license_is_valid(_license):
             ''' Test that license from licencecheck is parsed OK. '''
-            return not 'UNKNOWN'  in _license and \
+            return not 'UNKNOWN' in _license and \
                   not 'GENERATED' in _license
 
         def parse_licenses(raw_text):
@@ -1266,7 +1267,7 @@ class CheckNoNameConflict(GenericMustCheckbase):
         try:
             p.get_package_info(name)
             self.set_passed(
-                     self.FAIL,
+                    self.FAIL,
                     'A package already exist with this name, please check'
                         ' https://admin.fedoraproject.org/pkgdb/acls/name/'
                         + name)
