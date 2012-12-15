@@ -87,7 +87,7 @@ class ReviewHelper(object):
         if Settings.no_report:
             self.outfile = '/dev/null'
         else:
-            self.outfile = ReviewDirs.report_path(self.checks.spec.name)
+            self.outfile = ReviewDirs.report_path()
         with open(self.outfile, "w") as output:
             self.log.info('Running checks and generating report\n')
             self.checks.run_checks(output=output,

@@ -70,9 +70,9 @@ class _ReviewDirs(object):
             self.startdir = startdir
 
     @staticmethod
-    def report_path(name):
+    def report_path():
         ''' Return path for report. '''
-        return os.path.abspath('./%s-review.txt' % name)
+        return os.path.abspath('./review.txt')
 
     def _create_and_copy_wd(self, wd, reuse_old):
         ''' Create wd, possibly filled with cached data. '''
