@@ -118,6 +118,7 @@ class CheckResultdir(BuildCheckBase):
         BuildCheckBase.__init__(self, base)
         self.automatic = True
         self.needs = []
+        self.text = 'Resultdir need to be empty before review'
 
     def run(self):
         if len(glob.glob(os.path.join(Mock.resultdir, '*.*'))) != 0 \
