@@ -22,5 +22,5 @@
 - Various internal refactoring and clean-ups:
    #134, #140, #145, #172 and a lot of commits...
 - Improved unit tests, notably for plugins. Unit tests are now
-  packaged (#146, many commits).
+  packaged (#146, #163, many commits).
 - Roughly 20 other bugs fixed.
