@@ -107,6 +107,7 @@ class RpmFile(object):
         return self._scriptlet(rpm.RPMTAG_PREINPROG,
                                rpm.RPMTAG_PREIN)
 
+    @property
     def filelist(self):
         ''' List of files in this rpm (expanded). '''
         self.init()

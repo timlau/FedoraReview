@@ -50,7 +50,7 @@ class AbstractDataSource():
         self.log = Settings.get_logger()
 
     @abstractmethod
-    def filelist(self, container=None):
+    def get_filelist(self, container=None):
         '''
         Return list of all files in a container or consolidated list
         of files in all containers if container == None.
@@ -77,7 +77,7 @@ class AbstractDataSource():
         if hasattr(glob_pattern, 'match'):
             return self.find_re(glob_pattern, container)
         for s in [container] if container else self.containers:
-            for f in self.filelist(s):
+            for f in self.get_filelist(s):
                 if fnmatch(f, glob_pattern):
                     return f
         return None
@@ -89,7 +89,7 @@ class AbstractDataSource():
         if isinstance(regex, str):
             regex = re.compile(regex, re.IGNORECASE)
         for s in [container] if container else self.containers:
-            for f in self.filelist(s):
+            for f in self.get_filelist(s):
                 if regex.match(f):
                     return f
         return None
@@ -102,7 +102,7 @@ class AbstractDataSource():
             return self.find_all_re(glob_pattern, container)
         result = []
         for s in [container] if container else self.containers:
-            for f in self.filelist(s):
+            for f in self.get_filelist(s):
                 if fnmatch(f, glob_pattern):
                     result.append(f)
         return result
@@ -115,7 +115,7 @@ class AbstractDataSource():
             regex = re.compile(regex, re.IGNORECASE)
         result = []
         for s in [container] if container else self.containers:
-            for f in self.filelist(s):
+            for f in self.get_filelist(s):
                 if regex.match(f):
                     result.append(f)
         return result
@@ -149,7 +149,7 @@ class BuildFilesSource(AbstractDataSource):
         self._containers = [entries[0]]
         self.files = None
 
-    def filelist(self, container=None):
+    def get_filelist(self, container=None):
         self.init()
         if container and not container in self.containers:
             raise ValueError('BuildFilesSource: illegal rootdir')
@@ -182,14 +182,14 @@ class RpmDataSource(AbstractDataSource):
             self.rpms_by_pkg[pkg] = \
                 RpmFile(pkg, spec.version, spec.release)
 
-    def filelist(self, container=None):
+    def get_filelist(self, container=None):
         if container and not container in self.containers:
             raise ValueError('RpmSource: bad package: ' + container)
         if container:
-            return self.rpms_by_pkg[container].filelist()
+            return self.rpms_by_pkg[container].filelist
         all_ = []
         for pkg in self.rpms_by_pkg.iterkeys():
-            all_.extend(self.rpms_by_pkg[pkg].filelist())
+            all_.extend(self.rpms_by_pkg[pkg].filelist)
         return all_
 
     def get(self, key=None):
@@ -229,7 +229,7 @@ class SourcesDataSource(AbstractDataSource):
         self.log.debug('Loaded %d files',
                        len(self.files_by_tag[source.tag]))
 
-    def filelist(self, container=None):
+    def get_filelist(self, container=None):
         if container and not container in self.containers:
             raise ValueError('SourcesDataSource: bad package: '
                              + container)
@@ -257,7 +257,7 @@ class SourcesDataSource(AbstractDataSource):
     def get_files_sources(self):
         ''' Compatibility, to be removed. '''
         self.log.warning('SourcesDataSource: calling get_files_sources')
-        return self.filelist()
+        return self.get_filelist()
 
 
 # vim: set expandtab: ts=4:sw=4:

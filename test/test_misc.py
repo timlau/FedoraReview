@@ -80,7 +80,7 @@ class TestMisc(FR_TestCase):
         bug.download_files()
         checks = Checks(bug.spec_file, bug.srpm_file)
         src = RpmDataSource(checks.spec)
-        files = src.filelist()
+        files = src.get_filelist()
         self.assertEqual(len(files), 11)
         rpms = src.get_all()
         self.assertEqual(rpms, ['python-test'])
@@ -99,7 +99,7 @@ class TestMisc(FR_TestCase):
         bug.download_files()
         checks = Checks(bug.spec_file, bug.srpm_file)  # pylint: disable=W0612
         src = BuildFilesSource()
-        files = src.filelist()
+        files = src.get_filelist()
         self.assertEqual(len(files), 8)
         root = src.get_all()
         expected_root = os.getcwd() + '/BUILD/RPM-Specfile-1.51'
