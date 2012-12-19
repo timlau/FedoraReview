@@ -1082,9 +1082,11 @@ class CheckSourceMD5(GenericCheckBase):
         passed = True
         text = ''
         try:
-            passed, text = self.check_checksums(self.sources.get_all())
+            sources = [self.sources.get(s)
+                           for s in self.sources.get_all()]
+            passed, text = self.check_checksums(sources)
             if not passed:
-                passed, diff = self.make_diff(self.sources.get_all())
+                passed, diff = self.make_diff(sources)
                 if passed:
                     text += 'However, diff -r shows no differences\n'
                     msg = 'checksum differs but diff -r is OK'

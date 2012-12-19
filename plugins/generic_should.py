@@ -415,7 +415,8 @@ class CheckSourceComment(GenericShouldCheckBase):
 
     def run(self):
         passed = True
-        for source in self.sources.get_all():
+        for source_tag in self.sources.get_all():
+            source = self.sources.get(source_tag)
             if source.local and source.is_archive():
                 passed = False
 
@@ -439,7 +440,8 @@ class CheckSourceUrl(GenericShouldCheckBase):
     def run(self):
         passed = True
         output = ''
-        for source in self.sources.get_all():
+        for source_tag in self.sources.get_all():
+            source = self.sources.get(source_tag)
             if not source.url.startswith('file:'):
                 if not source.downloaded:
                     passed = False

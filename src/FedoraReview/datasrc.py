@@ -225,10 +225,10 @@ class SourcesDataSource(AbstractDataSource):
         self.sources_by_tag = {}
         for tag, url in spec.sources_by_tag.iteritems():
             self.sources_by_tag[tag] = Source(tag, url)
-        self.containers = [s for s in self.sources_by_tag.itervalues()]
+        self.containers = [s.tag for s in self.sources_by_tag.itervalues()]
         self.files_by_tag = {}
 
-    def _load_files_(self, tag):
+    def _load_files(self, tag):
         """ Ensure that file list for tag is in files_by_tag. """
 
         if tag in self.files_by_tag.iterkeys():
@@ -238,7 +238,8 @@ class SourcesDataSource(AbstractDataSource):
             source.extract()
         self.log.debug('Adding files in : %s' % source.filename)
         self.files_by_tag[tag] = []
-        for root, files in os.walk(source.extract_dir)[0:3:2]:
+        # pylint: disable=W0612
+        for root, dirs, files in os.walk(source.extract_dir):
             paths = [os.path.join(root, f) for f in files]
             self.files_by_tag[source.tag].extend(paths)
         self.log.debug('Loaded %d files',
