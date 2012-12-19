@@ -55,7 +55,8 @@ class RpmFile(object):
     # RPMTAG_POSTTRANSPROG are given as list on F18, but not before
     def header_to_str(self, tag):
         ''' Convert header in a string, to cope with API changes in F18'''
-        if isinstance(self.header[tag], dict):
+        if isinstance(self.header[tag], dict) or isinstance(self.header[tag],
+                                                            list):
             return ' '.join(self.header[tag])
         else:
             return self.header[tag]
