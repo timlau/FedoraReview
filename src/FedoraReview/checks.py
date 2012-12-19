@@ -249,6 +249,7 @@ class _ChecksLoader(object):
                 # Mark check as run, don't delete it. We want
                 # checks depending on this to run.
                 self.checkdict[c].result = None
+                self.checkdict[c].is_disabled = True
             else:
                 self.log.warn("I can't remove check: " + c)
 

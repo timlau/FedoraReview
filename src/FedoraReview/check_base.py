@@ -104,6 +104,7 @@ class AbstractCheck(object):
         self.defined_in = defined_in
         self.deprecates = []
         self.needs = []
+        self.is_disabled = False
         try:
             self.name = 'Undefined'
         except AttributeError:

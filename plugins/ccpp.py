@@ -233,9 +233,13 @@ class CheckRPATH(CCppCheckBase):
         self.text = 'Rpath absent or only used for internal libs.'
         self.automatic = True
         self.type = 'MUST'
+        self.needs.append('CheckRpmlint')
 
     def run_on_applicable(self):
         ''' Run the test, called if is_applicable() is True. '''
+        if  self.checks.checkdict['CheckRpmlint'].is_disabled:
+            self.set_passed(self.PENDING, 'Rpmlint run disabled')
+            return
         for line in Mock.rpmlint_output:
             if 'binary-or-shlib-defines-rpath' in line:
                 self.set_passed(self.PENDING, 'See rpmlint output')

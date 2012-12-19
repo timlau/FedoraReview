@@ -454,8 +454,12 @@ class CheckFilePermissions(GenericCheckBase):
         self.text = 'Permissions on files are set properly.'
         self.automatic = True
         self.type = 'MUST'
+        self.needs.append('CheckRpmlint')
 
     def run(self):
+        if  self.checks.checkdict['CheckRpmlint'].is_disabled:
+            self.set_passed(self.PENDING, 'Rpmlint run disabled')
+            return
         for line in Mock.rpmlint_output:
             if 'non-standard-executable-perm' in line:
                 self.set_passed(self.FAIL, 'See rpmlint output')
@@ -1175,8 +1179,12 @@ class CheckUTF8Filenames(GenericCheckBase):
         self.text = 'File names are valid UTF-8.'
         self.automatic = True
         self.type = 'MUST'
+        self.needs.append('CheckRpmlint')
 
     def run(self):
+        if  self.checks.checkdict['CheckRpmlint'].is_disabled:
+            self.set_passed(self.PENDING, 'Rpmlint run disabled')
+            return
         for line in Mock.rpmlint_output:
             if 'wrong-file-end-of-line-encoding' in line or \
                     'file-not-utf8' in line:
