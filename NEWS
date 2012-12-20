@@ -11,6 +11,7 @@
     * Bundled fonts check (#155).
     * Improper %_sourcedir usage test (#154).
 - Improved report layout (#135).
+- Improved console output, notably invisible yellow text fixed. (#185).
 - The report has got a fixed name 'review.txt'.
 - It's now possible to create a python plugin with some tests which
   becomes part of an existing group e. g., a plugin with one new php
