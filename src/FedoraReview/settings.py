@@ -29,6 +29,7 @@ import os.path
 import re
 import sys
 
+import ansi
 from review_error import ReviewError
 from xdg_dirs import XdgDirs
 
@@ -78,6 +79,8 @@ def _add_modes(modes):
 def _add_optionals(optional):
     ''' Add all optional arguments to option parser group optionals. '''
 
+    optional.add_argument('-B', '--no-colors', action='store_false',
+                help='No colors in output', default=True, dest='use_colors')
     optional.add_argument('-c', '--cache', action='store_true',
                 dest='cache',
                 help = 'Do not redownload files from bugzilla,'
@@ -144,20 +147,11 @@ def _make_log_dir():
 class ColoredFormatter(logging.Formatter):
     ''' Formatter usable for colorizing terminal output acccording to presets
     '''
-    BLACK = "\033[1;30m"
-    RED = "\033[1;31m"
-    GREEN = "\033[1;32m"
-    YELLOW = "\033[1;33m"
-    BLUE = "\033[1;34m"
-    MAGENTA = "\033[1;35m"
-    CYAN = "\033[1;36m"
-    WHITE = "\033[1;37m"
-    RESET = "\033[0m"
 
     COLORS = {
-        'WARNING': YELLOW,
-        'CRITICAL': YELLOW,
-        'ERROR': RED
+        'WARNING': ansi.blue,
+        'CRITICAL': ansi.red,
+        'ERROR': ansi.red
     }
 
     def __init__(self, fmt=None, datefmt=None, use_color=True):
@@ -167,10 +161,9 @@ class ColoredFormatter(logging.Formatter):
     def format(self, record):
         lname = record.levelname
         ret = logging.Formatter.format(self, record)
+        ret = lname + ': ' + ret
         if self.use_color and lname in self.COLORS:
-            ret = self.COLORS[lname] + \
-                  ret + \
-                  self.RESET
+            ret = self.COLORS[lname](ret)
         return ret
 
 
@@ -214,6 +207,7 @@ class _Settings(object):                         # pylint: disable=R0902
         self.log_level = None
         self.verbose = False
         self.name = None
+        self.use_colors = False
 
     def __getitem__(self, key):
         my_key = self._get_hash(key)
@@ -353,7 +347,8 @@ class _Settings(object):                         # pylint: disable=R0902
         # define a Handler which writes INFO  or higher to sys.stderr
         console = logging.StreamHandler()
         console.setLevel(lvl)
-        formatter = ColoredFormatter('%(message)s', "%H:%M:%S")
+        formatter = ColoredFormatter(
+                        '%(message)s', "%H:%M:%S", self.use_colors)
         console.setFormatter(formatter)
         if self._con_handler:
             self.log.removeHandler(self._con_handler)

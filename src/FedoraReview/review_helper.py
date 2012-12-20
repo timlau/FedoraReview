@@ -22,6 +22,7 @@ Tools for helping Fedora package reviewers
 import sys
 import os.path
 
+import ansi
 from bugzilla_bug import BugzillaBug
 from checks import Checks, ChecksLister
 from name_bug import NameBug
@@ -30,6 +31,13 @@ from review_error import ReviewError
 from settings import Settings
 from url_bug import UrlBug
 from version import __version__, BUILD_FULL
+
+
+_EXIT_MESSAGE = """\
+fedora-review is automated tool, but *YOU* are responsible for manually
+reviewing the results and finishing the review. Do not just copy-paste
+the results without understanding them.
+"""
 
 
 def _print_version():
@@ -75,13 +83,11 @@ class ReviewHelper(object):
     def __run_checks(self, spec, srpm):
         ''' Register and run all checks. '''
 
-        def red(s):
-            ''' Return string printed in red. '''
-            return '\033[91m' + s + '\033[0m'
-
-        def green(s):
-            ''' Return string printed in green. '''
-            return '\033[92m' + s + '\033[0m'
+        def apply_color(s, formatter):
+            ''' Return s formatted by formatter or plain s. '''
+            if Settings.use_colors:
+                return formatter(s)
+            return s
 
         self.checks = Checks(spec, srpm)
         if Settings.no_report:
@@ -94,11 +100,9 @@ class ReviewHelper(object):
                                    writedown=not Settings.no_report)
             output.close()
         if not Settings.no_report:
-            print green("Review template in: " + self.outfile)
-            print red("fedora-review is automated tool, but *YOU* " \
-                  "are responsible for manually reviewing the results " \
-                  "and finishing the review. Do not just copy-paste the " \
-                  "results without understanding them.")
+            print apply_color("Review template in: " + self.outfile,
+                              ansi.green)
+            print apply_color(_EXIT_MESSAGE, ansi.red)
 
     @staticmethod
     def _list_flags():
