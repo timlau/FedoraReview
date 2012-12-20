@@ -15,37 +15,32 @@
 import os
 import os.path
 import sys
-import subprocess
-
+import subprocess 
 main_dir = os.path.dirname(os.path.realpath(__file__))
-pkg_dir = os.path.join(main_dir, 'src')
-sys.path.insert(1, pkg_dir)
 
-from FedoraReview.review_helper import ReviewHelper
+# let's setup a proper git commit hooks so people don't commit ugly code
+# accidentally
+devnull = open('/dev/null', 'w')
+subprocess.call(['ln', '-s', '../../git-hooks/pre-commit',
+                 os.path.join(main_dir, '.git/hooks/pre-commit')],
+                 stderr=devnull)
+
+pkg_dir = os.path.join(main_dir, 'src')
+sys.path.insert(0, pkg_dir)
+
 try:
     from subprocess import check_output
 except ImportError:
     from FedoraReview.el_compat import check_output
 
 
-def _link_hook(source, hook):
-    ''' Symlink source to a git hook, fail silently. '''
-    try:
-        main_dir = os.path.dirname(os.path.realpath(__file__))
-        os.symlink(source, os.path.join(main_dir, '.git/hooks', hook))
-    except OSError:
-        pass
-
-
-# let's setup a proper git commit hooks so people don't commit ugly code
-# accidentally
-_link_hook('../../update-version', 'post-commit')
-_link_hook('../../git-hooks/pre-commit', 'pre-commit')
+from FedoraReview.review_helper import ReviewHelper
 
 review = ReviewHelper()
 review.run()
 
 os.chdir(main_dir)
+
 cmd = ["git", "rev-parse", "--abbrev-ref", "HEAD"]
 cur_branch = check_output(cmd).strip()
 if cur_branch == "master":
