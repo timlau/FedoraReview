@@ -760,14 +760,13 @@ class CheckMakeinstall(GenericCheckBase):
         self.automatic = True
         self.type = 'MUST'
 
-    def is_applicable(self):
-        regex = re.compile(r'^(%makeinstall.*)')
-        res = self.spec.find_re(regex)
-        if res:
-            self.set_passed(self.FAIL, res.group(0))
-            return True
+    def run_on_applicable(self):
+        install = self.spec.get_section('%install', raw=True)
+        if '%makeinstall' in install:
+            self.set_passed(self.PENDING,
+                            '%makeinstall used in %install section')
         else:
-            return False
+            self.set_passed(self.PASS)
 
 
 class CheckMultipleLicenses(GenericCheckBase):
