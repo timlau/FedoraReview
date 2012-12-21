@@ -298,6 +298,7 @@ class TestMisc(FR_TestCase):
         src_files = [os.path.basename(f) for f in  src_files]
         self.assertTrue('python-test-1.0.tar.gz' in src_files)
         self.log.info("Starting mock build (patience...)")
+        Mock.clear_builddir()
         Mock.build(srpm.filename)
         rpms = glob.glob(os.path.join(Mock.resultdir,
                                       'python-test-1.0-1*noarch.rpm'))
