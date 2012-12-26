@@ -42,6 +42,30 @@ class RpmFile(object):
         self.filename = None
         self.header = None
 
+    def _format_deps(self, names, versions, sense):
+        """ Format a set of deps to spec file syntax. """
+        dp = []
+        lt = rpm.RPMSENSE_LESS
+        gt = rpm.RPMSENSE_GREATER
+        eq = rpm.RPMSENSE_EQUAL
+        for ix in range(0, len(names) - 1):
+            if not versions[ix]:
+                dp.append(names[ix])
+                continue
+            s = names[ix] + ' '
+            if sense[ix] and eq:
+                s += '= '
+            elif sense[ix] and lt:
+                s += '< '
+            elif sense[ix] and gt:
+                s += '> '
+            else:
+                s += 'What? : ' + bin(sense[ix])
+                self.log.warning("Bad RPMSENSE: " + bin(sense[ix]))
+            s += versions[ix]
+            dp.append(s)
+        return dp
+
     def init(self):
         ''' Lazy init, we have no rpms until they are built. '''
         if self._inited:
@@ -125,6 +149,22 @@ class RpmFile(object):
         ''' List of provides, also auto-generated for rpm. '''
         self.init()
         return self.header[rpm.RPMTAG_PROVIDES]
+
+    @property
+    def format_requires(self):
+        ''' List of formatted provides. '''
+        return self._format_deps(self.header[rpm.RPMTAG_REQUIRENAME],
+                                 self.header[rpm.RPMTAG_REQUIREVERSION],
+                                 self.header[rpm.RPMTAG_REQUIREFLAGS])
+
+    @property
+    def format_provides(self):
+        ''' List of formatted provides. '''
+        return self._format_deps(self.header[rpm.RPMTAG_PROVIDENAME],
+                                 self.header[rpm.RPMTAG_PROVIDEVERSION],
+                                 self.header[rpm.RPMTAG_PROVIDEFLAGS])
+
+
 
 
 # vim: set expandtab: ts=4:sw=4:

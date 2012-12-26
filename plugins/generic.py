@@ -467,7 +467,7 @@ class CheckFullVerReqSub(GenericCheckBase):
     ''' Sub-packages requires base package using fully-versioned dep. '''
 
     HDR = 'No Requires: %{name}%{?_isa} = %{version}-%{release} in '
-    REGEX = r'Requires:\s*%{name}\s*=\s*%{version}-%{release}'
+    REGEX = r'%{name}%{?_isa} = %{version}-%{release}'
 
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
@@ -480,12 +480,17 @@ class CheckFullVerReqSub(GenericCheckBase):
 
     def run(self):
         bad_pkgs = []
-        regex = re.compile(self.REGEX)
+        isa = Mock.rpm_eval('%{?_isa}')
+        regex = self.REGEX.replace('%{?_isa}', isa)
+        regex = rpm.expandMacro(regex)
+        regex = re.sub('[.](fc|el)[0-9]+', '', regex)
         for pkg in self.spec.packages:
-            if not pkg.endswith('-devel'):
+            if pkg == self.spec.base_package:
                 continue
-            requires = ' '.join(self.spec.get_requires(pkg))
-            if not regex.search(requires):
+            if pkg.endswith('debuginfo'):
+                continue
+            reqs = ''.join(self.rpms.get(pkg).format_requires)
+            if not regex in reqs:
                 bad_pkgs.append(pkg)
         if bad_pkgs:
             self.set_passed(self.PENDING,
