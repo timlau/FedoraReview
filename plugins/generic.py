@@ -94,7 +94,7 @@ class CheckBundledLibs(GenericCheckBase):
         self.url = 'http://fedoraproject.org/wiki/' \
                    'Packaging:Guidelines#Duplication_of_system_libraries'
         self.text = 'Package contains no bundled libraries without' \
-                    ' FESCO exception.'
+                    ' FPC exception.'
         self.automatic = False
         self.type = 'MUST'
 
