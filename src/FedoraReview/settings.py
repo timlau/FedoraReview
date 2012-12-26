@@ -161,7 +161,8 @@ class ColoredFormatter(logging.Formatter):
     def format(self, record):
         lname = record.levelname
         ret = logging.Formatter.format(self, record)
-        ret = lname + ': ' + ret
+        if not ret.startswith(lname):
+            ret = lname + ': ' + ret
         if self.use_color and lname in self.COLORS:
             ret = self.COLORS[lname](ret)
         return ret
