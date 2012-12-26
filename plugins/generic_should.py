@@ -251,7 +251,7 @@ class CheckFinalRequiresProvides(GenericShouldCheckBase):
         GenericShouldCheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
         self.text = 'Final provides and requires are sane' \
-                    ' (rpm -q --provides and rpm -q --requires).'
+                    ' (see attachments).'
         self.automatic = False
         self.type = 'SHOULD'
 
