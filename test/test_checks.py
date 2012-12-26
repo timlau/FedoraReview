@@ -44,7 +44,7 @@ class TestChecks(FR_TestCase):
         spec.testcase = 'ruby-racc'
         spec.workdir = 'ruby-racc'
         spec.groups_ok = ['Generic.build', 'Generic', 'Generic.should', 'Ruby']
-        spec.expected = [('pass', 'CheckResultdir'),
+        spec.expected = [('na', 'CheckResultdir'),
                         ('pending', 'CheckBuild'),
                         ('pass', 'CheckRpmlint'),
                         ('pass', 'CheckPackageInstalls'),
@@ -122,7 +122,7 @@ class TestChecks(FR_TestCase):
         spec.groups_ok = ['Generic.build', 'Generic', 'Java', 'Maven']
         spec.groups_ok = ['Generic.build', 'Generic', 'Generic.should',
                           'Java', 'Maven']
-        spec.expected = [('pass', 'CheckResultdir'),
+        spec.expected = [('na', 'CheckResultdir'),
                          ('pending', 'CheckBuild'),
                          ('pass', 'CheckRpmlint'),
                          ('pass', 'CheckPackageInstalls'),
@@ -246,7 +246,7 @@ class TestChecks(FR_TestCase):
         spec.workdir = 'FreeSOLID'
         spec.groups_ok = ['Generic.build', 'Generic.should', 'Generic',
                           'C/C++']
-        spec.expected = [('pass', 'CheckResultdir'),
+        spec.expected = [('na', 'CheckResultdir'),
                          ('pending', 'CheckBuild'),
                          ('pass', 'CheckRpmlint'),
                          ('pass', 'CheckPackageInstalls'),

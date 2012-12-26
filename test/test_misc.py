@@ -448,13 +448,16 @@ class TestMisc(FR_TestCase):
         for dirt in glob.glob('results/*.*'):
             shutil.move(dirt, 'results.bak')
         check.run()
-        self.assertTrue(check.is_passed)
+        self.assertTrue(check.is_na)
 
-        subprocess.check_call('touch results/orvar.rpm', shell=True)
+        try:
+            subprocess.check_call('touch results/orvar.rpm', shell=True)
+        except OSError:
+            pass
         self.assertRaises(ReviewError, check.run)
         Settings.nobuild = True
         check.run()
-        self.assertTrue(check.is_passed)
+        self.assertTrue(check.is_na)
         os.unlink('results/orvar.rpm')
         for dirt in glob.glob('results.bak/*'):
             shutil.move(dirt, 'results')

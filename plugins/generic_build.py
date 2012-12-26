@@ -124,7 +124,7 @@ class CheckResultdir(BuildCheckBase):
         if len(glob.glob(os.path.join(Mock.resultdir, '*.*'))) != 0 \
             and not  (Settings.nobuild or Settings.prebuilt):
                 raise self.NotEmptyError()       # pylint: disable=W0311
-        self.set_passed(self.PASS)
+        self.set_passed(self.NA)
 
 
 class CheckBuild(BuildCheckBase):
