@@ -178,17 +178,16 @@ class NonGemCheckUsesMacros(NonGemCheckBase):
         self.type = 'SHOULD'
 
     def run_on_applicable(self):
-        self.set_passed(self.FAIL)
-        vendorarchdir_re = re.compile('%{vendorarchdir}', re.I)
-        vendorlibdir_re = re.compile('%{vendorlibdir}', re.I)
-        #FIXME: get_files returns expanded macros, not'%{whatever}'
-
+        ok = False
+        vendorarchdir = rpm.expandMacro('%{vendorarchdir}')
+        vendorlibdir = rpm.expandMacro('%{vendorlibdir}')
         for pkg in self.spec.packages:
             for line in self.spec.get_files(pkg):
-                if _has_extension(self) and vendorarchdir_re.match(line):
-                    self.set_passed(self.PASS)
-                if not _has_extension(self) and vendorlibdir_re.match(line):
-                    self.set_passed(self.PASS)
+                if _has_extension(self) and vendorarchdir in line:
+                    ok = True
+                if not _has_extension(self) and vendorlibdir in line:
+                    ok = True
+        self.set_passed(self.PASS if ok else self.FAIL)
 
 
 class NonGemCheckFilePlacement(NonGemCheckBase):
