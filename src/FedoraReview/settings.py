@@ -209,6 +209,7 @@ class _Settings(object):                         # pylint: disable=R0902
         self.verbose = False
         self.name = None
         self.use_colors = False
+        self.session_log = SESSION_LOG
 
     def __getitem__(self, key):
         my_key = self._get_hash(key)

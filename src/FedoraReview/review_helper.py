@@ -198,12 +198,12 @@ class ReviewHelper(object):
             if not err.silent:
                 msg = 'ERROR: ' + str(err)
                 if err.show_logs:
-                    msg += ' (logs in ~/.cache/fedora-review.log)'
+                    msg += ' (logs in ' + Settings.session_log + ')'
                 self.log.error(msg)
         except:
             self.log.debug("Exception down the road...", exc_info=True)
             self.log.error('Exception down the road...'
-                           '(logs in ~/.cache/fedora-review.log)')
+                           '(logs in ' + Settings.session_log + ')')
             rcode = 1
         return rcode
 
