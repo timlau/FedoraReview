@@ -128,7 +128,8 @@ class  FR_TestCase(unittest.TestCase):
         Mock.clear_builddir()
         if os.path.exists('BUILD'):
             os.unlink('BUILD')
-        checks.run_checks(writedown=False)
+        with open('review.txt', 'w') as review:
+            checks.run_checks(output=review)
         checkdict = checks.get_checks()
         for check in checkdict.itervalues():
             self.assertTrue(check.is_run)
