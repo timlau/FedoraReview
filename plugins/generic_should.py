@@ -329,9 +329,10 @@ class CheckParallelMake(GenericShouldCheckBase):
         rc = self.NA
         build_sec = self.spec.get_section('build')
         if build_sec:
+            smp_mflags = rpm.expandMacro('%{?_smp_mflags}')
             for line in build_sec:
                 if line.startswith('make'):
-                    ok = '%{?_smp_mflags}' in line
+                    ok = smp_mflags in line
                     rc = self.PASS if ok else self.FAIL
         self.set_passed(rc)
 

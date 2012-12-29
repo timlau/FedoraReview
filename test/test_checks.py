@@ -251,7 +251,7 @@ class TestChecks(FR_TestCase):
                          ('pass', 'CheckRpmlint'),
                          ('pass', 'CheckPackageInstalls'),
                          ('pass', 'CheckRpmlintInstalled'),
-                         ('fail', 'CheckParallelMake'),
+                         ('pass', 'CheckParallelMake'),
                          ('pending', 'CheckObeysFHS'),
                          ('pass', 'CheckFileRequires'),
                          ('pass', 'CheckUTF8Filenames'),
