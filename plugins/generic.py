@@ -1268,9 +1268,9 @@ class CheckNoNameConflict(GenericCheckBase):
             p = fedora.client.PackageDB()
             try:
                 p.get_package_info(name)
-                return False
-            except fedora.client.AppError:
                 return True
+            except fedora.client.AppError:
+                return False
 
         try:
             if already_exist(name.lower()) or already_exist(name):
