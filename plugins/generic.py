@@ -1264,6 +1264,7 @@ class CheckNoNameConflict(GenericCheckBase):
         name = self.spec.name
 
         def already_exist(name):
+            ''' Check if a package name is already in Fedora '''
             p = fedora.client.PackageDB()
             try:
                 p.get_package_info(name)
