@@ -1261,17 +1261,25 @@ class CheckNoNameConflict(GenericCheckBase):
     def run(self):
         import fedora.client
         import pycurl
-        p = fedora.client.PackageDB()
-        name = self.spec.name.lower()
+        name = self.spec.name
+
+        def already_exist(name):
+            p = fedora.client.PackageDB()
+            try:
+                p.get_package_info(name)
+                return False
+            except fedora.client.AppError:
+                return True
+
         try:
-            p.get_package_info(name)
-            self.set_passed(
+            if already_exist(name.lower()) or already_exist(name):
+                self.set_passed(
                     self.FAIL,
                     'A package already exist with this name, please check'
                         ' https://admin.fedoraproject.org/pkgdb/acls/name/'
                         + name)
-        except fedora.client.AppError:
-            self.set_passed(self.PASS)
+            else:
+                self.set_passed(self.PASS)
         except pycurl.error:
             self.set_passed(self.PENDING,
                             "Couldn't connect to PackageDB, check manually")
