@@ -145,15 +145,15 @@ class CheckBuildRequires(GenericCheckBase):
         elif self.checks.checkdict['CheckBuild'].is_passed:
             brequires = self.spec.build_requires
             pkg_by_default = ['bash', 'bzip2', 'coreutils', 'cpio',
-                'diffutils', 'fedora-release', 'findutils', 'gawk',
-                'gcc', 'gcc-c++', 'grep', 'gzip', 'info', 'make',
-                'patch', 'redhat-rpm-config', 'rpm-build', 'sed',
-                'shadow-utils', 'tar', 'unzip', 'util-linux-ng',
-                'which', 'xz']
+                              'diffutils', 'fedora-release', 'findutils',
+                              'gawk', 'gcc', 'gcc-c++', 'grep', 'gzip',
+                              'info', 'make', 'patch', 'redhat-rpm-config',
+                              'rpm-build', 'sed', 'shadow-utils', 'tar',
+                              'unzip', 'util-linux-ng', 'which', 'xz']
             intersec = list(set(brequires).intersection(set(pkg_by_default)))
             if intersec:
                 self.set_passed(self.FAIL, 'These BR are not needed: %s' % (
-                ' '.join(intersec)))
+                    ' '.join(intersec)))
             else:
                 self.set_passed(self.PASS)
         else:
@@ -229,17 +229,17 @@ class CheckCleanBuildroot(GenericCheckBase):
     def run(self):
         has_clean = False
         regex = 'rm\s+\-[rf][rf]\s+(%{buildroot}|$RPM_BUILD_ROOT)'
-        regex  = rpm.expandMacro(regex)
+        regex = rpm.expandMacro(regex)
         install_sec = self.spec.get_section('%install', raw=True)
         has_clean = install_sec and re.search(regex, install_sec)
         if self.flags['EPEL5']:
             self.text = 'EPEL5: Package does run rm -rf %{buildroot}' \
-                  ' (or $RPM_BUILD_ROOT) at the beginning of %install.'
+                        ' (or $RPM_BUILD_ROOT) at the beginning of %install.'
         if has_clean and self.flags['EPEL5']:
             self.set_passed(self.PASS)
         elif has_clean and not self.flags['EPEL5']:
             self.set_passed(self.PENDING,
-                           'rm -rf %{buildroot} present but not required')
+                            'rm -rf %{buildroot} present but not required')
         elif not has_clean and self.flags['EPEL5']:
             self.set_passed(self.FAIL)
         else:
@@ -352,7 +352,7 @@ class CheckDesktopFileInstall(GenericCheckBase):
             self.set_passed(self.NA)
             return
         pattern = r'(desktop-file-install|desktop-file-validate)' \
-                   '.*(desktop|SOURCE)'
+                  '.*(desktop|SOURCE)'
         found = self.spec.find_re(re.compile(pattern))
         self.set_passed(self.PASS if found else self.FAIL)
 
@@ -596,7 +596,7 @@ class CheckLicenseField(GenericCheckBase):
             source_dir = globs[0]
         else:
             msg = 'There is no build directory. Running licensecheck ' \
-                   'on vanilla upstream sources.'
+                  'on vanilla upstream sources.'
             source_dir = ReviewDirs.upstream_unpacked
         return (source_dir, msg)
 
@@ -605,7 +605,7 @@ class CheckLicenseField(GenericCheckBase):
         def license_is_valid(_license):
             ''' Test that license from licencecheck is parsed OK. '''
             return not 'UNKNOWN' in _license and \
-                  not 'GENERATED' in _license
+                not 'GENERATED' in _license
 
         def parse_licenses(raw_text):
             ''' Convert licensecheck output to files_by_license. '''
@@ -642,14 +642,14 @@ class CheckLicenseField(GenericCheckBase):
                 self._write_license(licenses, filename)
             else:
                 self.log.error('Source directory %s does not exist!' %
-                                source_dir)
+                               source_dir)
             if not licenses:
                 msg += ' No licenses found.'
                 msg += ' Please check the source files for licenses manually.'
                 self.set_passed(self.FAIL, msg)
             else:
                 msg += ' Licenses found: "' \
-                         + '", "'.join(licenses.iterkeys()) + '".'
+                       + '", "'.join(licenses.iterkeys()) + '".'
                 msg += ' %d files have unknown license.' % len(licenses)
                 msg += ' Detailed output of licensecheck in ' + filename
                 self.set_passed(self.PENDING, msg)
@@ -1089,7 +1089,7 @@ class CheckSourceMD5(GenericCheckBase):
         for source in sources:
             if source.local:
                 self.log.debug('Skipping md5-test for '
-                                + source.filename)
+                               + source.filename)
                 continue
             if source.local_src:
                 text += "Using local file " + source.local_src + \
@@ -1173,7 +1173,7 @@ class CheckSpecName(GenericCheckBase):
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
-                    'Packaging/NamingGuidelines#Spec_file_name'
+                   'Packaging/NamingGuidelines#Spec_file_name'
         self.text = 'Spec file name must match the spec package' \
                     ' %{name}, in the format %{name}.spec.'
         self.automatic = True
@@ -1184,7 +1184,7 @@ class CheckSpecName(GenericCheckBase):
             self.set_passed(self.PASS)
         else:
             self.set_passed(self.FAIL, '%s should be %s ' %
-                (os.path.basename(self.spec.filename), spec_name))
+                            (os.path.basename(self.spec.filename), spec_name))
 
 
 class CheckSystemdScripts(GenericCheckBase):
@@ -1215,7 +1215,7 @@ class CheckUTF8Filenames(GenericCheckBase):
     def run(self):
         for line in Mock.rpmlint_output:
             if 'wrong-file-end-of-line-encoding' in line or \
-            'file-not-utf8' in line:
+                    'file-not-utf8' in line:
                 self.set_passed(self.FAIL)
         self.set_passed(self.PASS)
 
@@ -1276,8 +1276,8 @@ class CheckNoNameConflict(GenericCheckBase):
                 self.set_passed(
                     self.FAIL,
                     'A package already exist with this name, please check'
-                        ' https://admin.fedoraproject.org/pkgdb/acls/name/'
-                        + name)
+                    ' https://admin.fedoraproject.org/pkgdb/acls/name/'
+                    + name)
             else:
                 self.set_passed(self.PASS)
         except pycurl.error:
@@ -1299,7 +1299,7 @@ class CheckSourcedirMacroUse(GenericCheckBase):
     def run(self):
         text = ''.join(self.spec.lines)
         if '%_sourcedir' in text or '$RPM_SOURCE_DIR' in text or \
-        '%{_sourcedir}' in text:
+                                    '%{_sourcedir}' in text:
             self.set_passed(self.PENDING,
                             '%_sourcedir/$RPM_SOURCE_DIR is used.')
         else:
@@ -1325,7 +1325,7 @@ class CheckUpdateIconCache(GenericCheckBase):
                 using.append(pkg)
                 rpm_pkg = self.rpms.get(pkg)
                 if not in_list('gtk-update-icon-cache',
-                                [rpm_pkg.postun, rpm_pkg.posttrans]):
+                               [rpm_pkg.postun, rpm_pkg.posttrans]):
                     failed = True
         if not using:
             self.set_passed(self.NA)
@@ -1353,7 +1353,7 @@ class CheckUpdateDesktopDatabase(GenericCheckBase):
             if self.rpms.find('*.desktop', pkg):
                 using.append(pkg)
                 if not 'update-desktop-database' in install and \
-                not 'desktop-file-validate' in install:
+                       not 'desktop-file-validate' in install:
                     failed = True
         if not using:
             self.set_passed(self.NA)
@@ -1383,7 +1383,7 @@ class CheckGioQueryModules(GenericCheckBase):
                 using.append(pkg)
                 rpmpkg = self.rpms.get(pkg)
                 if not in_list('gio-querymodules',
-                                [rpmpkg.post, rpmpkg.postun]):
+                               [rpmpkg.post, rpmpkg.postun]):
                     failed = True
         if not using:
             self.set_passed(self.NA)
@@ -1413,7 +1413,7 @@ class CheckGtkQueryModules(GenericCheckBase):
                 using.append(pkg)
                 rpmpkg = self.rpms.get(pkg)
                 if not in_list('gtk-query-immodules',
-                                [rpmpkg.postun, rpmpkg.posttrans]):
+                               [rpmpkg.postun, rpmpkg.posttrans]):
                     failed = True
         if not using:
             self.set_passed(self.NA)
@@ -1441,7 +1441,7 @@ class CheckGlibCompileSchemas(GenericCheckBase):
                 using.append(pkg)
                 rpm_pkg = self.rpms.get(pkg)
                 if not in_list('glib-compile-schemas',
-                                [rpm_pkg.postun, rpm_pkg.posttrans]):
+                               [rpm_pkg.postun, rpm_pkg.posttrans]):
                     failed = True
         if not using:
             self.set_passed(self.NA)
@@ -1469,7 +1469,7 @@ class CheckGconfSchemaInstall(GenericCheckBase):
                 using.append(pkg)
                 rpm_pkg = self.rpms.get(pkg)
                 if not in_list('%gconf_schema',
-                                [rpm_pkg.post, rpm_pkg.pre]):
+                               [rpm_pkg.post, rpm_pkg.pre]):
                     failed = True
         if not using:
             self.set_passed(self.NA)
@@ -1497,7 +1497,7 @@ class CheckInfoInstall(GenericCheckBase):
                 using.append(pkg)
                 rpm_pkg = self.rpms.get(pkg)
                 if not in_list('install-info',
-                                [rpm_pkg.post, rpm_pkg.preun]):
+                               [rpm_pkg.post, rpm_pkg.preun]):
                     failed = True
         if not using:
             self.set_passed(self.NA)
