@@ -127,7 +127,8 @@ class AbstractDataSource():
 
 
 class BuildFilesSource(AbstractDataSource):
-    ''' Patched sources created using rpmbuild -bp. '''
+    ''' Patched sources created using rpmbuild -bp. Accesses might
+    throw LookupError if buildsources are not installed correct. '''
 
     def __init__(self):
         AbstractDataSource.__init__(self)

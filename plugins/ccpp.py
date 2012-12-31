@@ -16,12 +16,13 @@ class Registry(RegistryBase):
         archs = self.checks.spec.expand_tag('BuildArchs')
         if len(archs) == 1 and archs[0].lower() == 'noarch':
             return False
-        rpms = self.checks.rpms
-        if rpms.find_re('/usr/(lib|lib64)/[\w\-]*\.so\.[0-9]') or \
-        rpms.find('*.h') or rpms.find('*.a') or \
-        self.checks.buildsrc.find('*.c') or \
-        self.checks.buildsrc.find('*.C') or \
-        self.checks.buildsrc.find('*.cpp'):
+        if self.checks.buildsrc.is_available:
+            src = self.checks.buildsrc
+        else:
+            src = self.checks.sources
+        if self.checks.rpms.find_re('/usr/(lib|lib64)/[\w\-]*\.so\.[0-9]') or \
+        self.checks.rpms.find('*.h') or self.checks.rpms.find('*.a') or \
+        src.find('*.c') or src.find('*.C') or src.find('*.cpp'):
             return True
         return False
 
@@ -254,8 +255,12 @@ class CheckBundledGnulib(CCppCheckBase):
         self.type = 'MUST'
 
     def run_on_applicable(self):
-        if not self.buildsrc.find('*00gnulib.m4'):
-            self.set_passed(self.NA)
+        try:
+            if not self.buildsrc.find('*00gnulib.m4'):
+                self.set_passed(self.NA)
+                return
+        except LookupError:
+            self.set_passed(self.PENDING, "Sources not installed")
             return
         for pkg in self.spec.packages:
             if 'bundled(gnulib)' in self.rpms.get(pkg).provides:
