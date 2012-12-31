@@ -66,6 +66,11 @@ class AbstractDataSource():
         ''' Return all keys usable with get(). '''
         pass
 
+    @property
+    def is_available(self):
+        ''' Return True if source is available. '''
+        return True
+
     def get_all(self):
         ''' Return list of all containers. '''
         return self.containers
@@ -148,6 +153,16 @@ class BuildFilesSource(AbstractDataSource):
             raise LookupError('More than one build directory in BUILD')
         self._containers = [entries[0]]
         self.files = None
+
+    @property
+    def is_available(self):
+        if self._containers:
+            return True
+        try:
+            self.init()
+            return self._containers != None
+        except LookupError:
+            return False
 
     def get_filelist(self, container=None):
         self.init()
