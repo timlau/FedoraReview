@@ -73,7 +73,6 @@ class CheckLDConfig(CCppCheckBase):
 class CheckHeaderFiles(CCppCheckBase):
     '''
     MUST: Header files must be in a -devel package
-    http://fedoraproject.org/wiki/Packaging/Guidelines#DevelPackages
     '''
     def __init__(self, base):
         CCppCheckBase.__init__(self, base)
@@ -105,10 +104,8 @@ class CheckHeaderFiles(CCppCheckBase):
 
 
 class CheckStaticLibs(CCppCheckBase):
-    '''
-    MUST: Static libraries must be in a -static package.
-    http://fedoraproject.org/wiki/Packaging/Guidelines#StaticLibraries
-    '''
+    ''' MUST: Static libraries must be in a -static package.  '''
+
     def __init__(self, base):
         CCppCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines' \
@@ -150,7 +147,6 @@ class CheckSoFiles(CCppCheckBase):
     MUST: If a package contains library files with a suffix (e.g.
     libfoo.so.1.1), then library files that end in .so (without suffix)
     must go in a -devel package.
-    http://fedoraproject.org/wiki/Packaging/Guidelines#DevelPackages
     '''
     def __init__(self, base):
         CCppCheckBase.__init__(self, base)
@@ -205,7 +201,6 @@ class CheckLibToolArchives(CCppCheckBase):
     '''
     MUST: Packages must NOT contain any .la libtool archives,
     these must be removed in the spec if they are built.
-    http://fedoraproject.org/wiki/Packaging/Guidelines#StaticLibraries
     '''
     def __init__(self, base):
         CCppCheckBase.__init__(self, base)
@@ -228,9 +223,8 @@ class CheckLibToolArchives(CCppCheckBase):
 
 
 class CheckRPATH(CCppCheckBase):
-    '''
-    http://fedoraproject.org/wiki/Packaging/Guidelines#Beware_of_Rpath
-    '''
+    ''' Thou shall not use bad RPATH. '''
+
     def __init__(self, base):
         CCppCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines' \

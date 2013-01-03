@@ -101,7 +101,6 @@ def _mock_root_setup(while_what):
             raise DependencyInstallError(while_what + ': ' + error)
 
 
-## Startup sequence, up to CheckBuildCompleted
 class CheckResultdir(BuildCheckBase):
     '''
     EXTRA: The resultdir must be empty, since we later on will assume
@@ -131,7 +130,6 @@ class CheckBuild(BuildCheckBase):
     '''
     MUST: The package MUST successfully compile and build into binary
     rpms on at least one primary architecture.
-    http://fedoraproject.org/wiki/Packaging/Guidelines#Architecture_Support
     '''
 
     def __init__(self, base):
@@ -165,7 +163,6 @@ class CheckRpmlint(BuildCheckBase):
     '''
     MUST: rpmlint must be run on the source rpm and all binary rpms
     the build produces.  The output should be posted in the review.
-    http://fedoraproject.org/wiki/Packaging/Guidelines#rpmlint
     '''
     def __init__(self, base):
         BuildCheckBase.__init__(self, base)
@@ -237,7 +234,6 @@ class CheckRpmlintInstalled(BuildCheckBase):
     '''
     EXTRA: Not in guidelines, but running rpmlint on the installed
     package occasionally reveals things otherwise not found.
-    http://fedoraproject.org/wiki/Packaging/Guidelines#rpmlint
     '''
     def __init__(self, base):
         BuildCheckBase.__init__(self, base)
@@ -264,7 +260,7 @@ class CheckRpmlintInstalled(BuildCheckBase):
 
 class CheckBuildCompleted(BuildCheckBase):
     '''
-    DUMMY: This test is the default dependency. Requiring this test means
+    EXTRA: This test is the default dependency. Requiring this test means
     requiring the build, rpmlint and restored source using rpmbuild -bp
     under BUILD. The test runs rpmbuild -bp, but leaves no trace in report.
     '''
@@ -288,6 +284,5 @@ class CheckBuildCompleted(BuildCheckBase):
             os.symlink(Mock.get_builddir('BUILD'), 'BUILD')
         self.set_passed(self.NA)
 
-## End of startup sequence
 
 # vim: set expandtab: ts=4:sw=4:

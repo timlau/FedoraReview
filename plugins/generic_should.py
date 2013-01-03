@@ -114,9 +114,8 @@ class CheckBuildroot(GenericShouldCheckBase):
 
 
 class CheckClean(GenericShouldCheckBase):
-    '''
-    http://fedoraproject.org/wiki/Packaging/Guidelines#.25clean
-    '''
+    ''' Packags has or has not %clean depending on EPEL5. '''
+
     def __init__(self, base):
         GenericShouldCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
@@ -151,9 +150,8 @@ class CheckClean(GenericShouldCheckBase):
 
 
 class CheckDistTag(GenericShouldCheckBase):
-    '''
-    http://fedoraproject.org/wiki/DistTag
-    '''
+    ''' Disttag %{?dist} is present in Release: '''
+
     def __init__(self, base):
         GenericShouldCheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
@@ -172,6 +170,7 @@ class CheckDistTag(GenericShouldCheckBase):
 
 class CheckContainsLicenseText(GenericShouldCheckBase):
     ''' Handle missing license info.  '''
+
     def __init__(self, base):
         GenericShouldCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
@@ -185,10 +184,9 @@ class CheckContainsLicenseText(GenericShouldCheckBase):
 
 class CheckFileRequires(GenericShouldCheckBase):
     '''
-    SHOULD: If the package has file dependencies outside of /etc,
+    If the package has file dependencies outside of /etc,
     /bin, /sbin, /usr/bin, or /usr/sbin consider requiring the package
     which provides the file instead of the file itself.
-    http://fedoraproject.org/wiki/Packaging/Guidelines#FileDeps
     '''
     def __init__(self, base):
         GenericShouldCheckBase.__init__(self, base)
@@ -258,7 +256,7 @@ class CheckFinalRequiresProvides(GenericShouldCheckBase):
 
 class CheckFunctionAsDescribed(GenericShouldCheckBase):
     '''
-    SHOULD: The reviewer should test that the package functions as described.
+    The reviewer should test that the package functions as described.
     A package should not segfault instead of running, for example.
     '''
     def __init__(self, base):
@@ -282,7 +280,7 @@ class CheckLatestVersionIsPackaged(GenericShouldCheckBase):
 
 class CheckLicenseUpstream(GenericShouldCheckBase):
     '''
-    SHOULD: If the source package does not include license text(s)
+    If the source package does not include license text(s)
     as a separate file from upstream, the packager SHOULD query upstream
     to include it.
     '''
@@ -298,10 +296,9 @@ class CheckLicenseUpstream(GenericShouldCheckBase):
 
 class CheckManPages(GenericShouldCheckBase):
     '''
-    SHOULD: your package should contain man pages for binaries or
+    your package should contain man pages for binaries or
     scripts.  If it doesn't, work with upstream to add them where they
     make sense.
-    http://fedoraproject.org/wiki/Packaging/Guidelines#Man_pages
     '''
     def __init__(self, base):
         GenericShouldCheckBase.__init__(self, base)
@@ -355,12 +352,11 @@ class CheckPatchComments(GenericShouldCheckBase):
 
 class CheckPkgConfigFiles(GenericShouldCheckBase):
     '''
-    SHOULD: The placement of pkgconfig(.pc) files depends on their
+    The placement of pkgconfig(.pc) files depends on their
     usecase, and this is usually for development purposes, so should
     be placed in a -devel pkg.  A reasonable exception is that the
     main pkg itself is a devel tool not installed in a user runtime,
     e.g. gcc or gdb.
-    http://fedoraproject.org/wiki/Packaging/Guidelines#PkgconfigFiles
     '''
     def __init__(self, base):
         GenericShouldCheckBase.__init__(self, base)
@@ -394,7 +390,6 @@ class CheckScriptletSanity(GenericShouldCheckBase):
     SHOULD: If scriptlets are used, those scriptlets must be sane.
     This is vague, and left up to the reviewers judgement to determine
     sanity.
-    http://fedoraproject.org/wiki/Packaging/Guidelines#Scriptlets
     '''
     def __init__(self, base):
         GenericShouldCheckBase.__init__(self, base)
@@ -432,9 +427,8 @@ class CheckSourceComment(GenericShouldCheckBase):
 
 
 class CheckSourceUrl(GenericShouldCheckBase):
-    '''
-    http://fedoraproject.org/wiki/Packaging/SourceURL
-    '''
+    ''' SourceX is a working URL. '''
+
     def __init__(self, base):
         GenericShouldCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/SourceURL'
@@ -459,10 +453,9 @@ class CheckSourceUrl(GenericShouldCheckBase):
 
 class CheckSpecAsInSRPM(GenericShouldCheckBase):
     '''
-    SHOULD: Not in guidelines, buth the spec in the spec URL should
+    Not in guidelines, buth the spec in the spec URL should
     be the same as the one in the srpm.
     '''
-
     def __init__(self, base):
         GenericShouldCheckBase.__init__(self, base)
         self.text = 'Spec file according to URL is the same as in SRPM.'
@@ -510,10 +503,9 @@ class CheckSpecAsInSRPM(GenericShouldCheckBase):
 
 class CheckSpecDescTranslation(GenericShouldCheckBase):
     '''
-    SHOULD: The description and summary sections in the package spec file
+    The description and summary sections in the package spec file
     should contain translations for supported Non-English languages,
     if available.
-    http://fedoraproject.org/wiki/Packaging/Guidelines#summary
     '''
     def __init__(self, base):
         GenericShouldCheckBase.__init__(self, base)
@@ -528,9 +520,8 @@ class CheckSpecDescTranslation(GenericShouldCheckBase):
 
 class CheckSupportAllArchs(GenericShouldCheckBase):
     '''
-    SHOULD: The package should compile and build into binary rpms on
+    The package should compile and build into binary rpms on
     all supported architectures.
-    http://fedoraproject.org/wiki/Packaging/Guidelines#ArchitectureSupport
     '''
     def __init__(self, base):
         GenericShouldCheckBase.__init__(self, base)
@@ -567,9 +558,8 @@ class CheckTestSuites(GenericShouldCheckBase):
 
 
 class CheckTimeStamps(GenericShouldCheckBase):
-    '''
-    http://fedoraproject.org/wiki/Packaging/Guidelines#Timestamps
-    '''
+    ''' Preserve timestamps if possible. '''
+
     def __init__(self, base):
         GenericShouldCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
@@ -582,6 +572,7 @@ class CheckTimeStamps(GenericShouldCheckBase):
 
 class CheckUseGlobal(GenericShouldCheckBase):
     ''' Thou shall not use %define. '''
+
     def __init__(self, base):
         GenericShouldCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/' \
@@ -606,7 +597,6 @@ class CheckTmpfiles(GenericShouldCheckBase):
     '''
     Check for files in /run, /var/run etc, candidates for tmpfiles.d
     '''
-
     def __init__(self, base):
         GenericShouldCheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Tmpfiles.d'
