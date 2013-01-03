@@ -200,15 +200,19 @@ class CheckConfigNoReplace(GenericCheckBase):
 
     def run(self):
         rc = self.NA
-        extra = ''
+        bad_lines = []
+        extra = None
         for pkg in self.spec.packages:
             for line in self.spec.get_files(pkg):
                 if line.startswith('%config'):
                     if not line.startswith('%config(noreplace)'):
-                        extra += line
+                        bad_lines.append(line)
                     else:
                         rc = self.PASS
-        self.set_passed(self.FAIL if extra else rc, extra)
+        if bad_lines:
+            extra = "No (noreplace) in " + ' '.join(bad_lines)
+            rc = self.PENDING
+        self.set_passed(rc, extra)
 
 
 class CheckCleanBuildroot(GenericCheckBase):
