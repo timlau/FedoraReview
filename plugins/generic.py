@@ -873,13 +873,11 @@ class CheckNoConflicts(GenericCheckBase):
         self.type = 'MUST'
 
     def run(self):
+        text = None
         if self.spec.expand_tag('Conflicts'):
-            self.set_passed(self.FAIL,
-                            'Package contains Conflicts: tag(s)'
-                            ' needing fix or justification.')
-        else:
-            self.set_passed(self.PENDING,
-                            'Package contains no Conflicts: tag(s)')
+            text = 'Package contains Conflicts: tag(s)' \
+                       ' needing fix or justification.'
+        self.set_passed(self.PENDING, text)
 
 
 class CheckObeysFHS(GenericCheckBase):
