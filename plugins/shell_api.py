@@ -260,9 +260,9 @@ def _create_env(checks):
     for tag in _TAGS:
         env = _write_tag(checks.spec, env, tag)
     env = env.replace('FR_SOURCE_generator',
-                       _source_generator(checks.spec))
+                      _source_generator(checks.spec))
     env = env.replace('FR_PATCH_generator',
-                       _patch_generator(checks.spec))
+                      _patch_generator(checks.spec))
     for s in _SECTIONS:
         env = _write_section(checks.spec, env, s)
     env = env.replace('FR_FILES_generator',
@@ -317,7 +317,7 @@ class Registry(AbstractRegistry):
             plugindir = os.path.normpath(plugindir)
             dir_list.append(plugindir)
             dir_list.append(os.path.join(XdgDirs.app_datadir,
-                                                  'scripts'))
+                                         'scripts'))
             return dir_list
 
         dirs = _get_plugin_dirs()
@@ -438,7 +438,7 @@ class ShellCheck(GenericCheck):
                 sort_hint = int(sort_hint)
             except ValueError:
                 self.log.warning('Cannot decode attachment sorting hint: '
-                                  + sort_hint + ', defaulting to 7')
+                                 + sort_hint + ', defaulting to 7')
                 sort_hint = 7
             a = self.Attachment(header, body, sort_hint)
             attachments.append(a)
@@ -451,9 +451,9 @@ class ShellCheck(GenericCheck):
             return
         if not self.group in self.groups:
             self.set_passed(self.PENDING,
-                           "Test run failed: illegal group")
+                            "Test run failed: illegal group")
             self.log.warning('Illegal group %s in %s' %
-                                   (self.group, self.defined_in))
+                             (self.group, self.defined_in))
             return
         if not self.groups[self.group].is_applicable():
             self.set_passed(self.NA)
@@ -475,8 +475,8 @@ class ShellCheck(GenericCheck):
         else:
             self.log.warning(
                 'Illegal return from %s, code %d, output: %s' %
-                     (self.defined_in, retval,
-                     'stdout:' + str(stdout) + ' stderr:' + str(stderr)))
+                (self.defined_in, retval,
+                'stdout:' + str(stdout) + ' stderr:' + str(stderr)))
             self.set_passed(self.PENDING, 'Test run failed')
 
 # vim: set expandtab: ts=4:sw=4:
