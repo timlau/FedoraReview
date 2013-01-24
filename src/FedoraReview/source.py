@@ -78,9 +78,8 @@ class Source(HelpersMixin):
                                                ReviewDirs.upstream,
                                                my_logger)
             except DownloadError as ex:
-                self.log.debug('Download error on ' + url
-                                    + ', : ' + str(ex),
-                                exc_info=True)
+                self.log.debug('Download error on %s, : %s' % (url, str(ex)),
+                               exc_info=True)
                 self.log.warning('Cannot download url: ' + url)
                 self.downloaded = False
                 # get the filename
@@ -114,8 +113,7 @@ class Source(HelpersMixin):
         if self.downloaded:
             return self._checksum(self.filename)
         else:
-            raise ReviewError(self.tag +
-                                    ": upstream source not found")
+            raise ReviewError(self.tag + ": upstream source not found")
 
     def is_archive(self):
         ''' Return true if source can be assumed to be an archive file. '''
@@ -134,8 +132,8 @@ class Source(HelpersMixin):
         '''
         if not os.path.isfile(self.filename):
             raise ReviewError("%s file %s is missing in src.rpm."
-                    " Conditional source inclusion?" %
-                    (self.tag, self.filename))
+                              " Conditional source inclusion?" %
+                              (self.tag, self.filename))
 
         self.extract_dir = os.path.join(ReviewDirs.upstream_unpacked,
                                         self.tag)
