@@ -72,14 +72,14 @@ class _Mock(HelpersMixin):
         '''Return mock's root according to Settings. '''
         config = 'default'
         if Settings.mock_config:
-            config  = Settings.mock_config
+            config = Settings.mock_config
         mockdir = Settings.configdir if Settings.configdir \
             else '/etc/mock'
         path = os.path.join(mockdir, config + '.cfg')
 
         config_opts = {}
         with open(path) as f:
-            config = [line for line in f.readlines() if \
+            config = [line for line in f.readlines() if
                       line.find("config_opts['root']") >= 0]
         exec config[0]                           # pylint: disable=W0122
         self.mock_root = config_opts['root']
@@ -261,7 +261,7 @@ class _Mock(HelpersMixin):
         cmd = ' '.join(cmd)
         rc = call(cmd, shell=True)
         self.log.debug('is_installed: Tested ' + package +
-                        ', result: ' + str(rc))
+                       ', result: ' + str(rc))
         return rc == 0
 
     def rpmbuild_bp(self, srpm):
@@ -319,7 +319,7 @@ class _Mock(HelpersMixin):
         else:
             self.log.debug('Build failed rc = ' + rc)
             error = ReviewError('mock build failed, see ' + self.resultdir
-                                 + '/build.log')
+                                + '/build.log')
             error.show_logs = False
             raise error
 
