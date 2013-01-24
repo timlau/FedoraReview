@@ -98,8 +98,8 @@ class AbstractBug(HelpersMixin):
 
         def has_srpm():
             ''' Return true iff self.srpmfile is a valid path. '''
-            return hasattr(self, 'srpm_file')  and self.srpm_file and  \
-                   os.path.exists(self.srpm_file)
+            return hasattr(self, 'srpm_file') and self.srpm_file and \
+                os.path.exists(self.srpm_file)
 
         if not self.dir:
             self.dir = ReviewDirs.srpm
@@ -125,8 +125,8 @@ class AbstractBug(HelpersMixin):
     def is_downloaded(self):
         ''' Return true iff self.{specfile, srpmfile} are valid. '''
         ok = (self.spec_file and os.path.exists(self.spec_file)
-                and self.srpm_file and
-                os.path.exists(self.srpm_file))
+              and self.srpm_file and
+              os.path.exists(self.srpm_file))
         return ok
 
     def _check_cache(self):
