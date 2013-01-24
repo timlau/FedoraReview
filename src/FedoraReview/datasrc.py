@@ -48,6 +48,11 @@ class AbstractDataSource():
 
     def __init__(self):
         self.log = Settings.get_logger()
+        self._inited = False
+
+    @abstractmethod
+    def init(self):
+        ''' Lazy init. '''
 
     @abstractmethod
     def get_filelist(self, container=None):
@@ -64,7 +69,6 @@ class AbstractDataSource():
     @abstractmethod
     def get_keys(self):
         ''' Return all keys usable with get(). '''
-        pass
 
     @property
     def is_available(self):
@@ -73,10 +77,12 @@ class AbstractDataSource():
 
     def get_all(self):
         ''' Return list of all containers. '''
+        self.init()
         return self.containers
 
     def find(self, glob_pattern, container=None):
         ''' Find first file matching glob_pattern, or None. '''
+        self.init()
         if container and not container in self.containers:
             raise ValueError('DataSource: bad source: ' + container)
         if hasattr(glob_pattern, 'match'):
@@ -89,6 +95,7 @@ class AbstractDataSource():
 
     def find_re(self, regex, container=None):
         ''' Find first file matching regex, or None. '''
+        self.init()
         if container and not container in self.containers:
             raise ValueError('DataSource: bad source: ' + container)
         if isinstance(regex, str):
@@ -101,6 +108,7 @@ class AbstractDataSource():
 
     def find_all(self, glob_pattern, container=None):
         ''' List of all files matching glob_pattern. '''
+        self.init()
         if container and not container in self.containers:
             raise ValueError('DataSource: bad source: ' + container)
         if hasattr(glob_pattern, 'match'):
@@ -114,6 +122,7 @@ class AbstractDataSource():
 
     def find_all_re(self, regex, container=None):
         ''' List of all files matching regex. '''
+        self.init()
         if container and not container in self.containers:
             raise ValueError('DataSource: bad source: ' + container)
         if isinstance(regex, str):
@@ -191,14 +200,21 @@ class RpmDataSource(AbstractDataSource):
 
     def __init__(self, spec):
         AbstractDataSource.__init__(self)
-        self.containers = spec.packages
         self.spec = spec
+        self.containers = None
+        self.rpms_by_pkg = None
+
+    def init(self):
+        if self.containers:
+            return
+        self.containers = self.spec.packages
         self.rpms_by_pkg = {}
-        for pkg in spec.packages:
+        for pkg in self.spec.packages:
             self.rpms_by_pkg[pkg] = \
-                RpmFile(pkg, spec.version, spec.release)
+                RpmFile(pkg, self.spec.version, self.spec.release)
 
     def get_filelist(self, container=None):
+        self.init()
         if container and not container in self.containers:
             raise ValueError('RpmSource: bad package: ' + container)
         if container:
@@ -210,11 +226,13 @@ class RpmDataSource(AbstractDataSource):
 
     def get(self, key=None):
         ''' Return RpmFile object for a package name key. '''
+        self.init()
         if key and key in  self.rpms_by_pkg.iterkeys():
             return self.rpms_by_pkg[key]
         return None
 
     def get_keys(self):
+        self.init()
         return self.rpms_by_pkg.iterkeys()
 
 
@@ -228,6 +246,9 @@ class SourcesDataSource(AbstractDataSource):
             self.sources_by_tag[tag] = Source(tag, url)
         self.containers = [s.tag for s in self.sources_by_tag.itervalues()]
         self.files_by_tag = {}
+
+    def init(self):
+        pass
 
     def _load_files(self, tag):
         """ Ensure that file list for tag is in files_by_tag. """

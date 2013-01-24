@@ -22,6 +22,7 @@ Spec file management.
 import re
 import rpm
 
+from review_error import ReviewError
 from settings import Settings
 from mock import Mock
 
@@ -55,11 +56,6 @@ class SpecFile(object):
                 if not expanded[i].startswith('%'):
                     rpm.addMacro(macros[i][1:], expanded[i])
 
-        def get_packages():
-            ''' Return list of all packages, except empty ones. '''
-            pkgs = [p.header[rpm.RPMTAG_NAME] for p in self.spec.packages]
-            return [p for p in pkgs if self.get_files(p) != None]
-
         self.log = Settings.get_logger()
         self.filename = filename
         self.lines = []
@@ -69,11 +65,26 @@ class SpecFile(object):
         self.name_vers_rel = [self.expand_tag(rpm.RPMTAG_NAME),
                               self.expand_tag(rpm.RPMTAG_VERSION),
                               self.expand_tag(rpm.RPMTAG_RELEASE)]
-        self._packages = get_packages()
+        self._packages = None
 
     name = property(lambda self: self.name_vers_rel[0])
     version = property(lambda self: self.name_vers_rel[1])
     release = property(lambda self: self.name_vers_rel[2])
+
+    def _get_packages(self):
+        ''' Return list of all packages, except empty or not built. '''
+
+        def check_pkg_path(pkg):
+            ''' Check that pkg is available (built or supplied w -p).'''
+            try:
+                return Mock.get_package_rpm_path(pkg, self)
+            except ReviewError:
+                self.log.warning("Package %s not built" % pkg)
+                return None
+
+        pkgs = [p.header[rpm.RPMTAG_NAME] for p in self.spec.packages]
+        pkgs = [p for p in pkgs if self.get_files(p) != None]
+        return [p for p in pkgs if check_pkg_path(p)]
 
     def _get_lines(self, filename):
         ''' Read line from specfile, fold \ continuation lines. '''
@@ -192,6 +203,8 @@ class SpecFile(object):
     @property
     def packages(self):
         ''' Return list of package names built by this spec. '''
+        if self._packages == None:
+            self._packages = self._get_packages()
         return self._packages
 
     @property
