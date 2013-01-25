@@ -1,0 +1,50 @@
+#-*- coding: utf-8 -*-
+
+# This is an example file extending a language specific plugin
+
+
+from FedoraReview import CheckBase, RegistryBase
+
+
+class Registry(RegistryBase):
+    """ Register all checks in this file in group "R.ext".
+    Using a dotted name like this means that all results will
+    be presented as part of the main group, 'R' in this case.
+    """
+    group = 'R.ext'
+
+    def is_applicable(self):
+        """ Use the is_applicable() defined in main group: """
+        return self.checks.groups['R'].is_applicable()
+
+
+class RExtCheckBase(CheckBase):
+    """ Base class for all R.ext specific checks. """
+
+    def __init__(self, checks):
+        CheckBase.__init__(self, checks, __file__)
+
+
+class RCheckRequires(RExtCheckBase):
+    """
+    Add a new check to R.ext, effectively to the 'R' tests:
+    Check if the Requires have R-core. """
+
+    def __init__(self, base):
+        """ Instanciate check variable """
+        RCheckBase.__init__(self, base)
+        self.url = 'http://fedoraproject.org/wiki/Packaging:R'
+        self.text = 'Package requires R-core.'
+        self.automatic = True
+
+    def run_on_applicable(self):
+        """ Run the check """
+        brs = self.spec.get_requires()
+        if ('R' in brs and not 'R-core' in brs):
+            self.set_passed(self.FAIL,
+                "Package should requires R-core rather than R")
+        else:
+            self.set_passed('R-core' in brs)
+
+
+# Other classes doing other tests....
