@@ -3,6 +3,8 @@
 # @text: Run phpci static analyze on all php files.
 # @type: EXTRA
 
+[ -d BUILD ] ||  exit $FR_NOT_APPLICABLE
+
 rpm -q php-bartlett-PHP-CompatInfo &> /dev/null || {
     echo "Cannot find phpci, install php-bartlett-PHP-CompatInfo"
     exit $FR_FAIL
