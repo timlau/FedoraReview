@@ -37,11 +37,14 @@ class Source(HelpersMixin):
          - url: complete url, possibly file://
          - filename: local filename
          - tag: as defined in specfile e. g., 'Source0'
-         - sources: container holding this source.
          - local: True if the source is just a file, false
            if it's a downloaded url
          - local_src: points to local upstream copy, or None.
+         - is_failed: True if attempted download failed.
+         - is_url: True if url is downloadable.
+
     '''
+    # pylint: disable=R0902
     def __init__(self, tag, url):
 
         def my_logger(cache):
@@ -58,8 +61,9 @@ class Source(HelpersMixin):
         self.tag = tag
         self.downloaded = True
         self.local_src = None
-        is_url = urlparse(url)[0] != ''
-        if is_url:  # This is a URL, Download it
+        self.is_url = urlparse(url)[0] != ''
+        self.is_failed = False
+        if self.is_url:  # This is a URL, Download it
             self.url = url
             self.local = False
             if Settings.cache:
@@ -82,10 +86,11 @@ class Source(HelpersMixin):
                                 exc_info=True)
                 self.log.warning('Cannot download url: ' + url)
                 self.downloaded = False
+                self.is_failed = True
                 # get the filename
                 url = urlparse(url)[2].split('/')[-1]
 
-        if not is_url or not self.downloaded:  # A local file in the SRPM
+        if not self.is_url or not self.downloaded:  # A local file in the SRPM
             local_src = os.path.join(ReviewDirs.startdir, url)
             if os.path.isfile(local_src):
                 self.log.info(

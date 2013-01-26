@@ -1476,6 +1476,32 @@ class CheckInfoInstall(GenericCheckBase):
         self.set_passed(self.FAIL if failed else self.PENDING, text)
 
 
+class CheckSourceDownloads(GenericCheckBase):
+    ''' Check that sources could be downloaded from their URI. '''
+
+    def __init__(self, base):
+        GenericCheckBase.__init__(self, base)
+        self.url = 'http://fedoraproject.org/wiki/Packaging:Guidelines' \
+                   '#Tags'
+        self.text = 'Sources can be downloaded from URI in Source: tag'
+        self.automatic = True
+        self.type = 'SHOULD'
+
+    def run(self):
+        sources = [self.sources.get(s) for s in self.sources.get_all()]
+        url_src = [s for s in sources if s.is_url]
+        if not url_src:
+            self.set_passed(self.NA)
+            return
+        failed_src = [s for s in url_src if s.is_failed]
+        if not failed_src:
+            self.set_passed(self.PASS)
+            return
+        self.set_passed(self.FAIL, "Could not download " +
+                                   ', '.join([s.tag for s in failed_src]))
+
+
+
 
 #
 # vim: set expandtab: ts=4:sw=4:

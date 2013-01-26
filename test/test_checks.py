@@ -109,6 +109,7 @@ class TestChecks(FR_TestCase):
                         ('pending', 'CheckLicenseField'),
                         ('pending', 'CheckPatchComments'),
                         ('pending', 'CheckChangelogFormat'),
+                        ('pass', 'CheckSourceDownloads'),
                         ('pass', 'check-large-data'),
                         ('pass', 'check-srv-opt-local')]
         self.run_spec(spec)
@@ -195,6 +196,7 @@ class TestChecks(FR_TestCase):
                          ('pending', 'CheckLicenseField'),
                          ('pending', 'CheckPatchComments'),
                          ('pending', 'CheckChangelogFormat'),
+                         ('pass', 'CheckSourceDownloads'),
                          ('pass', 'check-large-data'),
                          ('pass', 'check-srv-opt-local'),
                          ('pass', 'java-check-bundled-jars')]
@@ -235,7 +237,8 @@ class TestChecks(FR_TestCase):
                          ('pending', 'CheckUpdateMimeDatabase'),
                          ('pending', 'CheckBundledFonts'),
                          ('pending', 'CheckSourcedirMacroUse'),
-                         ('pending', 'CheckTmpfiles')]
+                         ('pending', 'CheckTmpfiles'),
+                         ('na', 'CheckSourceDownloads')]
         self.run_spec(spec)
 
     def test_FreeSOLID(self):
