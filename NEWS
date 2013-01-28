@@ -10,6 +10,7 @@
     * Tmpfiles.d check (#156).
     * Bundled fonts check (#155).
     * Improper %_sourcedir usage test (#154).
+    * Test that sources could be downloaded from SourceX: tag (#198)
 - Improved report layout (#135).
 - Improved console output, notably invisible yellow text fixed. (#185).
 - The report has got a fixed name 'review.txt'.
