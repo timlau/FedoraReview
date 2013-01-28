@@ -2,11 +2,11 @@
 %bcond_without tests
 
 # See notes in make_release which patches this.
-%global     git_tag  .fa1afe1
+#global     git_tag  .fa1afe1
 
 Name:       fedora-review
-Version:    0.3.1
-Release:    3%{?git_tag}%{?dist}
+Version:    0.4.0
+Release:    1%{?git_tag}%{?dist}
 Summary:    Review tool for fedora rpm packages
 
 License:    GPLv2+
@@ -96,6 +96,9 @@ cp -ar test "$RPM_BUILD_ROOT%{_datadir}/%{name}"
 cd test
 export REVIEW_LOGLEVEL=warning
 export MAKE_RELEASE=1
+mock --quiet -r fedora-17-i386 --init
+mock --quiet -r fedora-16-i386 --init
+mock --quiet -r fedora-17-i386 --uniqueext=hugo --init
 python -m unittest discover -f
 %endif
 
@@ -122,6 +125,9 @@ python -m unittest discover -f
 
 
 %changelog
+* Mon Jan 27 2013 Stanislav Ochotnicky <sochotnicky@redhat.com> - 0.4.0-1
+- Updating to upstream 0.4
+
 * Tue Oct 30 2012 Alec Leamas <leamas@nowhere.net> - 0.3.1-3.fa1afe1
 - Provisionary post-release placeholder (nothing yet really released)
 - Post-release capabilities using make_release script and %%git_tag

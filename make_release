@@ -68,6 +68,9 @@ if [ ! "$1" = '-q' ]; then
     tar -xf $dfile && pushd fedora-review-$__version__
     cd test
     bash < restore-links.sh
+    mock --quiet -r fedora-17-i386 --init
+    mock --quiet -r fedora-16-i386 --init
+    mock --quiet -r fedora-17-i386 --uniqueext=hugo --init
     MAKE_RELEASE=1 REVIEW_LOGLEVEL=error python -m unittest discover
     if [ $? -ne 0 ]; then
         echo "Some tests failed. Review test logs and fix all problems"
@@ -81,6 +84,7 @@ cd $startdir
 rm -f dist/*
 sed -r  -e 's/git_tag[ ]*\.[0-9a-f]*/git_tag  '".$BUILD_ID/" \
         -e '/%changelog/,/^$/ s/[0-9a-f]{7}/'"$BUILD_ID/" \
+        -e '/%changelog/,/^$/ s/\*.*201[0-9]/* '"$(date +'%a %b %d %Y')/" \
     < fedora-review.spec  > dist/fedora-review.spec
 echo Created: dist/fedora-review.spec
 
