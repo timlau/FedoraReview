@@ -1,5 +1,5 @@
-#invoke with "--without tests" to disable tests
-%bcond_without tests
+#invoke with "--with tests" to enable tests
+%bcond_with tests
 
 # See notes in make_release which patches this.
 #global     git_tag  .fa1afe1
@@ -125,8 +125,8 @@ python -m unittest discover -f
 
 
 %changelog
-* Mon Jan 27 2013 Stanislav Ochotnicky <sochotnicky@redhat.com> - 0.4.0-1
-- Updating to upstream 0.4
+* Mon Jan 28 2013 Stanislav Ochotnicky <sochotnicky@redhat.com> - 0.4.0-1
+- Updating to upstream 0.4.0
 
 * Tue Oct 30 2012 Alec Leamas <leamas@nowhere.net> - 0.3.1-3.fa1afe1
 - Provisionary post-release placeholder (nothing yet really released)
