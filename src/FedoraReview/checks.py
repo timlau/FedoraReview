@@ -230,7 +230,7 @@ class _ChecksLoader(object):
         self.groups = {}
 
         appdir = os.path.realpath(
-                     os.path.join(os.path.dirname(__file__), '../..'))
+                     os.path.join(os.path.dirname(__file__)))
         sys.path.insert(0, appdir)
         sys.path.insert(0, XdgDirs.app_datadir)
         plugins = load('plugins')
