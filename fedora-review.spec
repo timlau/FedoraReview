@@ -2,7 +2,7 @@
 %bcond_without tests
 
 # See notes in make_release which patches this.
-#global     git_tag  .fa1afe1
+%global     git_tag  .fa1afe1
 
 Name:       fedora-review
 Version:    0.4.0
