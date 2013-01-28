@@ -83,9 +83,10 @@ fi
 
 cd $startdir
 rm -f dist/*
+timestamp=$(LC_TIME=C date +'* %a %b %d %Y')
 sed -r  -e 's/git_tag[ ]*\.[0-9a-f]*/git_tag  '".$BUILD_ID/" \
         -e '/%changelog/,/^$/ s/[0-9a-f]{7}/'"$BUILD_ID/" \
-        -e '/%changelog/,/^$/ s/\*.*201[0-9]/* '"$(date +'%a %b %d %Y')/" \
+        -e '/%changelog/,/^$/ s/\*.*201[0-9]/'"$timestamp/" \
     < fedora-review.spec  > dist/fedora-review.spec
 echo Created: dist/fedora-review.spec
 
