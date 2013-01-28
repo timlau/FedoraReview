@@ -81,6 +81,7 @@ cd $startdir
 rm -f dist/*
 sed -r  -e 's/git_tag[ ]*\.[0-9a-f]*/git_tag  '".$BUILD_ID/" \
         -e '/%changelog/,/^$/ s/[0-9a-f]{7}/'"$BUILD_ID/" \
+        -e '/%changelog/,/^$/ s/\*.*201[0-9]/* '"$(date +'%a %b %d %Y')/" \
     < fedora-review.spec  > dist/fedora-review.spec
 echo Created: dist/fedora-review.spec
 
