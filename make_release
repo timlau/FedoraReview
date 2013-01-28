@@ -68,6 +68,9 @@ if [ ! "$1" = '-q' ]; then
     tar -xf $dfile && pushd fedora-review-$__version__
     cd test
     bash < restore-links.sh
+    mock --quiet -r fedora-17-i386 --init
+    mock --quiet -r fedora-16-i386 --init
+    mock --quiet -r fedora-17-i386 --uniqueext=hugo --init
     MAKE_RELEASE=1 REVIEW_LOGLEVEL=error python -m unittest discover
     if [ $? -ne 0 ]; then
         echo "Some tests failed. Review test logs and fix all problems"
