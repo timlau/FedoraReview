@@ -16,15 +16,12 @@
 #
 # (C) 2011 - Tim Lauridsen <timlau@fedoraproject.org>
 
-'''
-This module contains automatic test for Fedora Packaging guidelines
-'''
+''' Basic definitions: AbstractCheck + descendants, TestResult.  '''
 
 import re
 import StringIO
 
 from abc import ABCMeta, abstractmethod
-from fnmatch import fnmatch
 from textwrap import TextWrapper
 
 from helpers_mixin import HelpersMixin
@@ -62,47 +59,6 @@ class _Attachment(object):
         return 0
 
 
-class FileChecks(object):
-    """ Add file-checking capabilities to self. """
-
-    def __init__(self, checks):
-        """ Build an instance from a Checks instance. """
-
-        class FileCheckData:
-            ''' Container for class private data. '''
-            pass
-
-        self._filechecks = FileCheckData()
-        self._filechecks.srpm = checks.srpm
-        self._filechecks.spec = checks.spec
-        self._filechecks.sources = checks.sources
-
-    def sources_have_files(self, pattern):
-        ''' Check if sources have file matching a glob pattern'''
-        for source in self._filechecks.sources.get_files_sources():
-            if fnmatch(source, pattern):
-                return True
-        return False
-
-    def _match_rpmfiles(self, matcher):
-        ''' Run matcher on all files in rpms, return match or not. '''
-        files_by_rpm = self._filechecks.srpm.get_files_rpms()
-        for rpm in files_by_rpm.iterkeys():
-            for fn in files_by_rpm[rpm]:
-                if matcher(fn):
-                    return True
-        return False
-
-    def has_files(self, pattern):
-        ''' Check if rpms have file matching a glob pattern'''
-        return self._match_rpmfiles(lambda f: fnmatch(f, pattern))
-
-    def has_files_re(self, pattern_re):
-        ''' Check if rpms have file matching a regex pattern'''
-        regex = re.compile(pattern_re)
-        return self._match_rpmfiles(regex.search)
-
-
 class AbstractCheck(object):
     """
     The basic interface for a test (a. k a. check) as seen from
@@ -113,8 +69,7 @@ class AbstractCheck(object):
       - version version of api, defaults to 0.1
       - group: 'Generic', 'C/C++', 'PHP': binds the test to a
                 Registry.
-      - implementation: 'json'|'python'|'shell', defaults to
-        'python'.
+      - implementation: 'python'|'shell', defaults to 'python'.
 
     Properties:
       - name: Unique string.
@@ -149,6 +104,7 @@ class AbstractCheck(object):
         self.defined_in = defined_in
         self.deprecates = []
         self.needs = []
+        self.is_disabled = False
         try:
             self.name = 'Undefined'
         except AttributeError:
@@ -187,20 +143,19 @@ class AbstractCheck(object):
                      lambda self: self.is_run and self.state == None)
 
 
-class GenericCheck(AbstractCheck, FileChecks):
-
+class GenericCheck(AbstractCheck):
     """
     Common interface inherited by all Check implementations.
 
     Properties:
       - text: free format user info on test, one line.
       - description: longer, multiline free format text info.
-      - type: 'MUST'|'SHOULD'|'EXTRA'|'UNDEFINED', defaults to
-        'MUST'
+      - type: 'MUST'|'SHOULD'|'EXTRA', defaults to 'MUST'.
       - url: Usually guidelines url, possibly None.
       - checks: Checks instance which created this check.
       - registry: Defining Registry, set by Registry.register()
     """
+
     registry = None
 
     class Attachment(_Attachment):
@@ -209,7 +164,6 @@ class GenericCheck(AbstractCheck, FileChecks):
 
     def __init__(self, checks, defined_in):
         AbstractCheck.__init__(self, defined_in)
-        FileChecks.__init__(self, checks)
         self.checks = checks
         self.url = '(this test has no URL)'
         self.text = self.__class__.__name__
@@ -221,7 +175,9 @@ class GenericCheck(AbstractCheck, FileChecks):
     flags      = property(lambda self: self.checks.flags)
     srpm       = property(lambda self: self.checks.srpm)
     sources    = property(lambda self: self.checks.sources)
+    buildsrc   = property(lambda self: self.checks.buildsrc)
     log        = property(lambda self: self.checks.log)
+    rpms       = property(lambda self: self.checks.rpms)
 
     @property
     def name(self):                              # pylint: disable=E0202
@@ -230,8 +186,8 @@ class GenericCheck(AbstractCheck, FileChecks):
 
     def set_passed(self, result, output_extra=None, attachments=None):
         '''
-        Set if the test is passed, failed or N/A
-        and set optional extra output to be shown in repost
+        Set if the test is passed, failed or N/A and set optional
+        extra output and/or attachments to be shown in repost.
         '''
         if result in ['not_applicable', self.NA, None]:
             self.result = None
@@ -269,28 +225,19 @@ class CheckBase(GenericCheck, HelpersMixin):
         self.set_passed(self.PENDING)
 
     def run(self):
-        ''' By default, a manual test returning 'inconclusive'.'''
+        '''
+        Default implementation, returns run_on_applicable() or self.NA.
+        '''
         if self.is_applicable():
             self.run_on_applicable()
         else:
-            self.set_passed('not_applicable')
-
-    def get_files_by_pattern(self, pattern):
-        ''' Return plain list of files in rpms matching glob pattern. '''
-        result = {}
-        rpm_files = self.srpm.get_files_rpms()
-        for rpm in rpm_files:
-            result[rpm] = []
-            for fn in rpm_files[rpm]:
-                if fnmatch(fn, pattern):
-                    result[rpm].append(fn)
-        return result
+            self.set_passed(self.NA)
 
     group = property(lambda self: self.registry.group)
 
 
 class TestResult(object):
-    ''' The outcome of a test, stored in check.result. '''
+    ''' The printable outcome of a test, stored in check.result. '''
 
     TEST_STATES = {
          'pending': '[ ]', 'pass': '[x]', 'fail': '[!]', 'na': '[-]'}
@@ -299,12 +246,12 @@ class TestResult(object):
         self.check = check
         self.text = re.sub("\s+", " ", check.text) if check.text else ''
         self.result = result
+        self._leader = self.TEST_STATES[result] + ': '
         self.output_extra = output_extra
         self.attachments = attachments if attachments else []
         if self.output_extra:
             self.output_extra = re.sub("\s+", " ", self.output_extra)
-        self.wrapper = TextWrapper(width=78, subsequent_indent=" " * 5,
-                                   break_long_words=False, )
+        self.set_indent(5)
 
     url = property(lambda self: self.check.url)
     name = property(lambda self: self.check.name)
@@ -314,16 +261,27 @@ class TestResult(object):
 
     state = property(lambda self: self.result)
 
+    def set_indent(self, indent):
+        ''' Set indentation level for get_text (int, defaults to 5). '''
+        # pylint: disable=W0201
+        self.wrapper = TextWrapper(width = 78,
+                                   subsequent_indent = " " * indent,
+                                   break_long_words = False, )
+
+    def set_leader(self, leader):
+        ''' Set the leading string, defaults to [!], [ ], [-], etc. '''
+        self._leader = leader
+
     def get_text(self):
         ''' Return printable representation of test. '''
         strbuf = StringIO.StringIO()
-        main_lines = self.wrapper.wrap(
-            "%s: %s" % (self.TEST_STATES[self.result], self.text))
-        strbuf.write("%s" % '\n'.join(main_lines))
+        main_lines = self.wrapper.wrap(self._leader + self.text)
+        strbuf.write('\n'.join(main_lines))
         if self.output_extra and self.output_extra != "":
             strbuf.write("\n")
-            extra_lines = self.wrapper.wrap("     Note: %s" %
-                                            self.output_extra)
+            extra_lines = self.wrapper.wrap(
+                              self.wrapper.subsequent_indent +
+                              "Note: " + self.output_extra)
             strbuf.write('\n'.join(extra_lines))
 
         return strbuf.getvalue()

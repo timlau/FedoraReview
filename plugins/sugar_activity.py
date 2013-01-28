@@ -29,7 +29,8 @@ class Registry(RegistryBase):
     group = 'SugarActivity'
 
     def is_applicable(self):
-        return self.has_files_re('^/usr/(share|lib|lib64)/sugar/activities/')
+        regex = '^/usr/(share|lib|lib64)/sugar/activities/'
+        return self.checks.rpms.find(regex) != None
 
 
 class SugarActivityCheckBase(CheckBase):
@@ -50,11 +51,11 @@ class SugarActivityCheckNaming(SugarActivityCheckBase):
 
     def run_on_applicable(self):
         if not self.spec.name.startswith('sugar-'):
-            self.set_passed(False)
+            self.set_passed(self.FAIL)
             return
         # TODO check if sugar-foo is valid or if there is specific
         # need for activity name
-        self.set_passed('inconclusive')
+        self.set_passed(self.PENDING)
 
 
 class SugarActivityCheckBuildRequires(SugarActivityCheckBase):
@@ -67,7 +68,7 @@ class SugarActivityCheckBuildRequires(SugarActivityCheckBase):
         self.automatic = True
 
     def run_on_applicable(self):
-        br = self.spec.get_build_requires()
+        br = self.spec.build_requires()
         self.set_passed('sugar-toolkit' in br)
 
 

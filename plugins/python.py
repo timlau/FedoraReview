@@ -13,7 +13,7 @@ class Registry(RegistryBase):
     def is_applicable(self):
         ''' Return true if this is a python package. '''
         return self.checks.spec.name.startswith("python") or \
-           self.has_files('*.pyc')
+           self.checks.rpms.find('*.pyc')
 
 
 class PythonCheckBase(CheckBase):
@@ -34,7 +34,6 @@ class  CheckPythonBuildRequires(PythonCheckBase):
         self.automatic = True
 
     def run_on_applicable(self):
-
-        br = self.spec.get_build_requires()
+        br = self.spec.build_requires
         passed = 'python2-devel' in br  or 'python3-devel' in br
         self.set_passed(self.PASS if passed else self.FAIL)

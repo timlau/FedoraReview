@@ -1,9 +1,0 @@
-Changes
-Makefile.PL
-MANIFEST
-README
-lib/RPM/Specfile.pm
-test.pl
-cpanflute2
-cpanflute2-old
-META.yml                                 Module meta-data (added by MakeMaker)

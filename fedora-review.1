@@ -87,6 +87,9 @@ List all available flags, usable as arguments to --define or -D.
 Show version info
 .SH GENERAL OPTIONS
 .TP 4
+.B -B, --no-colors
+Disable use of ansi colors in console output.
+.TP 4
 .B -c, --cache
 Do not redownload the files from bugzilla or upstream, use the local ones
 from previous run instead.
@@ -274,17 +277,9 @@ User supplied directory for full-featured python plugins
 .I ~/.local/share/fedora-review/scripts/
 .RS
 User supplied directory with shell-based plugins
-.RE
-.I ~/.config/fedora-review/plugins
-.RS
-User directory for JSON-based plugins (deprecated).
 
 
 .SH ENVIRONMENT
-.TP
-.B  REVIEW_EXT_DIRS
-If REVIEW_EXT_DIRS is set, it specifies additional directories that will be searched for external
-json plugins
 .TP
 .B REVIEW_LOGLEVEL
 loglevel used when not using -v/--verbose. A logging.* value like 'DEBUG', 'Info', or 'warning'. Setting

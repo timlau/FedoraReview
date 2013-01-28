@@ -1,4 +1,3 @@
-#!/usr/bin/python -tt
 #-*- coding: utf-8 -*-
 #
 #    This program is free software; you can redistribute it and/or modify
@@ -23,10 +22,22 @@ Tools for helping Fedora package reviewers
 import sys
 import os.path
 
-from FedoraReview import  BugzillaBug, Checks, ChecksLister, ReviewDirs, \
-                          ReviewError, NameBug, Settings, UrlBug
+import ansi
+from bugzilla_bug import BugzillaBug
+from checks import Checks, ChecksLister
+from name_bug import NameBug
+from review_dirs import ReviewDirs
+from review_error import ReviewError
+from settings import Settings
+from url_bug import UrlBug
+from version import __version__, BUILD_FULL
 
-from FedoraReview import __version__, BUILD_FULL
+
+_EXIT_MESSAGE = """\
+fedora-review is automated tool, but *YOU* are responsible for manually
+reviewing the results and finishing the review. Do not just copy-paste
+the results without understanding them.
+"""
 
 
 def _print_version():
@@ -50,11 +61,6 @@ class ReviewHelper(object):
         self.outfile = None
         self.prebuilt = False
 
-    def __download_sources(self):
-        ''' Download and extract all upstream sources. '''
-        self.sources.extract_all()
-        return True
-
     def __do_report(self):
         ''' Create a review report'''
         self.log.info('Getting .spec and .srpm Urls from : '
@@ -76,24 +82,27 @@ class ReviewHelper(object):
 
     def __run_checks(self, spec, srpm):
         ''' Register and run all checks. '''
+
+        def apply_color(s, formatter):
+            ''' Return s formatted by formatter or plain s. '''
+            if Settings.use_colors:
+                return formatter(s)
+            return s
+
         self.checks = Checks(spec, srpm)
         if Settings.no_report:
             self.outfile = '/dev/null'
         else:
-            self.outfile = ReviewDirs.report_path(self.checks.spec.name)
+            self.outfile = ReviewDirs.report_path()
         with open(self.outfile, "w") as output:
-            if Settings.nobuild:
-                self.checks.srpm.is_build = True
-            self.log.info('Running checks and generate report\n')
+            self.log.info('Running checks and generating report\n')
             self.checks.run_checks(output=output,
                                    writedown=not Settings.no_report)
             output.close()
         if not Settings.no_report:
-            print "\033[92mReview template in: %s\033[0m" % self.outfile
-            print "\033[91mfedora-review is automated tool, but *YOU* " \
-                  "are responsible for manually reviewing the results " \
-                  "and finishing the review. Do not just copy-paste the " \
-                  "results without understanding them.\033[0m"
+            print apply_color("Review template in: " + self.outfile,
+                              ansi.green)
+            print apply_color(_EXIT_MESSAGE, ansi.red)
 
     @staticmethod
     def _list_flags():
@@ -177,6 +186,8 @@ class ReviewHelper(object):
 
     def run(self):
         ''' Load urls, run checks and make report, '''
+        self.log.debug('fedora-review ' + __version__ + ' ' +
+                         BUILD_FULL + ' started')
         self.log.debug("Command  line: " + ' '.join(sys.argv))
         try:
             rcode = 0
@@ -185,14 +196,14 @@ class ReviewHelper(object):
             rcode = err.exitcode
             self.log.debug("ReviewError: " + str(err), exc_info=True)
             if not err.silent:
-                msg = 'Error: ' + str(err)
+                msg = 'ERROR: ' + str(err)
                 if err.show_logs:
-                    msg += ' (logs in ~/.cache/fedora-review.log)'
+                    msg += ' (logs in ' + Settings.session_log + ')'
                 self.log.error(msg)
         except:
             self.log.debug("Exception down the road...", exc_info=True)
             self.log.error('Exception down the road...'
-                           '(logs in ~/.cache/fedora-review.log)')
+                           '(logs in ' + Settings.session_log + ')')
             rcode = 1
         return rcode
 

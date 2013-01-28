@@ -29,20 +29,6 @@ License
 fedora-review is licensed under GPLv2+, for more details check COPYING.
 
 
-Dependencies
-------------
-
-Install dependencies:
-
-    # yum install python-straight-plugin python-BeautifulSoup \
-          python-bugzilla  python-requests python-kitchen \
-          fedora-packager rpmdevtools mock git python-fedora
-
-The mock requirement is not hard, it's possible to use fedora-review
-without mock when always using the --prebuilt/-p option. This means
-that packages must be built using other tools e. g., koji. Generally,
-installing without mock is not recommended.
-
 
 Download
 --------
@@ -54,6 +40,19 @@ Alternative repository for users wishing to use github:
 git://github.com/timlau/FedoraReview.git. You might consider cloning
 another branch e. g., a release branch. However, 'master' branch is
 probably not what you want.
+
+Dependencies
+------------
+
+Install dependencies:
+
+    # yum install mock
+    # yum-builddep fedora-review.spec
+
+The mock requirement is not hard, it's possible to use fedora-review
+without mock when always using the --prebuilt/-p option. This means
+that packages must be built using other tools e. g., koji. Generally,
+installing without mock is not recommended.
 
 
 Running from git
@@ -81,8 +80,22 @@ There's more in the wiki (above).
 Extending
 ---------
 
-fedora-review can be extended with small shell-scripts and full-featured
-python plugins. See the wiki (above).
+As of 0.4, fedora-review has two plugin interfaces:
+
+ * The native python interface used by modules in the src/checks
+   directory. This is the most complete, and is required e. g., when
+   defining a new group of tests for a new language. This is
+   descibed in the project wiki, at
+   https://fedorahosted.org/FedoraReview/wiki/NewPlugin
+
+ * The script interface used by scripts in the scripts/ directory.
+   This is a small interface designed to make it possible to write
+   simple tests in plain bash. This is covered in the wiki, at
+   https://fedorahosted.org/FedoraReview/wiki/ScriptsApi
+
+The json-based interface which existed in earlier versions has been
+retired.
+
 
 
 Bugs and issues

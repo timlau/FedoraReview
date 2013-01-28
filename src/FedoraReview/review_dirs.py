@@ -26,8 +26,8 @@ import os.path
 import shutil
 import tempfile
 
-from FedoraReview.review_error import ReviewError
-from FedoraReview.settings     import Settings
+from review_error import ReviewError
+from settings     import Settings
 
 SRPM              = 'srpm'
 SRPM_UNPACKED     = 'srpm-unpacked'
@@ -70,9 +70,9 @@ class _ReviewDirs(object):
             self.startdir = startdir
 
     @staticmethod
-    def report_path(name):
+    def report_path():
         ''' Return path for report. '''
-        return os.path.abspath('./%s-review.txt' % name)
+        return os.path.abspath('./review.txt')
 
     def _create_and_copy_wd(self, wd, reuse_old):
         ''' Create wd, possibly filled with cached data. '''
@@ -82,7 +82,7 @@ class _ReviewDirs(object):
                 for d in self.WD_DIRS:
                     shutil.move(os.path.join(wd, d), cache)
                 try:
-                    buildlink = os.readlink('BUILD')
+                    buildlink = os.readlink(os.path.join(wd, 'BUILD'))
                 except  OSError:
                     buildlink = None
             logging.info("Clearing old review directory: " + wd)
@@ -91,8 +91,11 @@ class _ReviewDirs(object):
             if Settings.cache:
                 for d in self.WD_DIRS:
                     shutil.move(os.path.join(cache, d), wd)
-                    if buildlink:
-                        shutil.symlink(buildlink, 'BUILD')
+                if buildlink:
+                    oldwd = os.getcwd()
+                    os.chdir(wd)
+                    os.symlink(buildlink, 'BUILD')
+                    os.chdir(oldwd)
                 shutil.rmtree(cache)
         if not os.path.exists(wd):
             os.mkdir(wd)
@@ -128,6 +131,56 @@ class _ReviewDirs(object):
                                                   UPSTREAM_UNPACKED))
     results = property(lambda self: os.path.join(self.wdir, RESULTS))
 
-ReviewDirs = _ReviewDirs()
+
+class _ReviewDirsFixture(_ReviewDirs):
+    ''' Simple test mockup.Uses wdir unconditionally, don't
+    care about reuse and such things.
+    '''
+    # pylint: disable=W0231
+    def __init__(self):
+        ''' Setup.... '''
+        self.wdir = None
+        self.startdir = None
+
+    def init(self, workdir, startdir):
+        '''
+        Create fixture. params:
+          - startdir: where f-r is invoked, and looks fo r-p stuff.
+          - wdir: the review_dir f-r works in, must exist.
+        '''
+        self.startdir = os.path.abspath(startdir)
+        self.wdir = os.path.abspath(workdir)
+        os.chdir(self.wdir)
+        for d in self.WD_DIRS:
+            if not os.path.exists(d):
+                os.makedirs(d)
+        src_path = os.path.join(os.getcwd(), 'BUILD')
+        if not os.path.exists(src_path):
+            try:
+                os.makedirs(
+                    os.path.join(os.getcwd(), '..', 'dummy', 'pkg-1.0'))
+            except OSError:
+                pass
+            try:
+                os.symlink(os.path.join(os.getcwd(), '..', 'dummy'),
+                           src_path)
+            except OSError:
+                pass
+
+    def workdir_setup(self, wd, reuse='Ignored'):
+        ''' Lazy init while testing. wd: the review dir '''
+        if reuse == 'testing':
+            self.init(wd, os.getcwd())
+
+    def reset(self, startdir=None):
+        ''' Ignored while testing. '''
+        pass
+
+
+try:
+    import test_env   # pylint: disable=W0611,F0401
+    ReviewDirs = _ReviewDirsFixture()
+except ImportError:
+    ReviewDirs = _ReviewDirs()
 
 # vim: set expandtab: ts=4:sw=4:

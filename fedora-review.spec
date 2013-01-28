@@ -1,11 +1,17 @@
+#invoke with "--without tests" to disable tests
+%bcond_without tests
+
+# See notes in make_release which patches this.
+#global     git_tag  .fa1afe1
+
 Name:       fedora-review
-Version:    0.3.1
-Release:    1%{?dist}
+Version:    0.4.0
+Release:    1%{?git_tag}%{?dist}
 Summary:    Review tool for fedora rpm packages
 
 License:    GPLv2+
 URL:        https://fedorahosted.org/FedoraReview/
-Source0:    https://fedorahosted.org/released/FedoraReview/%{name}-%{version}.tar.gz
+Source0:    https://fedorahosted.org/released/FedoraReview/%{name}-%{version}%{?git_tag}.tar.gz
 
 BuildArch:  noarch
 
@@ -47,21 +53,58 @@ python.  There is also support for external tests that can be written
 in a simple way in bash.
 
 
+%package tests
+Summary: Test and test data files for fedora-review
+Requires: %{name} = %{version}-%{release}
+
+%description tests
+Tests are packaged separately due to space concerns.
+
+
+%package php-phpci
+Summary:  Run phpci static analyzer on php packages
+Requires: %{name} = %{version}-%{release}
+Requires: php-bartlett-PHP-CompatInfo
+
+%description php-phpci
+Bash plugin running the phpci static analyzer on php packages,
+see http://php5.laurent-laville.org/compatinfo/.
+
+
 %prep
 %setup -q
-chmod -x api/examples/*
+
 
 %build
-%{__python} setup.py build
+%{__python} setup.py --quiet build
+
 
 %install
-%{__python} setup.py install -O1 --skip-build --root $RPM_BUILD_ROOT
+%{__python} setup.py --quiet install -O1 --skip-build --root $RPM_BUILD_ROOT
+pkg_dir="$RPM_BUILD_ROOT/%{python_sitelib}/FedoraReview"
+ln -s %{_datadir}/%{name}/scripts $pkg_dir/scripts
+ln -s %{_datadir}/%{name}/plugins $pkg_dir/plugins
+cd test
+bash < restore-links.sh
+rm restore-links.sh remember-links
+cd ..
+cp -ar test "$RPM_BUILD_ROOT%{_datadir}/%{name}"
 
-ln -s %{_datadir}/%{name}/plugins \
-      %{buildroot}%{python_sitelib}/FedoraReview/plugins
+
+%check
+%if %{with tests}
+cd test
+export REVIEW_LOGLEVEL=warning
+export MAKE_RELEASE=1
+mock --quiet -r fedora-17-i386 --init
+mock --quiet -r fedora-16-i386 --init
+mock --quiet -r fedora-17-i386 --uniqueext=hugo --init
+python -m unittest discover -f
+%endif
+
 
 %files
-%doc COPYING AUTHORS TODO README api
+%doc COPYING AUTHORS TODO README
 %{python_sitelib}/*
 %{_bindir}/fedora-review
 %{_bindir}/fedora-create-review
@@ -71,8 +114,30 @@ ln -s %{_datadir}/%{name}/plugins \
 %dir %{_datadir}/%{name}
 %{_datadir}/%{name}/plugins
 %{_datadir}/%{name}/scripts
+%exclude %{_datadir}/%{name}/scripts/php-phpci.sh
+
+%files tests
+%doc test/README.test
+%{_datadir}/%{name}/test
+
+%files php-phpci
+%{_datadir}/%{name}/scripts/php-phpci.sh
+
 
 %changelog
+* Mon Jan 27 2013 Stanislav Ochotnicky <sochotnicky@redhat.com> - 0.4.0-1
+- Updating to upstream 0.4
+
+* Tue Oct 30 2012 Alec Leamas <leamas@nowhere.net> - 0.3.1-3.fa1afe1
+- Provisionary post-release placeholder (nothing yet really released)
+- Post-release capabilities using make_release script and %%git_tag
+- Update symlinking of plugin/script dirs (from 3.1.1 release branch)
+- Add test subpackage
+- Added %%check and %%bcond tests
+
+* Thu Oct 25 2012 Stanislav Ochotnicky <sochotnicky@redhat.com> - 0.3.1-2
+- Add symlink to scripts directory so they are loaded
+
 * Tue Sep 25 2012 Stanislav Ochotnicky <sochotnicky@redhat.com> - 0.3.1-1
 - Update to lastest upstream (0.3.1)
 - Fix loading of system-wide plugins
@@ -113,3 +178,5 @@ ln -s %{_datadir}/%{name}/plugins \
 
 * Thu Nov 10 2011 Pierre-Yves Chibon <pingou@pingoured.fr> - 0.1.0-1
 - Initial packaging work for Fedora
+
+

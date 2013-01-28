@@ -1,0 +1,27 @@
+0.4
+===
+
+- The deprecated JSON api has been removed.
+- Patch-naming check not mandated by GL is removed (#179).
+- New checks:
+    * Bundled gnulib check (#53).
+    * Run phpci static analyzer on php packages (#63).
+    * Various scriptlet checks (#152).
+    * Tmpfiles.d check (#156).
+    * Bundled fonts check (#155).
+    * Improper %_sourcedir usage test (#154).
+    * Test that sources could be downloaded from SourceX: tag (#198)
+- Improved report layout (#135).
+- Improved console output, notably invisible yellow text fixed. (#185).
+- The report has got a fixed name 'review.txt'.
+- It's now possible to create a python plugin with some tests which
+  becomes part of an existing group e. g., a plugin with one new php
+  test (#182).
+- Improved handling of mock build failures (#79).
+- Make used buildroot more visible (#147).
+- New Guidelines update (#161).
+- Various internal refactoring and clean-ups:
+   #134, #140, #145, #172 and a lot of commits...
+- Improved unit tests, notably for plugins. Unit tests are now
+  packaged (#146, #163, many commits).
+- Roughly 20 other bugs fixed.

@@ -84,12 +84,12 @@ class RCheckBuildRequires(RCheckBase):
 
     def run_on_applicable(self):
         """ Run the check """
-        brs = self.spec.get_build_requires()
+        brs = self.spec.build_requires
         tocheck = ['R-devel', 'tex(latex)']
         if set(tocheck).intersection(set(brs)):
-            self.set_passed(True)
+            self.set_passed(self.PASS)
         else:
-            self.set_passed(False, 'Missing BuildRequires on %s' %
+            self.set_passed(self.FAIL, 'Missing BuildRequires on %s' %
                         ', '.join(set(tocheck).difference(set(brs))))
 
 
@@ -107,7 +107,7 @@ class RCheckRequires(RCheckBase):
         """ Run the check """
         brs = self.spec.get_requires()
         if ('R' in brs and not 'R-core' in brs):
-            self.set_passed(False,
+            self.set_passed(self.FAIL,
                 "Package should requires R-core rather than R")
         else:
             self.set_passed('R-core' in brs)
@@ -127,12 +127,12 @@ class RCheckDoc(RCheckBase):
         """ Run the check """
         doc_found = []
         for doc in self.DOCS:
-            if self.srpm and self.has_files("*" + doc):
+            if self.checks.rpms.find("*" + doc):
                 doc_found.append(doc)
-        docs = self.spec.find_all(re.compile("%doc.*"))
+        docs = self.spec.find_all_re("%doc.*")
         self.text += ", ".join(doc_found)
         for entry in docs:
-            entry = os.path.basename(entry.group(0)).strip()
+            entry = os.path.basename(entry).strip()
             if str(entry) in doc_found:
                 doc_found.remove(entry)
         self.set_passed(doc_found == [])
@@ -153,10 +153,10 @@ class RCheckLatestVersionIsPackaged(RCheckBase):
 
     def run_on_applicable(self):
         """ Run the check """
-        cur_version = self.spec.find_tag('Version')[0]
+        cur_version = self.spec.expand_tag('Version')
         up_version = self.get_upstream_r_package_version()
         if up_version is None:
-            self.set_passed('inconclusive',
+            self.set_passed(self.PENDING,
                 'The package does not come from one of the standard sources')
             return
         up_version = up_version.replace('-', '.')
@@ -197,7 +197,7 @@ class RCheckDir(RCheckBase):
     def dont_run_on_applicable(self):
         # Disabled, does not call set_passed -> errors.
         """ Run the check """
-        #dirs = self.spec.find_tag('%dir')
+        #dirs = self.spec.find_tag_re('%dir')
         #print dirs
         pass
 
@@ -235,7 +235,7 @@ class RCheckBuildSection(RCheckBase):
                 b_install = True
         if b_dir is True and b_test is True and b_rm is True and \
             b_install is True:
-            self.set_passed(True)
+            self.set_passed(self.PASS)
         else:
             cmt = ''
             if b_dir is False:
@@ -250,6 +250,6 @@ class RCheckBuildSection(RCheckBase):
             if b_install is False:
                 cmt += "Package doesn't have the standard " \
                 "R CMD INSTALL function\n"
-            self.set_passed(False, cmt)
+            self.set_passed(self.FAIL, cmt)
 
 # vim: set expandtab: ts=4:sw=4:

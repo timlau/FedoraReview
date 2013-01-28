@@ -51,12 +51,13 @@ class HelpersMixin(object):
         ''' Run a command using using subprocess, return output. '''
         self.log.debug(header + ': ' + cmd)
         cmd = cmd.split(' ')
+        proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        output, error = '', 'undefined'
         try:
-            proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
             output, error = proc.communicate()
         except OSError, e:
             self.log.debug("OS error, stderr: " + error, exc_info=True)
-            self.log.error("OS error running " + cmd, str(e))
+            self.log.error("OS error running " + ' '.join(cmd), str(e))
         return output
 
     @staticmethod

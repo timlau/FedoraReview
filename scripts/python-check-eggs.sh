@@ -3,12 +3,10 @@
 # @url: http://fedoraproject.org/wiki/Packaging:Python#Packaging_eggs_and_setuptools_concerns
 # @text: Binary eggs must be removed in %prep
 
-if [ ! -d BUILD/${FR_NAME}-*  ]; then
-    echo "Cannot find sources under BUILD (using prebuilt sources?)"
+cd BUILD/* &>/dev/null || {
+    echo "Cannot find any build in BUILD directory (--prebuilt option?)"
     exit $FR_PENDING
-fi
-
-cd BUILD/${FR_NAME}-*
+}
 eggs=$( find . -name \*.egg)
 if [ -n "$eggs" ]; then
     echo "Binary egg files not removed in %prep: $eggs"

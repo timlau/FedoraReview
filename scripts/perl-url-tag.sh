@@ -6,5 +6,5 @@
 if [[ "${FR_URL^^}" ==  *CPAN* ]]; then
     exit $FR_PENDING
 else
-    exit $FR_NA
+    exit $FR_NOT_APPLICABLE
 fi

@@ -40,6 +40,6 @@ if sys.version < '2.7':
             raise error
         return output
 else:
-    from subprocess import check_output
+    from subprocess import check_output          # pylint: disable=E0611
 
 # vim: set expandtab: ts=4:sw=4:

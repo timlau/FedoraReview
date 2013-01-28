@@ -2,7 +2,7 @@
 ''' Checks for ruby and rubygem packages.'''
 
 import re
-import itertools
+import rpm
 
 from FedoraReview import CheckBase, RegistryBase
 
@@ -22,8 +22,9 @@ def _is_gem(spec):
 
 def _has_extension(check):
     """ Return True if the package contains native extension """
+    # pylint: disable=W0511
     # TODO: will need altering for jruby .jar files
-    return check.has_files_re(r'.*\.c(?:pp)')
+    return check.rpms.find_re(r'.*\.c(?:pp)')
 
 
 def _gl_uri():
@@ -97,10 +98,10 @@ class RubyCheckBuildArchitecture(RubyCheckBase):
         self.automatic = True
 
     def run_on_applicable(self):
-        arch = self.spec.find_tag('BuildArch')
-        if _has_extension(self):
+        arch = self.spec.expand_tag('arch')
+        if  _has_extension(self):
             self.set_passed('noarch' not in arch,
-                            "Package with binary extension can't be built" \
+                            "Package with binary extension can't be built"
                             " as noarch.")
         else:
             self.set_passed('noarch' in arch)
@@ -112,7 +113,8 @@ class RubyCheckPlatformSpecificFilePlacement(RubyCheckBase):
     def __init__(self, base):
         RubyCheckBase.__init__(self, base)
         self.url = _gl_fmt_uri({'section':
-                    'Ruby_packages_with_binary_content.2Fshared_libraries'})
+                                'Ruby_packages_with_binary_content.'
+                                '2Fshared_libraries'})
         self.text = 'Platform specific files must be located under ' \
                     '/usr/lib[64]'
         self.automatic = True
@@ -124,12 +126,12 @@ class RubyCheckPlatformSpecificFilePlacement(RubyCheckBase):
     def run_on_applicable(self):
         usr_lib_re = re.compile(r'/usr/lib')
         so_file_re = re.compile(r'\.so$')
-        self.set_passed(True)
-
-        for one_rpm in self.srpm.get_files_rpms().values():
-            for f in one_rpm:
-                if so_file_re.match(f) and not usr_lib_re.match(f):
-                    self.set_passed(False)
+        rc = self.PASS
+        for f in self.checks.rpms.filelist:
+            if so_file_re.match(f) and not usr_lib_re.match(f):
+                rc = self.FAIL
+                break
+        self.set_passed(rc)
 
 
 class RubyCheckTestsRun(RubyCheckBase):
@@ -142,11 +144,8 @@ class RubyCheckTestsRun(RubyCheckBase):
         self.type = 'SHOULD'
 
     def run_on_applicable(self):
-        check_sections = self.spec.get_section('%check')
-        self.set_passed(True)
-
-        if len(check_sections) == 0:
-            self.set_passed(False)
+        check_section = self.spec.get_section('%check')
+        self.set_passed(self.PASS if check_section else self.FAIL)
 
 
 class RubyCheckTestsNotRunByRake(RubyCheckBase):
@@ -159,11 +158,14 @@ class RubyCheckTestsNotRunByRake(RubyCheckBase):
         self.type = 'SHOULD'
 
     def run_on_applicable(self):
-        self.set_passed(True)
-        if self.spec.get_section('%check'):
-            for line in self.spec.get_section('%check')['%check']:
-                if line.find('rake') != -1:
-                    self.set_passed(False)
+        rc = self.PASS
+        check_section = self.spec.get_section('%check', raw=True)
+        if check_section:
+            if 'rake ' in check_section:
+                rc = self.FAIL
+        else:
+            rc = self.NA
+        self.set_passed(rc)
 
 
 class NonGemCheckUsesMacros(NonGemCheckBase):
@@ -176,15 +178,16 @@ class NonGemCheckUsesMacros(NonGemCheckBase):
         self.type = 'SHOULD'
 
     def run_on_applicable(self):
-        self.set_passed(False)
-        vendorarchdir_re = re.compile('%{vendorarchdir}', re.I)
-        vendorlibdir_re = re.compile('%{vendorlibdir}', re.I)
-
-        for line in self.spec.get_section('%files')['%files']:
-            if _has_extension(self) and vendorarchdir_re.match(line):
-                self.set_passed(True)
-            if not _has_extension(self) and vendorlibdir_re.match(line):
-                self.set_passed(True)
+        ok = False
+        vendorarchdir = rpm.expandMacro('%{vendorarchdir}')
+        vendorlibdir = rpm.expandMacro('%{vendorlibdir}')
+        for pkg in self.spec.packages:
+            for line in self.spec.get_files(pkg):
+                if _has_extension(self) and vendorarchdir in line:
+                    ok = True
+                if not _has_extension(self) and vendorlibdir in line:
+                    ok = True
+        self.set_passed(self.PASS if ok else self.FAIL)
 
 
 class NonGemCheckFilePlacement(NonGemCheckBase):
@@ -192,7 +195,7 @@ class NonGemCheckFilePlacement(NonGemCheckBase):
     def __init__(self, base):
         NonGemCheckBase.__init__(self, base)
         self.url = _gl_fmt_uri({'section':
-                                    'Build_Architecture_and_File_Placement'})
+                                'Build_Architecture_and_File_Placement'})
         self.text = 'Platform dependent files must go under ' \
             '%{ruby_vendorarchdir}, platform independent under ' \
             '%{ruby_vendorlibdir}.'
@@ -218,11 +221,12 @@ class GemCheckRequiresProperDevel(GemCheckBase):
         self.automatic = True
 
     def run_on_applicable(self):
-        br = self.spec.get_build_requires()
+        """ Run the check """
+        br = self.spec.build_requires
         self.set_passed('rubygems-devel' in br)
         if _has_extension(self):
             self.set_passed('ruby-devel' in br,
-                            'The Gem package must have BuildRequires: ' \
+                            'The Gem package must have BuildRequires: '
                             'ruby-devel if the Gem contains binary extension.')
 
 
@@ -235,7 +239,7 @@ class NonGemCheckRequiresProperDevel(NonGemCheckBase):
         self.automatic = True
 
     def run_on_applicable(self):
-        self.set_passed('ruby-devel' in self.spec.get_build_requires())
+        self.set_passed('ruby-devel' in self.spec.build_requires)
 
 
 class GemCheckSetsGemName(GemCheckBase):
@@ -247,7 +251,8 @@ class GemCheckSetsGemName(GemCheckBase):
         self.automatic = True
 
     def run_on_applicable(self):
-        self.set_passed(len(self.spec.find_tag('gem_name')) > 0)
+        expanded = rpm.expandMacro('%{gem_name}')
+        self.set_passed(self.FAIL if '%' in expanded else self.PASS)
 
 
 class GemCheckProperName(GemCheckBase):
@@ -259,8 +264,8 @@ class GemCheckProperName(GemCheckBase):
         self.automatic = True
 
     def run_on_applicable(self):
-        names = self.spec.find_tag('Name')
-        self.set_passed('rubygem-%{gem_name}' in names)
+        name = self.spec.find_re('^Name\s*:')
+        self.set_passed('rubygem-%{gem_name}' in name)
 
 
 class GemCheckDoesntHaveNonGemSubpackage(GemCheckBase):
@@ -273,13 +278,12 @@ class GemCheckDoesntHaveNonGemSubpackage(GemCheckBase):
         self.automatic = True
 
     def run_on_applicable(self):
-        subpackage_re = re.compile(r'^%package\s+-n\s+ruby-.*')
-        self.set_passed(True)
-
-        for line in self.spec.lines:
-            if subpackage_re.match(line):
-                self.set_passed(False)
+        for pkg in self.spec.packages:
+            if '-ruby-' in pkg or pkg.startswith('ruby-'):
+                self.set_passed(self.FAIL)
                 break
+        else:
+            self.set_passed(self.PASS)
 
 
 class GemCheckRequiresRubygems(GemCheckBase):
@@ -295,9 +299,10 @@ class GemCheckRequiresRubygems(GemCheckBase):
         # it seems easier to check whether .gem is not present in rpms
         # than to examine %files
         failed = []
-        for pkg_name in self.spec_packages:
+        for pkg_name in self.spec.packages:
             rpm_pkg = self.rpms.get(pkg_name)
-            if not 'rubygems' in rpm_pkg.requires:
+            if not 'rubygems' in rpm_pkg.requires and \
+                    not 'ruby(rubygems)' in rpm_pkg.requires:
                 failed.append(pkg_name)
         if failed:
             text = 'Requires: rubygems missing in ' + ', '.join(failed)
@@ -318,13 +323,8 @@ class GemCheckExcludesGemCache(GemCheckBase):
     def run_on_applicable(self):
         # it seems easier to check whether .gem is not present in rpms
         # than to examine %files
-        gemfile_re = re.compile(r'.*\.gem$')
-        self.set_passed(True)
-
-        for one_rpm in self.srpm.get_files_rpms().values():
-            for f in one_rpm:
-                if gemfile_re.match(f):
-                    self.set_passed(False)
+        self.set_passed(
+            self.FAIL if self.rpms.find('*.gem') else self.PASS)
 
 
 class GemCheckUsesMacros(GemCheckBase):
@@ -351,23 +351,22 @@ class GemCheckUsesMacros(GemCheckBase):
             re_dict[gem_extdir_re] = False
 
         # mark the present macro regexps with True
-        files_val = self.spec.get_section('%files').values()
-        files_sections = itertools.chain(*files_val)  # pylint: disable=W0142
-        for line in files_sections:
-            for macro_re in re_dict:
-                if macro_re.match(line):
-                    re_dict[macro_re] = True
+        for pkg in self.spec.packages:
+            for line in self.spec.get_files(pkg):
+                for macro_re in re_dict:
+                    if macro_re.match(line):
+                        re_dict[macro_re] = True
 
         err_message = []
         # construct the error message for all non-present macros
         for key, value in re_dict.iteritems():
-            if value == False:
+            if value is False:
                 err_message.append(key.pattern.replace('\\s+', ' '))
 
         if len(err_message) == 0:
-            self.set_passed(True)
+            self.set_passed(self.PASS)
         else:
-            self.set_passed(False,
+            self.set_passed(self.FAIL,
                             'The specfile doesn\'t use these macros: %s'
                             % ', '.join(err_message))
 

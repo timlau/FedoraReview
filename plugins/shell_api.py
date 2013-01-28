@@ -28,11 +28,16 @@ import shutil
 from glob import glob
 from subprocess import Popen, PIPE
 
-from FedoraReview import AbstractRegistry
-from FedoraReview import GenericCheck, ReviewDirs, Settings, XdgDirs
+from FedoraReview import AbstractRegistry, GenericCheck
+from FedoraReview import ReviewDirs, Settings, XdgDirs
 
 ENVIRON_TEMPLATE = """
-unset $(env | sed 's/=.*//')
+#
+# This file is not needed for review, and is only used for the
+# shell API plugin. No need to modify it or anything.
+#
+
+unset $(env | sed -n 's/=.*//p')
 PATH=/bin:/usr/bin:/sbin/:/usr/sbin
 
 FR_FLAGS_generator
@@ -54,17 +59,11 @@ FR_PATCH_generator
 export FR_PREP=@prep@
 export FR_BUILD=@build@
 export FR_INSTALL=@install@
-export FR_PRE=@pre@
-export FR_POST=@post@
-export FR_PREUN=@preun@
-export FR_POSTUN=@postun@
-export FR_POSTTRANS=@posttrans@
 
 FR_FILES_generator
 FR_DESCRIPTION_generator
-FR_PACKAGE_generator
 
-export FR_FILES FR_DESCRIPTION FR_PACKAGE
+export FR_FILES FR_DESCRIPTION
 
 export FR_PASS=80
 export FR_FAIL=81
@@ -148,8 +147,7 @@ function attach()
 ENV_PATH = 'review-env.sh'
 
 _TAGS = ['name', 'version', 'release', 'group', 'license', 'url']
-_SECTIONS = ['prep', 'build', 'install', 'pre', 'post',
-             'preun', 'postun', 'posttrans']
+_SECTIONS = ['prep', 'build', 'install', 'check']
 
 _PASS = 80
 _FAIL = 81
@@ -186,8 +184,7 @@ def _settings_generator():
 def _source_generator(spec):
     ''' Bash code defining the %sourceX items. '''
     body = ''
-    sources = spec.get_sources()
-    for tag, path in sources.iteritems():
+    for tag, path in spec.sources_by_tag.iteritems():
         body += 'export ' + tag + '="' + path + '"\n'
     return body
 
@@ -195,8 +192,7 @@ def _source_generator(spec):
 def _patch_generator(spec):
     ''' Bash code defining the %patchX items. '''
     body = ''
-    patches = spec.get_sources('Patch')
-    for tag, path in patches.iteritems():
+    for tag, path in spec.patches_by_tag.iteritems():
         body += 'export ' + tag + '="' + path + '"\n'
     return body
 
@@ -204,12 +200,9 @@ def _patch_generator(spec):
 def _files_generator(spec):
     ''' Bash code defining FR_FILES,reflecting %files. '''
     body = 'declare -A FR_FILES\n'
-    files = spec.get_section('%files')
-    for section, lines in files.iteritems():
-        item = ''
-        for line in lines:
-            item += _quote(line) + '\n'
-        body += """FR_FILES[%s]='%s'\n""" % (section, item)
+    for pkg in spec.packages:
+        item = _quote('\n'.join(spec.get_files(pkg)))
+        body += """FR_FILES[%s]='%s'\n""" % (pkg, item)
     return body
 
 
@@ -218,12 +211,11 @@ def _description_generator(spec):
     Bash code defining FR_DESCRIPTION,reflecting %description.
     '''
     body = 'declare -A FR_DESCRIPTION\n'
-    descriptions = spec.get_section('%description')
-    for section, lines in descriptions.iteritems():
-        item = ''
-        for line in lines:
-            item += _quote(line) + '\n'
-        body += """FR_DESCRIPTION[%s]='%s'\n""" % (section, item)
+    for pkg in spec.packages:
+        section = spec.get_section('%description', pkg)
+        if section:
+            item = _quote('\n'.join(section))
+            body += """FR_DESCRIPTION[%s]='%s'\n""" % (pkg, item)
     return body
 
 
@@ -235,28 +227,13 @@ def _flags_generator(flags):
     return body
 
 
-def _package_generator(spec):
-    ''' Bash code defining FR_PACKAGE,reflecting %package. '''
-    body = 'declare -A FR_PACKAGE\n'
-    packages = spec.get_section('%package')
-    for section, lines in packages.iteritems():
-        item = ''
-        for line in lines:
-            item += _quote(line) + '\n'
-        body += """FR_PACKAGE[%s]='%s'\n""" % (section, item)
-    return body
-
-
 def _write_section(spec, env, s):
     ''' Substitute a spec section into env.'''
     body = ''
     section = '%' + s.strip()
-    try:
-        lines = spec.get_section(section)[section]
-    except KeyError:
-        lines = []
-    for line in lines:
-        body += _quote(line) + '\n'
+    lines = spec.get_section(section)
+    if lines:
+        body += _quote('\n'.join(lines))
     body = "'" + body + "'"
     if len(body) < 5:
         body = ''
@@ -266,7 +243,7 @@ def _write_section(spec, env, s):
 
 def _write_tag(spec, env, tag):
     ''' Substitute a spec tag into env. '''
-    value = spec.get_from_spec(tag.upper())
+    value = spec.expand_tag(tag.upper())
     if value:
         env = env.replace('@' + tag + '@', value)
     else:
@@ -283,17 +260,15 @@ def _create_env(checks):
     for tag in _TAGS:
         env = _write_tag(checks.spec, env, tag)
     env = env.replace('FR_SOURCE_generator',
-                       _source_generator(checks.spec))
+                      _source_generator(checks.spec))
     env = env.replace('FR_PATCH_generator',
-                       _patch_generator(checks.spec))
+                      _patch_generator(checks.spec))
     for s in _SECTIONS:
         env = _write_section(checks.spec, env, s)
     env = env.replace('FR_FILES_generator',
                       _files_generator(checks.spec))
     env = env.replace('FR_FLAGS_generator',
                       _flags_generator(checks.flags))
-    env = env.replace('FR_PACKAGE_generator',
-                       _package_generator(checks.spec))
     env = env.replace('FR_DESCRIPTION_generator',
                       _description_generator(checks.spec))
     with open(ENV_PATH, 'w') as f:
@@ -337,12 +312,12 @@ class Registry(AbstractRegistry):
         def _get_plugin_dirs():
             ''' Return list of dirs to scan for scripts. '''
             dir_list = []
-            plugindir = os.path.dirname(__file__)
+            plugindir = os.path.realpath(os.path.dirname(__file__))
             plugindir = os.path.join(plugindir, '../scripts')
             plugindir = os.path.normpath(plugindir)
             dir_list.append(plugindir)
             dir_list.append(os.path.join(XdgDirs.app_datadir,
-                                                  'scripts'))
+                                         'scripts'))
             return dir_list
 
         dirs = _get_plugin_dirs()
@@ -463,7 +438,7 @@ class ShellCheck(GenericCheck):
                 sort_hint = int(sort_hint)
             except ValueError:
                 self.log.warning('Cannot decode attachment sorting hint: '
-                                  + sort_hint + ', defaulting to 7')
+                                 + sort_hint + ', defaulting to 7')
                 sort_hint = 7
             a = self.Attachment(header, body, sort_hint)
             attachments.append(a)
@@ -476,9 +451,9 @@ class ShellCheck(GenericCheck):
             return
         if not self.group in self.groups:
             self.set_passed(self.PENDING,
-                           "Test run failed: illegal group")
+                            "Test run failed: illegal group")
             self.log.warning('Illegal group %s in %s' %
-                                   (self.group, self.defined_in))
+                             (self.group, self.defined_in))
             return
         if not self.groups[self.group].is_applicable():
             self.set_passed(self.NA)
@@ -500,8 +475,8 @@ class ShellCheck(GenericCheck):
         else:
             self.log.warning(
                 'Illegal return from %s, code %d, output: %s' %
-                     (self.defined_in, retval,
-                     'stdout:' + str(stdout) + ' stderr:' + str(stderr)))
+                (self.defined_in, retval,
+                'stdout:' + str(stdout) + ' stderr:' + str(stderr)))
             self.set_passed(self.PENDING, 'Test run failed')
 
 # vim: set expandtab: ts=4:sw=4:

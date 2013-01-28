@@ -1,7 +1,0 @@
-{
-  "command":"get_subpackages"
-}
-
-{
-  "subpackages":["javadoc",'devel']
-}

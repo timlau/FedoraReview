@@ -1,59 +1,126 @@
 #!/bin/bash
-# reads version from setup.py, create a source tarball and optionally
-# upload to fedorahosted
+# reads version from setup.py, create a source tarball and customized
+# spec file. Optionally upload to fedorahosted
 #
 # Options: -b  Batch mode, don't ask for fedorahosted upload
+#          -q  Quick: disable test, implies -b.
+#
+# Creating release:
+#   - Update version in version.tmpl and test/fr_testcase.py.
+#   - Comment %git_tag ("%global  %gittag" -> "#global gittag")
+#     in specfile.
+#
+# Preparing post-release:
+#   -  Reactivate %global %git_tag
+#
+# Making post-release:
+#   -  Make changelog entry with git commit (must exist, might
+#      be anything - the git tag will be patched).
+#   -  Update release number (first part of Release: field).
+#
+# All cases: run this script, find spec, tarball and srpm in dist/.
 
-newdir=`mktemp --tmpdir -d fedora-review-release-XXXXX`
+startdir=$PWD
+cd $( dirname $( readlink -fn $0 ))
+branch="$( git branch | awk '/^*/ {$1 = ""; print $0}' )"
+commit=$( git log --oneline | head -1 | cut -d' ' -f1 )
+echo "Using branch: $branch"
+echo "Last commit : $(git log --oneline -1)"
 
-git clone $( dirname $( readlink -fn $0 )) $newdir
-
-cd ${newdir}
-
-
-status=$( git status --short )
+status=$( git status --short -uno)
 [ -n "$status" ] && echo 'Warning: there are uncommitted changes' >&2
+
+echo
+newdir=$( mktemp --tmpdir -d fedora-review-release-XXXXX )
+git clone --quiet . $newdir &>/dev/null
+cd $newdir
+git reset --quiet --hard $commit
 
 badlinks=$( find . -type l ! -execdir test -e '{}' \; -print | nl )
 [ -n "$badlinks" ] && echo "Warning: unresolved  symlinks: $badlinks" >&2
 
-./update-version
+env PYTHONPATH=src ./update-version
 
 source src/FedoraReview/version
 dfile="dist/fedora-review-$__version__.tar.gz"
-
 [ -f ${dfile} ] && echo Removing: $dfile
 rm -f $dfile
 
+# setuptools does not package symlinks...
+cd test; ./remember-links > restore-links.sh; cd $OLDPWD
+
+git ls-files | while read path; do
+    [[ $(basename $path) == .git* || -L $path ]] && continue
+    echo $path
+done > MANIFEST
+
+echo "src/FedoraReview/version" >> MANIFEST
+echo "test/restore-links.sh" >> MANIFEST
 env PYTHONPATH=src python setup.py --quiet clean
 env PYTHONPATH=src python setup.py --quiet build sdist
 if [ ! -e "$dfile" ];  then
     echo "Error: could not create $dfile"
     exit 1
 fi
-echo "Created: $dfile"
 
-echo "Running tests on tarball before finalizing release"
-tar -xf $dfile && pushd fedora-review-$__version__
-REVIEW_LOGLEVEL=error src/test/run-tests.py
-if [ $? -ne 0 ]; then
-    echo "Some tests failed. Review test logs and fix all problems"
-    echo "before doing a release. Aborting"
-    exit 1
+if [ ! "$1" = '-q' ]; then
+    echo "Running tests on tarball before finalizing release"
+    tar -xf $dfile && pushd fedora-review-$__version__
+    cd test
+    bash < restore-links.sh
+    mock --quiet -r fedora-17-i386 --init
+    mock --quiet -r fedora-16-i386 --init
+    mock --quiet -r fedora-17-i386 --uniqueext=hugo --init
+    MAKE_RELEASE=1 REVIEW_LOGLEVEL=error python -m unittest discover
+    if [ $? -ne 0 ]; then
+        echo "Some tests failed. Review test logs and fix all problems"
+        echo "before doing a release."
+        echo "Aborting. Temporary files left in $newdir"
+        exit 1
+    fi
 fi
-popd
-[ "$1" = '-b' ] && exit 0
 
-read -i 'n' -e -p "Do you want to upload file $dfile to fedorahosted? (y/n): "
+cd $startdir
+rm -f dist/*
+sed -r  -e 's/git_tag[ ]*\.[0-9a-f]*/git_tag  '".$BUILD_ID/" \
+        -e '/%changelog/,/^$/ s/[0-9a-f]{7}/'"$BUILD_ID/" \
+        -e '/%changelog/,/^$/ s/\*.*201[0-9]/* '"$(date +'%a %b %d %Y')/" \
+    < fedora-review.spec  > dist/fedora-review.spec
+echo Created: dist/fedora-review.spec
+
+source0=$( spectool dist/fedora-review.spec | awk '{print $2}' )
+source0=${source0##*/}
+cp "$newdir/$dfile" "$startdir/dist/$source0"
+echo "Created: dist/$source0"
+
+sources=$( rpm --eval %_sourcedir )
+mkdir -p $sources &>/dev/null || :
+ln -sf $PWD/dist/$source0  $sources
+
+cd dist
+    evr=$( rpmspec --srpm -q --qf '%{version}-%{release}' fedora-review.spec )
+    rpmbuild --quiet -bs fedora-review.spec
+    mv $( rpm --eval %_srcrpmdir )/fedora-review-${evr}* .
+cd ..
+echo Created: dist/fedora-review-${evr}*
+
+if [[ "$1" = '-b' || "$1" = '-q' ]]; then
+    rm -rf $newdir
+    exit 0
+fi
+
+read -i 'n' -e -p "Do you want to upload file $source0 to fedorahosted? (y/n): "
 if [ "$REPLY" = "y" ];then
-    scp "${dfile}" fedorahosted.org:FedoraReview
+    scp "dist/$source0" fedorahosted.org:FedoraReview
     git tag $__version__
     git push --tags
     echo "Things to do now:"
     echo "      1. Merge to 'master' and 'devel'"
-    echo "      2. Update trac releases and tickets"
-    echo "      3. Build rpms for Fedoras/EPEL"
-    echo "      4. Create updates in bodhi"
-    echo "      5. Announce!"
-    echo "      6. (nice to have) Update trac queries for new milestone"
+    echo "      2. On devel, reactivate %git_tag in fedora-review.spec"
+    echo "      3. Update trac releases and tickets"
+    echo "      4. Build rpms for Fedoras/EPEL"
+    echo "      5. Create updates in bodhi"
+    echo "      6. Announce!"
+    echo "      7. (nice to have) Update trac queries for new milestone"
 fi
+rm -rf $newdir

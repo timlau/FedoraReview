@@ -1,9 +1,8 @@
-#!/usr/bin/env python
 #
 '''
 Create the file version if it does not exist.
 In any case, exec this file, providing symbols defined
-there on module level, redefining he 'unknown' defaults.
+there on module level, redefining the 'unknown' defaults.
 '''
 
 import os.path
