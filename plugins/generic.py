@@ -37,6 +37,8 @@ from FedoraReview import CheckBase, Mock, ReviewDirs
 from FedoraReview import ReviewError             # pylint: disable=W0611
 from FedoraReview import RegistryBase, Settings
 
+import FedoraReview.deps as deps
+
 
 def in_list(what, list_):
     ''' test if 'what' is in each item in list_. '''
@@ -927,8 +929,70 @@ class CheckOwnDirs(GenericCheckBase):
         self.url = 'http://fedoraproject.org/wiki/' \
                    'Packaging/Guidelines#FileAndDirectoryOwnership'
         self.text = 'Package must own all directories that it creates.'
-        self.automatic = False
+        self.automatic = True
         self.type = 'MUST'
+
+    def run_on_applicable(self):
+        ''' Test if all directories created by us are owned by us or
+        of a dependency. Dependency resolution recurses one level, but
+        no more. This is partly to limit the result set, partly a
+        a best practise not to trust deep dependency chains for
+        package directory ownership.
+        '''
+
+        # pylint: disable=R0912
+        def resolve(requires):
+            '''
+            Resolve list of symbols to packages in srpm or by repoquery.
+            '''
+            pkgs = []
+            requires_to_process = list(requires)
+            for r in requires:
+                if r.startswith('rpmlib'):
+                    requires_to_process.remove(r)
+                    continue
+                for pkg in self.spec.packages:
+                    if r in self.rpms.get(pkg).provides:
+                        pkgs.append(pkg)
+                        requires_to_process.remove(r)
+                        break
+            if requires_to_process:
+                pkgs.extend(deps.resolve(requires_to_process))
+                pkgs.extend(deps.list_deps(pkgs))
+            return list(set(pkgs))
+
+        def get_deps_paths(pkg_deps):
+            ''' Return aggregated  list of files in all pkg_deps. '''
+            if not pkg_deps:
+                return  []
+            paths = deps.list_paths(pkg_deps)
+            for dep in pkg_deps:
+                if dep in self.spec.packages:
+                    paths.extend(self.rpms.get_filelist(dep))
+            return paths
+
+        bad_dirs = []
+        for pkg in self.spec.packages:
+            pkg_deps = resolve(self.rpms.get(pkg).requires)
+            pkg_deps.append('filesystem')
+            pkg_deps_paths = get_deps_paths(pkg_deps)
+            rpm_paths = self.rpms.get_filelist(pkg)
+            for p in rpm_paths:
+                path = p.rsplit('/', 1)[0]  # We own leaf, for sure.
+                while path:
+                    if not path in rpm_paths:
+                        if path in pkg_deps_paths:
+                            break
+                        else:
+                            bad_dirs.append(path)
+                    path = path.rsplit('/', 1)[0]
+        if bad_dirs:
+            bad_dirs = list(set(bad_dirs))
+            self.set_passed(self.PENDING,
+                            "Directories without known owners: "
+                                 + ', '.join(bad_dirs))
+        else:
+            self.set_passed(self.PASS)
 
 
 class CheckOwnOther(GenericCheckBase):
