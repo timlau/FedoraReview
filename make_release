@@ -66,6 +66,7 @@ fi
 if [ ! "$1" = '-q' ]; then
     echo "Running tests on tarball before finalizing release"
     tar -xf $dfile && pushd fedora-review-$__version__
+    cd src/FedoraReview; ln -s ../../plugins .; cd $OLDPWD
     cd test
     bash < restore-links.sh
     mock --quiet -r fedora-17-i386 --init
