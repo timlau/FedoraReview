@@ -34,17 +34,16 @@ from settings import Settings
 class Source(HelpersMixin):
     ''' A source defined in the specfile.
     Attributes:
-         - url: complete url, possibly file://
-         - filename: local filename
          - tag: as defined in specfile e. g., 'Source0'
-         - local: True if the source is just a file, false
-           if it's a downloaded url
-         - local_src: points to local upstream copy, or None.
-         - is_failed: True if attempted download failed.
-         - is_url: True if url is downloadable.
+         - url: complete url, possibly file://
+         - extract_dir: where extract() places unpacked source.
+         - filename: local filename
+         - local_src: points to local upstream copy provided by user,
+           or None.
+         - is_url: True if url is (or should be) downloadable.
 
     '''
-    # pylint: disable=R0902
+
     def __init__(self, tag, url):
 
         def my_logger(cache):
@@ -62,10 +61,8 @@ class Source(HelpersMixin):
         self.downloaded = True
         self.local_src = None
         self.is_url = urlparse(url)[0] != ''
-        self.is_failed = False
         if self.is_url:  # This is a URL, Download it
             self.url = url
-            self.local = False
             if Settings.cache:
                 cached = os.path.join(ReviewDirs.upstream,
                                       url.rsplit('/', 1)[1])
@@ -86,7 +83,6 @@ class Source(HelpersMixin):
                                 exc_info=True)
                 self.log.warning('Cannot download url: ' + url)
                 self.downloaded = False
-                self.is_failed = True
                 # get the filename
                 url = urlparse(url)[2].split('/')[-1]
 
@@ -97,13 +93,19 @@ class Source(HelpersMixin):
                     "Using local file " + url + " as " + tag)
                 srcdir = ReviewDirs.startdir
                 self.local_src = local_src
-                self.local = False
             else:
                 self.log.info("No upstream for (%s): %s" % (tag, url))
                 srcdir = ReviewDirs.srpm_unpacked
-                self.local = True
             self.filename = os.path.join(srcdir, url)
             self.url = 'file://' + self.filename
+
+    # True if the source is a local file in srpm, false if a downloaded
+    # url or tarball provided by user.
+    local = property(lambda self: (not self.is_url or not self.downloaded)
+                                  and not self.local_src)
+
+    # True if downloadable, but the uri couldn't be accessed.
+    is_failed = property(lambda self: self.is_url and not self.downloaded)
 
     def check_source_checksum(self):
         ''' Check source with upstream source using checksumming. '''
