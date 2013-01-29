@@ -1,10 +1,10 @@
 .TH "fedora-review" 1
 .SH NAME
-fedora-review \- Automatically review RPM packages for Fedora.
+fedora-review \- Customized review template for Fedora packages
 
 .SH SYNOPSIS
 .B fedora-review
-[options] [bugzilla options] -b <bug>
+[options] -b <bug>
 .br
 .B fedora-review
 [options] [--prebuilt] -n <package name>
@@ -17,14 +17,15 @@ fedora-review \- Automatically review RPM packages for Fedora.
 
 .SH DESCRIPTION
 
-This tool makes reviews of rpm packages for Fedora easier. It tries to
-automate most of the process.  Through a  bash API the checks can be
-extended in any programming language and for any programming language.
-We have at the moment checks for C/C++, R, Java and Perl packages.
+Makes reviews of rpm packages for Fedora easier by providing
+a customized review template, automating some trivial tasks. The tool
+runs a number of checks to test whether a package complies to the
+Fedora Packaing Guidelines before creating the template.  Through a
+bash API the checks can be extended. We have at the moment checks for
+C/C++, R, Java and Perl packages.
 
 .SH USAGE
-The program runs a number of checks for packages in Fedora, producing
-a customized review template.
+Basic usage:
 .IP "" 4
 $ fedora-review -b <bug number>
 .br
@@ -33,9 +34,8 @@ $ fedora-review -u <url>
 Will download the SPEC & SRPM files from the Bugzilla report,
 build them in mock, run a number of tests and generate a template.
 
-Not all bugzillas support the -b option. The -u option only allows for
-downloads and is not as reliable as -b, but works in many cases.
-See  --url usage notes below.
+Not all bugzillas support the -b option. The -u option is available
+for these.  See  --url usage notes below.
 .IP "" 4
 $ fedora-review -n <package name>
 .PP
@@ -111,7 +111,7 @@ with the .cfg suffix stripped. Defaults to the root defined in
 /etc/mock/default.cfg
 .TP 4
 .B -o, --mock-options "options..."
-Mock options the build. Defaults to --no-cleanup-after, you might
+Mock options for the build. Defaults to --no-cleanup-after, you might
 want this along with other options
 you provide.
 .TP 4
@@ -216,19 +216,6 @@ For the source url, possible parameters are
 removed. It must end with /filename, typically something like
 /package-2.0.1.tar.gz
 
-.SH LOGIN AND ASSIGN
-fedora-review as of version 0.2.2 had options to login and assign a bugzilla
-bug. As of version 0.2.3 these options have been removed in favor of using
-bugzilla(1). Direct correspondence with old options:
-.PP
---login --user <user id>
-.IP "" 4
-bugzilla login --user <user id>
-.PP
---assign
-.IP "" 4
-bugzilla modify --assignee=<user id> --status=ASSIGNED --flag='fedora-cvs?'
-
 .SH EXAMPLES
 Make a report template for Fedora bug 817271:
 .IP "" 4
@@ -250,12 +237,8 @@ is needed:
 .nf
 .IP "" 4
 $ wget http://somewhere.com/bad-srpmlink -O my-package-1.2-1.fc16.src.rpm
-$ fedora-review --rpm-spec -n my-package
+$ fedora-review --rpm-spec -n my-package-1.2-1.fc16.src.rpm
 .fi
-.PP
-This works if (and only if) the local files has name with correct prefix
-as given to -n (my-package in this example). The filenames must also end
-with \.spec and \.src.rpm
 
 .SH FILES
 .I ~/.cache/fedora-review.log
@@ -272,7 +255,7 @@ System-wide scripts directory
 .RE
 .I ~/.local/share/fedora-review/plugins/
 .RS
-User supplied directory for full-featured python plugins
+User supplied directory for python plugins
 .RE
 .I ~/.local/share/fedora-review/scripts/
 .RS
@@ -294,9 +277,6 @@ but is $XDG_DATA_HOME/fedora-review/plugins if XDG_DATA_HOME is set. See FILES.
 If set, defines the directory where the logfile fedora-review.log is written.
 Defaults to ~ /.cache.
 
-.SH SEE ALSO
-bugzilla(1) - CLI tool to create and modify bugzilla bug tickets.
-
 .SH AUTHORS
 Original author: Tim Lauridsen <tim.lauridsen@gmail.com>
 
@@ -309,4 +289,12 @@ Developers:
 For a list of all contributors see AUTHORS file
 
 .SH SEE ALSO
-https://fedorahosted.org/FedoraReview/  - source, issue tracker, etc.
+.TP
+bugzilla(1)
+CLI tool to create and modify bugzilla bug tickets.
+.TP
+https://fedorahosted.org/FedoraReview/
+source, issue tracker, etc.
+.TP
+http://fedoraproject.org/wiki/Packaging:Guidelines
+Rules for Fedora packages.
