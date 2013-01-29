@@ -72,4 +72,4 @@ class _XdgDirs(object):
 XdgDirs = _XdgDirs()
 
 
-# vim: set expandtab: ts=4:sw=4:
+# vim: set expandtab ts=4 sw=4:

@@ -81,4 +81,4 @@ class NameBug(AbstractBug):
         self.spec_file = urlparse(self.spec_url).path
         return True
 
-# vim: set expandtab: ts=4:sw=4:
+# vim: set expandtab ts=4 sw=4:

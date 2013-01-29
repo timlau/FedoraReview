@@ -71,4 +71,4 @@ def _init():
 
 exec(_init())                                    # pylint: disable=W0122
 
-# vim: set expandtab: ts=4:sw=4;
+# vim: set expandtab ts=4 sw=4;

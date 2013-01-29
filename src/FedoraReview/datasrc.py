@@ -298,4 +298,4 @@ class SourcesDataSource(AbstractDataSource):
         return self.get_filelist()
 
 
-# vim: set expandtab: ts=4:sw=4:
+# vim: set expandtab ts=4 sw=4:

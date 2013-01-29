@@ -30,3 +30,5 @@ else:
     REVIEW_PATH = '/usr/bin/fedora-review'
 assert os.path.exists(SRC_PATH), "Can't find src path"
 sys.path.insert(0, SRC_PATH)
+
+# vim: set expandtab ts=4 sw=4:

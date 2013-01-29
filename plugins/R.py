@@ -252,4 +252,4 @@ class RCheckBuildSection(RCheckBase):
                 "R CMD INSTALL function\n"
             self.set_passed(self.FAIL, cmt)
 
-# vim: set expandtab: ts=4:sw=4:
+# vim: set expandtab ts=4 sw=4:

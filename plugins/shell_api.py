@@ -479,4 +479,4 @@ class ShellCheck(GenericCheck):
                 'stdout:' + str(stdout) + ' stderr:' + str(stderr)))
             self.set_passed(self.PENDING, 'Test run failed')
 
-# vim: set expandtab: ts=4:sw=4:
+# vim: set expandtab ts=4 sw=4:

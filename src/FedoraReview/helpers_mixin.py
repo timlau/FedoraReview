@@ -154,4 +154,4 @@ class HelpersMixin(object):
             return False, 'Cannot parse rpmlint output:'
 
 
-# vim: set expandtab: ts=4:sw=4:
+# vim: set expandtab ts=4 sw=4:

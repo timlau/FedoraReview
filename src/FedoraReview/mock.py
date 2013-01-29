@@ -415,4 +415,4 @@ class _Mock(HelpersMixin):
 
 Mock = _Mock()
 
-# vim: set expandtab: ts=4:sw=4:
+# vim: set expandtab ts=4 sw=4:

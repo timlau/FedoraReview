@@ -370,4 +370,4 @@ class GemCheckUsesMacros(GemCheckBase):
                             'The specfile doesn\'t use these macros: %s'
                             % ', '.join(err_message))
 
-# vim: set expandtab: ts=4:sw=4:
+# vim: set expandtab ts=4 sw=4:

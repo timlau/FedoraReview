@@ -370,4 +370,4 @@ class _Settings(object):                         # pylint: disable=R0902
 
 Settings = _Settings()
 
-# vim: set expandtab: ts=4:sw=4:
+# vim: set expandtab ts=4 sw=4:

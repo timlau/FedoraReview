@@ -42,4 +42,4 @@ if sys.version < '2.7':
 else:
     from subprocess import check_output          # pylint: disable=E0611
 
-# vim: set expandtab: ts=4:sw=4:
+# vim: set expandtab ts=4 sw=4:

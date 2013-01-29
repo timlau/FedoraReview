@@ -154,4 +154,4 @@ class Source(HelpersMixin):
             self.extract()
         return self.extract_dir
 
-# vim: set expandtab: ts=4:sw=4:
+# vim: set expandtab ts=4 sw=4:

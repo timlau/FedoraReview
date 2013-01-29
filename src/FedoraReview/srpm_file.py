@@ -105,4 +105,4 @@ class SRPMFile(HelpersMixin):
         return self._checksum(path)
 
 
-# vim: set expandtab: ts=4:sw=4:
+# vim: set expandtab ts=4 sw=4:

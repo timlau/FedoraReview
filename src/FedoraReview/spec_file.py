@@ -270,4 +270,4 @@ class SpecFile(object):
                 result.append(line.strip())
         return result
 
-# vim: set expandtab: ts=4:sw=4:
+# vim: set expandtab ts=4 sw=4:

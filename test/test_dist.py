@@ -80,3 +80,5 @@ if __name__ == '__main__':
     else:
         suite = unittest.TestLoader().loadTestsFromTestCase(TestDist)
     unittest.TextTestRunner(verbosity=2).run(suite)
+
+# vim: set expandtab ts=4 sw=4:

@@ -46,3 +46,5 @@ for t in 'Misc', 'Bugzilla', 'Ext', 'Options', 'Checks', 'RChecks', \
     testFail = testFail + len(result.errors) + len(result.failures)
 
 sys.exit(testFail)
+
+# vim: set expandtab ts=4 sw=4:

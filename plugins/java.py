@@ -472,4 +472,4 @@ class CheckNoArch(JavaCheckBase):
         self.automatic = False
         self.type = 'SHOULD'
 
-# vim: set expandtab: ts=4:sw=4:
+# vim: set expandtab ts=4 sw=4:

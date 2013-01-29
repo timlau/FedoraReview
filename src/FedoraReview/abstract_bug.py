@@ -236,4 +236,4 @@ class AbstractBug(HelpersMixin):
                     '--' + opt + ' can not be used with ' + mode)
 
 
-# vim: set expandtab: ts=4:sw=4:
+# vim: set expandtab ts=4 sw=4:

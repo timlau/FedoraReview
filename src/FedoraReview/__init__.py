@@ -30,4 +30,4 @@ from settings     import Settings
 from version      import __version__, BUILD_ID, BUILD_DATE, BUILD_FULL
 from xdg_dirs     import XdgDirs
 
-# vim: set expandtab: ts=4:sw=4:
+# vim: set expandtab ts=4 sw=4:

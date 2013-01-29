@@ -149,3 +149,5 @@ class  FR_TestCase(unittest.TestCase):
                               checkdict[check].attachments[0].text)
             else:
                 self.assertFalse(what)
+
+# vim: set expandtab ts=4 sw=4:
