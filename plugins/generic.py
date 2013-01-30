@@ -1013,8 +1013,39 @@ class CheckOwnOther(GenericCheckBase):
                    'Packaging/Guidelines#FileAndDirectoryOwnership'
         self.text = 'Package does not own files or directories' \
                     ' owned by other packages.'
-        self.automatic = False
+        self.automatic = True
         self.type = 'MUST'
+
+    def run_on_applicable(self):
+
+        def format_msg(owners_by_dir):
+            ''' Message string for PENDING message. '''
+            items = []
+            for d in owners_by_dir:
+                owners = ', '.join(owners_by_dir[d])
+                items.append("{0}({1})".format(d, owners))
+            return "Dirs in package are owned also by: " + \
+                ', '.join(items)
+
+        bad_owners_by_dir = {}
+        rpm_files = glob(os.path.join(Mock.resultdir, '*.rpm'))
+        rpm_files = [r for r in rpm_files if not r.endswith('.src.rpm')]
+        for rpm_file in rpm_files:
+            rpm_dirs = sorted(deps.list_dirs(rpm_file))
+            my_dirs = []
+            allowed = set(self.spec.packages)
+            for rpm_dir in rpm_dirs:
+                if [d for d in my_dirs if rpm_dir.startswith(d)]:
+                    continue
+                owners = set(deps.list_owners(rpm_dir))
+                if owners.issubset(allowed):
+                    my_dirs.append(rpm_dir)
+                    continue
+                bad_owners_by_dir[rpm_dir] = owners
+        if bad_owners_by_dir:
+            self.set_passed(self.PENDING, format_msg(bad_owners_by_dir))
+        else:
+            self.set_passed(self.PASS)
 
 
 class CheckRelocatable(GenericCheckBase):
