@@ -374,8 +374,35 @@ class CheckDirectoryRequire(GenericCheckBase):
         GenericCheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
         self.text = 'Package requires other packages for directories it uses.'
-        self.automatic = False
+        self.automatic = True
         self.type = 'MUST'
+
+    def run_on_applicable(self):
+        '''
+        Build raw list of directory paths in pkg, package owning the
+        leaf.
+        Split list into /part1 /part1/part2 /part1/part2/part3...
+        Remove all paths part of filesystem.
+        Remove all paths part of package.
+        Remaining dirs must have a owner, test one by one (painful).
+        '''
+        dirs = []
+        for path in self.rpms.get_filelist():
+            path = path.rsplit('/', 1)[0]  # We own the leaf.
+            while path:
+                dirs.append(path)
+                path = path.rsplit('/', 1)[0]
+        dirs = set(dirs)
+        filesys_dirs = set(deps.list_paths('filesystem'))
+        dirs -= filesys_dirs
+        rpm_paths = set(self.rpms.get_filelist())
+        dirs -= rpm_paths
+        bad_dirs = [d for d in dirs if not deps.list_owners(d)]
+        if bad_dirs:
+            self.set_passed(self.PENDING,
+                            "No known owner of " + ", ".join(bad_dirs))
+        else:
+            self.set_passed(self.PASS)
 
 
 class CheckDocRuntime(GenericCheckBase):
