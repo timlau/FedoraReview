@@ -40,7 +40,7 @@ Mock.init()
 
 testFail = 0
 for t in 'Misc', 'Bugzilla', 'Ext', 'Options', 'Checks', 'RChecks', \
-         'Regressions', 'Dist':
+         'Regressions', 'Dist', 'Deps':
     test = eval('unittest.TestLoader().loadTestsFromTestCase(Test%s)' % t)
     result = unittest.TextTestRunner(verbosity=VERBOSITY).run(test)
     testFail = testFail + len(result.errors) + len(result.failures)

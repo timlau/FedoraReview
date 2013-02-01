@@ -15,21 +15,22 @@ Source0:    https://fedorahosted.org/released/FedoraReview/%{name}-%{version}%{?
 
 BuildArch:  noarch
 
+BuildRequires:  python-argparse
 BuildRequires:  python-BeautifulSoup
 BuildRequires:  python-bugzilla
 BuildRequires:  python-straight-plugin
 BuildRequires:  python2-devel
 BuildRequires:  rpm-python
-BuildRequires:  python-argparse
 
 Requires:       fedora-packager
+Requires:       python-argparse
 Requires:       python-BeautifulSoup
 Requires:       python-bugzilla
 Requires:       python-kitchen
 Requires:       python-straight-plugin
 Requires:       rpm-python
 Requires:       rpmdevtools
-Requires:       python-argparse
+Requires:       yum-utils
 
 # Let's be consistent with the name used on fedorahosted
 provides:       FedoraReview = %{version}-%{release}

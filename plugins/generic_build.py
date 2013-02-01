@@ -29,6 +29,12 @@ tests by default depends on.
 import glob
 import os
 import os.path
+import subprocess
+try:
+    from subprocess import check_output          # pylint: disable=E0611
+except ImportError:
+    from FedoraReview.el_compat import check_output
+
 
 from FedoraReview import CheckBase, Mock, ReviewDirs, Settings
 from FedoraReview import RegistryBase, ReviewError
@@ -258,6 +264,26 @@ class CheckRpmlintInstalled(BuildCheckBase):
             self.set_passed(self.FAIL, 'Mock build failed')
 
 
+class CheckInitDeps(BuildCheckBase):
+    ''' EXTRA: Setup the repoquery wrapper.  No output in report '''
+
+    def __init__(self, base):
+        BuildCheckBase.__init__(self, base)
+        self.url = ''
+        self.text = 'This text is never shown'
+        self.automatic = True
+        self.type = 'EXTRA'
+        self.needs = ['CheckRpmlintInstalled']
+        self.filesys_dirs = None
+
+    def run(self):
+        try:
+            check_output(['yum', 'makecache'])
+        except subprocess.CalledProcessError:
+            self.log.warning("Cannot run yum makecache, trouble ahead")
+        self.set_passed(self.NA)
+
+
 class CheckBuildCompleted(BuildCheckBase):
     '''
     EXTRA: This test is the default dependency. Requiring this test means
@@ -270,7 +296,7 @@ class CheckBuildCompleted(BuildCheckBase):
         self.text = 'This text is never shown'
         self.automatic = True
         self.type = 'EXTRA'
-        self.needs = ['CheckRpmlintInstalled']
+        self.needs = ['CheckInitDeps']
 
     def run(self):
         Mock.clear_builddir()
