@@ -1,0 +1,33 @@
+#!/bin/bash
+#
+# Run tests, the jenkins way.
+#
+# Requires: python-virtualenv, python-pip
+
+set -x
+cd $(dirname $(readlink -fn $0))
+cd ..
+
+rm -fr fedorareviewenv
+virtualenv --system-site-packages fedorareviewenv
+source fedorareviewenv/bin/activate
+pip install nose --upgrade  ## Needed within the venv
+hash -r  ## Reload where the nosetests app is (within the venv)
+pip install nosexcover
+
+PYTHONPATH=src ./update-version || :
+yum makecache #FIXME - remove
+pushd test
+export REVIEW_LOGLEVEL=warning
+mock -q --shell "echo OK" || mock --quiet --init
+mock -qr fedora-17-i386 --shell "echo 17-i38 OK" ||\
+     mock --quiet -r fedora-17-i386 --init
+mock -qr fedora-16-i386 --shell "echo 16-i38 OK" || \
+    mock --quiet -r fedora-16-i386 --init
+mock -qr fedora-17-i386 --uniqueext=hugo \
+    --shell "echo 17-i386  uniqueext=hugo OK" || \
+    mock --quiet -r fedora-17-i386 --uniqueext=hugo --init
+
+nosetests -vx -e init_test -e init_opt_test --cover-erase \
+    --cover-package=plugins,FedoraReview --with-xunit --with-xcoverage
+popd
