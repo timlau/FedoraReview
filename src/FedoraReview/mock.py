@@ -25,7 +25,7 @@ import os
 import os.path
 
 from glob import glob
-from subprocess import call, Popen, PIPE, STDOUT
+from subprocess import call, Popen, PIPE, STDOUT, CalledProcessError
 
 try:
     from subprocess import check_output          # pylint: disable=E0611
@@ -66,6 +66,7 @@ class _Mock(HelpersMixin):
         self.build_failed = None
         self.mock_root = None
         self._rpmlint_output = None
+        self._topdir = None
 
     def _get_root(self):
         '''Return mock's root according to Settings. '''
@@ -90,13 +91,16 @@ class _Mock(HelpersMixin):
                           'Rawhide should be used for most package reviews')
 
     def _get_dir(self, subdir=None):
-        ''' Return a directory under root, create if non-existing. '''
+        ''' Return a directory under root, try to create if non-existing. '''
         if not self.mock_root:
             self._get_root()
         p = os.path.join('/var/lib/mock', self.mock_root)
         p = os.path.join(p, subdir) if subdir else p
         if not os.path.exists(p):
-            os.makedirs(p)
+            try:
+                os.makedirs(p)
+            except OSError:
+                pass
         return p
 
     def _get_rpmlint_output(self):
@@ -133,6 +137,20 @@ class _Mock(HelpersMixin):
             logging.info(header + " command returned error code %i",
                          p.returncode)
         return None if p.returncode == 0 else str(output)
+
+    def _get_topdir(self):
+        ''' Update _topdir to reflect %_topdir in current mock config. '''
+        if self._topdir:
+            return
+        cmd = self._mock_cmd()
+        cmd.extend(['-q', '--shell', 'rpm --eval %_topdir'])
+        try:
+            self._topdir = check_output(cmd).strip()
+            self.log.debug("_topdir: " + str(self._topdir))
+        except CalledProcessError:
+            self.log.warning("Cannot evaluate %topdir in mock, using"
+                             "hardcoded /builddir/build")
+            self._topdir = '/builddir/build'
 
     def _clear_rpm_db(self):
         """ Mock install uses host's yum -> bad rpm database. """
@@ -201,7 +219,8 @@ class _Mock(HelpersMixin):
         """ Return the directory which corresponds to %_topdir inside
         mock. Optional subdir argument is added to returned path.
         """
-        p = self._get_dir('root/builddir/build')
+        self._get_topdir()
+        p = self._get_dir(os.path.join('root', self._topdir[1:]))
         return os.path.join(p, subdir) if subdir else p
 
     def rpm_eval(self, arg):
@@ -227,7 +246,7 @@ class _Mock(HelpersMixin):
         ''' Remove all sources installed in BUILD. '''
         cmd = self._mock_cmd()
         cmd.append('--shell')
-        cmd.append('rm -rf /builddir/build/BUILD/*')
+        cmd.append('rm -rf $(rpm --eval %_builddir)/*')
         errmsg = self._run_cmd(cmd)
         if  errmsg:
             self.log.debug('Cannot clear build area: ' + errmsg +
@@ -259,9 +278,9 @@ class _Mock(HelpersMixin):
         cmd = self._mock_cmd()
         cmd.append('--shell')
         script = 'rpm -i ' + os.path.basename(srpm.filename) + '; '
-        script += 'rpmbuild --nodeps -bp /builddir/build/SPECS/' \
+        script += 'rpmbuild --nodeps -bp $(rpm --eval %_specdir)/' \
                   + srpm.name + '.spec;'
-        script += 'chmod -R  go+r  /builddir/build/BUILD/* || :'
+        script += 'chmod -R  go+r  $(rpm --eval %_builddir)/* || :'
         cmd.append(script)
         errmsg = self._run_cmd(cmd)
         if  errmsg:
