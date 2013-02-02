@@ -99,6 +99,47 @@ class _Mock(HelpersMixin):
             os.makedirs(p)
         return p
 
+    def _get_rpmlint_output(self):
+        ''' Return output from last rpmlint, list of lines. '''
+        if not self._rpmlint_output:
+            if os.path.exists('rpmlint.txt'):
+                with open('rpmlint.txt') as f:
+                    self._rpmlint_output = f.readlines()
+        return self._rpmlint_output
+
+    def _mock_cmd(self):
+        ''' Return mock +  default options, a list of strings. '''
+        cmd = ["mock"]
+        if Settings.mock_config:
+            cmd.extend(['-r', Settings.mock_config])
+        cmd.extend(self.get_mock_options().split())
+        return cmd
+
+    def _run_cmd(self, cmd, header='Mock'):
+
+        def log_text(out, err):
+            ''' Format stdout + stderr. '''
+            return  header + " output: " + str(out) + ' ' + str(err)
+
+        self.log.debug(header + ' command: ' + ', '.join(cmd))
+        try:
+            p = Popen(cmd, stdout=PIPE, stderr=STDOUT)
+            output, error = p.communicate()
+            logging.debug(log_text(output, error), exc_info=True)
+        except OSError:
+            logging.error("Command failed", exc_info=True)
+            return "Command utterly failed. See logs for details"
+        if p.returncode != 0:
+            logging.info(header + " command returned error code %i",
+                         p.returncode)
+        return None if p.returncode == 0 else str(output)
+
+    def _clear_rpm_db(self):
+        """ Mock install uses host's yum -> bad rpm database. """
+        cmd = self._mock_cmd()
+        cmd.extend(['--shell', 'rm -f /var/lib/rpm/__db*'])
+        self._run_cmd(cmd)
+
     def reset(self):
         """ Clear all persistent state. """
         if self.mock_root:
@@ -110,6 +151,15 @@ class _Mock(HelpersMixin):
             return Settings.resultdir
         else:
             return ReviewDirs.results
+
+    # Last (cached?) output from rpmlint, list of lines.
+    rpmlint_output = property(_get_rpmlint_output)
+
+    # The directory where mock leaves built rpms and logs
+    resultdir = property(get_resultdir)
+
+    # Mock's %_topdir seen from the outside.
+    topdir = property(lambda self: self.get_builddir())
 
     @property
     def buildroot(self):
@@ -153,56 +203,6 @@ class _Mock(HelpersMixin):
         """
         p = self._get_dir('root/builddir/build')
         return os.path.join(p, subdir) if subdir else p
-
-    def _get_rpmlint_output(self):
-        ''' Return output from last rpmlint, list of lines. '''
-        if not self._rpmlint_output:
-            if os.path.exists('rpmlint.txt'):
-                with open('rpmlint.txt') as f:
-                    self._rpmlint_output = f.readlines()
-        return self._rpmlint_output
-
-    # Last (cached?) output from rpmlint, list of lines.
-    rpmlint_output = property(_get_rpmlint_output)
-
-    # The directory where mock leaves built rpms and logs
-    resultdir = property(get_resultdir)
-
-    # Mock's %_topdir seen from the outside.
-    topdir = property(lambda self: self.get_builddir())
-
-    def _mock_cmd(self):
-        ''' Return mock +  default options, a list of strings. '''
-        cmd = ["mock"]
-        if Settings.mock_config:
-            cmd.extend(['-r', Settings.mock_config])
-        cmd.extend(self.get_mock_options().split())
-        return cmd
-
-    def _run_cmd(self, cmd, header='Mock'):
-
-        def log_text(out, err):
-            ''' Format stdout + stderr. '''
-            return  header + " output: " + str(out) + ' ' + str(err)
-
-        self.log.debug(header + ' command: ' + ', '.join(cmd))
-        try:
-            p = Popen(cmd, stdout=PIPE, stderr=STDOUT)
-            output, error = p.communicate()
-            logging.debug(log_text(output, error), exc_info=True)
-        except OSError:
-            logging.error("Command failed", exc_info=True)
-            return "Command utterly failed. See logs for details"
-        if p.returncode != 0:
-            logging.info(header + " command returned error code %i",
-                         p.returncode)
-        return None if p.returncode == 0 else str(output)
-
-    def _clear_rpm_db(self):
-        """ Mock install uses host's yum -> bad rpm database. """
-        cmd = self._mock_cmd()
-        cmd.extend(['--shell', 'rm -f /var/lib/rpm/__db*'])
-        self._run_cmd(cmd)
 
     def rpm_eval(self, arg):
         ''' Run rpm --eval <arg> inside mock, return output. '''
