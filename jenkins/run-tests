@@ -4,30 +4,51 @@
 #
 # Requires: python-virtualenv, python-pip
 
-set -x
+
+function install_virtenv()
+{
+    rm -fr fedorareviewenv
+    virtualenv --system-site-packages fedorareviewenv
+    source fedorareviewenv/bin/activate
+    pip  install -q nose --upgrade  ## Needed within the venv
+    pip  install -q nosexcover
+    hash -r  ## Reload where the nosetests app is (within the venv)
+}
+
+args="$@"
+
 cd $(dirname $(readlink -fn $0))
 cd ..
 
-rm -fr fedorareviewenv
-virtualenv --system-site-packages fedorareviewenv
+if [[ -n "$PIP_INSTALL" || ! -d fedorareviewenv ]]; then
+        install_virtenv
+fi
 source fedorareviewenv/bin/activate
-pip install nose --upgrade  ## Needed within the venv
-hash -r  ## Reload where the nosetests app is (within the venv)
-pip install nosexcover
+hash -r
+
+nose_vers=$(nosetests --version) || :
+if [[ "$nose_vers" != *1.2* ]]; then
+    install_virtenv
+    source fedorareviewenv/bin/activate
+    hash -r
+fi
 
 PYTHONPATH=src ./update-version || :
-yum makecache #FIXME - remove
-pushd test
-export REVIEW_LOGLEVEL=warning
-mock -q --shell "echo OK" || mock --quiet --init
-mock -qr fedora-17-i386 --shell "echo 17-i38 OK" ||\
+cd test
+export REVIEW_LOGLEVEL=${REVIEW_LOGLEVEL:-warning}
+mock -q --shell "echo default root OK >/dev/null" || mock --quiet --init
+mock -qr fedora-17-i386 --shell "echo 17-i38 OK >/dev/null" ||\
      mock --quiet -r fedora-17-i386 --init
-mock -qr fedora-16-i386 --shell "echo 16-i38 OK" || \
+mock -qr fedora-16-i386 --shell "echo 16-i38 OK >/dev/null" || \
     mock --quiet -r fedora-16-i386 --init
 mock -qr fedora-17-i386 --uniqueext=hugo \
-    --shell "echo 17-i386  uniqueext=hugo OK" || \
+    --shell "echo 17-i386  uniqueext=hugo OK >/dev/null" || \
     mock --quiet -r fedora-17-i386 --uniqueext=hugo --init
 
-nosetests -vx -e init_test -e init_opt_test --cover-erase \
-    --cover-package=plugins,FedoraReview --with-xunit --with-xcoverage
-popd
+nosetests -svx -e init_test -e init_opt_test --cover-erase \
+    --cover-package=plugins,FedoraReview \
+    ${REVIEW_NOSEOPTS:- --with-xunit --with-xcoverage} \
+    "${args[@]}"
+
+
+# vim: set expandtab ts=4 sw=4:
