@@ -280,8 +280,9 @@ class CheckBuildCompleted(BuildCheckBase):
                 "Cannot do rpmbuild -bp, trying with builddeps")
             Mock.install(self.spec.build_requires)
             Mock.rpmbuild_bp(self.srpm)
-        if not os.path.exists('BUILD'):
-            os.symlink(Mock.get_builddir('BUILD'), 'BUILD')
+        if os.path.lexists('BUILD'):
+            os.unlink('BUILD')
+        os.symlink(Mock.get_builddir('BUILD'), 'BUILD')
         self.set_passed(self.NA)
 
 
