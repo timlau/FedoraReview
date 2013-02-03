@@ -217,23 +217,6 @@ class _Settings(object):                         # pylint: disable=R0902
             raise KeyError(key)
         return self._dict.get(my_key)
 
-    def _populate(self):
-        '''Set option values from INI file section.
-        '''
-        if self.parser.has_section(PARSER_SECTION):
-            opts = set(self.parser.options(PARSER_SECTION))
-        else:
-            opts = set()
-
-        for name in self._dict.iterkeys():
-            value = None
-            if name in opts:
-                value = self.parser.get(PARSER_SECTION, name)
-                setattr(self, name, value)
-                self.parser.set(PARSER_SECTION, name, value)
-            else:
-                self.parser.set(PARSER_SECTION, name, self._dict[name])
-
     def _fix_mock_options(self):
         '''
         Update resultdir, uniqueext and configdir from mock_options.
