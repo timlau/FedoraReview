@@ -79,6 +79,7 @@ if [ ! "$1" = '-q' ]; then
         echo "Aborting. Temporary files left in $newdir"
         exit 1
     fi
+    cp *xml $startdir/test
 fi
 
 cd $startdir
@@ -87,6 +88,7 @@ sed -r  -e 's/git_tag[ ]*\.[0-9a-f]*/git_tag  '".$BUILD_ID/" \
         -e '/%changelog/,/^$/ s/[0-9a-f]{7}/'"$BUILD_ID/" \
         -e '/%changelog/,/^$/ s/\*.*201[0-9]/'"$timestamp/" \
     < fedora-review.spec  > dist/fedora-review.spec
+echo
 echo Created: dist/fedora-review.spec
 
 source0=$( spectool dist/fedora-review.spec | awk '{print $2}' )

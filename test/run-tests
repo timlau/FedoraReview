@@ -39,8 +39,9 @@ if [ "$1" = '-q' ]; then
     REVIEW_NOSEWITH=${REVIEW_NOSEWITH:- -x}
     shift
 fi
-
 args="$@"
+
+export PATH=/bin:/usr/bin:/sbin:/usr/sbin
 
 cd $(dirname $(readlink -fn $0))
 cd ..
@@ -61,30 +62,34 @@ logfile="$PWD/dist/build.log"
 
     PYTHONPATH=src ./update-version || :
     cd test
-    export REVIEW_LOGLEVEL=${REVIEW_LOGLEVEL:-warning}
-    for root in '-' fedora-17-i386 fedora-16-i386 "fedora-17-i386 --uniqueext=hugo"
-    do
-        init_mockroot $root
-    done
+        export REVIEW_LOGLEVEL=${REVIEW_LOGLEVEL:-warning}
+        for root in '-' fedora-17-i386 fedora-16-i386 \
+                    "fedora-17-i386 --uniqueext=hugo"
+        do
+            init_mockroot $root
+        done
 
-    PYTHONPATH=../src \
-    nosetests -x --nocapture -e init_test -e init_opt_test --cover-erase \
-        --cover-package=plugins,FedoraReview \
-        ${REVIEW_NOSEWITH:- --with-xunit --with-xcoverage} \
-        "${args[@]}"
-
-    deactivate
+        PYTHONPATH=../src \
+        nosetests -x --nocapture -e init_test -e init_opt_test --cover-erase \
+            --cover-package=plugins,FedoraReview \
+            ${REVIEW_NOSEWITH:- --with-xunit --with-xcoverage} \
+            "${args[@]}"
+        status=$?
+        deactivate
     cd ..
     if [ -z "$quick" ]; then
         echo
-        echo -- '---- pylint ----'
+        echo '---- pylint ----'
         PYTHONPATH=src pylint --rcfile=pylint.conf -f parseable src plugins
-        echo -- '---- pep8 ----'
+        echo
+        echo '---- pep8 ----'
         pep8 --exclude=jsonapi* --ignore=E221,E251 \
             src/FedoraReview/*.py plugins/*.py
     fi
 
 ) 2>&1 | tee $logfile
+
+exit $status
 
 
 # vim: set expandtab ts=4 sw=4:
