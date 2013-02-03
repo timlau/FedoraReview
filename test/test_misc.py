@@ -32,7 +32,7 @@ import sys
 import unittest2 as unittest
 
 try:
-    from subprocess import check_output
+    from subprocess import check_output          # pylint: disable=E0611
 except ImportError:
     from FedoraReview.el_compat import check_output
 
@@ -65,8 +65,6 @@ class TestMisc(FR_TestCase):
         self.srpm_file = os.path.join(os.path.abspath('.'),
                                       'test_misc',
                                       'python-test-1.0-1.fc17.src.rpm')
-        self.spec_file = os.path.join(Mock.get_builddir('SOURCES'),
-                                      'python-test.spec')
         self.startdir = os.getcwd()
         Mock.reset()
 
@@ -162,7 +160,6 @@ class TestMisc(FR_TestCase):
         self.init_test('test_misc',
                        argv=['-n', 'python-test', '--cache',
                              '--no-build'])
-
         source = Source('Source0',
                         self.BASE_URL + 'python-test-1.0.tar.gz')
         # source exists and source.filename point to the right location?
@@ -173,11 +170,14 @@ class TestMisc(FR_TestCase):
         self.assertEqual(source.check_source_checksum(),
                          "7ef644ee4eafa62cfa773cad4056cdcea592e27dacd5ae"
                          "b4e8b11f51f5bf60d3")
+        source.extract()
+        self.assertTrue(os.path.exists(ReviewDirs.upstream_unpacked +
+                                       '/Source0/python-test-1.0'))
 
     def test_sources_data(self):
         ''' Test a SourcesDataSource. '''
         self.init_test('test_misc',
-                       argv=['-n', 'python-test', '--cache',
+                       argv=['-n', 'python-test', '--cache', \
                              '--no-build'])
         bug = NameBug('python-test')
         bug.find_urls()
@@ -300,7 +300,7 @@ class TestMisc(FR_TestCase):
         self.log.info("Starting mock build (patience...)")
         Mock.clear_builddir()
         Mock.build(srpm.filename)
-        rpms = glob.glob(os.path.join(Mock.resultdir,
+        rpms = glob.glob(os.path.join(Mock.resultdir, \
                                       'python-test-1.0-1*noarch.rpm'))
         self.assertEqual(1, len(rpms))
 
@@ -394,7 +394,7 @@ class TestMisc(FR_TestCase):
     def test_rpm_spec(self):
         ''' Internal -r check. '''
         self.init_test('test_misc',
-                       argv=['-rn', 'python-test', '--cache',
+                       argv=['-rn', 'python-test', '--cache', \
                              '--no-build'])
         bug = NameBug('python-test')
         bug.find_urls()
@@ -406,7 +406,7 @@ class TestMisc(FR_TestCase):
     def test_md5sum_diff_ok(self):
         ''' Complete MD5sum test expected to pass. '''
         self.init_test('md5sum-diff-ok',
-                       argv=['-rpn', 'python-test', '--cache',
+                       argv=['-rpn', 'python-test', '--cache', \
                              '--no-build'])
         bug = NameBug('python-test')
         bug.find_urls()
@@ -422,7 +422,7 @@ class TestMisc(FR_TestCase):
     def test_md5sum_diff_fail(self):
         ''' Complete MD5sum test expected to fail. '''
         self.init_test('md5sum-diff-fail',
-                       argv=['-rpn', 'python-test', '--cache',
+                       argv=['-rpn', 'python-test', '--cache', \
                              '--no-build'])
         bug = NameBug('python-test')
         bug.find_urls()
@@ -479,7 +479,7 @@ class TestMisc(FR_TestCase):
     def test_bad_specfile(self):
         ''' Specfile with syntactic errors test. '''
         self.init_test('bad-spec',
-                       argv=['-n', 'python-test', '-p', '--cache',
+                       argv=['-n', 'python-test', '-p', '--cache', \
                              '--no-build'])
         bug = NameBug('python-test')
         check = self.run_single_check(bug, 'CheckSpecAsInSRPM')
@@ -490,7 +490,7 @@ class TestMisc(FR_TestCase):
         ''' desktop file handling test. '''
 
         self.init_test('desktop-file',
-                       argv=['-n', 'python-test', '--cache',
+                       argv=['-n', 'python-test', '--cache', \
                              '--no-build'])
         bug = NameBug('python-test')
         check = self.run_single_check(bug, 'CheckDesktopFileInstall', True)
@@ -550,7 +550,7 @@ class TestMisc(FR_TestCase):
     def test_local_repo(self):
         ''' Local repo with prebuilt rpms test. '''
         self.init_test('test_misc',
-                       argv=['-rn', 'python-test', '--local-repo',
+                       argv=['-rn', 'python-test', '--local-repo', \
                              'repo', '--cache'])
         bug = NameBug('python-test')
         bug.find_urls()
