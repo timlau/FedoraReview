@@ -11,39 +11,32 @@ first be copied to an area where its writeable e. g.,
    $ cd test
 
 This way, the installed version is tested. When running direct from git repo
-only the git repo variant is used, even if there is a instelled version.
+only the git repo variant is used, even if there is a installed version.
 
-The tests could be run either by the run-scripts.py wrapper, or directly.
-   $ export REVIEW_LOGLEVEL=warning
-   $ ./run-tests.py
-or (not on EL6):
-   $ python -m unittest discover -v
+The tests are run using the run-tests wrapper:
+   $ ./run-tests
 
-The REVIEW_LOGLEVEL could be given other values, and there some other
-environment variables as well. Some examples:
+run-tests is a bash wrapper using nosetests and virtualenv which runs also on
+EPEL. A deprecated script run-tests.py only working on Fedora is still lingering
+here.
 
-To display lot's of data when hunting down bugs:
-    $ export REVIEW_LOGLEVEL=debug
-    $ ./run-tests.py
+The REVIEW_LOGLEVEL governs the amount of logging. It defaults to 'warning' but
+could be given other values .e. g., to display lot's of data when hunting down bugs:
+    $ REVIEW_LOGLEVEL=debug ./run-tests
 
 To disable slow tests:
-    $ export REVIEW_FAST_TEST=1
-    $ ./run-tests.py
+    $ REVIEW_FAST_TEST=1 ./run-tests
+
+Running a single test file:
+    $ ./run-tests test_misc.py
+
+Running a single test case:
+    $ ./run-tests test_misc.py:TestMisc.test_sources
+
+Avoid the trailing coverage and pylint reports:
+    $  ./run-tests test_misc.py &>/dev/null || \
+          echo 'Error: (logs in ../dist/build.log)'
 
 To display a 'git status' after each test:
     $ export REVIEW_TEST_GIT_STATUS=1
     $ ./run-tests.py
-
-Running a single test file:
-    $ python -m unittest test_misc
-
-Running a single test case:
-    $ python -m unittest test_misc.TestMisc.test_sources
-or (only solution on EL6, works for all test_*.py files):
-    $ python test_dist.py dogfood
-
-Occasionally, mock is locked in a bad state, making tests
-fail.  To recover:
-    # rm -rf /var/lib/mock/*
-    $ mock --init
-

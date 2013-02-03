@@ -24,7 +24,7 @@
 startdir=$PWD
 cd $( dirname $( readlink -fn $0 ))
 branch="$( git branch | awk '/^*/ {$1 = ""; print $0}' )"
-commit=$( git log --oneline | head -1 | cut -d' ' -f1 )
+commit=$( git rev-parse  HEAD )
 echo "Using branch: $branch"
 echo "Last commit : $(git log --oneline -1)"
 
@@ -64,16 +64,15 @@ if [ ! -e "$dfile" ];  then
     exit 1
 fi
 
+rm -f $startdir/dist/*
 if [ ! "$1" = '-q' ]; then
     echo "Running tests on tarball before finalizing release"
     tar -xf $dfile && pushd fedora-review-$__version__
     cd src/FedoraReview; ln -s ../../plugins .; cd $OLDPWD
+    ln -s $startdir/dist .
     cd test
     bash < restore-links.sh
-    mock --quiet -r fedora-17-i386 --init
-    mock --quiet -r fedora-16-i386 --init
-    mock --quiet -r fedora-17-i386 --uniqueext=hugo --init
-    MAKE_RELEASE=1 REVIEW_LOGLEVEL=error python -m unittest discover
+    MAKE_RELEASE=1  ./run-tests
     if [ $? -ne 0 ]; then
         echo "Some tests failed. Review test logs and fix all problems"
         echo "before doing a release."
@@ -83,7 +82,6 @@ if [ ! "$1" = '-q' ]; then
 fi
 
 cd $startdir
-rm -f dist/*
 timestamp=$(LC_TIME=C date +'* %a %b %d %Y')
 sed -r  -e 's/git_tag[ ]*\.[0-9a-f]*/git_tag  '".$BUILD_ID/" \
         -e '/%changelog/,/^$/ s/[0-9a-f]{7}/'"$BUILD_ID/" \
@@ -101,7 +99,9 @@ mkdir -p $sources &>/dev/null || :
 ln -sf $PWD/dist/$source0  $sources
 
 cd dist
-    evr=$( rpmspec --srpm -q --qf '%{version}-%{release}' fedora-review.spec )
+    pkg=$(rpm -q --specfile fedora-review.spec | head -1)
+    evr=$(echo $pkg | \
+              sed -re 's/[.][^.]+[.][^.]+$//' -e 's/^[^-]+[-][^-]+[-]//')
     rpmbuild --quiet -bs fedora-review.spec
     mv $( rpm --eval %_srcrpmdir )/fedora-review-${evr}* .
 cd ..

@@ -1,0 +1,77 @@
+#!/bin/bash
+#
+# Run tests, the jenkins way.
+#
+# Requires: python-virtualenv, python-pip
+
+
+function install_virtenv()
+{
+    echo "Installing new virtual env"
+    rm -fr fedorareviewenv
+    virtualenv --system-site-packages fedorareviewenv
+    source fedorareviewenv/bin/activate
+    pip  install -q nose --upgrade  ## Needed within the venv
+    pip  install -q nosexcover
+    hash -r  ## Reload where the nosetests app is (within the venv)
+}
+
+function init_mockroot()
+{
+    if [ "$1" = '-' ]; then
+       root=''
+       rootmsg=default
+    else
+       root="-r $1"
+       rootmsg="$1"
+    fi
+    mock -q $root --shell  "echo $rootmsg OK >/dev/null" || {
+        echo "Re-initializing mock root $rootmsg"
+        mock -q $root  --init
+    }
+}
+
+args="$@"
+
+cd $(dirname $(readlink -fn $0))
+cd ..
+logfile="$PWD/dist/build.log"
+
+(
+    if [[ -n "$PIP_INSTALL" || ! -d fedorareviewenv ]]; then
+            install_virtenv
+    fi
+    source fedorareviewenv/bin/activate
+    hash -r
+
+    nose_vers=$(nosetests --version) || :
+    if [[ "$nose_vers" != *1.2* ]]; then
+        install_virtenv
+        source fedorareviewenv/bin/activate
+        hash -r
+    fi
+
+    PYTHONPATH=src ./update-version || :
+    cd test
+    export REVIEW_LOGLEVEL=${REVIEW_LOGLEVEL:-warning}
+    for root in '-' fedora-17-i386 fedora-16-i386 "fedora-17-i386 --uniqueext=hugo"
+    do
+        init_mockroot $root
+    done
+
+    PYTHONPATH=../src \
+    nosetests -vx --nocapture -e init_test -e init_opt_test --cover-erase \
+        --cover-package=plugins,FedoraReview \
+        ${REVIEW_NOSEOPTS:- --with-xunit --with-xcoverage} \
+        "${args[@]}"
+
+    deactivate
+    cd ..
+    PYTHONPATH=src pylint --rcfile=pylint.conf -f parseable src plugins
+    pep8 --exclude=jsonapi* --ignore=E221,E251 \
+        src/FedoraReview/*.py plugins/*.py
+
+) 2>&1 | tee $logfile
+
+
+# vim: set expandtab ts=4 sw=4:
