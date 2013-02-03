@@ -26,7 +26,7 @@ import unittest2 as unittest
 
 import srcpath                                   # pylint: disable=W0611
 
-from fr_testcase import FR_TestCase
+from fr_testcase import FR_TestCase, FEDORA
 
 
 class Testspec():
@@ -110,6 +110,87 @@ class TestChecks(FR_TestCase):
                         ('pending', 'CheckPatchComments'),
                         ('pending', 'CheckChangelogFormat'),
                         ('pass', 'CheckSourceDownloads'),
+                        ('pass', 'check-large-data'),
+                        ('pass', 'check-srv-opt-local')]
+        self.run_spec(spec)
+
+    def test_rubygem_fssm(self):
+        ''' Run automated generic + rubygem tests. '''
+        spec = Testspec()
+        spec.args = []
+        spec.testcase = 'rubygem-fssm'
+        spec.workdir = 'rubygem-fssm'
+        spec.groups_ok = ['Generic.build', 'Generic', 'Generic.should', 'Ruby']
+        spec.expected = [('pending', 'CheckBuild'),
+                        ('pass', 'CheckRpmlint'),
+                        ('pass', 'CheckPackageInstalls'),
+                        ('pass', 'CheckRpmlintInstalled'),
+                        ('fail', 'GemCheckRequiresRubygems'),
+                        ('pending', 'CheckObeysFHS'),
+                        ('pass', 'GemCheckProperName'),
+                        ('pass', 'CheckFileRequires'),
+                        ('pending', 'GemCheckUsesMacros'),
+                        ('pending', 'CheckSupportAllArchs'),
+                        ('pending', 'GemCheckFilePlacement'),
+                        ('pass', 'RubyCheckBuildArchitecture'),
+                        ('pending', 'CheckTestSuites'),
+                        ('pass', 'CheckBuildroot'),
+                        ('pending', 'CheckNaming'),
+                        ('pending', 'CheckFinalRequiresProvides'),
+                        ('pass', 'CheckDistTag'),
+                        ('pass', 'CheckFilePermissions'),
+                        ('pending', 'CheckLatestVersionIsPackaged'),
+                        ('pending', 'CheckObsoletesForRename'),
+                        ('pass', 'CheckClean'),
+                        ('pass', 'CheckCleanBuildroot'),
+                        ('pass', 'CheckDescMacros'),
+                        ('pass', 'CheckSourceDownloads'),
+                        ('pending', 'CheckSpecDescTranslation'),
+                        ('pass', 'CheckUseGlobal'),
+                        ('pass', 'GemCheckRequiresProperDevel'),
+                        ('pending', 'CheckGuidelines'),
+                        ('pass', 'CheckDefattr'),
+                        ('pass', 'CheckSourceUrl'),
+                        ('pending', 'CheckExcludeArch'),
+                        ('fail', 'RubyCheckTestsRun'),
+                        ('pass', 'CheckUTF8Filenames'),
+                        ('pending', 'CheckLicenseInSubpackages'),
+                        ('pending', 'CheckOwnOther'),
+                        ('pending', 'CheckFullVerReqSub'),
+                        ('pending', 'CheckApprovedLicense'),
+                        ('pending', 'CheckDocRuntime'),
+                        ('pass', 'GemCheckSetsGemName'),
+                        ('pass', 'CheckSourceMD5'),
+                        ('pending', 'CheckBundledLibs'),
+                        ('fail', 'CheckBuildInMock'),
+                        ('pending', 'CheckBuildRequires'),
+                        ('pending', 'CheckOwnDirs'),
+                        ('pass', 'RubyCheckRequiresRubyAbi'),
+                        ('pass', 'CheckMakeinstall'),
+                        ('pass', 'CheckSourceComment'),
+                        ('pending', 'CheckTimeStamps'),
+                        ('pass', 'CheckFileDuplicates'),
+                        ('pass', 'CheckRelocatable'),
+                        ('pending', 'CheckLicenseUpstream'),
+                        ('pending', 'CheckSystemdScripts'),
+                        ('pending', 'CheckMacros'),
+                        ('pending', 'CheckFunctionAsDescribed'),
+                        ('pass', 'CheckLicensInDoc'),
+                        ('pending', 'CheckRequires'),
+                        ('pending', 'CheckCodeAndContent'),
+                        ('pass', 'CheckNameCharset'),
+                        ('pass', 'GemCheckExcludesGemCache'),
+                        ('pass', 'CheckIllegalSpecTags'),
+                        ('pass', 'CheckSpecName'),
+                        ('pending', 'CheckNoConflicts'),
+                        ('pass', 'GemCheckDoesntHaveNonGemSubpackage'),
+                        ('pending', 'CheckDirectoryRequire'),
+                        ('pending', 'CheckSpecLegibility'),
+                        ('pending', 'CheckContainsLicenseText'),
+                        ('pending', 'CheckDesktopFile'),
+                        ('pending', 'CheckDevelFilesInDevel'),
+                        ('fail', 'CheckNoNameConflict'),
+                        ('pending', 'CheckChangelogFormat'),
                         ('pass', 'check-large-data'),
                         ('pass', 'check-srv-opt-local')]
         self.run_spec(spec)
