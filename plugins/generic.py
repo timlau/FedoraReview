@@ -226,7 +226,7 @@ class CheckCleanBuildroot(GenericCheckBase):
 
     def run(self):
         has_clean = False
-        regex = 'rm\s+\-[rf][rf]\s+(%{buildroot}|$RPM_BUILD_ROOT)'
+        regex = r'rm\s+\-[rf][rf]\s+(%{buildroot}|$RPM_BUILD_ROOT)'
         regex = rpm.expandMacro(regex)
         install_sec = self.spec.get_section('%install', raw=True)
         has_clean = install_sec and re.search(regex, install_sec)
@@ -748,7 +748,7 @@ class CheckMacros(GenericCheckBase):
 
     def run(self):
         br_tag1 = self.spec.find_all_re('.*%{buildroot}.*', True)
-        br_tag2 = self.spec.find_all_re('.*\$RPM_BUILD_ROOT.*', True)
+        br_tag2 = self.spec.find_all_re(r'.*\$RPM_BUILD_ROOT.*', True)
         if br_tag1 and br_tag2:
             self.set_passed(self.FAIL,
                             'Using both %{buildroot} and $RPM_BUILD_ROOT')
