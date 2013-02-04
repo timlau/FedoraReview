@@ -155,7 +155,10 @@ class SpecFile(object):
                         lines = []
                 continue
             line = rpm.expandMacro(line)
-            if line.startswith('%'):
+            if line.startswith('%{gem_'):
+                # Nasty F17/EPEL fix where  %gem_*  are not defined.
+                lines.append(line)
+            elif line.startswith('%'):
                 token = re.split('\s|\(', line)[0]
                 if not token in ['%ghost', '%doc', '%docdir', '%license',
                 '%verify', '%attr', '%config', '%dir', '%defattr']:
