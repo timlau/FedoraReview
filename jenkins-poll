@@ -5,7 +5,7 @@
 # See: https://wiki.jenkins-ci.org/display/JENKINS/Git+Plugin
 # See: http://jenkins.turbogears.org/
 
-api_base='http://jenkins.turbogears.org'
+api_base='http://cloud.fedoraproject.org'
 branches='&branches=devel'
 repo_url='http://git.fedorahosted.org/git/FedoraReview.git'
 

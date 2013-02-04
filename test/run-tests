@@ -2,6 +2,10 @@
 #
 # Run tests, the jenkins way.
 #
+# Usage: run-tests [-q] [noseopts options]
+#
+#    -q  Don't run static checks, just run test
+#
 # Requires: python-virtualenv, python-pip
 
 
@@ -30,16 +34,20 @@ function init_mockroot()
         mock -q $root  --init
     }
 }
+if [ "$1" = '-q' ]; then
+    quick=1
+    REVIEW_NOSEWITH=${REVIEW_NOSEWITH:- -x}
+    shift
+fi
 
 args="$@"
 
 cd $(dirname $(readlink -fn $0))
 cd ..
 logfile="$PWD/dist/build.log"
-
 (
     if [[ -n "$PIP_INSTALL" || ! -d fedorareviewenv ]]; then
-            install_virtenv
+        install_virtenv
     fi
     source fedorareviewenv/bin/activate
     hash -r
@@ -60,16 +68,22 @@ logfile="$PWD/dist/build.log"
     done
 
     PYTHONPATH=../src \
-    nosetests -vx --nocapture -e init_test -e init_opt_test --cover-erase \
+    nosetests -x --nocapture -e init_test -e init_opt_test --cover-erase \
         --cover-package=plugins,FedoraReview \
-        ${REVIEW_NOSEOPTS:- --with-xunit --with-xcoverage} \
+        ${REVIEW_NOSEWITH:- --with-xunit --with-xcoverage} \
         "${args[@]}"
 
     deactivate
     cd ..
-    PYTHONPATH=src pylint --rcfile=pylint.conf -f parseable src plugins
-    pep8 --exclude=jsonapi* --ignore=E221,E251 \
-        src/FedoraReview/*.py plugins/*.py
+    if [ -z "$quick" ]; then
+        echo -- '---- pylint ----'
+        PYTHONPATH=src pylint --rcfile=pylint.conf -f parseable src plugins
+        echo -- '---- pep8 ----'
+        pep8 --exclude=jsonapi* --ignore=E221,E251 \
+            src/FedoraReview/*.py plugins/*.py
+        echo -- '---- rpmlint----'
+        rpmlint ../dist/*.rpm
+    fi
 
 ) 2>&1 | tee $logfile
 

@@ -20,22 +20,18 @@ run-tests is a bash wrapper using nosetests and virtualenv which runs also on
 EPEL. A deprecated script run-tests.py only working on Fedora is still lingering
 here.
 
+Running a single test file (-q disables pylint, pep8 etc)
+    $ ./run-tests -q test_misc.py
+
+Running a single test case:
+    $ ./run-tests -q test_misc.py:TestMisc.test_sources
+
 The REVIEW_LOGLEVEL governs the amount of logging. It defaults to 'warning' but
 could be given other values .e. g., to display lot's of data when hunting down bugs:
     $ REVIEW_LOGLEVEL=debug ./run-tests
 
 To disable slow tests:
     $ REVIEW_FAST_TEST=1 ./run-tests
-
-Running a single test file:
-    $ ./run-tests test_misc.py
-
-Running a single test case:
-    $ ./run-tests test_misc.py:TestMisc.test_sources
-
-Avoid the trailing coverage and pylint reports:
-    $  ./run-tests test_misc.py &>/dev/null || \
-          echo 'Error: (logs in ../dist/build.log)'
 
 To display a 'git status' after each test:
     $ export REVIEW_TEST_GIT_STATUS=1
