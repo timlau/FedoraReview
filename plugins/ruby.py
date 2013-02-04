@@ -337,11 +337,13 @@ class GemCheckUsesMacros(GemCheckBase):
         self.type = 'SHOULD'
 
     def run_on_applicable(self):
-        gem_libdir_re = re.compile('%{gem_libdir}', re.I)
-        gem_extdir_re = re.compile('%{gem_extdir}', re.I)
-        doc_gem_docdir_re = re.compile('%doc\s+%{gem_docdir}', re.I)
-        exclude_gem_cache_re = re.compile(r'%exclude\s+%{gem_cache}', re.I)
-        gem_spec_re = re.compile('%{gem_spec}', re.I)
+        gem_libdir_re = re.compile(rpm.expandMacro('%{gem_libdir}'), re.I)
+        gem_extdir_re = re.compile(rpm.expandMacro('%{gem_extdir}'), re.I)
+        doc_gem_docdir_re = \
+            re.compile(rpm.expandMacro('%doc\s+%{gem_docdir}'), re.I)
+        exclude_gem_cache_re = \
+            re.compile(rpm.expandMacro(r'%exclude\s+%{gem_cache}'), re.I)
+        gem_spec_re = re.compile(rpm.expandMacro('%{gem_spec}'), re.I)
 
         re_dict = {gem_libdir_re: False,
                    doc_gem_docdir_re: False,
@@ -366,7 +368,7 @@ class GemCheckUsesMacros(GemCheckBase):
         if len(err_message) == 0:
             self.set_passed(self.PASS)
         else:
-            self.set_passed(self.FAIL,
+            self.set_passed(self.PENDING,
                             'The specfile doesn\'t use these macros: %s'
                             % ', '.join(err_message))
 
