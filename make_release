@@ -106,6 +106,9 @@ cd dist
     mv $( rpm --eval %_srcrpmdir )/fedora-review-${evr}* .
 cd ..
 echo Created: dist/fedora-review-${evr}*
+echo
+echo -- '---- rpmlint ----'
+rpmlint -f test/rpmlint.conf dist/*.rpm dist/*.spec
 
 if [[ "$1" = '-b' || "$1" = '-q' ]]; then
     rm -rf $newdir

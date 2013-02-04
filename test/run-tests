@@ -76,13 +76,12 @@ logfile="$PWD/dist/build.log"
     deactivate
     cd ..
     if [ -z "$quick" ]; then
+        echo
         echo -- '---- pylint ----'
         PYTHONPATH=src pylint --rcfile=pylint.conf -f parseable src plugins
         echo -- '---- pep8 ----'
         pep8 --exclude=jsonapi* --ignore=E221,E251 \
             src/FedoraReview/*.py plugins/*.py
-        echo -- '---- rpmlint----'
-        rpmlint ../dist/*.rpm
     fi
 
 ) 2>&1 | tee $logfile
