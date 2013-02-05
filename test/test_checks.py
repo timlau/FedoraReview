@@ -198,8 +198,7 @@ class TestChecks(FR_TestCase):
                          ('pending', 'CheckChangelogFormat'),
                          ('pass', 'CheckSourceDownloads'),
                          ('pass', 'check-large-data'),
-                         ('pass', 'check-srv-opt-local'),
-                         ('pass', 'java-check-bundled-jars')]
+                         ('pass', 'check-srv-opt-local')]
         self.run_spec(spec)
 
     def test_scriptlets_fail(self):
