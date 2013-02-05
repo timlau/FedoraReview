@@ -639,13 +639,12 @@ class CheckLicenseField(GenericCheckBase):
             if not licenses:
                 msg += ' No licenses found.'
                 msg += ' Please check the source files for licenses manually.'
-                self.set_passed(self.FAIL, msg)
             else:
                 msg += ' Licenses found: "' \
                        + '", "'.join(licenses.iterkeys()) + '".'
                 msg += ' %d files have unknown license.' % len(licenses)
                 msg += ' Detailed output of licensecheck in ' + filename
-                self.set_passed(self.PENDING, msg)
+            self.set_passed(self.PENDING, msg)
         except OSError, e:
             self.log.error('OSError: %s' % str(e))
             msg = ' Programmer error: ' + e.strerror
