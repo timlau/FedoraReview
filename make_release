@@ -109,8 +109,8 @@ cd dist
 cd ..
 echo Created: dist/fedora-review-${evr}*
 echo
-echo -- '---- rpmlint ----'
-rpmlint -f test/rpmlint.conf dist/*.rpm dist/*.spec
+
+rpmlint -f test/rpmlint.conf dist/*.rpm dist/*.spec | tee dist/rpmlint.log
 
 if [[ "$1" = '-b' || "$1" = '-q' ]]; then
     rm -rf $newdir
