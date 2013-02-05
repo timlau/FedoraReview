@@ -46,7 +46,7 @@ export PATH=/bin:/usr/bin:/sbin:/usr/sbin
 cd $(dirname $(readlink -fn $0))
 cd ..
 logfile="$PWD/dist/build.log"
-(
+{
     if [[ -n "$PIP_INSTALL" || ! -d fedorareviewenv ]]; then
         install_virtenv
     fi
@@ -87,7 +87,7 @@ logfile="$PWD/dist/build.log"
             src/FedoraReview/*.py plugins/*.py
     fi
 
-) 2>&1 | tee $logfile
+} 2>&1 | tee $logfile
 
 exit $status
 
