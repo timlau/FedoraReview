@@ -91,5 +91,4 @@ logfile="$PWD/dist/build.log"
 
 exit $status
 
-
 # vim: set expandtab ts=4 sw=4:
