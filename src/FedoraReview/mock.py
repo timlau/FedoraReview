@@ -158,6 +158,22 @@ class _Mock(HelpersMixin):
         cmd.extend(['--shell', 'rm -f /var/lib/rpm/__db*'])
         self._run_cmd(cmd)
 
+    # Last (cached?) output from rpmlint, list of lines.
+    rpmlint_output = property(_get_rpmlint_output)
+
+    # The directory where mock leaves built rpms and logs
+    resultdir = property(lambda self: self.get_resultdir())
+
+    # Mock's %_topdir seen from the outside.
+    topdir = property(lambda self: self.get_builddir())
+
+    @property
+    def buildroot(self):
+        ''' Return path to current buildroot' '''
+        if not self.mock_root:
+            self._get_root()
+        return self.mock_root
+
     def reset(self):
         """ Clear all persistent state. """
         if self.mock_root:
@@ -169,22 +185,6 @@ class _Mock(HelpersMixin):
             return Settings.resultdir
         else:
             return ReviewDirs.results
-
-    # Last (cached?) output from rpmlint, list of lines.
-    rpmlint_output = property(_get_rpmlint_output)
-
-    # The directory where mock leaves built rpms and logs
-    resultdir = property(get_resultdir)
-
-    # Mock's %_topdir seen from the outside.
-    topdir = property(lambda self: self.get_builddir())
-
-    @property
-    def buildroot(self):
-        ''' Return path to current buildroot' '''
-        if not self.mock_root:
-            self._get_root()
-        return self.mock_root
 
     def get_package_rpm_path(self, pkg_name, rpm_or_spec):
         '''
