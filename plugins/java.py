@@ -375,7 +375,6 @@ class CheckTestSkip(JavaCheckBase):
                             "before mvn-rpmbuild command. Please"
                             " verify it explains use of "
                             "-Dmaven.test.skip")
-            self.set_passed(self.FAIL)
 
 
 class CheckLocalDepmap(JavaCheckBase):
