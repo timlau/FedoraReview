@@ -58,6 +58,8 @@ class TestMisc(FR_TestCase):
     ''' Low-level, true unit tests. '''
 
     def setUp(self):
+        if not srcpath.PLUGIN_PATH in sys.path:
+            sys.path.append(srcpath.PLUGIN_PATH)
         sys.argv = ['fedora-review', '-b', '1']
         Settings.init(True)
         self.log = Settings.get_logger()
@@ -222,6 +224,27 @@ class TestMisc(FR_TestCase):
         self.assertEqual(len(results), 2)
         for dirt in glob.glob('results/*.*'):
             os.unlink(dirt)
+
+    def test_java_spec(self):
+        ''' Test the ChecktestSkip check. '''
+        # pylint: disable=F0401,R0201,C0111
+
+        from plugins.java import CheckTestSkip
+
+        class ChecksMockup(object):
+            pass
+
+        class ApplicableCheckTestSkip(CheckTestSkip):
+            def is_applicable(self):
+                return True
+
+        self.init_test('test_misc',
+                       argv=['-n', 'python-test', '--no-build'])
+        spec = SpecFile(os.path.join(os.getcwd(), 'jettison.spec'))
+        check = ApplicableCheckTestSkip(ChecksMockup())
+        check.checks.spec = spec
+        check.run()
+        self.assertTrue(check.is_pending)
 
     def test_spec_file(self):
         ''' Test the SpecFile class'''
