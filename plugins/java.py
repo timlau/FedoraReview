@@ -355,8 +355,8 @@ class CheckTestSkip(JavaCheckBase):
         self.type = 'MUST'
 
     def run(self):
-        skip_regex = re.compile(r'^\s+-Dmaven.test.skip.*')
-        mvn_regex = re.compile(r'^\s*mvn-rpmbuild\s+')
+        skip_regex = re.compile(r'\s+-Dmaven.test.skip.*')
+        mvn_regex = re.compile(r'\s*mvn-rpmbuild\s+')
         comment_regex = re.compile(r'^\s*#.*')
         build_sec = self.spec.get_section('%build')
 
@@ -392,8 +392,8 @@ class CheckLocalDepmap(JavaCheckBase):
         self.type = 'MUST'
 
     def run(self):
-        depmap_regex = re.compile(r'^\s+-Dmaven.local.depmap.*')
-        mvn_regex = re.compile(r'^\s*mvn-rpmbuild\s+')
+        depmap_regex = re.compile(r'\s+-Dmaven.local.depmap.*')
+        mvn_regex = re.compile(r'\s*mvn-rpmbuild\s+')
         comment_regex = re.compile(r'^\s*#.*')
         build_sec = self.spec.get_section('%build')
         if not self.spec.find_re(depmap_regex) or not build_sec:
