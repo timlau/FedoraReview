@@ -27,8 +27,10 @@ from settings import Settings
 
 
 def list_deps(pkgs):
-    ''' Return list of all dependencies for named pkg. '''
+    ''' Return list of all dependencies for named packages. '''
 
+    if not pkgs:
+        return []
     if not isinstance(pkgs, list):
         pkgs = [pkgs]
     cmd = ['repoquery', '-C', '--requires', '--resolve']
@@ -52,6 +54,8 @@ def list_deps(pkgs):
 def resolve(reqs):
     ''' Return the packages providing the reqs symbols. '''
 
+    if not reqs:
+        return []
     if not isinstance(reqs, list):
         reqs = [reqs]
     cmd = ['repoquery', '-C', '--whatprovides']
@@ -136,6 +140,8 @@ def list_owners(paths):
 
 def list_paths(pkgs):
     ''' Return list of all files in pkgs (single name or list). '''
+    if not pkgs:
+        return []
     cmd = ['repoquery', '-C', '-l']
     if isinstance(pkgs, list):
         cmd.extend(pkgs)
@@ -153,10 +159,6 @@ def list_paths(pkgs):
 
 class Deps:
     ''' Models the dependencies. '''
-
-    def list_owners(self, path):
-        ''' Return possobly empty list of owners to path. '''
-        pass
 
     def get_spec(self, pkg):
         ''' Return a Spec object for a given dependency pkg.'''
