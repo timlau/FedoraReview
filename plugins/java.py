@@ -118,7 +118,7 @@ class CheckJavadocdirName(JavaCheckBase):
             self.set_passed(self.FAIL, "No javadoc subpackage present")
             return
         name_ver_pattern = "/usr/share/javadoc/%s-%s/*" \
-                                       % (self.spec.name, self.spec.version)
+            % (self.spec.name, self.spec.version)
         if self.rpms.find_all(name_ver_pattern, pkg):
             self.set_passed(self.FAIL,
                             "Found deprecated versioned javadoc paths " +
@@ -172,7 +172,7 @@ class CheckJavadocJPackageRequires(JavaCheckBase):
     def run_on_applicable(self):
         """ run check for java packages """
         pkgs = [pkg for pkg in self.spec.packages
-                     if pkg.endswith('-javadoc')]
+                if pkg.endswith('-javadoc')]
         if len(pkgs) == 0:
             self.set_passed(self.NA)
         elif len(pkgs) > 1:
@@ -252,7 +252,7 @@ class CheckAddMavenDepmap(JavaCheckBase):
         if not self.spec.find_re('[^#]*%add_maven_depmap'):
             self.set_passed(self.FAIL,
                             "No add_maven_depmap calls found but pom"
-                                 " files present")
+                            " files present")
         else:
             self.set_passed(self.PENDING, """Some add_maven_depmap
         calls found. Please check if they are correct""")
@@ -367,14 +367,14 @@ class CheckTestSkip(JavaCheckBase):
                                             skip_regex,
                                             mvn_regex,
                                             comment_regex)
-        if result == None:
+        if result is None:
             # weird. It has skip regex but no maven call?
             self.set_passed(self.PASS)
         else:
             self.set_passed(self.PENDING, "Some comment is used "
-                               "before mvn-rpmbuild command. Please"
-                               " verify it explains use of "
-                               "-Dmaven.test.skip")
+                            "before mvn-rpmbuild command. Please"
+                            " verify it explains use of "
+                            "-Dmaven.test.skip")
             self.set_passed(self.FAIL)
 
 
