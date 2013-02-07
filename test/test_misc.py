@@ -109,6 +109,63 @@ class TestMisc(FR_TestCase):
         all_files = src.find_all('*')
         self.assertEqual(len(all_files), 8)
 
+    def test_ccpp_gnulib(self):
+        ''' test ccpp bundled gnulib  '''
+        # pylint: disable=F0401,R0201,C0111,W0613
+
+        from plugins.ccpp import CheckBundledGnulib
+
+        class ChecksMockup(object):
+            pass
+
+        class BuildSrcMockup(object):
+            def find(self, what):
+                return True
+
+        class ApplicableCheckBundledGnulib(CheckBundledGnulib):
+            def is_applicable(self):
+                return True
+
+        self.init_test('test_misc',
+                       argv=['-n', 'python-test', '--cache',
+                             '--no-build'])
+        check = ApplicableCheckBundledGnulib(ChecksMockup())
+        check.checks.spec = SpecFile(os.path.join(os.getcwd(),
+                                                  'python-test.spec'))
+        check.checks.buildsrc = BuildSrcMockup()
+        check.checks.rpms = RpmDataSource(check.checks.spec)
+        check.run()
+        self.assertTrue(check.is_failed)
+
+    def test_ccpp_static(self):
+        ''' test ccpp static -a checs  '''
+        # pylint: disable=F0401,R0201,C0111,W0613
+
+        from plugins.ccpp import CheckStaticLibs
+
+        class ChecksMockup(object):
+            pass
+
+        class RpmsMockup(object):
+            def find(self, what, where):
+                return True
+
+        class ApplicableCheckStaticLibs(CheckStaticLibs):
+            def is_applicable(self):
+                return True
+
+        self.init_test('test_misc',
+                       argv=['-n', 'python-test', '--cache',
+                             '--no-build'])
+        check = ApplicableCheckStaticLibs(ChecksMockup())
+        check.checks.spec = SpecFile(os.path.join(os.getcwd(),
+                                                  'python-test.spec'))
+        check.checks.rpms = RpmsMockup()
+        check.run()
+        note = check.result.output_extra
+        self.assertTrue(check.is_failed)
+        self.assertTrue('Archive *.a files found in' in note)
+
     def test_flags_1(self):
         ''' test a flag defined in python, set by user' '''
         self.init_test('test_misc',
