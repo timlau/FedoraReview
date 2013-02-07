@@ -266,6 +266,20 @@ class TestMisc(FR_TestCase):
         Mock._get_root()
         self.assertEqual(Mock.mock_root, 'fedora-12-i786')
 
+    def test_mock_clear(self):
+        ''' test mock.clear_builddir(). '''
+        self.init_test('test_misc',
+                       argv=['-n', 'python-test', '--cache', \
+                             '--no-build'])
+        wdir = Mock.get_builddir('BUILD')
+        len1 = len(glob.glob(os.path.join(wdir, "*")))
+        s = "cd {0}; ln -sf foo bar || :".format(wdir)
+        check_output(s, shell=True)
+        Mock.builddir_cleanup()
+        len2 = len(glob.glob(os.path.join(wdir, "*")))
+        print wdir
+        self.assertEqual(len2, len1)
+
     @unittest.skipIf(FAST_TEST, 'slow test disabled by REVIEW_FAST_TEST')
     def test_mock_uniqueext(self):
         ''' Test --uniqueext option. '''
