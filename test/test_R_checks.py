@@ -20,12 +20,14 @@
 Unit checks for automatic test of fedora R review guidelines
 '''
 
+import os
 import sys
 import unittest2 as unittest
 
 import srcpath                                   # pylint: disable=W0611
 from FedoraReview.checks import Checks
 from FedoraReview.name_bug import NameBug
+from FedoraReview.spec_file import SpecFile
 
 from fr_testcase import FR_TestCase, FAST_TEST
 
@@ -37,6 +39,58 @@ class TestRChecks(FR_TestCase):
                   '/FedoraReview/R-Rdummypkg-1.0-2.fc15.src.rpm'
     R_TEST_SPEC = FR_TestCase.BASE_URL + 'R-Rdummypkg.spec'
     R_TEST_SRC  = FR_TestCase.BASE_URL + 'Rdummypkg_1.0.tar.gz'
+
+    def setUp(self):
+        if not srcpath.PLUGIN_PATH in sys.path:
+            sys.path.append(srcpath.PLUGIN_PATH)
+        self.startdir = os.getcwd()
+
+    def test_good_R_spec(self):
+        ''' test R spec, expected to pass. '''
+        # pylint: disable=F0401,R0201,C0111
+
+        from plugins.R import RCheckInstallSection
+
+        class ChecksMockup(object):
+            pass
+
+        class ApplicableRCheckInstallSection(RCheckInstallSection):
+            def is_applicable(self):
+                return True
+
+        self.init_test('test-R',
+                        argv=['-rpn', 'R-Rdummypkg', '--no-build'])
+        spec = SpecFile(os.path.join(os.getcwd(), 'R-Rdummypkg.spec'))
+        check = ApplicableRCheckInstallSection(ChecksMockup())
+        check.checks.spec = spec
+        check.run()
+        self.assertTrue(check.is_passed)
+
+    def test_bad_R_spec(self):
+        ''' test R spec, expected to fail. '''
+        # pylint: disable=F0401,R0201,C0111
+
+        from plugins.R import RCheckInstallSection
+
+        class ChecksMockup(object):
+            pass
+
+        class ApplicableRCheckInstallSection(RCheckInstallSection):
+            def is_applicable(self):
+                return True
+
+        self.init_test('test-R',
+                        argv=['-rpn', 'R-Rdummypkg', '--no-build'])
+        spec = SpecFile(os.path.join(os.getcwd(), 'R-Rdummypkg-bad.spec'))
+        check = ApplicableRCheckInstallSection(ChecksMockup())
+        check.checks.spec = spec
+        check.run()
+        note = check.result.output_extra
+        self.assertTrue(check.is_failed)
+        self.assertTrue('directory creation' in note)
+        self.assertTrue('removal of *.o and *.so' in note)
+        self.assertTrue('removal of the R.css file' in note)
+        self.assertTrue('R CMD INSTALL function' in note)
 
     @unittest.skipIf(FAST_TEST, 'slow test disabled by REVIEW_FAST_TEST')
     def test_all_checks(self):
