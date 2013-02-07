@@ -116,10 +116,28 @@ class TestOptions(FR_TestCase):
 
     def test_display(self):
         """ test -d/--display option. """
-        cmd = srcpath.REVIEW_PATH + ' --display-checks'
-        output = check_output(cmd, shell=True)
-        output = output.decode('utf-8')
-        self.assertTrue(len(output) > 20)
+        # pylint: disable=C0111
+
+        class Logger:
+
+            def __init__(self):
+                self.lines = []
+
+            def write(self, message):
+                self.lines.append(message)
+
+        if not srcpath.PLUGIN_PATH in sys.path:
+            sys.path.append(srcpath.PLUGIN_PATH)
+        from FedoraReview.review_helper import ReviewHelper
+        sys.argv = ['fedora-review', '-d', '--no-build']
+        Settings.init(True)
+        helper = ReviewHelper()
+        stdout = sys.stdout
+        logger = Logger()
+        sys.stdout = logger
+        helper.run()
+        sys.stdout = stdout
+        self.assertTrue(len(logger.lines) > 20)
 
     def test_git_source(self):
         ''' test use of local source0 tarball '''
