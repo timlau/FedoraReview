@@ -260,6 +260,22 @@ class TestMisc(FR_TestCase):
         files = check.checks.sources.get_filelist()
         self.assertEqual(len(files), 10)
 
+    def test_review_dir(self):
+        ''' Test ReviewDir setup functions. '''
+        self.init_test('.', argv=['-n', 'python-test', '--no-build'])
+        from FedoraReview.review_dirs import _ReviewDirs
+        os.chdir('review_dir')
+        check_output('rm -rf testdirs; mkdir testdirs', shell=True)
+        ReviewDirs.workdir_setup('testdirs', 'testing')
+        check_output(['touch', 'results/dummy.rpm'])
+        os.chdir('..')
+        rd = _ReviewDirs()
+        rd.workdir_setup('testdirs')
+        self.assertEqual(len(glob.glob('*')), 7)
+        self.assertEqual(os.path.basename(os.getcwd()), 'testdirs')
+        self.assertTrue(os.path.exists('results/dummy.rpm'))
+        self.assertEqual(glob.glob('BUILD/*'), ['BUILD/pkg-1.0'])
+
     def test_mock_configdir(self):
         ''' Test internal scanning of --configdir option. '''
         self.init_test('test_misc',
