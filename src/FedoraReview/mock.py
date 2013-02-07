@@ -422,14 +422,8 @@ class _Mock(HelpersMixin):
         ''' Remove broken symlinks left by mock command. '''
         paths = glob(os.path.join(self.get_builddir('BUILD'), '*'))
         for p in paths:
-            try:
-                os.stat(p)
-            except IOError:
-                try:
-                    os.lstat(p)
-                    os.unlink(p)
-                except IOError:
-                    pass
+            if not os.path.exists(p) and os.path.lexists(p):
+                os.unlink(p)
 
 
 Mock = _Mock()
