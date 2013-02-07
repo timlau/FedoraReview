@@ -250,6 +250,11 @@ class TestMisc(FR_TestCase):
         if result.output_extra:
             self.log.debug("Result extra text: " + result.output_extra)
         self.assertTrue(check.is_passed)
+        paths = check.checks.sources.find_all_re('.*[.]py')
+        files = [os.path.basename(p) for p in paths]
+        self.assertEqual(set(files), set(['setup.py', '__init__.py']))
+        files = check.checks.sources.get_filelist()
+        self.assertEqual(len(files), 10)
 
     def test_mock_configdir(self):
         ''' Test internal scanning of --configdir option. '''
