@@ -8,6 +8,9 @@
 import re
 import os
 import urllib
+
+import rpm
+
 from FedoraReview import CheckBase, RegistryBase
 
 
@@ -170,7 +173,7 @@ class RCheckCheckMacro(RCheckBase):
     """ Check if the section %check is present in the spec """
 
     def __init__(self, base):
-        """ Instanciate check variable """
+        """ Instantiate check variable """
         RCheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
         self.text = 'The %check macro is present'
@@ -183,33 +186,14 @@ class RCheckCheckMacro(RCheckBase):
         self.set_passed(bool(sec_check))
 
 
-class RCheckDir(RCheckBase):
-    """ Check if the directory %{packname} is owned by the package """
-
-    def __init__(self, base):
-        """ Instanciate check variable """
-        RCheckBase.__init__(self, base)
-        self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
-        self.text = 'The package owns the created directory.'
-        self.automatic = True
-        self.type = 'MUST'
-
-    def dont_run_on_applicable(self):
-        # Disabled, does not call set_passed -> errors.
-        """ Run the check """
-        #dirs = self.spec.find_tag_re('%dir')
-        #print dirs
-        pass
-
-
-class RCheckBuildSection(RCheckBase):
+class RCheckInstallSection(RCheckBase):
     """ Check if the build section follows the expected behavior """
 
     def __init__(self, base):
         """ Instanciate check variable """
         RCheckBase.__init__(self, base)
-        self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
-        self.text = 'The package has the standard %build section.'
+        self.url = 'http://fedoraproject.org/wiki/Packaging:R'
+        self.text = 'The package has the standard %install section.'
         self.automatic = True
         self.type = 'MUST'
 
@@ -219,34 +203,35 @@ class RCheckBuildSection(RCheckBase):
         b_test = False
         b_rm = False
         b_install = False
-        for line in self.spec.lines:
-            if 'mkdir -p' in line and (
-                '/R/library' in line or 'rlibdir' in line):
-                    b_dir = True
-            if "test -d %{packname}/src && " \
-                "(cd %{packname}/src; rm -f *.o *.so)" in line:
-                    b_test = True
+        section = self.spec.get_section('%install')
+        for line in section:
+            if 'mkdir -p' in line and \
+                ('/R/library' in line or 'rlibdir' in line):
+                b_dir = True
+            if rpm.expandMacro("test -d %{packname}/src && "
+            "(cd %{packname}/src; rm -f *.o *.so)") in line:
+                b_test = True
             if 'rm' in line and 'R.css' in line:
                 b_rm = True
             if 'R CMD INSTALL' in line \
                 and '-l ' in line \
-                and '%{packname}' in line \
+                and rpm.expandMacro('%{packname}') in line \
                 and ('/R/library' in line or 'rlibdir' in line):
                     b_install = True
-        if b_dir and b_test and b_rm  and b_install:
-                self.set_passed(self.PASS)
+        if b_dir and b_test and b_rm and b_install:
+            self.set_passed(self.PASS)
         else:
             cmt = ''
-            if b_dir is False:
+            if not b_dir:
                 cmt += "Package doesn't have the standard " \
                     "directory creation.\n"
-            if b_test is False:
+            if not b_test:
                 cmt += "Package doesn't have the standard " \
                     "removal of *.o and *.so.\n"
-            if b_rm is False:
+            if not b_rm:
                 cmt += "Package doesn't have the standard " \
                     "removal of the R.css file\n"
-            if b_install is False:
+            if not b_install:
                 cmt += "Package doesn't have the standard " \
                     "R CMD INSTALL function\n"
             self.set_passed(self.FAIL, cmt)
