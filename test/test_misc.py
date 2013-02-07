@@ -22,6 +22,7 @@ Unit tests for bugzilla bug handling
 '''
 
 import glob
+import logging
 import shutil
 import os
 import os.path
@@ -232,6 +233,9 @@ class TestMisc(FR_TestCase):
         source.extract()
         self.assertTrue(os.path.exists(ReviewDirs.upstream_unpacked +
                                        '/Source0/python-test-1.0'))
+        source.log.setLevel(logging.ERROR)
+        source = Source('Source0', 'http://nowhere.internet/a_file.txt')
+        self.assertFalse(source.downloaded)
 
     def test_sources_data(self):
         ''' Test a SourcesDataSource. '''
