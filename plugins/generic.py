@@ -228,9 +228,14 @@ class CheckCleanBuildroot(GenericCheckBase):
 
     def run(self):
         has_clean = False
-        regex = r'rm\s+\-[rf][rf]\s+(%{buildroot}|$RPM_BUILD_ROOT)'
-        regex = rpm.expandMacro(regex)
+        regex = r'rm\s+\-[rf][rf]\s+(@buildroot@|$RPM_BUILD_ROOT)'
+        buildroot = rpm.expandMacro('%{buildroot}')
+        # BZ 908830: handle '+' in package name.
+        buildroot = buildroot.replace('+', r'\+')
+        regex = regex.replace('@buildroot@', buildroot)
         install_sec = self.spec.get_section('%install', raw=True)
+        self.log.debug('regex: ' + regex)
+        self.log.debug('install_sec: ' + install_sec)
         has_clean = install_sec and re.search(regex, install_sec)
         if self.flags['EPEL5']:
             self.text = 'EPEL5: Package does run rm -rf %{buildroot}' \
