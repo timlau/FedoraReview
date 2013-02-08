@@ -34,6 +34,7 @@ SRPM_UNPACKED     = 'srpm-unpacked'
 UPSTREAM          = 'upstream'
 UPSTREAM_UNPACKED = 'upstream-unpacked'
 RESULTS           = 'results'
+DEPENDENCIES      = 'dependencies'
 
 
 class _ReviewDirs(object):
@@ -57,7 +58,8 @@ class _ReviewDirs(object):
         ''' Attempt to change directory already set. '''
         pass
 
-    WD_DIRS = [UPSTREAM, UPSTREAM_UNPACKED, SRPM, SRPM_UNPACKED, RESULTS]
+    WD_DIRS = [UPSTREAM, UPSTREAM_UNPACKED, SRPM, SRPM_UNPACKED,
+               RESULTS, DEPENDENCIES]
 
     def __init__(self):
         self.startdir = os.getcwd()
