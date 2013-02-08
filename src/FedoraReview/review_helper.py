@@ -61,7 +61,7 @@ class ReviewHelper(object):
         self.outfile = None
         self.prebuilt = False
 
-    def __do_report(self):
+    def _do_report(self, outfile=None):
         ''' Create a review report'''
         self.log.info('Getting .spec and .srpm Urls from : '
                        + self.bug.get_location())
@@ -78,9 +78,9 @@ class ReviewHelper(object):
             raise self.HelperError('Cannot download .spec and .srpm')
 
         Settings.name = self.bug.get_name()
-        self.__run_checks(self.bug.spec_file, self.bug.srpm_file)
+        self._run_checks(self.bug.spec_file, self.bug.srpm_file, outfile)
 
-    def __run_checks(self, spec, srpm):
+    def _run_checks(self, spec, srpm, outfile=None):
         ''' Register and run all checks. '''
 
         def apply_color(s, formatter):
@@ -90,7 +90,9 @@ class ReviewHelper(object):
             return s
 
         self.checks = Checks(spec, srpm)
-        if Settings.no_report:
+        if outfile:
+            self.outfile = outfile
+        elif Settings.no_report:
             self.outfile = '/dev/null'
         else:
             self.outfile = ReviewDirs.report_path()
@@ -159,7 +161,7 @@ class ReviewHelper(object):
             for victim in dep.deprecates:
                 print '    ' + victim
 
-    def _do_run(self):
+    def _do_run(self, outfile=None):
         ''' Initiate, download url:s, run checks a write report. '''
         Settings.init()
         make_report = True
@@ -182,16 +184,16 @@ class ReviewHelper(object):
             self.log.info("Processing local files: " + Settings.name)
             self.bug = NameBug(Settings.name)
         if make_report:
-            self.__do_report()
+            self._do_report(outfile)
 
-    def run(self):
+    def run(self, outfile=None):
         ''' Load urls, run checks and make report, '''
         self.log.debug('fedora-review ' + __version__ + ' ' +
                          BUILD_FULL + ' started')
         self.log.debug("Command  line: " + ' '.join(sys.argv))
         try:
             rcode = 0
-            self._do_run()
+            self._do_run(outfile)
         except ReviewError as err:
             rcode = err.exitcode
             self.log.debug("ReviewError: " + str(err), exc_info=True)
