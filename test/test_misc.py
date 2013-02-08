@@ -48,6 +48,7 @@ from FedoraReview.check_base import AbstractCheck
 from FedoraReview.checks import _CheckDict
 from FedoraReview.helpers_mixin import HelpersMixin
 from FedoraReview.name_bug import NameBug
+from FedoraReview.review_helper import ReviewHelper
 from FedoraReview.source import Source
 from FedoraReview.spec_file import SpecFile
 from FedoraReview.srpm_file import SRPMFile
@@ -259,6 +260,27 @@ class TestMisc(FR_TestCase):
         self.assertEqual(set(files), set(['setup.py', '__init__.py']))
         files = check.checks.sources.get_filelist()
         self.assertEqual(len(files), 10)
+
+    def test_review_helper(self):
+        ''' Test review_helper error handling. '''
+        # pylint: disable=C0111,W0212
+
+        class Null:
+            def write(self, msg):
+                pass
+
+        loglevel = None
+        argv = ['-rn', 'foo', '--no-build']
+        self.init_test('.', argv)
+        helper = ReviewHelper()
+        stdout = sys.stdout
+        sys.stdout = Null()
+        helper.log.setLevel(logging.CRITICAL)
+        rc = helper.run('review.txt')
+        sys.stdout = stdout
+        if loglevel:
+            os.environ['REVIEW_LOGLEVEL'] = loglevel
+        self.assertEqual(rc, 2)
 
     def test_review_dir(self):
         ''' Test ReviewDir setup functions. '''
