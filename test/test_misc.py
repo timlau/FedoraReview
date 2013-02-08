@@ -53,7 +53,7 @@ from FedoraReview.source import Source
 from FedoraReview.spec_file import SpecFile
 from FedoraReview.srpm_file import SRPMFile
 
-from fr_testcase import FR_TestCase, FAST_TEST, NO_NET
+from fr_testcase import FR_TestCase, FAST_TEST, NO_NET, VERSION
 
 
 class TestMisc(FR_TestCase):
@@ -71,6 +71,17 @@ class TestMisc(FR_TestCase):
                                       'python-test-1.0-1.fc17.src.rpm')
         self.startdir = os.getcwd()
         Mock.reset()
+
+    def test_version(self):
+        ''' Test version and update-version. '''
+        vers_path = os.path.join(
+                          srcpath.SRC_PATH, 'FedoraReview', 'version')
+        if os.path.exists(vers_path):
+            os.unlink(vers_path)
+        import FedoraReview.version
+        reload(FedoraReview.version)
+        self.assertTrue(os.path.exists(vers_path))
+        self.assertEqual(FedoraReview.__version__, VERSION)
 
     def test_rpm_source(self):
         ''' Test a rpm datasource. '''
