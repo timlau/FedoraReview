@@ -285,6 +285,11 @@ User supplied directory with shell-based plugins
 loglevel used when not using -v/--verbose. A logging.* value like 'DEBUG', 'Info', or 'warning'. Setting
 REVIEW_LOGLEVEL to 'debug' is the same as providing the -v/--verbose option.
 .TP
+.B REVIEW_NO_MOCKGROUP_CHECK
+Normally, fedora-review checks  that user is member of the mock group
+before proceeding since this is required to run mock in most setups.
+In cases this check is not useful it can be suppressed by this variable.
+.TP
 .B XDG_DATA_HOME
 fedora-review respects XDG_DATA_HOME which defaults to ~/.local/share. Eg g.,
 the personal data directory with plugins is by default ~/.local/share/fedora-review/plugins,
