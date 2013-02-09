@@ -20,6 +20,7 @@ Plugin module acting as an interface between, simple, shell-based plugins
 and the regular python plugins.
 '''
 
+import logging                                   # pylint: disable=W0611
 import os
 import os.path
 import re
@@ -31,6 +32,8 @@ from subprocess import Popen, PIPE
 from FedoraReview import AbstractRegistry, GenericCheck
 from FedoraReview import ReviewDirs, Settings, XdgDirs
 
+
+# pylint:  disable=W1401
 ENVIRON_TEMPLATE = """
 #
 # This file is not needed for review, and is only used for the
@@ -445,6 +448,21 @@ class ShellCheck(GenericCheck):
             os.unlink(path)
         return attachments
 
+    def _handle_log_messages(self):
+        ''' Handle log messages from plugin. '''
+        logfile = os.path.join(ReviewDirs.root, '.log')
+        if not os.path.exists(logfile):
+            return
+        with open(logfile) as f:
+            for line in f.readlines():
+                try:
+                    tag, msg = line.split(':')
+                    level = eval('logging.' + tag.upper())
+                except (ValueError, AttributeError):
+                    self.log.error("Malformed plugin log: " + line)
+                self.log.log(level, msg)
+        os.unlink(logfile)
+
     def run(self):
         ''' Run the check. '''
         if self.is_run:
@@ -460,6 +478,7 @@ class ShellCheck(GenericCheck):
             return
         cmd = 'source ./review-env.sh; source ' + self.defined_in
         retval, stdout, stderr = self._do_run(cmd)
+        self._handle_log_messages()
         attachments = self._get_attachments()
         if retval == -1:
             self.set_passed(self.PENDING,
