@@ -36,6 +36,7 @@ except ImportError:
     from FedoraReview.el_compat import check_output
 
 
+import FedoraReview.deps as deps
 from FedoraReview import CheckBase, Mock, ReviewDirs, Settings
 from FedoraReview import RegistryBase, ReviewError
 
@@ -149,8 +150,25 @@ class CheckBuild(BuildCheckBase):
         self.needs = ['CheckResultdir']
 
     def run(self):
+
+        def listfiles():
+            ''' Generate listing of dirs and files in each package. '''
+            with open('files.dir', 'w') as f:
+                for pkg in self.spec.packages:
+                    path = Mock.get_package_rpm_path(pkg, self.spec)
+                    dirs, files = deps.listpaths(path)
+                    f.write(pkg + '\n')
+                    f.write('=' * len(pkg) + '\n')
+                    for line in sorted(dirs):
+                        f.write(line + '\n')
+                    f.write('\n')
+                    for line in sorted(files):
+                        f.write(line + '\n')
+                    f.write('\n')
+
         if Settings.prebuilt:
             self.set_passed(self.PENDING, 'Using prebuilt packages')
+            listfiles()
             return
         if Settings.nobuild:
             if Mock.have_cache_for(self.spec):
@@ -162,6 +180,7 @@ class CheckBuild(BuildCheckBase):
                      'No valid cache, building despite --no-build.')
         _mock_root_setup("While building")
         Mock.build(self.srpm.filename)
+        listfiles()
         self.set_passed(self.PASS)
 
 

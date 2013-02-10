@@ -76,8 +76,8 @@ def resolve(reqs):
         pkgs.append(pkg.rsplit('-', 2)[0])
 
 
-def list_dirs(pkg_filename):
-    ''' Return list of directories in local pkg. '''
+def listpaths(pkg_filename):
+    ''' Return lists of files and dirs in local pkg. '''
 
     cmd = ['rpm', '-ql', '--dump', '-p', pkg_filename]
     try:
@@ -85,16 +85,24 @@ def list_dirs(pkg_filename):
     except OSError:
         Settings.get_logger().warning("Cannot run " + " ".join(cmd))
         return []
+    files = []
     dirs = []
     while True:
         try:
             line = rpm.stdout.next().strip()
         except StopIteration:
-            return dirs
+            return dirs, files
         path, mode = line.split()[0:5:4]
         mode = int(mode, 8)
         if mode & 040000:
             dirs.append(path)
+        else:
+            files.append(path)
+
+
+def list_dirs(pkg_filename):
+    ''' Return list of directories in local pkg matching mode. '''
+    return listpaths(pkg_filename)[0]
 
 
 def list_owners(paths):
