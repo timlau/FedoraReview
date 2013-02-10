@@ -53,6 +53,8 @@ class Registry(RegistryBase):
 class BuildCheckBase(CheckBase):
     ''' Base class for all generic tests. '''
 
+    sort_key = '10'
+
     def __init__(self, checks):
         CheckBase.__init__(self, checks, __file__)
         self.rpmlint_output = []

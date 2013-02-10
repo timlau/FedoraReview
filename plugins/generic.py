@@ -39,6 +39,10 @@ from FedoraReview import RegistryBase, Settings
 
 import FedoraReview.deps as deps
 
+_DIR_SORT_KEY = '30'
+_LICENSE_SORT_KEY = '20'
+_GL_SORT_KEY = '90'
+
 
 def in_list(what, list_):
     ''' test if 'what' is in each item in list_. '''
@@ -74,6 +78,9 @@ class CheckApprovedLicense(GenericCheckBase):
     MUST: The package must be licensed with a Fedora approved license and
     meet the Licensing Guidelines .
     '''
+
+    sort_key = _LICENSE_SORT_KEY
+
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
@@ -375,6 +382,8 @@ class CheckDevelFilesInDevel(GenericCheckBase):
 class CheckDirectoryRequire(GenericCheckBase):
     ''' Package should require directories it uses. '''
 
+    sort_key = _DIR_SORT_KEY
+
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
@@ -540,6 +549,8 @@ class CheckFullVerReqSub(GenericCheckBase):
 class CheckGuidelines(GenericCheckBase):
     ''' MUST: The package complies to the Packaging Guidelines.  '''
 
+    sort_key = _GL_SORT_KEY
+
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging:Guidelines'
@@ -592,6 +603,9 @@ class CheckLicenseField(GenericCheckBase):
     MUST: The License field in the package spec file must match the
     actual license.
     '''
+
+    sort_key = _LICENSE_SORT_KEY
+
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/' \
@@ -688,6 +702,8 @@ class CheckLicenseField(GenericCheckBase):
 class CheckLicensInDoc(GenericCheckBase):
     ''' Package includes license text files. '''
 
+    sort_key = _LICENSE_SORT_KEY
+
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
@@ -735,6 +751,8 @@ class CheckLicensInDoc(GenericCheckBase):
 
 class CheckLicenseInSubpackages(GenericCheckBase):
     ''' License should always be installed when subpackages.'''
+
+    sort_key = _LICENSE_SORT_KEY
 
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
@@ -813,6 +831,8 @@ class CheckMakeinstall(GenericCheckBase):
 
 class CheckMultipleLicenses(GenericCheckBase):
     ''' If multiple licenses, we should provide a break-down. '''
+
+    sort_key = _LICENSE_SORT_KEY
 
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
@@ -956,6 +976,9 @@ class CheckOwnDirs(GenericCheckBase):
     does not create a directory that it uses, then it should require a
     package which does create that directory.
     '''
+
+    sort_key = _DIR_SORT_KEY
+
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
@@ -1039,6 +1062,9 @@ class CheckOwnOther(GenericCheckBase):
     another package owns, then please present that at package review
     time.
     '''
+
+    sort_key = _DIR_SORT_KEY
+
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \

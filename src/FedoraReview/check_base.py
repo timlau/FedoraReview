@@ -70,6 +70,7 @@ class AbstractCheck(object):
       - group: 'Generic', 'C/C++', 'PHP': binds the test to a
                 Registry.
       - implementation: 'python'|'shell', defaults to 'python'.
+      - sort_key: used to sort checks in output.
 
     Properties:
       - name: Unique string.
@@ -99,6 +100,7 @@ class AbstractCheck(object):
 
     version        = '0.1'
     implementation = 'python'
+    sort_key       = 50
 
     def __init__(self, defined_in):
         self.defined_in = defined_in

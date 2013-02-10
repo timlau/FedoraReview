@@ -64,13 +64,13 @@ def _write_section(results, output):
     def result_key(result):
         ''' Return key used to sort results. '''
         if result.check.is_failed:
-            return '0'
+            return '0' + str(result.check.sort_key)
         elif result.check.is_pending:
-            return '1'
+            return '1' + str(result.check.sort_key)
         elif result.check.is_passed:
-            return '2'
+            return '2' + str(result.check.sort_key)
         else:
-            return '3'
+            return '3' + str(result.check.sort_key)
 
     groups = list(set([hdr(test.group) for test in results]))
     for group in sorted(groups):
