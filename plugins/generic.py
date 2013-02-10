@@ -793,8 +793,8 @@ class CheckMacros(GenericCheckBase):
         GenericCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/' \
                    'wiki/Packaging/Guidelines#macros'
-        self.text = 'Package consistently uses macro' \
-                    ' is (instead of hard-coded directory names).'
+        self.text = 'Package consistently uses macros' \
+                    ' (instead of hard-coded directory names).'
         self.automatic = True
         self.type = 'MUST'
 
