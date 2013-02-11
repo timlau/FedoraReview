@@ -16,7 +16,7 @@ function install_virtenv()
     virtualenv --system-site-packages fedorareviewenv
     source fedorareviewenv/bin/activate
     pip  install -q nose --upgrade  ## Needed within the venv
-    pip  install -q nosexcover
+    pip  install -q nosexcover --upgrade
     hash -r  ## Reload where the nosetests app is (within the venv)
 }
 
@@ -69,6 +69,7 @@ logfile="$PWD/dist/build.log"
             init_mockroot $root
         done
 
+        echo "Running tests:"
         PYTHONPATH=../src \
         nosetests -x --nocapture -e init_test -e init_opt_test --cover-erase \
             --cover-package=plugins,FedoraReview \
