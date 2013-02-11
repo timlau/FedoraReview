@@ -28,14 +28,14 @@ class RCheckBase(CheckBase):
     DIR = ['%{packname}']
     DOCS = ['doc', 'DESCRIPTION', 'NEWS', 'CITATION']
     URLS = [
-    'http://www.bioconductor.org/packages/release/data/' \
-    'experiment/src/contrib/PACKAGES',
-    'http://www.bioconductor.org/packages/release/data/' \
-    'annotation/src/contrib/PACKAGES',
-    'http://www.bioconductor.org/packages/release/bioc/' \
-    'src/contrib/PACKAGES',
-    'http://cran.at.r-project.org/src/contrib/PACKAGES',
-    'http://r-forge.r-project.org/src/contrib/PACKAGES',
+        'http://www.bioconductor.org/packages/release/data/'
+        'experiment/src/contrib/PACKAGES',
+        'http://www.bioconductor.org/packages/release/data/'
+        'annotation/src/contrib/PACKAGES',
+        'http://www.bioconductor.org/packages/release/bioc/'
+        'src/contrib/PACKAGES',
+        'http://cran.at.r-project.org/src/contrib/PACKAGES',
+        'http://r-forge.r-project.org/src/contrib/PACKAGES',
     ]
 
     def __init__(self, base):
@@ -180,7 +180,7 @@ class RCheckCheckMacro(RCheckBase):
     def run_on_applicable(self):
         """ Run the check """
         sec_check = self.spec.get_section('%check')
-        self.set_passed(sec_check != None)
+        self.set_passed(bool(sec_check))
 
 
 class RCheckDir(RCheckBase):
@@ -220,36 +220,35 @@ class RCheckBuildSection(RCheckBase):
         b_rm = False
         b_install = False
         for line in self.spec.lines:
-            if 'mkdir -p' in line and \
-                ('/R/library' in line or 'rlibdir' in line):
-                b_dir = True
+            if 'mkdir -p' in line and (
+                '/R/library' in line or 'rlibdir' in line):
+                    b_dir = True
             if "test -d %{packname}/src && " \
-            "(cd %{packname}/src; rm -f *.o *.so)" in line:
-                b_test = True
+                "(cd %{packname}/src; rm -f *.o *.so)" in line:
+                    b_test = True
             if 'rm' in line and 'R.css' in line:
                 b_rm = True
             if 'R CMD INSTALL' in line \
-                    and '-l ' in line \
-                    and '%{packname}' in line \
-                    and ('/R/library' in line or 'rlibdir' in line):
-                b_install = True
-        if b_dir is True and b_test is True and b_rm is True and \
-            b_install is True:
-            self.set_passed(self.PASS)
+                and '-l ' in line \
+                and '%{packname}' in line \
+                and ('/R/library' in line or 'rlibdir' in line):
+                    b_install = True
+        if b_dir and b_test and b_rm  and b_install:
+                self.set_passed(self.PASS)
         else:
             cmt = ''
             if b_dir is False:
                 cmt += "Package doesn't have the standard " \
-                "directory creation.\n"
+                    "directory creation.\n"
             if b_test is False:
                 cmt += "Package doesn't have the standard " \
-                "removal of *.o and *.so.\n"
+                    "removal of *.o and *.so.\n"
             if b_rm is False:
                 cmt += "Package doesn't have the standard " \
-                "removal of the R.css file\n"
+                    "removal of the R.css file\n"
             if b_install is False:
                 cmt += "Package doesn't have the standard " \
-                "R CMD INSTALL function\n"
+                    "R CMD INSTALL function\n"
             self.set_passed(self.FAIL, cmt)
 
 # vim: set expandtab ts=4 sw=4:

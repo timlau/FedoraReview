@@ -99,7 +99,7 @@ class RubyCheckBuildArchitecture(RubyCheckBase):
 
     def run_on_applicable(self):
         arch = self.spec.expand_tag('arch')
-        if  _has_extension(self):
+        if _has_extension(self):
             self.set_passed('noarch' not in arch,
                             "Package with binary extension can't be built"
                             " as noarch.")

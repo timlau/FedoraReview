@@ -123,7 +123,7 @@ class _Mock(HelpersMixin):
 
         def log_text(out, err):
             ''' Format stdout + stderr. '''
-            return  header + " output: " + str(out) + ' ' + str(err)
+            return header + " output: " + str(out) + ' ' + str(err)
 
         self.log.debug(header + ' command: ' + ', '.join(cmd))
         try:
@@ -248,7 +248,7 @@ class _Mock(HelpersMixin):
         cmd.append('--shell')
         cmd.append('rm -rf $(rpm --eval %_builddir)/*')
         errmsg = self._run_cmd(cmd)
-        if  errmsg:
+        if errmsg:
             self.log.debug('Cannot clear build area: ' + errmsg +
                            ' (ignored)')
         return None
@@ -272,7 +272,7 @@ class _Mock(HelpersMixin):
         cmd.append(srpm.filename)
         cmd.append(os.path.basename(srpm.filename))
         errmsg = self._run_cmd(cmd)
-        if  errmsg:
+        if errmsg:
             self.log.warning("Cannot run mock --copyin: " + errmsg)
             return errmsg
         cmd = self._mock_cmd()
@@ -283,7 +283,7 @@ class _Mock(HelpersMixin):
         script += 'chmod -R  go+r  $(rpm --eval %_builddir)/* || :'
         cmd.append(script)
         errmsg = self._run_cmd(cmd)
-        if  errmsg:
+        if errmsg:
             self.log.warning("Cannot run mock --shell rpmbuild -bp: "
                              + errmsg)
             return errmsg
@@ -331,7 +331,7 @@ class _Mock(HelpersMixin):
 
         def log_text(out, err):                  # pylint: disable=W0612
             ''' Log message + default prefix. '''
-            return  "Install output: " + str(out) + ' ' + str(err)
+            return "Install output: " + str(out) + ' ' + str(err)
 
         def is_not_installed(package):
             ''' Test if package (path or name) isn't installed. '''

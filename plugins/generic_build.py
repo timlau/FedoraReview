@@ -130,7 +130,7 @@ class CheckResultdir(BuildCheckBase):
 
     def run(self):
         if len(glob.glob(os.path.join(Mock.resultdir, '*.*'))) != 0 \
-            and not  (Settings.nobuild or Settings.prebuilt):
+            and not (Settings.nobuild or Settings.prebuilt):
                 raise self.NotEmptyError()       # pylint: disable=W0311
         self.set_passed(self.NA)
 
@@ -179,7 +179,7 @@ class CheckBuild(BuildCheckBase):
                 return
             else:
                 self.log.info(
-                     'No valid cache, building despite --no-build.')
+                        'No valid cache, building despite --no-build.')
         _mock_root_setup("While building")
         Mock.build(self.srpm.filename)
         listfiles()
@@ -247,11 +247,11 @@ class CheckPackageInstalls(BuildCheckBase):
         rpms = Mock.get_package_rpm_paths(self.spec)
         self.log.info('Installing built package(s)')
         output = Mock.install(rpms)
-        if output == None:
+        if not output:
             self.set_passed(self.PASS)
         else:
             attachments = [
-               self.Attachment('Installation errors', output, 3)]
+                self.Attachment('Installation errors', output, 3)]
             self.set_passed(self.FAIL,
                            "Installation errors (see attachment)",
                             attachments)

@@ -99,9 +99,9 @@ class CheckBuildroot(GenericShouldCheckBase):
         except IndexError:
             br = 'Illegal buildroot line:' + br_tags[0]
         legal_buildroots = [
-        '%(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)',
-        '%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)',
-        '%{_tmppath}/%{name}-%{version}-%{release}-root']
+            '%(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)',
+            '%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)',
+            '%{_tmppath}/%{name}-%{version}-%{release}-root']
         if br in legal_buildroots:
             if self.flags['EPEL5']:
                 self.set_passed(self.PASS)

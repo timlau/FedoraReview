@@ -203,7 +203,7 @@ class AbstractBug(HelpersMixin):
             basename = os.path.basename(urlparse(self.spec_url).path)
             return basename.rsplit('.', 1)[0]
         elif self.srpm_file:
-            return  os.path.basename(self.srpm_file).rsplit('-', 2)[0]
+            return os.path.basename(self.srpm_file).rsplit('-', 2)[0]
         elif self.srpm_url:
             basename = os.path.basename(urlparse(self.srpm_url).path)
             return basename.rsplit('-', 2)[0]

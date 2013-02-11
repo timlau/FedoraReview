@@ -132,7 +132,7 @@ class AbstractCheck(object):
     @property
     def state(self):
         ''' None for (not is_run or is_na), else result.result '''
-        assert self != None
+        assert self
         if hasattr(self, 'result'):
             return self.result.result if self.result else None
         return None
@@ -141,8 +141,7 @@ class AbstractCheck(object):
     is_failed  = property(lambda self: self.state == self.FAIL)
     is_passed  = property(lambda self: self.state == self.PASS)
     is_pending = property(lambda self: self.state == self.PENDING)
-    is_na      = property(
-                     lambda self: self.is_run and self.state == None)
+    is_na      = property(lambda self: self.is_run and not self.state)
 
 
 class GenericCheck(AbstractCheck):
@@ -191,12 +190,13 @@ class GenericCheck(AbstractCheck):
         Set if the test is passed, failed or N/A and set optional
         extra output and/or attachments to be shown in repost.
         '''
+
         if result in ['not_applicable', self.NA, None]:
             self.result = None
             return
-        elif result == True or result == self.PASS:
+        elif result is True or result == self.PASS:
             state = self.PASS
-        elif result == False or result == self.FAIL:
+        elif result is False or result == self.FAIL:
             state = self.FAIL
         elif result == 'inconclusive' or result == self.PENDING:
             state = self.PENDING
@@ -242,7 +242,7 @@ class TestResult(object):
     ''' The printable outcome of a test, stored in check.result. '''
 
     TEST_STATES = {
-         'pending': '[ ]', 'pass': '[x]', 'fail': '[!]', 'na': '[-]'}
+        'pending': '[ ]', 'pass': '[x]', 'fail': '[!]', 'na': '[-]'}
 
     def __init__(self, check, result, output_extra, attachments=None):
         self.check = check
@@ -282,8 +282,8 @@ class TestResult(object):
         if self.output_extra and self.output_extra != "":
             strbuf.write("\n")
             extra_lines = self.wrapper.wrap(
-                              self.wrapper.subsequent_indent +
-                              "Note: " + self.output_extra)
+                                self.wrapper.subsequent_indent +
+                                "Note: " + self.output_extra)
             strbuf.write('\n'.join(extra_lines))
 
         return strbuf.getvalue()

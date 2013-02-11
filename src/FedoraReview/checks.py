@@ -28,12 +28,12 @@ from operator import attrgetter
 from straight.plugin import load
 
 from datasrc import RpmDataSource, BuildFilesSource, SourcesDataSource
-from settings import  Settings
+from settings import Settings
 from mock import Mock
-from srpm_file import  SRPMFile
-from spec_file import  SpecFile
+from srpm_file import SRPMFile
+from spec_file import SpecFile
 from review_dirs import ReviewDirs
-from version import  __version__, BUILD_ID, BUILD_DATE
+from version import __version__, BUILD_ID, BUILD_DATE
 from review_error import ReviewError
 from xdg_dirs import XdgDirs
 
@@ -230,7 +230,7 @@ class _ChecksLoader(object):
         self.groups = {}
 
         appdir = os.path.realpath(
-                     os.path.join(os.path.dirname(__file__)))
+                        os.path.join(os.path.dirname(__file__)))
         sys.path.insert(0, appdir)
         sys.path.insert(0, XdgDirs.app_datadir)
         plugins = load('plugins')
@@ -245,7 +245,7 @@ class _ChecksLoader(object):
     def exclude_checks(self, exclude_arg):
         ''' Mark all checks in exclude_arg (string) as already done. '''
         for c in [l.strip() for l in exclude_arg.split(',')]:
-            if  c in self.checkdict:
+            if c in self.checkdict:
                 # Mark check as run, don't delete it. We want
                 # checks depending on this to run.
                 self.checkdict[c].result = None

@@ -83,7 +83,7 @@ class SpecFile(object):
                 return None
 
         pkgs = [p.header[rpm.RPMTAG_NAME] for p in self.spec.packages]
-        pkgs = [p for p in pkgs if self.get_files(p) != None]
+        pkgs = [p for p in pkgs if not self.get_files(p) is None]
         return [p for p in pkgs if check_pkg_path(p)]
 
     def _get_lines(self, filename):
@@ -149,7 +149,7 @@ class SpecFile(object):
             pkg_name = self.name
         lines = None
         for line in [l.strip() for l in self.lines]:
-            if lines == None:
+            if lines is None:
                 if line.startswith('%files'):
                     if self._parse_files_pkg_name(line) == pkg_name:
                         lines = []
@@ -161,8 +161,8 @@ class SpecFile(object):
             elif line.startswith('%'):
                 token = re.split('\s|\(', line)[0]
                 if not token in ['%ghost', '%doc', '%docdir', '%license',
-                '%verify', '%attr', '%config', '%dir', '%defattr']:
-                    break
+                    '%verify', '%attr', '%config', '%dir', '%defattr']:
+                        break
                 else:
                     lines.append(line)
             elif line:
@@ -172,7 +172,7 @@ class SpecFile(object):
     @property
     def base_package(self):
         ''' Base package name, normally %{name} unless -n is used. '''
-        return  self.spec.packages[0].header[rpm.RPMTAG_NAME]
+        return self.spec.packages[0].header[rpm.RPMTAG_NAME]
 
     @property
     def sources_by_tag(self):
@@ -206,7 +206,7 @@ class SpecFile(object):
     @property
     def packages(self):
         ''' Return list of package names built by this spec. '''
-        if self._packages == None:
+        if self._packages is None:
             self._packages = self._get_packages()
         return self._packages
 

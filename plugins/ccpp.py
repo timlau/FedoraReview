@@ -20,10 +20,11 @@ class Registry(RegistryBase):
             src = self.checks.buildsrc
         else:
             src = self.checks.sources
-        if self.checks.rpms.find_re('/usr/(lib|lib64)/[\w\-]*\.so\.[0-9]') or \
-        self.checks.rpms.find('*.h') or self.checks.rpms.find('*.a') or \
-        src.find('*.c') or src.find('*.C') or src.find('*.cpp'):
-            return True
+        rpms = self.checks.rpms
+        if rpms.find_re('/usr/(lib|lib64)/[\w\-]*\.so\.[0-9]') or \
+            rpms.find('*.h') or rpms.find('*.a') or \
+                src.find('*.c') or src.find('*.C') or src.find('*.cpp'):
+                    return True
         return False
 
 
@@ -51,7 +52,7 @@ class CheckLDConfig(CCppCheckBase):
 
     def is_applicable(self):
         ''' check if this test is applicable '''
-        return self.rpms.find_re(self.sofiles_regex) != None
+        return bool(self.rpms.find_re(self.sofiles_regex))
 
     def run_on_applicable(self):
         ''' Run the test, called if is_applicable() is True. '''
@@ -60,9 +61,9 @@ class CheckLDConfig(CCppCheckBase):
             rpm = RpmFile(pkg, self.spec.version, self.spec.release)
             if not self.rpms.find_re(self.sofiles_regex, pkg):
                 continue
-            if not rpm.post  or not '/sbin/ldconfig' in rpm.post or \
-            not rpm.postun or not '/sbin/ldconfig' in  rpm.postun:
-                bad_pkgs.append(pkg)
+            if not rpm.post or not '/sbin/ldconfig' in rpm.post or \
+                not rpm.postun or not '/sbin/ldconfig' in rpm.postun:
+                    bad_pkgs.append(pkg)
         if bad_pkgs:
             self.set_passed(self.FAIL,
                             '/sbin/ldconfig not called in '
@@ -95,7 +96,7 @@ class CheckHeaderFiles(CCppCheckBase):
             for path in self.rpms.find_all('*.h', pkg):
                 # header files (.h) under /usr/src/debug/* will be in
                 #  the -debuginfo package.
-                if  path.startswith('/usr/src/debug/') and '-debuginfo' in pkg:
+                if path.startswith('/usr/src/debug/') and '-debuginfo' in pkg:
                     continue
                 # All other .h files should be in a -devel package.
                 if not '-devel' in pkg:
@@ -237,7 +238,7 @@ class CheckRPATH(CCppCheckBase):
 
     def run_on_applicable(self):
         ''' Run the test, called if is_applicable() is True. '''
-        if  self.checks.checkdict['CheckRpmlint'].is_disabled:
+        if self.checks.checkdict['CheckRpmlint'].is_disabled:
             self.set_passed(self.PENDING, 'Rpmlint run disabled')
             return
         for line in Mock.rpmlint_output:

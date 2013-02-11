@@ -85,7 +85,7 @@ class _ReviewDirs(object):
                     shutil.move(os.path.join(wd, d), cache)
                 try:
                     buildlink = os.readlink(os.path.join(wd, 'BUILD'))
-                except  OSError:
+                except OSError:
                     buildlink = None
             logging.info("Clearing old review directory: " + wd)
             shutil.rmtree(wd)

@@ -35,7 +35,7 @@ class DownloadError(ReviewError):
     ''' Error in urlretrieve(). '''
     def __init__(self, code, url):
         ReviewError.__init__(
-           self, "Error %s downloading %s" % (code, url))
+            self, "Error %s downloading %s" % (code, url))
 
 
 class HelpersMixin(object):
@@ -101,7 +101,7 @@ class HelpersMixin(object):
             if logger:
                 logger(True)
             logging.debug('Using cached source: ' + fname)
-            return  path
+            return path
         self.log.debug("  --> %s : %s" % (directory, link))
         if logger:
             logger(False)

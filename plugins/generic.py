@@ -146,7 +146,7 @@ class CheckBuildRequires(GenericCheckBase):
 
     def run(self):
 
-        if  self.checks.checkdict['CheckBuild'].is_pending:
+        if self.checks.checkdict['CheckBuild'].is_pending:
             self.set_passed(self.PENDING, 'Using prebuilt rpms.')
         elif self.checks.checkdict['CheckBuild'].is_passed:
             brequires = self.spec.build_requires
@@ -500,7 +500,7 @@ class CheckFilePermissions(GenericCheckBase):
         self.needs.append('CheckRpmlint')
 
     def run(self):
-        if  self.checks.checkdict['CheckRpmlint'].is_disabled:
+        if self.checks.checkdict['CheckRpmlint'].is_disabled:
             self.set_passed(self.PENDING, 'Rpmlint run disabled')
             return
         for line in Mock.rpmlint_output:
@@ -1019,7 +1019,7 @@ class CheckOwnDirs(GenericCheckBase):
         def get_deps_paths(pkg_deps):
             ''' Return aggregated  list of files in all pkg_deps. '''
             if not pkg_deps:
-                return  []
+                return []
             paths = deps.list_paths(pkg_deps)
             for dep in pkg_deps:
                 if dep in self.spec.packages:
@@ -1334,7 +1334,7 @@ class CheckUTF8Filenames(GenericCheckBase):
         self.needs.append('CheckRpmlint')
 
     def run(self):
-        if  self.checks.checkdict['CheckRpmlint'].is_disabled:
+        if self.checks.checkdict['CheckRpmlint'].is_disabled:
             self.set_passed(self.PENDING, 'Rpmlint run disabled')
             return
         for line in Mock.rpmlint_output:

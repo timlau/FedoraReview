@@ -42,10 +42,10 @@ def _check_mock_grp():
     ''' Raise ReviewError unless mock installation is OK. '''
 
     mock_msg = \
-    'No mock group - mock not installed or mock not in effective' \
-    'groups. Try running  "newgrp" or logging out from all your local '\
-    'sessions and logging back in. Or disable test using ' \
-    'REVIEW_NO_MOCKGROUP_CHECK, see manpage'
+        'No mock group - mock not installed or mock not in effective' \
+        'groups. Try running  "newgrp" or logging out from all your local ' \
+        'sessions and logging back in. Or disable test using ' \
+        'REVIEW_NO_MOCKGROUP_CHECK, see manpage'
 
     if 'REVIEW_NO_MOCKGROUP_CHECK' in os.environ:
         return
@@ -290,7 +290,7 @@ class _Settings(object):                         # pylint: disable=R0902,R0924
     @property
     def current_bz_url(self):
         ''' Effective value of --bz-url, not empty. '''
-        return  self.other_bz if self.other_bz else self.bz_url
+        return self.other_bz if self.other_bz else self.bz_url
 
     def dump(self):
         ''' Debug output of all settings. '''

@@ -170,7 +170,7 @@ class BuildFilesSource(AbstractDataSource):
             return True
         try:
             self.init()
-            return self._containers != None
+            return bool(self._containers)
         except LookupError:
             return False
 
@@ -178,7 +178,7 @@ class BuildFilesSource(AbstractDataSource):
         self.init()
         if container and not container in self.containers:
             raise ValueError('BuildFilesSource: illegal rootdir')
-        if self.files == None:
+        if self.files is None:
             self.files = []
             # pylint: disable=W0612
             for root, dirs, files in os.walk(self.containers[0]):
@@ -189,7 +189,7 @@ class BuildFilesSource(AbstractDataSource):
     def get(self, key=None):
         ''' Return the root builddir under BUILD.'''
         self.init()
-        return  self.containers[0]
+        return self.containers[0]
 
     def get_keys(self):
         return [None]
@@ -227,7 +227,7 @@ class RpmDataSource(AbstractDataSource):
     def get(self, key=None):
         ''' Return RpmFile object for a package name key. '''
         self.init()
-        if key and key in  self.rpms_by_pkg.iterkeys():
+        if key and key in self.rpms_by_pkg.iterkeys():
             return self.rpms_by_pkg[key]
         return None
 

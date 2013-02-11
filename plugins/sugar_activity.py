@@ -30,7 +30,7 @@ class Registry(RegistryBase):
 
     def is_applicable(self):
         regex = '^/usr/(share|lib|lib64)/sugar/activities/'
-        return self.checks.rpms.find(regex) != None
+        return bool(self.checks.rpms.find(regex))
 
 
 class SugarActivityCheckBase(CheckBase):

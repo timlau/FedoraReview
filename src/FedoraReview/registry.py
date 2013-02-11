@@ -93,7 +93,7 @@ class AbstractRegistry(object):
         Return True if these tests are applicable for current srpm.
         """
         raise ReviewError(
-             'abstract Registry.is_applicable() called')
+            'abstract Registry.is_applicable() called')
 
 
 class RegistryBase(AbstractRegistry):
