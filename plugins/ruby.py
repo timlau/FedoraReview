@@ -264,7 +264,7 @@ class GemCheckProperName(GemCheckBase):
         self.automatic = True
 
     def run_on_applicable(self):
-        name = self.spec.find_re('^Name\s*:')
+        name = self.spec.find_re(r'^Name\s*:')
         self.set_passed('rubygem-%{gem_name}' in name)
 
 
@@ -340,7 +340,7 @@ class GemCheckUsesMacros(GemCheckBase):
         gem_libdir_re = re.compile(rpm.expandMacro('%{gem_libdir}'), re.I)
         gem_extdir_re = re.compile(rpm.expandMacro('%{gem_extdir}'), re.I)
         doc_gem_docdir_re = \
-            re.compile(rpm.expandMacro('%doc\s+%{gem_docdir}'), re.I)
+            re.compile(rpm.expandMacro(r'%doc\s+%{gem_docdir}'), re.I)
         exclude_gem_cache_re = \
             re.compile(rpm.expandMacro(r'%exclude\s+%{gem_cache}'), re.I)
         gem_spec_re = re.compile(rpm.expandMacro('%{gem_spec}'), re.I)

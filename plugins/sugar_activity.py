@@ -53,8 +53,6 @@ class SugarActivityCheckNaming(SugarActivityCheckBase):
         if not self.spec.name.startswith('sugar-'):
             self.set_passed(self.FAIL)
             return
-        # TODO check if sugar-foo is valid or if there is specific
-        # need for activity name
         self.set_passed(self.PENDING)
 
 

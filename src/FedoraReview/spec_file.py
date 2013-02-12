@@ -86,6 +86,7 @@ class SpecFile(object):
         pkgs = [p for p in pkgs if not self.get_files(p) is None]
         return [p for p in pkgs if check_pkg_path(p)]
 
+    # pylint: disable=W1401
     def _get_lines(self, filename):
         ''' Read line from specfile, fold \ continuation lines. '''
         with open(filename, "r") as f:
@@ -159,7 +160,7 @@ class SpecFile(object):
                 # Nasty F17/EPEL fix where  %gem_*  are not defined.
                 lines.append(line)
             elif line.startswith('%'):
-                token = re.split('\s|\(', line)[0]
+                token = re.split(r'\s|\(', line)[0]
                 if not token in ['%ghost', '%doc', '%docdir', '%license',
                     '%verify', '%attr', '%config', '%dir', '%defattr']:
                         break

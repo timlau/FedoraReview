@@ -133,7 +133,7 @@ class HelpersMixin(object):
         reflected in errmsg. If not ok and msg == None parsing
         is ok but there are warnings/errors"""
 
-        problems = re.compile('(\d+)\serrors\,\s(\d+)\swarnings')
+        problems = re.compile(r'(\d+)\serrors\,\s(\d+)\swarnings')
         lines = out.split('\n')[:-1]
         err_lines = filter(lambda l: l.lower().find('error') != -1,
                            lines)

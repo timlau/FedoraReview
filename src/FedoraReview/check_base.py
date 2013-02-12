@@ -246,13 +246,13 @@ class TestResult(object):
 
     def __init__(self, check, result, output_extra, attachments=None):
         self.check = check
-        self.text = re.sub("\s+", " ", check.text) if check.text else ''
+        self.text = re.sub(r"\s+", " ", check.text) if check.text else ''
         self.result = result
         self._leader = self.TEST_STATES[result] + ': '
         self.output_extra = output_extra
         self.attachments = attachments if attachments else []
         if self.output_extra:
-            self.output_extra = re.sub("\s+", " ", self.output_extra)
+            self.output_extra = re.sub(r"\s+", " ", self.output_extra)
         self.set_indent(5)
 
     url = property(lambda self: self.check.url)

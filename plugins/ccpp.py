@@ -21,7 +21,7 @@ class Registry(RegistryBase):
         else:
             src = self.checks.sources
         rpms = self.checks.rpms
-        if rpms.find_re('/usr/(lib|lib64)/[\w\-]*\.so\.[0-9]') or \
+        if rpms.find_re(r'/usr/(lib|lib64)/[\w\-]*\.so\.[0-9]') or \
             rpms.find('*.h') or rpms.find('*.a') or \
                 src.find('*.c') or src.find('*.C') or src.find('*.cpp'):
                     return True
@@ -48,7 +48,7 @@ class CheckLDConfig(CCppCheckBase):
         self.text = 'ldconfig called in %post and %postun if required.'
         self.automatic = True
         self.type = 'MUST'
-        self.sofiles_regex = '/usr/(lib|lib64)/[\w\-]*\.so\.[0-9]'
+        self.sofiles_regex = r'/usr/(lib|lib64)/[\w\-]*\.so\.[0-9]'
 
     def is_applicable(self):
         ''' check if this test is applicable '''
@@ -159,7 +159,7 @@ class CheckSoFiles(CCppCheckBase):
         self.automatic = True
         self.type = 'MUST'
         # we ignore .so files in private directories
-        self.bad_re = re.compile('/usr/(lib|lib64)/[\w\-]*\.so$')
+        self.bad_re = re.compile(r'/usr/(lib|lib64)/[\w\-]*\.so$')
 
     def run(self):
         ''' Run the test, always called '''

@@ -160,7 +160,7 @@ class CheckDistTag(GenericShouldCheckBase):
         self.type = 'SHOULD'
 
     def run(self):
-        rel_tags = self.spec.find_all_re('^Release\s*:')
+        rel_tags = self.spec.find_all_re(r'^Release\s*:')
         if len(rel_tags) > 1:
             self.set_passed(self.FAIL, 'Multiple Release tags found')
             return
@@ -400,7 +400,7 @@ class CheckScriptletSanity(GenericShouldCheckBase):
         self.type = 'SHOULD'
 
     def is_applicable(self):
-        regex = re.compile('%(post|postun|posttrans|preun|pretrans|pre)\s+')
+        regex = re.compile(r'%(post|postun|posttrans|preun|pretrans|pre)\s+')
         return self.spec.find_re(regex)
 
 
@@ -584,7 +584,7 @@ class CheckUseGlobal(GenericShouldCheckBase):
         self.type = 'SHOULD'
 
     def run(self):
-        regex = re.compile('(\%define.*)')
+        regex = re.compile(r'(\%define.*)')
         result = self.spec.find_all_re(regex, skip_changelog=True)
         if result:
             extra = ''
