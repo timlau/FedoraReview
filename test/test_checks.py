@@ -70,7 +70,7 @@ class TestChecks(FR_TestCase):
                         ('pass', 'CheckDescMacros'),
                         ('pending', 'NonGemCheckFilePlacement'),
                         ('pending', 'CheckSpecDescTranslation'),
-                        ('fail', 'CheckUseGlobal'),
+                        ('pending', 'CheckUseGlobal'),
                         ('pending', 'CheckDefattr'),
                         ('pending', 'CheckGuidelines'),
                         ('pass', 'NonGemCheckRequiresProperDevel'),

@@ -579,7 +579,8 @@ class CheckUseGlobal(GenericShouldCheckBase):
         GenericShouldCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/' \
                    'Guidelines#.25global_preferred_over_.25define'
-        self.text = 'Spec use %global instead of %define.'
+        self.text = 'Spec use %global instead of %define unless' \
+                    ' justified.'
         self.automatic = True
         self.type = 'SHOULD'
 
@@ -587,10 +588,9 @@ class CheckUseGlobal(GenericShouldCheckBase):
         regex = re.compile(r'(\%define.*)')
         result = self.spec.find_all_re(regex, skip_changelog=True)
         if result:
-            extra = ''
-            for res in result:
-                extra += res + '\n'
-            self.set_passed(self.FAIL, extra)
+            extra = '%define requiring justification: ' +  \
+                    ', '.join(result)
+            self.set_passed(self.PENDING, extra)
         else:
             self.set_passed(self.PASS)
 
