@@ -29,11 +29,13 @@ tests by default depends on.
 import glob
 import os
 import os.path
-import subprocess
+
+# pylint: disable=W0611
 try:
-    from subprocess import check_output          # pylint: disable=E0611
+    from subprocess import check_output
 except ImportError:
     from FedoraReview.el_compat import check_output
+# pylint: enable=W0611
 
 
 import FedoraReview.deps as deps
@@ -290,18 +292,12 @@ class CheckInitDeps(BuildCheckBase):
 
     def __init__(self, base):
         BuildCheckBase.__init__(self, base)
-        self.url = ''
-        self.text = 'This text is never shown'
         self.automatic = True
         self.type = 'EXTRA'
         self.needs = ['CheckRpmlintInstalled']
-        self.filesys_dirs = None
 
     def run(self):
-        try:
-            check_output(['yum', 'makecache'])
-        except subprocess.CalledProcessError:
-            self.log.warning("Cannot run yum makecache, trouble ahead")
+        deps.init()
         self.set_passed(self.NA)
 
 

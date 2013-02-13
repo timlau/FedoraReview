@@ -26,6 +26,15 @@ except ImportError:
 from settings import Settings
 
 
+def init():
+    ''' Setup module fotr subsequent calls. '''
+    try:
+        check_output(['yum', 'makecache'])
+    except subprocess.CalledProcessError:
+        Settings.get_logger().warning(
+                            "Cannot run yum makecache, trouble ahead")
+
+
 def list_deps(pkgs):
     ''' Return list of all dependencies for named packages. '''
 
