@@ -84,7 +84,7 @@ logfile="$PWD/dist/build.log"
         PYTHONPATH=src pylint --rcfile=pylint.conf -f parseable src plugins
         echo
         echo '---- pep8 ----'
-        pep8 src/FedoraReview plugins
+        pep8 --config pep8.conf src/FedoraReview plugins
     fi
 
 } 2>&1 | tee $logfile
