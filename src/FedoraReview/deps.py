@@ -15,19 +15,50 @@
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-''' Interface to package dependencies. '''
+''' Interface to package dependencies using packagekit, yum and rpm. '''
+#
+# See: http://www.packagekit.org/gtk-doc/index.html
+# See: https://github.com/tseliot/ubuntu-drivers-common
+#
+
+# pylint: disable=E0611,W0611,F0401
+from gi.repository import PackageKitGlib as PackageKit
 
 import subprocess
 try:
-    from subprocess import check_output          # pylint: disable=E0611
+    from subprocess import check_output
 except ImportError:
     from FedoraReview.el_compat import check_output
 
+# pylint: enable=E0611,W0611,F0401
+
 from settings import Settings
+
+_id_by_name = {}
+
+
+def _resolve(pk, name):
+    ''' Resolve a package name into a packagekit id. '''
+    if not name in _id_by_name:
+        pk = PackageKit.Client()
+        results = pk.resolve(PackageKit.FilterEnum.NONE,
+                             [name],
+                             None,
+                             lambda p, t, d: True,
+                             None)
+        if results.get_exit_code() != PackageKit.ExitEnum.SUCCESS:
+            Settings.get_logger().warning("Cannot resolve: " + name)
+            return None
+        pkgs = results.get_package_array()
+        _id_by_name[name] = pkgs[0].get_id() if pkgs else None
+    return _id_by_name[name]
 
 
 def init():
-    ''' Setup module fotr subsequent calls. '''
+    ''' Setup module for subsequent calls. '''
+    # pk.refresh_cache would be better, but requires privileges.
+    # Might be solvable, see
+    # https://bugs.launchpad.net/ubuntu/+source/packagekit/+bug/1008106
     try:
         check_output(['yum', 'makecache'])
     except subprocess.CalledProcessError:
@@ -42,22 +73,19 @@ def list_deps(pkgs):
         return []
     if not isinstance(pkgs, list):
         pkgs = [pkgs]
-    cmd = ['repoquery', '-C', '--requires', '--resolve']
-    cmd.extend(pkgs)
-    Settings.get_logger().debug("Running: " + ' '.join(cmd))
-    try:
-        yum = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-    except OSError:
-        Settings.get_logger().warning("Cannot run " + " ".join(cmd))
+    pk = PackageKit.Client()
+    ids = [_resolve(pk, pkg) for pkg in pkgs]
+    result = pk.get_depends(PackageKit.FilterEnum.NONE,
+                            ids,
+                            False,
+                            None,
+                            lambda p, t, d: True,
+                            None)
+    if result.get_exit_code() != PackageKit.ExitEnum.SUCCESS:
+        Settings.get_logger().warning("Cannot run get_requires")
         return []
-    deps = []
-    while True:
-        try:
-            line = yum.stdout.next().strip()
-        except StopIteration:
-            return list(set(deps))
-        name = line.rsplit('.', 2)[0]
-        deps.append(name.rsplit('-', 2)[0])
+    pkgs = result.get_package_array()
+    return list(set([p.get_name() for p in pkgs]))
 
 
 def resolve(reqs):
@@ -67,22 +95,19 @@ def resolve(reqs):
         return []
     if not isinstance(reqs, list):
         reqs = [reqs]
-    cmd = ['repoquery', '-C', '--whatprovides']
-    cmd.extend(reqs)
-    Settings.get_logger().debug("Running: " + ' '.join(cmd))
-    try:
-        yum = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-    except OSError:
-        Settings.get_logger().warning("Cannot run " + " ".join(cmd))
+    pk = PackageKit.Client()
+    results = pk.what_provides(PackageKit.FilterEnum.NONE,
+                               PackageKit.ProvidesEnum.ANY,
+                               reqs,
+                               None,
+                               lambda p, t, d: True,
+                               None)
+    if results.get_exit_code() != PackageKit.ExitEnum.SUCCESS:
+        Settings.get_logger().warning("Cannot run what_provides")
         return []
-    pkgs = []
-    while True:
-        try:
-            line = yum.stdout.next().strip()
-        except StopIteration:
-            return list(set(pkgs))
-        pkg = line.rsplit('.', 2)[0]
-        pkgs.append(pkg.rsplit('-', 2)[0])
+    pkgs = results.get_package_array()
+    pkgs = list(set([p.get_name() for p in pkgs]))
+    return pkgs
 
 
 def listpaths(pkg_filename):
@@ -120,58 +145,38 @@ def list_owners(paths):
         return []
     if not isinstance(paths, list):
         paths = [paths]
-
-    owners = []
-    paths_to_exam = list(paths)
-    for i in range(len(paths)):
-        p = subprocess.Popen(['rpm', '--qf', '%{NAME}\n', '-qf', paths[i]],
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
-        path_owners = p.communicate()[0].split()
-        if p.returncode != 0:
-            continue
-        path_owners = [p.strip() for p in path_owners]
-        if path_owners and path_owners[0]:
-            path_owners = [p for p in path_owners
-                               if not p.startswith('error:')]
-        if not path_owners or not path_owners[0]:
-            continue
-        paths_to_exam.remove(paths[i])
-        owners.extend(path_owners)
-    for path in paths_to_exam:
-        cmd = ['repoquery', '-C', '-qf', path]
-        Settings.get_logger().debug("Running: " + ' '.join(cmd))
-        try:
-            lines = check_output(cmd).split()
-            lines = [l.strip() for l in lines]
-            if not lines or not lines[0]:
-                continue
-            lines = [l.rsplit('.', 2)[0] for l in lines]
-            lines = [l.rsplit('-', 2)[0] for l in lines]
-            owners.extend(list(set(lines)))
-        except subprocess.CalledProcessError:
-            Settings.get_logger().error("Cannot run " + " ".join(cmd))
-            return owners
-    return owners
+    pk = PackageKit.Client()
+    results = pk.search_files(PackageKit.FilterEnum.NONE,
+                              paths,
+                              None,
+                              lambda p, t, d: True,
+                              None)
+    if results.get_exit_code() != PackageKit.ExitEnum.SUCCESS:
+        Settings.get_logger().warning("Cannot run search_files")
+        return []
+    pkgs = results.get_package_array()
+    return [p.get_name() for p in pkgs]
 
 
 def list_paths(pkgs):
     ''' Return list of all files in pkgs (single name or list). '''
     if not pkgs:
         return []
-    cmd = ['repoquery', '-C', '-l']
-    if isinstance(pkgs, list):
-        cmd.extend(pkgs)
-    else:
-        cmd.append(pkgs)
-    Settings.get_logger().debug("Running: " + ' '.join(cmd))
-    try:
-        Settings.get_logger().debug("Running: " + ' '.join(cmd))
-        paths = check_output(cmd)
-    except OSError:
-        Settings.get_logger().warning("Cannot run repoquery")
+    if not isinstance(pkgs, list):
+        pkgs = [pkgs]
+    pk = PackageKit.Client()
+    ids = [_resolve(pk, pkg) for pkg in pkgs]
+    result = pk.get_files(ids,
+                          None,
+                          lambda p, t, d: True,
+                          None)
+    if result.get_exit_code() != PackageKit.ExitEnum.SUCCESS:
+        Settings.get_logger().warning("Cannot run get_files")
         return []
-    return paths.split()
+    paths = []
+    for f in result.get_files_array():
+        paths.extend(f.get_property('files'))
+    return paths
 
 
 class Deps:
