@@ -372,8 +372,6 @@ class TestChecks(FR_TestCase):
                          ('fail', 'CheckBuildInMock'),
                          ('pass', 'CheckLDConfig'),
                          ('pending', 'CheckBuildRequires'),
-                         ('pass' if FEDORA else 'pending',
-                                   'CheckOwnDirs'),
                          ('pending', 'CheckNoStaticExecutables'),
                          ('pass', 'CheckRPATH'),
                          ('pending', 'CheckUsefulDebuginfo'),

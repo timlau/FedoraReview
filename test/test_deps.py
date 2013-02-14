@@ -76,4 +76,12 @@ class TestDeps(unittest.TestCase):
     def test_list_owners(self):
         ''' Test listing of file owner(s). '''
         owners = deps.list_owners(['/var/lib/rpm', '/etc/yum.repos.d/'])
+        if 'generic-release' in owners:  # F18 madness
+            owners.remove('generic-release')
         self.assertEqual(set(owners), OWNERS_OK)
+
+    @unittest.skipIf(not FEDORA, 'Fedora-only test')
+    def test_list_paths(self):
+        ''' test list_paths method. '''
+        paths = deps.list_paths('fedora-release')
+        self.assertTrue('/etc/fedora-release' in paths)
