@@ -85,9 +85,7 @@ class ReviewHelper(object):
 
         def apply_color(s, formatter):
             ''' Return s formatted by formatter or plain s. '''
-            if Settings.use_colors:
-                return formatter(s)
-            return s
+            return formatter(s) if Settings.use_colors else s
 
         self.checks = Checks(spec, srpm)
         if outfile:
@@ -100,7 +98,6 @@ class ReviewHelper(object):
             self.log.info('Running checks and generating report\n')
             self.checks.run_checks(output=output,
                                    writedown=not Settings.no_report)
-            output.close()
         if not Settings.no_report:
             print apply_color("Review template in: " + self.outfile,
                               ansi.green)
