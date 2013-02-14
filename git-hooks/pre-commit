@@ -2,8 +2,6 @@
 #
 # fedora-review git pre-commit hook: run pep8 and pylint
 
-cd $(dirname $(readlink -fn $0 ))
-
 
 ALL_FILES=$( git diff --cached --name-status |
               grep -v ^D | awk '$1 $2 { print $2}' | grep -e '.py$' )
