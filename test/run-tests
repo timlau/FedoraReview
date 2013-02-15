@@ -22,12 +22,12 @@ function install_virtenv()
 
 function init_mockroot()
 {
-    if [ "$1" = '-' ]; then
+    if [ "$*" = '-' ]; then
        root=''
        rootmsg=default
     else
-       root="-r $1"
-       rootmsg="$1"
+       root="-r $*"
+       rootmsg="$*"
     fi
     mock -q $root --shell  "echo $rootmsg OK >/dev/null" || {
         echo "Re-initializing mock root $rootmsg"
