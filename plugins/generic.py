@@ -1085,9 +1085,16 @@ class CheckOwnOther(GenericCheckBase):
             return "Dirs in package are owned also by: " + \
                 ', '.join(items)
 
+        def skip_rpm(path):
+            ' Return True if this rpm  should not be checked. '
+            if path.endswith('.src.rpm'):
+                return True
+            pkg = path.rsplit('-', 2)[0]
+            return pkg.endswith('-debuginfo')
+
         bad_owners_by_dir = {}
         rpm_files = glob(os.path.join(Mock.resultdir, '*.rpm'))
-        rpm_files = [r for r in rpm_files if not r.endswith('.src.rpm')]
+        rpm_files = [r for r in rpm_files if not skip_rpm(r)]
         for rpm_file in rpm_files:
             rpm_dirs = sorted(deps.list_dirs(rpm_file))
             my_dirs = []
