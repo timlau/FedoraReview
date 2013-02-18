@@ -40,6 +40,7 @@ git reset --quiet --hard $commit
 badlinks=$( find . -type l ! -execdir test -e '{}' \; -print | nl )
 [ -n "$badlinks" ] && echo "Warning: unresolved  symlinks: $badlinks" >&2
 
+export PATH=/bin:/usr/bin:/sbin:/usr/sbin
 env PYTHONPATH=src ./update-version
 
 source src/FedoraReview/version
