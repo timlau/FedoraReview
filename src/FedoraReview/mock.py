@@ -355,6 +355,13 @@ class _Mock(HelpersMixin):
 
     def init(self):
         """ Run a mock --init command. """
+        try:
+            self.rpm_eval('%{_libdir}')
+            self.log.debug("Avoiding init of working mock root")
+            return
+        except CalledProcessError:
+            pass
+        self.log.info("Re-initializing mock build root")
         cmd = ["mock"]
         if hasattr(Settings, 'mock_config') and Settings.mock_config:
             cmd.extend(['-r', Settings.mock_config])
