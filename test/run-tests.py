@@ -35,7 +35,7 @@ if not 'REVIEW_LOGLEVEL' in os.environ:
 if fr_testcase.FAST_TEST:
     print "Warning: slow tests skipped"
 
-
+export PATH=/bin:/usr/bin:/sbin:/usr/sbin
 Mock.init()
 
 testFail = 0
