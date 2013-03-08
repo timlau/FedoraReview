@@ -197,7 +197,8 @@ class _Mock(HelpersMixin):
             paths = glob(os.path.join(ReviewDirs.startdir, pattern))
         else:
             paths = glob(os.path.join(self.get_resultdir(), pattern))
-        paths = filter(lambda p: not p.endswith('.src.rpm'), paths)
+        paths = filter(lambda p: p.endswith('.rpm')
+                       and not p.endswith('.src.rpm'), paths)
         if len(paths) == 0:
             raise ReviewError('No built package found for ' + pkg_name)
         elif len(paths) > 1:
