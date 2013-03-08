@@ -53,10 +53,10 @@ class TestDist(FR_TestCase):
         ''' Test  make_release_script. '''
         os.chdir('..')
         check_call('./make_release -q >/dev/null', shell=True)
-        self.assertEqual(len(glob('dist/*')), 3)
+        self.assertEqual(len(glob('dist/*')), 4)
         lint = check_output(
-                  'rpmlint -f test/rpmlint.conf dist/*spec dist/*rpm',
-                  shell=True)
+                   'rpmlint -f test/rpmlint.conf dist/*spec dist/*rpm',
+                   shell=True)
         self.assertIn('0 error', lint)
         self.assertIn('0 warning', lint)
 
