@@ -135,7 +135,7 @@ class CheckClean(GenericShouldCheckBase):
             has_clean = re.search(regex, sec_clean)
         if self.flags['EPEL5']:
             self.text = 'EPEL5 requires explicit %clean with rm -rf' \
-                             ' %{buildroot} (or $RPM_BUILD_ROOT)'
+                            ' %{buildroot} (or $RPM_BUILD_ROOT)'
             self.type = 'MUST'
             if has_clean:
                 self.set_passed(self.PASS)

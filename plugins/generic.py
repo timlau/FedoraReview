@@ -941,7 +941,7 @@ class CheckNoConflicts(GenericCheckBase):
         text = None
         if self.spec.expand_tag('Conflicts'):
             text = 'Package contains Conflicts: tag(s)' \
-                       ' needing fix or justification.'
+                        ' needing fix or justification.'
         self.set_passed(self.PENDING, text)
 
 
