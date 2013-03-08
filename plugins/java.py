@@ -140,7 +140,7 @@ class CheckJavadocdirName(JavaCheckBase):
 
 
 class CheckJPackageRequires(JavaCheckBase):
-    """Check if (Build)Requires on jpackage-utils are present"""
+    """Check if (Build)Requires on jpackage-utils are correct"""
 
     def __init__(self, base):
         JavaCheckBase.__init__(self, base)
@@ -164,7 +164,13 @@ class CheckJPackageRequires(JavaCheckBase):
         for req in requires:
             if 'jpackage-utils' in req:
                 r_found = True
-        self.set_passed(br_found and r_found)
+
+        if self._is_maven_pkg():
+            extra = "Maven packages do not need to (Build)Require " \
+                    "jpackage-utils. It is pulled in by maven-local"
+            self.set_passed(not (br_found or r_found), extra)
+        else:
+            self.set_passed(br_found and r_found)
 
 
 class CheckJavadocJPackageRequires(JavaCheckBase):
