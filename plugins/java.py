@@ -22,6 +22,13 @@ class JavaCheckBase(CheckBase):
     def __init__(self, base):
         CheckBase.__init__(self, base, __file__)
 
+    def _is_maven_pkg(self):
+        """Returns True if this is likely Maven package"""
+        for build_r in self.spec.build_requires:
+            if 'maven-local' in build_r:
+                return True
+        return False
+
     def _get_javadoc_sub(self):
         """Returns name of javadoc rpm or None if no such subpackage
         exists."""
