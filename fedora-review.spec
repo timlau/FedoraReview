@@ -21,7 +21,6 @@ BuildRequires:  python-bugzilla
 BuildRequires:  python-straight-plugin
 BuildRequires:  python2-devel
 BuildRequires:  rpm-python
-BuildRequires:  PackageKit-glib-devel
 
 Requires:       fedora-packager
 Requires:       python-argparse
@@ -32,7 +31,6 @@ Requires:       python-straight-plugin
 Requires:       rpm-python
 Requires:       rpmdevtools
 Requires:       yum-utils
-Requires:       PackageKit-glib
 
 # Let's be consistent with the name used on fedorahosted
 provides:       FedoraReview = %{version}-%{release}
