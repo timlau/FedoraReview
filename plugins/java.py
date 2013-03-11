@@ -13,7 +13,9 @@ class Registry(RegistryBase):
     def is_applicable(self):
         ''' Return True if this is a java package. '''
         rpms = self.checks.rpms
-        return rpms.find("*.jar") or rpms.find("*.pom")
+        return (rpms.find("*.jar") or rpms.find("*.pom") or
+                self.checks.sources.find('pom.xml') or
+                self.checks.sources.find('*.java'))
 
 
 class JavaCheckBase(CheckBase):
