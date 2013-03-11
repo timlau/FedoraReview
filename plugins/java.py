@@ -449,7 +449,7 @@ class JarFilename(JavaCheckBase):
 
     def __init__(self, base):
         JavaCheckBase.__init__(self, base)
-        self.text = """Jar files are installed to %{_javadir}/%{name}.jar"""
+        self.text = "Jar files are named and installed according to guidelines"
         self.url = 'https://fedoraproject.org/wiki/Packaging:Java' \
                    '#JAR_file_installation'
         self.automatic = False
