@@ -491,7 +491,7 @@ class CheckNoArch(JavaCheckBase):
         self.automatic = True
         self.type = 'SHOULD'
 
-    def run(self):
+    def run_on_applicable(self):
         arch = self.spec.expand_tag('arch')
         if arch:
             arch = arch.lower()
