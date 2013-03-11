@@ -497,4 +497,27 @@ class CheckNoArch(JavaCheckBase):
             arch = arch.lower()
         self.set_passed(self.PASS if arch == 'noarch' else self.FAIL)
 
+
+class CheckNewStyleMaven(JavaCheckBase):
+    """Maven packages should use new style packaging style"""
+
+    group = "Maven"
+
+    def __init__(self, base):
+        JavaCheckBase.__init__(self, base)
+        self.text = """Maven packages should use new style packaging"""
+        self.url = 'https://fedoraproject.org/wiki/Packaging:Java#Apache_Maven'
+        self.automatic = True
+        self.type = 'MUST'
+
+    def run(self):
+        if self._is_maven_pkg() and self._is_xmvn_pkg():
+            self.set_passed(self.PASS)
+        elif self._is_maven_pkg():
+            self.set_passed(self.FAIL, "If possible update your package to "
+                            "latest guidelines")
+        else:
+            self.set_passed(self.NA)
+
+
 # vim: set expandtab ts=4 sw=4:
