@@ -486,16 +486,22 @@ class CheckNoArch(JavaCheckBase):
 
     def __init__(self, base):
         JavaCheckBase.__init__(self, base)
-        self.text = """Package has BuildArch: noarch (if possible)"""
+        self.text = """Packages are noarch unless they use JNI"""
         self.url = 'https://fedoraproject.org/wiki/Packaging:Java'
         self.automatic = True
         self.type = 'SHOULD'
 
     def run_on_applicable(self):
-        arch = self.spec.expand_tag('arch')
-        if arch:
-            arch = arch.lower()
-        self.set_passed(self.PASS if arch == 'noarch' else self.FAIL)
+        for pkg in self.spec.packages:
+            arch = self.spec.expand_tag('arch', pkg)
+            if arch:
+                arch = arch.lower()
+            if arch != 'noarch':
+                self.set_passed(self.PENDING, "%s subpackage is not "
+                                "noarch. Please verify manually" % pkg)
+                break
+        else:
+            self.set_passed(self.PASS)
 
 
 class CheckNewStyleMaven(JavaCheckBase):
