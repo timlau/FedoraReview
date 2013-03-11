@@ -488,7 +488,13 @@ class CheckNoArch(JavaCheckBase):
         JavaCheckBase.__init__(self, base)
         self.text = """Package has BuildArch: noarch (if possible)"""
         self.url = 'https://fedoraproject.org/wiki/Packaging:Java'
-        self.automatic = False
+        self.automatic = True
         self.type = 'SHOULD'
+
+    def run(self):
+        arch = self.spec.expand_tag('arch')
+        if arch:
+            arch = arch.lower()
+        self.set_passed(self.PASS if arch == 'noarch' else self.FAIL)
 
 # vim: set expandtab ts=4 sw=4:
