@@ -373,32 +373,26 @@ class CheckTestSkip(JavaCheckBase):
     def __init__(self, base):
         JavaCheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Java'
-        self.text = 'If package uses "-Dmaven.test.skip=true" explain' \
+        self.text = 'If tests are skipped during package build explain' \
                     ' why it was needed in a comment'
         self.automatic = True
         self.type = 'MUST'
 
     def run(self):
         skip_regex = re.compile(r'\s+-Dmaven.test.skip.*')
-        mvn_regex = re.compile(r'\s*mvn-rpmbuild\s+')
-        comment_regex = re.compile(r'^\s*#.*')
-        build_sec = self.spec.get_section('%build')
-
-        if not self.spec.find_re(skip_regex) or not build_sec:
-            self.set_passed(self.NA)
-            return
-        result = self._search_previous_line(build_sec,
-                                            skip_regex,
-                                            mvn_regex,
-                                            comment_regex)
-        if result is None:
-            # weird. It has skip regex but no maven call?
-            self.set_passed(self.PASS)
+        # This is ugly, we should test for %mvn_build macro but rpm gives us
+        # expanded sections. Expanding %mvn_build in rpm or Mock is an option
+        # but it either won't work with --prebuilt (Mock) or can easily fail
+        # when package providing %mvn_build macro is not installed locally
+        xmvn_skip_regex = re.compile(r'mvn-build\s+.*(-f|--force|'
+                                      '--skip-tests).*')
+        build_section = self.spec.get_section('%build', raw=True)
+        if (skip_regex.search(build_section) or
+            xmvn_skip_regex.search(build_section)):
+            self.set_passed(self.PENDING, """Tests seem to be skipped. Verify
+        there is a commment giving a reason for this""")
         else:
-            self.set_passed(self.PENDING, "Some comment is used "
-                            "before mvn-rpmbuild command. Please"
-                            " verify it explains use of "
-                            "-Dmaven.test.skip")
+            self.set_passed(self.NA)
 
 
 class CheckLocalDepmap(JavaCheckBase):
