@@ -255,14 +255,14 @@ class CheckNoOldMavenDepmap(JavaCheckBase):
 
 
 class CheckAddMavenDepmap(JavaCheckBase):
-    """Check if there is a proper call of add_maven_depmap macro"""
+    """Check if POM files have correct Maven mapping"""
     group = "Maven"
 
     def __init__(self, base):
         JavaCheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Java' \
                    '#add_maven_depmap_macro'
-        self.text = 'Pom files have correct add_maven_depmap call'
+        self.text = 'Pom files have correct Maven mapping'
         self.automatic = True
         self.type = 'MUST'
 
@@ -270,13 +270,16 @@ class CheckAddMavenDepmap(JavaCheckBase):
         if not self.rpms.find("*.pom"):
             self.set_passed(self.NA)
             return
-        if not self.spec.find_re('[^#]*%add_maven_depmap'):
-            self.set_passed(self.FAIL,
-                            "No add_maven_depmap calls found but pom"
-                                 " files present")
+        if self._is_xmvn_pkg():
+            self.set_passed(self.PASS)
+        elif not self.spec.find_re('[^#]*%add_maven_depmap'):
+            self.set_passed(self.FAIL, """Old style Maven package found, no
+                            add_maven_depmap calls found but pom files
+                            present""")
         else:
             self.set_passed(self.PENDING, """Some add_maven_depmap
-        calls found. Please check if they are correct""")
+                            calls found. Please check if they are correct or
+                            update to latest guidelines""")
 
 
 class CheckUseMavenpomdirMacro(JavaCheckBase):
