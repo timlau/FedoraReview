@@ -29,6 +29,11 @@ class JavaCheckBase(CheckBase):
                 return True
         return False
 
+    def _is_xmvn_pkg(self):
+        """Returns True if this package is being built with XMvn (new style
+        Maven packaging)"""
+        return self.spec.find_re('[^#]*%mvn_build')
+
     def _get_javadoc_sub(self):
         """Returns name of javadoc rpm or None if no such subpackage
         exists."""
