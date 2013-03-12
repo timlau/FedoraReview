@@ -21,6 +21,7 @@ Spec file management.
 
 import re
 import rpm
+import urllib
 
 from review_error import ReviewError
 from settings import Settings
@@ -125,7 +126,8 @@ class SpecFile(object):
             if _type != srctype:
                 continue
             tag = srctype + str(num)
-            result[tag] = self.spec.sourceHeader.format(url)
+            result[tag] = \
+                self.spec.sourceHeader.format(urllib.unquote(url))
         return result
 
     def _parse_files_pkg_name(self, line):
