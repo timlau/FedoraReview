@@ -19,6 +19,7 @@ BuildRequires:  python-argparse
 BuildRequires:  python-BeautifulSoup
 BuildRequires:  python-bugzilla
 BuildRequires:  python-straight-plugin
+BuildRequires:  python-unittest2
 BuildRequires:  python2-devel
 BuildRequires:  rpm-python
 
