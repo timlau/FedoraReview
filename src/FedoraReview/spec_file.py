@@ -135,12 +135,13 @@ class SpecFile(object):
         assert tokens.pop(0) == '%files'
         while tokens:
             token = tokens.pop(0)
-            if len(tokens) == 0:
-                return self.base_package + '-' + token
-            elif token == '-n':
+            if token == '-n':
                 return tokens.pop(0)
             elif token == '-f':
                 tokens.pop(0)
+            else:
+                return self.base_package + '-' + token
+
         return self.base_package
 
     def _parse_files(self, pkg_name):
