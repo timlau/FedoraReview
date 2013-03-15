@@ -524,13 +524,16 @@ class CheckIllegalSpecTags(GenericCheckBase):
 
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
-        self.text = 'Spec file lacks Packager, Vendor, PreReq tags.'
+        self.url = 'http://fedoraproject.org/wiki/Packaging:Guidelines#Tags'
+        self.text = 'Packager, Vendor, PreReq, Copyright tags should not be ' \
+                    'in spec file'
         self.automatic = True
+        self.type = 'SHOULD'
 
     def run(self):
         passed = True
         output = ''
-        for tag in ('Packager', 'Vendor', 'PreReq'):
+        for tag in ('Packager', 'Vendor', 'PreReq', 'Copyright'):
             value = self.spec.expand_tag(tag)
             if value:
                 passed = False
