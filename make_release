@@ -21,6 +21,19 @@
 #
 # All cases: run this script, find spec, tarball and srpm in dist/.
 
+function irc_log()
+{
+    [ -z "$MSG_PREFIX" ] && return
+    python << EOF
+import socket
+s = socket.create_connection(("mumin.dnsalias.net",12345))
+s.send("$MSG_PREFIX $* $JENKINS_URL")
+s.send('\n')
+s.close()
+EOF
+}
+
+
 startdir=$PWD
 cd $( dirname $( readlink -fn $0 ))
 branch="$( git branch | awk '/^*/ {$1 = ""; print $0}' )"
@@ -78,7 +91,10 @@ if [ ! "$1" = '-q' ]; then
         echo "Some tests failed. Review test logs and fix all problems"
         echo "before doing a release."
         echo "Aborting. Temporary files left in $newdir"
+        irc_log "Jenkins: build failed. "
         exit 1
+    else
+        irc_log "Jenkins: build OK."
     fi
     cp *xml $startdir/test
 fi
