@@ -21,13 +21,16 @@
 #
 # All cases: run this script, find spec, tarball and srpm in dist/.
 
+IRC_OK_MSG=${IRC_OK_MSG:-"Jenkins: build $BUILD_NUMBER ok - $BUILD_URL"}
+IRC_FAIL_MSG=${IRC_FAIL_MSG:-"Jenkins: build $BUILD_NUMBER failed - $BUILD_URL"}
+
 function irc_log()
 {
-    [ -z "$MSG_PREFIX" ] && return
+    [ -z "$IRC_MSG_PREFIX" ] && return
     python << EOF
 import socket
 s = socket.create_connection(("mumin.dnsalias.net",12345))
-s.send("$MSG_PREFIX $* $JENKINS_URL")
+s.send("${IRC_MSG_PREFIX}$*")
 s.send('\n')
 s.close()
 EOF
@@ -91,10 +94,10 @@ if [ ! "$1" = '-q' ]; then
         echo "Some tests failed. Review test logs and fix all problems"
         echo "before doing a release."
         echo "Aborting. Temporary files left in $newdir"
-        irc_log "Jenkins: build failed. "
+        irc_log "$IRC_FAIL_MSG"
         exit 1
     else
-        irc_log "Jenkins: build OK."
+        irc_log "$IRC_OK_MSG"
     fi
     cp *xml $startdir/test
 fi
