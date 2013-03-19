@@ -59,7 +59,7 @@ for task_id in args:
             sys.exit(1)
         for filename in output:
             if filename.endswith('.rpm') and opts.arches:
-                arch = filename.rsplit('.', 3)[1]
+                arch = filename.rsplit('.', 3)[2]
                 download = arch in opts.arches
             else:
                 download = True
