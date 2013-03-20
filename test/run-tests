@@ -36,6 +36,7 @@ function init_mockroot()
         mock -q $root  --init
     }
 }
+
 if [ "$1" = '-q' ]; then
     quick=1
     REVIEW_NOSEWITH=${REVIEW_NOSEWITH:- -x}
@@ -44,7 +45,6 @@ fi
 args="$@"
 
 export PATH=/bin:/usr/bin:/sbin:/usr/sbin
-virtualenv --version
 
 cd $(dirname $(readlink -fn $0))
 cd ..
