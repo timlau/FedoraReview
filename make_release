@@ -36,7 +36,7 @@ s.close()
 EOF
 }
 
-
+[ -n "$MAKE_RELEASE_DEBUG" ] && set -x
 startdir=$PWD
 cd $( dirname $( readlink -fn $0 ))
 branch="$( git branch | awk '/^*/ {$1 = ""; print $0}' )"
