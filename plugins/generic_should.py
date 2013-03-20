@@ -434,12 +434,12 @@ class CheckSourceUrl(GenericShouldCheckBase):
         GenericShouldCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/SourceURL'
         self.text = 'SourceX is a working URL.'
-        self.automatic = True
         self.type = 'SHOULD'
+        self.automatic = True
 
     def run(self):
-        passed = True
         output = ''
+        passed = True
         for source_tag in self.sources.get_all():
             source = self.sources.get(source_tag)
             if not source.url.startswith('file:'):
