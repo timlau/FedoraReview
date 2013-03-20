@@ -600,6 +600,8 @@ class CheckLicenseField(GenericCheckBase):
 
     def run(self):
 
+        unknown_license = 'Unknown or generated'
+
         def license_is_valid(_license):
             ''' Test that license from licencecheck is parsed OK. '''
             return not 'UNKNOWN' in _license and \
@@ -620,7 +622,7 @@ class CheckLicenseField(GenericCheckBase):
                 file_ = file_.strip()
                 license_ = license_.strip()
                 if not license_is_valid(license_):
-                    license_ = 'Unknown or generated'
+                    license_ = unknown_license
                 if not license in files_by_license.iterkeys():
                     files_by_license[license_] = []
                 files_by_license[license_].append(file_)
@@ -629,26 +631,27 @@ class CheckLicenseField(GenericCheckBase):
         try:
             source_dir, msg = self._get_source_dir()
             self.log.debug("Scanning sources in " + source_dir)
-            licenses = []
             if os.path.exists(source_dir):
                 cmd = 'licensecheck -r ' + source_dir
                 out = check_output(cmd, shell=True)
                 self.log.debug("Got license reply, length: %d" % len(out))
-                licenses = parse_licenses(out)
+                files_by_license = parse_licenses(out)
                 filename = os.path.join(ReviewDirs.root,
                                         'licensecheck.txt')
-                self._write_license(licenses, filename)
+                self._write_license(files_by_license, filename)
             else:
                 self.log.error('Source directory %s does not exist!' %
                                source_dir)
-            if not licenses:
+            if not files_by_license:
                 msg += ' No licenses found.'
                 msg += ' Please check the source files for licenses manually.'
                 self.set_passed(self.FAIL, msg)
             else:
                 msg += ' Licenses found: "' \
-                       + '", "'.join(licenses.iterkeys()) + '".'
-                msg += ' %d files have unknown license.' % len(licenses)
+                       + '", "'.join(files_by_license.iterkeys()) + '".'
+                if unknown_license in files_by_license:
+                    msg += ' %d files have unknown license.' % \
+                                len(files_by_license[unknown_license])
                 msg += ' Detailed output of licensecheck in ' + filename
                 self.set_passed(self.PENDING, msg)
         except OSError, e:
