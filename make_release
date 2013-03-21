@@ -90,7 +90,7 @@ if [ ! "$1" = '-q' ]; then
     ln -s $startdir/dist .
     cd test
     bash < restore-links.sh
-    if  MAKE_RELEASE=1  ./run-tests
+    if  MAKE_RELEASE=1  ./run-tests; then
         irc_log "$IRC_OK_MSG"
     else
         echo "Some tests failed. Review test logs and fix all problems"
