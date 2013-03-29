@@ -16,6 +16,7 @@ import os
 import os.path
 import sys
 import subprocess 
+
 main_dir = os.path.dirname(os.path.realpath(__file__))
 
 # let's setup a proper git commit hooks so people don't commit ugly code
@@ -23,6 +24,9 @@ main_dir = os.path.dirname(os.path.realpath(__file__))
 devnull = open('/dev/null', 'w')
 subprocess.call(['ln', '-s', '../../git-hooks/pre-commit',
                  os.path.join(main_dir, '.git/hooks/pre-commit')],
+                 stderr=devnull)
+subprocess.call(['ln', '-s', '../../git-hooks/post-commit',
+                 os.path.join(main_dir, '.git/hooks/post-commit')],
                  stderr=devnull)
 
 pkg_dir = os.path.join(main_dir, 'src')
