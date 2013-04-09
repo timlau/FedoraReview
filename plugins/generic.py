@@ -667,7 +667,7 @@ class CheckLicenseField(GenericCheckBase):
             license_ = license_.strip()
             if not license_is_valid(license_):
                 license_ = self.unknown_license
-            if not license in files_by_license.iterkeys():
+            if not license_ in files_by_license.iterkeys():
                 files_by_license[license_] = []
             files_by_license[license_].append(file_)
         return files_by_license
