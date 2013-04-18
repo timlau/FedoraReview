@@ -1126,7 +1126,7 @@ class CheckSourceMD5(GenericCheckBase):
                 msg = None
             if text:
                 attachments = [
-                    self.Attachment('MD5-sum check', text, 10)]
+                    self.Attachment('Source checksums', text, 10)]
             else:
                 attachments = []
             self.set_passed(passed, msg, attachments)
