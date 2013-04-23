@@ -576,7 +576,7 @@ class CheckLicenseField(GenericCheckBase):
     def _write_license(files_by_license, filename):
         ''' Dump files_by_license to filename. '''
         with open(filename, 'w') as f:
-            for license_ in files_by_license.iterkeys():
+            for license_ in sorted(files_by_license.iterkeys()):
                 f.write('\n' + license_ + '\n')
                 f.write('-' * len(license_) + '\n')
                 for path in sorted(files_by_license[license_]):
