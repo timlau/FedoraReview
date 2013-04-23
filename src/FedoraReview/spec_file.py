@@ -154,6 +154,11 @@ class SpecFile(object):
         lines = None
         for line in [l.strip() for l in self.lines]:
             if lines is None:
+                # Dragons: nasty fix for #209. This will not produce a
+                # working %files list, but is seemingly "good enough"
+                # for font packages. Proper solution is to patch rpm.
+                if line.startswith('%_font_pkg'):
+                    line = '%files -n ' + pkg_name
                 if line.startswith('%files'):
                     if self._parse_files_pkg_name(line) == pkg_name:
                         lines = []
