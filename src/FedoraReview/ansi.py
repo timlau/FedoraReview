@@ -16,6 +16,10 @@
 #
 
 ''' ANSI colored terminal output support '''
+import sys
+import curses
+# pylint: disable=W1401
+
 BLACK   = "\033[1;30m"
 RED     = "\033[1;31m"
 GREEN   = "\033[1;32m"
@@ -65,3 +69,17 @@ def cyan(s):
 def white(s):
     ''' Return s with optional ansi chars to print in white. '''
     return WHITE + s + RESET
+
+
+def color_supported():
+    ''' Return true if we are running on color supporting terminal '''
+    try:
+        if sys.stdout.isatty() and sys.stderr.isatty():
+            curses.setupterm()
+            if curses.tigetnum("colors") != -1:
+                return True
+        return False
+    except AttributeError:
+        return False
+    except curses.error:
+        return False
