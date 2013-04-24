@@ -163,7 +163,7 @@ class ColoredFormatter(logging.Formatter):
 
     def __init__(self, fmt=None, datefmt=None, use_color=True):
         logging.Formatter.__init__(self, fmt, datefmt)
-        self.use_color = use_color
+        self.use_color = use_color and ansi.color_supported()
 
     def format(self, record):
         lname = record.levelname
