@@ -42,7 +42,7 @@ HEADER = """
 Package Review
 ==============
 
-Key:
+Legend:
 [x] = Pass, [!] = Fail, [-] = Not applicable, [?] = Not evaluated
 [ ] = Manual review needed
 
