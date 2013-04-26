@@ -27,7 +27,7 @@ import rpm
 from glob import glob
 from subprocess import Popen, PIPE
 
-from FedoraReview import CheckBase, ReviewDirs
+from FedoraReview import CheckBase, Mock, ReviewDirs
 from FedoraReview import ReviewError             # pylint: disable=W0611
 from FedoraReview import RegistryBase, Settings
 
@@ -265,6 +265,47 @@ class CheckFunctionAsDescribed(GenericShouldCheckBase):
         self.text = 'Package functions as described.'
         self.automatic = False
         self.type = 'SHOULD'
+
+
+class CheckFullVerReqSub(GenericShouldCheckBase):
+    ''' Sub-packages requires base package using fully-versioned dep. '''
+
+    HDR = 'No Requires: %{name}%{?_isa} = %{version}-%{release} in '
+    REGEX = r'%{name}%{?_isa} = %{version}-%{release}'
+
+    def __init__(self, base):
+        GenericShouldCheckBase.__init__(self, base)
+        self.url = 'http://fedoraproject.org/wiki/' \
+                   'Packaging/Guidelines#RequiringBasePackage'
+        self.text = 'Fully versioned dependency in subpackages' \
+                    ' if applicable.'
+        self.automatic = True
+        self.type = 'SHOULD'
+
+    def run(self):
+        bad_pkgs = []
+        archs = self.checks.spec.expand_tag('BuildArchs')
+        if len(archs) == 1 and archs[0].lower() == 'noarch':
+            isa = ''
+        else:
+            isa = Mock.rpm_eval('%{?_isa}')
+        regex = self.REGEX.replace('%{?_isa}', isa)
+        regex = rpm.expandMacro(regex)
+        regex = re.sub('[.](fc|el)[0-9]+', '', regex)
+        for pkg in self.spec.packages:
+            if pkg == self.spec.base_package:
+                continue
+            for pkg_end in ['debuginfo', '-javadoc', '-doc']:
+                if pkg.endswith(pkg_end):
+                    continue
+            reqs = ''.join(self.rpms.get(pkg).format_requires)
+            if not regex in reqs:
+                bad_pkgs.append(pkg)
+        if bad_pkgs:
+            self.set_passed(self.PENDING,
+                            self.HDR + ' , '.join(bad_pkgs))
+        else:
+            self.set_passed(self.PASS)
 
 
 class CheckLatestVersionIsPackaged(GenericShouldCheckBase):
