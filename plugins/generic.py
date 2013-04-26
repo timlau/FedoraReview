@@ -566,6 +566,9 @@ class CheckLicenseField(GenericCheckBase):
     MUST: The License field in the package spec file must match the
     actual license.
     '''
+
+    unknown_license = 'Unknown or generated'
+
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/' \
@@ -601,36 +604,34 @@ class CheckLicenseField(GenericCheckBase):
             source_dir = ReviewDirs.upstream_unpacked
         return (source_dir, msg)
 
-    def run(self):
-
-        unknown_license = 'Unknown or generated'
+    def _parse_licenses(self, raw_text):
+        ''' Convert licensecheck output to files_by_license dict. '''
 
         def license_is_valid(_license):
             ''' Test that license from licencecheck is parsed OK. '''
             return not 'UNKNOWN' in _license and \
                 not 'GENERATED' in _license
 
-        def parse_licenses(raw_text):
-            ''' Convert licensecheck output to files_by_license. '''
-            files_by_license = {}
-            raw_file = StringIO(raw_text)
-            while True:
-                line = raw_file.readline()
-                if not line:
-                    break
-                try:
-                    file_, license_ = line.split(':')
-                except ValueError:
-                    continue
-                file_ = file_.strip()
-                license_ = license_.strip()
-                if not license_is_valid(license_):
-                    license_ = unknown_license
-                if not license in files_by_license.iterkeys():
-                    files_by_license[license_] = []
-                files_by_license[license_].append(file_)
-            return files_by_license
+        files_by_license = {}
+        raw_file = StringIO(raw_text)
+        while True:
+            line = raw_file.readline()
+            if not line:
+                break
+            try:
+                file_, license_ = line.split(':')
+            except ValueError:
+                continue
+            file_ = file_.strip()
+            license_ = license_.strip()
+            if not license_is_valid(license_):
+                license_ = self.unknown_license
+            if not license_ in files_by_license.iterkeys():
+                files_by_license[license_] = []
+            files_by_license[license_].append(file_)
+        return files_by_license
 
+    def run(self):
         try:
             source_dir, msg = self._get_source_dir()
             self.log.debug("Scanning sources in " + source_dir)
@@ -638,7 +639,7 @@ class CheckLicenseField(GenericCheckBase):
                 cmd = 'licensecheck -r ' + source_dir
                 out = check_output(cmd, shell=True)
                 self.log.debug("Got license reply, length: %d" % len(out))
-                files_by_license = parse_licenses(out)
+                files_by_license = self._parse_licenses(out)
                 filename = os.path.join(ReviewDirs.root,
                                         'licensecheck.txt')
                 self._write_license(files_by_license, filename)
@@ -648,15 +649,14 @@ class CheckLicenseField(GenericCheckBase):
             if not files_by_license:
                 msg += ' No licenses found.'
                 msg += ' Please check the source files for licenses manually.'
-                self.set_passed(self.FAIL, msg)
             else:
                 msg += ' Licenses found: "' \
                        + '", "'.join(files_by_license.iterkeys()) + '".'
-                if unknown_license in files_by_license:
+                if self.unknown_license in files_by_license:
                     msg += ' %d files have unknown license.' % \
-                                len(files_by_license[unknown_license])
+                                len(files_by_license[self.unknown_license])
                 msg += ' Detailed output of licensecheck in ' + filename
-                self.set_passed(self.PENDING, msg)
+            self.set_passed(self.PENDING, msg)
         except OSError, e:
             self.log.error('OSError: %s' % str(e))
             msg = ' Programmer error: ' + e.strerror
