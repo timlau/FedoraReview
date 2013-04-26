@@ -35,7 +35,7 @@ from FedoraReview.name_bug import NameBug
 
 STARTDIR = os.getcwd()
 
-VERSION = '0.4.0'
+VERSION = '0.4.1'
 
 try:
     urlopen('http://bugzilla.redhat.com')
