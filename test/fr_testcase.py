@@ -48,7 +48,7 @@ FAST_TEST = 'REVIEW_FAST_TEST' in os.environ
 FEDORA = os.path.exists('/etc/fedora-release')
 
 
-class  FR_TestCase(unittest.TestCase):
+class FR_TestCase(unittest.TestCase):
     ''' Common base class for all tests. '''
 
     BUILDROOT = "fedora-17-i386"
