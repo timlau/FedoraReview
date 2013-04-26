@@ -186,7 +186,8 @@ class CheckJavadocJPackageRequires(JavaCheckBase):
     def __init__(self, base):
         JavaCheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Java'
-        self.text = 'Javadoc subpackages do not have Requires: jpackage-utils'
+        self.text = "Javadoc subpackages should not have Requires: " \
+                    "jpackage-utils"
         self.automatic = True
 
     def run_on_applicable(self):
