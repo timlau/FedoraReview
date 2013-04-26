@@ -206,38 +206,6 @@ class CheckJavadocJPackageRequires(JavaCheckBase):
                             extra if not ok else None)
 
 
-class CheckJavaFullVerReqSub(JavaCheckBase):
-    """Check if subpackages have proper Requires on main package
-    except javadoc subpackage that doesn't have this requirement"""
-
-    deprecates = ['CheckFullVerReqSub']
-    MSG = "Missing: Requires: %{name} = %{version}-%{release} in "
-
-    def __init__(self, base):
-        JavaCheckBase.__init__(self, base)
-        self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines' \
-                   '#RequiringBasePackage'
-        self.text = 'Fully versioned dependency in subpackages, if present.'
-        self.automatic = True
-        self.type = 'MUST'
-
-    def run_on_applicable(self):
-        """ Run check for java packages """
-        req = "%s = %s-%s" % tuple(self.spec.name_vers_rel)
-        bad_ones = []
-        extra = None
-        for pkg_name in self.spec.packages:
-            if pkg_name.endswith("-javadoc"):
-                continue
-            if pkg_name == self.spec.base_package:
-                continue
-            if not req in self.rpms.get(pkg_name).requires:
-                bad_ones.append(pkg_name)
-        if bad_ones:
-            extra = self.MSG + ', '.join(bad_ones)
-        self.set_passed(self.FAIL if extra else self.PASS, extra)
-
-
 class CheckNoOldMavenDepmap(JavaCheckBase):
     """Check if old add_to_maven_depmap macro is being used"""
     group = "Maven"

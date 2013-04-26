@@ -527,15 +527,20 @@ class CheckFullVerReqSub(GenericCheckBase):
 
     def run(self):
         bad_pkgs = []
-        isa = Mock.rpm_eval('%{?_isa}')
+        archs = self.checks.spec.expand_tag('BuildArchs')
+        if len(archs) == 1 and archs[0].lower() == 'noarch':
+            isa = ''
+        else:
+            isa = Mock.rpm_eval('%{?_isa}')
         regex = self.REGEX.replace('%{?_isa}', isa)
         regex = rpm.expandMacro(regex)
         regex = re.sub('[.](fc|el)[0-9]+', '', regex)
         for pkg in self.spec.packages:
             if pkg == self.spec.base_package:
                 continue
-            if pkg.endswith('debuginfo'):
-                continue
+            for pkg_end in ['debuginfo', '-javadoc', '-doc']:
+                if pkg.endswith(pkg_end):
+                    continue
             reqs = ''.join(self.rpms.get(pkg).format_requires)
             if not regex in reqs:
                 bad_pkgs.append(pkg)
