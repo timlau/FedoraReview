@@ -25,7 +25,7 @@ import os
 import os.path
 
 from glob import glob
-from subprocess import call, Popen, PIPE, STDOUT
+from subprocess import call, Popen, PIPE, STDOUT, CalledProcessError
 
 try:
     from subprocess import check_output          # pylint: disable=E0611
@@ -129,7 +129,8 @@ class _Mock(HelpersMixin):
             paths = glob(os.path.join(ReviewDirs.startdir, pattern))
         else:
             paths = glob(os.path.join(self.get_resultdir(), pattern))
-        paths = filter(lambda p: not p.endswith('.src.rpm'), paths)
+        paths = filter(lambda p: p.endswith('.rpm')
+                       and not p.endswith('.src.rpm'), paths)
         if len(paths) == 0:
             raise ReviewError('No built package found for ' + pkg_name)
         elif len(paths) > 1:
@@ -336,6 +337,13 @@ class _Mock(HelpersMixin):
 
     def init(self):
         """ Run a mock --init command. """
+        try:
+            self.rpm_eval('%{_libdir}')
+            self.log.debug("Avoiding init of working mock root")
+            return
+        except CalledProcessError:
+            pass
+        self.log.info("Re-initializing mock build root")
         cmd = ["mock"]
         if hasattr(Settings, 'mock_config') and Settings.mock_config:
             cmd.extend(['-r', Settings.mock_config])

@@ -16,9 +16,9 @@
 #
 # (C) 2011 - Tim Lauridsen <timlau@fedoraproject.org>
 
-'''
-Tools for helping Fedora package reviewers
-'''
+''' Tools for helping Fedora package reviewers '''
+
+# pylint: disable=R0924
 
 import argparse
 import grp
@@ -44,8 +44,11 @@ def _check_mock_grp():
     mock_msg = \
     'No mock group - mock not installed or mock not in effective' \
     'groups. Try running  "newgrp" or logging out from all your local '\
-    'sessions and logging back in.'
+    'sessions and logging back in. Or disable test using ' \
+    'REVIEW_NO_MOCKGROUP_CHECK, see manpage'
 
+    if 'REVIEW_NO_MOCKGROUP_CHECK' in os.environ:
+        return
     mock_gid = grp.getgrnam('mock')[2]
     if not mock_gid in os.getgroups():
         raise ReviewError(mock_msg)
@@ -156,7 +159,7 @@ class ColoredFormatter(logging.Formatter):
 
     def __init__(self, fmt=None, datefmt=None, use_color=True):
         logging.Formatter.__init__(self, fmt, datefmt)
-        self.use_color = use_color
+        self.use_color = use_color and ansi.color_supported()
 
     def format(self, record):
         lname = record.levelname

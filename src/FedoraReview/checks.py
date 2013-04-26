@@ -42,11 +42,8 @@ HEADER = """
 Package Review
 ==============
 
-Key:
-[x] = Pass
-[!] = Fail
-[-] = Not applicable
-[?] = Not evaluated
+Legend:
+[x] = Pass, [!] = Fail, [-] = Not applicable, [?] = Not evaluated
 [ ] = Manual review needed
 
 """

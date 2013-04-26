@@ -226,9 +226,14 @@ class CheckCleanBuildroot(GenericCheckBase):
 
     def run(self):
         has_clean = False
-        regex = 'rm\s+\-[rf][rf]\s+(%{buildroot}|$RPM_BUILD_ROOT)'
-        regex = rpm.expandMacro(regex)
+        regex = r'rm\s+\-[rf][rf]\s+(@buildroot@|$RPM_BUILD_ROOT)'
+        buildroot = rpm.expandMacro('%{buildroot}')
+        # BZ 908830: handle '+' in package name.
+        buildroot = buildroot.replace('+', r'\+')
+        regex = regex.replace('@buildroot@', buildroot)
         install_sec = self.spec.get_section('%install', raw=True)
+        self.log.debug('regex: ' + regex)
+        self.log.debug('install_sec: ' + install_sec)
         has_clean = install_sec and re.search(regex, install_sec)
         if self.flags['EPEL5']:
             self.text = 'EPEL5: Package does run rm -rf %{buildroot}' \
@@ -519,13 +524,16 @@ class CheckIllegalSpecTags(GenericCheckBase):
 
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
-        self.text = 'Spec file lacks Packager, Vendor, PreReq tags.'
+        self.url = 'http://fedoraproject.org/wiki/Packaging:Guidelines#Tags'
+        self.text = 'Packager, Vendor, PreReq, Copyright tags should not be ' \
+                    'in spec file'
         self.automatic = True
+        self.type = 'SHOULD'
 
     def run(self):
         passed = True
         output = ''
-        for tag in ('Packager', 'Vendor', 'PreReq'):
+        for tag in ('Packager', 'Vendor', 'PreReq', 'Copyright'):
             value = self.spec.expand_tag(tag)
             if value:
                 passed = False
@@ -558,6 +566,9 @@ class CheckLicenseField(GenericCheckBase):
     MUST: The License field in the package spec file must match the
     actual license.
     '''
+
+    unknown_license = 'Unknown or generated'
+
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/' \
@@ -571,7 +582,7 @@ class CheckLicenseField(GenericCheckBase):
     def _write_license(files_by_license, filename):
         ''' Dump files_by_license to filename. '''
         with open(filename, 'w') as f:
-            for license_ in files_by_license.iterkeys():
+            for license_ in sorted(files_by_license.iterkeys()):
                 f.write('\n' + license_ + '\n')
                 f.write('-' * len(license_) + '\n')
                 for path in sorted(files_by_license[license_]):
@@ -593,59 +604,59 @@ class CheckLicenseField(GenericCheckBase):
             source_dir = ReviewDirs.upstream_unpacked
         return (source_dir, msg)
 
-    def run(self):
+    def _parse_licenses(self, raw_text):
+        ''' Convert licensecheck output to files_by_license dict. '''
 
         def license_is_valid(_license):
             ''' Test that license from licencecheck is parsed OK. '''
             return not 'UNKNOWN' in _license and \
                 not 'GENERATED' in _license
 
-        def parse_licenses(raw_text):
-            ''' Convert licensecheck output to files_by_license. '''
-            files_by_license = {}
-            raw_file = StringIO(raw_text)
-            while True:
-                line = raw_file.readline()
-                if not line:
-                    break
-                try:
-                    file_, license_ = line.split(':')
-                except ValueError:
-                    continue
-                file_ = file_.strip()
-                license_ = license_.strip()
-                if not license_is_valid(license_):
-                    license_ = 'Unknown or generated'
-                if not license in files_by_license.iterkeys():
-                    files_by_license[license_] = []
-                files_by_license[license_].append(file_)
-            return files_by_license
+        files_by_license = {}
+        raw_file = StringIO(raw_text)
+        while True:
+            line = raw_file.readline()
+            if not line:
+                break
+            try:
+                file_, license_ = line.split(':')
+            except ValueError:
+                continue
+            file_ = file_.strip()
+            license_ = license_.strip()
+            if not license_is_valid(license_):
+                license_ = self.unknown_license
+            if not license_ in files_by_license.iterkeys():
+                files_by_license[license_] = []
+            files_by_license[license_].append(file_)
+        return files_by_license
 
+    def run(self):
         try:
             source_dir, msg = self._get_source_dir()
             self.log.debug("Scanning sources in " + source_dir)
-            licenses = []
             if os.path.exists(source_dir):
                 cmd = 'licensecheck -r ' + source_dir
                 out = check_output(cmd, shell=True)
                 self.log.debug("Got license reply, length: %d" % len(out))
-                licenses = parse_licenses(out)
+                files_by_license = self._parse_licenses(out)
                 filename = os.path.join(ReviewDirs.root,
                                         'licensecheck.txt')
-                self._write_license(licenses, filename)
+                self._write_license(files_by_license, filename)
             else:
                 self.log.error('Source directory %s does not exist!' %
                                source_dir)
-            if not licenses:
+            if not files_by_license:
                 msg += ' No licenses found.'
                 msg += ' Please check the source files for licenses manually.'
-                self.set_passed(self.FAIL, msg)
             else:
                 msg += ' Licenses found: "' \
-                       + '", "'.join(licenses.iterkeys()) + '".'
-                msg += ' %d files have unknown license.' % len(licenses)
+                       + '", "'.join(files_by_license.iterkeys()) + '".'
+                if self.unknown_license in files_by_license:
+                    msg += ' %d files have unknown license.' % \
+                                len(files_by_license[self.unknown_license])
                 msg += ' Detailed output of licensecheck in ' + filename
-                self.set_passed(self.PENDING, msg)
+            self.set_passed(self.PENDING, msg)
         except OSError, e:
             self.log.error('OSError: %s' % str(e))
             msg = ' Programmer error: ' + e.strerror
@@ -1118,7 +1129,7 @@ class CheckSourceMD5(GenericCheckBase):
                 msg = None
             if text:
                 attachments = [
-                    self.Attachment('MD5-sum check', text, 10)]
+                    self.Attachment('Source checksums', text, 10)]
             else:
                 attachments = []
             self.set_passed(passed, msg, attachments)
