@@ -285,6 +285,11 @@ class TestResult(object):
                                 self.wrapper.subsequent_indent +
                                 "Note: " + self.output_extra)
             strbuf.write('\n'.join(extra_lines))
+            if self.check.is_failed:
+                see = self.wrapper.wrap(
+                                self.wrapper.subsequent_indent +
+                                "See: " + self.check.url)
+                strbuf.write("\n" + "\n".join(see))
 
         return strbuf.getvalue()
 
