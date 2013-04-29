@@ -21,6 +21,7 @@ Spec file management.
 
 import re
 import rpm
+import urllib
 
 from review_error import ReviewError
 from settings import Settings
@@ -124,7 +125,8 @@ class SpecFile(object):
             if _type != srctype:
                 continue
             tag = srctype + str(num)
-            result[tag] = self.spec.sourceHeader.format(url)
+            result[tag] = \
+                self.spec.sourceHeader.format(urllib.unquote(url))
         return result
 
     def _parse_files_pkg_name(self, line):
@@ -133,12 +135,13 @@ class SpecFile(object):
         assert tokens.pop(0) == '%files'
         while tokens:
             token = tokens.pop(0)
-            if len(tokens) == 0:
-                return self.base_package + '-' + token
-            elif token == '-n':
+            if token == '-n':
                 return tokens.pop(0)
             elif token == '-f':
                 tokens.pop(0)
+            else:
+                return self.base_package + '-' + token
+
         return self.base_package
 
     def _parse_files(self, pkg_name):
@@ -149,7 +152,12 @@ class SpecFile(object):
             pkg_name = self.name
         lines = None
         for line in [l.strip() for l in self.lines]:
-            if lines == None:
+            if lines is None:
+                # Dragons: nasty fix for #209. This will not produce a
+                # working %files list, but is seemingly "good enough"
+                # for font packages. Proper solution is to patch rpm.
+                if line.startswith('%_font_pkg'):
+                    line = '%files -n ' + pkg_name
                 if line.startswith('%files'):
                     if self._parse_files_pkg_name(line) == pkg_name:
                         lines = []

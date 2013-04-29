@@ -25,6 +25,7 @@ import os.path
 import ansi
 from bugzilla_bug import BugzillaBug
 from checks import Checks, ChecksLister
+from mock import Mock
 from name_bug import NameBug
 from review_dirs import ReviewDirs
 from review_error import ReviewError
@@ -73,6 +74,7 @@ class ReviewHelper(object):
         if not ReviewDirs.is_inited:
             wd = self.bug.get_dirname()
             ReviewDirs.workdir_setup(wd)
+        Mock.init()
 
         if not self.bug.download_files():
             raise self.HelperError('Cannot download .spec and .srpm')

@@ -134,7 +134,8 @@ of building new ones in mock
 Instead of using a spec file URL, use the spec file bundled in the srpm file.
 .TP 4
 .B -s test, --single test
-Run a single test, as listed by --display-checks
+Run a single test, as listed by --display-checks. Does not run dependencies,
+only the given test.
 .TP 4
 .B  -v, --verbose
 Provides a more detailed output of what's going on.
@@ -284,6 +285,11 @@ User supplied directory with shell-based plugins
 .B REVIEW_LOGLEVEL
 loglevel used when not using -v/--verbose. A logging.* value like 'DEBUG', 'Info', or 'warning'. Setting
 REVIEW_LOGLEVEL to 'debug' is the same as providing the -v/--verbose option.
+.TP
+.B REVIEW_NO_MOCKGROUP_CHECK
+Normally, fedora-review checks  that user is member of the mock group
+before proceeding since this is required to run mock in most setups.
+In cases this check is not useful it can be suppressed by this variable.
 .TP
 .B XDG_DATA_HOME
 fedora-review respects XDG_DATA_HOME which defaults to ~/.local/share. Eg g.,

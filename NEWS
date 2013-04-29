@@ -1,3 +1,22 @@
+0.4.1
+=====
+- Updated and improved Java checks for latest packaging guidelines
+    * Automate buildarch check
+    * Do CheckNoArch per subpackage instead of buildarch
+    * Add check for new style Maven packaging
+    * Update CheckTestSkip for mvn-build
+    * Maven packages don't need to BR/R jpackage-utils check
+- Fix attachment name for 'MD5-sum check' (bz 861716)
+- Fix %files section handling for font-packages (#209)
+- Handle %20 in source URLs correctly (bz 920376)
+- Fix CheckLicenseField for multiple files without license (#205)  
+- Don't write licenses in random order
+- Fix several bugs in koji-download-scratch script
+- Output ANSI color sequences only on color terminals (bz 955719)
+- Compress legend of report
+- Fix problem with subpackages being ignored/missed
+- Add 'Copyright' to illegal tags check
+
 0.4
 ===
 

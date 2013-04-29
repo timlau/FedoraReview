@@ -5,7 +5,7 @@
 #global     git_tag  .fa1afe1
 
 Name:       fedora-review
-Version:    0.4.0
+Version:    0.4.1
 Release:    1%{?git_tag}%{?dist}
 Summary:    Review tool for fedora rpm packages
 
@@ -125,6 +125,9 @@ python -m unittest discover -f
 
 
 %changelog
+* Mon Apr 29 2013 Stanislav Ochotnicky <sochotnicky@redhat.com> - 0.4.1-1
+- Updating to upstream 0.4.1
+
 * Mon Jan 28 2013 Stanislav Ochotnicky <sochotnicky@redhat.com> - 0.4.0-1
 - Updating to upstream 0.4.0
 

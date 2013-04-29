@@ -190,7 +190,7 @@ class TestChecks(FR_TestCase):
                          ('pending', 'CheckDevelFilesInDevel'),
                          ('pending', 'CheckSpecLegibility'),
                          ('na', 'CheckBuildCompilerFlags'),
-                         ('pass', 'CheckJavadocJPackageRequires'),
+                         ('fail', 'CheckJavadocJPackageRequires'),
                          ('pending', 'CheckContainsLicenseText'),
                          ('pending', 'CheckDesktopFile'),
                          ('pending', 'CheckLicenseField'),
