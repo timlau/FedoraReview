@@ -21,8 +21,7 @@
 import textwrap
 from subprocess import Popen, PIPE
 
-from FedoraReview import CheckBase
-from FedoraReview import RegistryBase
+from FedoraReview import CheckBase, RegistryBase, ReviewDirs
 
 
 #########################################
@@ -32,20 +31,26 @@ from FedoraReview import RegistryBase
 ## would be appreciated.               ##
 #########################################
 
-OBS_M4S_AUTOMAKE = [
+_OBS_M4S_AUTOMAKE = [
     'AM_CONFIG_HEADER',
     'AM_PROG_CC_STDC',
 ]
 
-OBS_M4S_LIBTOOL = [
+_OBS_M4S_LIBTOOL = [
     'AC_PROG_LIBTOOL',
     'AM_PROG_LIBTOOL',
 ]
 
-OBSOLETE_CHECKS = {
-    'automake': OBS_M4S_AUTOMAKE,
-    'libtool': OBS_M4S_LIBTOOL,
+_OBSOLETE_CHECKS = {
+    'automake': _OBS_M4S_AUTOMAKE,
+    'libtool': _OBS_M4S_LIBTOOL,
 }
+
+
+def _prepend_indent(text):
+    ''' add the paragraph indentation '''
+    lines = text.splitlines()
+    return '\n'.join(map(lambda x: "  " + x if x != "" else "", lines))
 
 
 class Registry(RegistryBase):
@@ -76,12 +81,6 @@ class AutotoolsCheckBase(CheckBase):
 
     def find_used_tools(self):
         ''' get the list of autotools relevant for this package '''
-        brequires = self.spec.build_requires
-
-        if self.used_tools is not None:
-            return
-
-        self.used_tools = []
 
         def check_for(tool, packages):
             ''' helper - try all known package names for the tool '''
@@ -89,6 +88,13 @@ class AutotoolsCheckBase(CheckBase):
                 if name in brequires:
                     self.used_tools.append(tool)
                     return
+
+        brequires = self.spec.build_requires
+
+        if self.used_tools is not None:
+            return
+
+        self.used_tools = []
 
         am_pkgs = ['automake', 'automake14', 'automake15', 'automake16',
                    'automake17']
@@ -99,17 +105,9 @@ class AutotoolsCheckBase(CheckBase):
         self.log.debug("autotools used: " + ' '.join(self.used_tools))
 
 
-## TEXT HELPERS ##
-
-def prepend_indent(text):
-    ''' add the paragraph indentation '''
-    lines = text.splitlines()
-    return '\n'.join(map(lambda x: "  " + x if x != "" else "", lines))
-
-
 ## CHECKERS ##
 
-class CheckAutotoolsObsoleteMarcos(AutotoolsCheckBase):
+class CheckAutotoolsObsoletedMacros(AutotoolsCheckBase):
     ''' obsolete macros (shorthly m4s) checker '''
 
     warn_items = {}
@@ -128,11 +126,11 @@ class CheckAutotoolsObsoleteMarcos(AutotoolsCheckBase):
         trace_cmd = ["grep", "-E", "-n", "-o"]
 
         for tool in self.used_tools:
-            if not tool in OBSOLETE_CHECKS:
+            if not tool in _OBSOLETE_CHECKS:
                 # shouldn't be neccessary
                 continue
 
-            checks = OBSOLETE_CHECKS[tool]
+            checks = _OBSOLETE_CHECKS[tool]
             for obs_m4 in checks:
                 trace_cmd.append("-e")
                 trace_cmd.append(obs_m4 + "[[:space:]]*$")
@@ -144,6 +142,14 @@ class CheckAutotoolsObsoleteMarcos(AutotoolsCheckBase):
     def trace(self):
         ''' trace for obsoleted macros '''
 
+        def shorter_configure(configure):
+            ''' remove the workdir prefix from configure file '''
+            prefix = ReviewDirs.root + "/BUILD"
+            simple = configure
+            if configure.startswith(prefix):
+                simple = configure[len(prefix) + 1:]
+            return simple
+
         # find traced files
         src = self.checks.buildsrc
         trace_files = src.find_all('*configure.ac') \
@@ -151,13 +157,6 @@ class CheckAutotoolsObsoleteMarcos(AutotoolsCheckBase):
 
         # get the base tracing command (grep)
         trace_cmd = self.get_trace_command()
-
-        def shorter_configure(configure, prefix):
-            ''' remove the workdir prefix from configure file '''
-            simple = configure
-            if configure.startswith(prefix):
-                simple = configure[len(prefix) + 1:]
-            return simple
 
         # ---------------------------
         # search for obsoleted macros
@@ -189,7 +188,7 @@ class CheckAutotoolsObsoleteMarcos(AutotoolsCheckBase):
                     self.warn_items[m4] = []
 
                 self.warn_items[m4].append({
-                    'file': shorter_configure(configure_ac, src.containers[0]),
+                    'file': shorter_configure(configure_ac),
                     'line': int(line),
                 })
 
@@ -214,7 +213,7 @@ class CheckAutotoolsObsoleteMarcos(AutotoolsCheckBase):
                     hit = hit + ', '
                 hit = hit + pos['file'] + ':' + str(pos['line'])
 
-            output = output + prepend_indent(self.text_wrap(hit))
+            output = output + _prepend_indent(self.text_wrap(hit))
             output = output + "\n"
 
         return output

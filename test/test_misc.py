@@ -183,7 +183,7 @@ class TestMisc(FR_TestCase):
         ''' test ccpp static -a checs  '''
         # pylint: disable=F0401,R0201,C0111,W0613
 
-        from plugins.generic_autotools import CheckAutotoolsObsoleteMarcos
+        from plugins.generic_autotools import CheckAutotoolsObsoletedMacros
 
         class BuildSrcMockup(object):
             def __init__(self):
@@ -205,7 +205,7 @@ class TestMisc(FR_TestCase):
         checks_mockup = ChecksMockup()
         checks_mockup.log = self.log
         checks_mockup.buildsrc = BuildSrcMockup()
-        check = CheckAutotoolsObsoleteMarcos(checks_mockup)
+        check = CheckAutotoolsObsoletedMacros(checks_mockup)
         check.checks.spec = SpecFile(os.path.join(os.getcwd(),
                                                   'gc.spec'))
         check.checks.rpms = RpmsMockup()
@@ -214,7 +214,9 @@ class TestMisc(FR_TestCase):
         self.assertTrue(check.is_failed)
         self.assertTrue('Some obsoleted macros' in note)
         self.assertEqual(len(check.result.attachments), 1)
-        self.assertIn('AC_PROG_LIBTOOL found in: configure.ac: :519',
+        self.assertIn('AC_PROG_LIBTOOL found in: configure.ac:519',
+                      check.result.attachments[0].text)
+        self.assertIn('AM_CONFIG_HEADER found in: configure.ac:29',
                       check.result.attachments[0].text)
 
     def test_flags_1(self):
