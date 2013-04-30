@@ -1474,7 +1474,7 @@ class CheckGioQueryModules(GenericCheckBase):
     def run(self):
         using = []
         failed = False
-        libdir = Mock.rpm_eval('%{_libdir}')
+        libdir = Mock.get_macro('%_libdir', self.spec)
         gio_pattern = os.path.join(libdir, 'gio/modules/', '*')
         for pkg in self.spec.packages:
             if self.rpms.find(gio_pattern, pkg):
@@ -1504,7 +1504,7 @@ class CheckGtkQueryModules(GenericCheckBase):
     def run(self):
         using = []
         failed = False
-        libdir = Mock.rpm_eval('%{_libdir}')
+        libdir = Mock.get_macro('%_libdir', self.spec)
         pattern = os.path.join(libdir, 'gtk-3.0/', '*')
         for pkg in self.spec.packages:
             if self.rpms.find(pattern, pkg):

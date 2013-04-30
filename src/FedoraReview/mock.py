@@ -59,6 +59,7 @@ def _run_script(script):
 
 class _Mock(HelpersMixin):
     """ Some basic operations on the mock chroot env, a singleton. """
+    # pylint: disable=R0904
 
     def __init__(self):
         HelpersMixin.__init__(self)
@@ -86,24 +87,24 @@ class _Mock(HelpersMixin):
         tags = []
         for path in paths:
             rel = path.rsplit('-', 2)[2]
-            tags.append(rel.rsplit('.',3)[1])
+            tags.append(rel.rsplit('.', 3)[1])
         if len(set(tags)) == 1:
             if tags[0].startswith('fc'):
-               macros['%fedora'] = tags[0]
-               macros['%epel'] = '%epel'
+                macros['%fedora'] = tags[0]
+                macros['%epel'] = '%epel'
             elif tags[0].startswith('el'):
-               macros['%epel'] = tags[0]
-               macros['%fedora'] = '%fedora'
+                macros['%epel'] = tags[0]
+                macros['%fedora'] = '%fedora'
             else:
-               raise ReviewError("Illegal prebuilt dist: " + tags[0])
+                raise ReviewError("Illegal prebuilt dist: " + tags[0])
         else:
             raise ReviewError("Prebuilt packages release differs")
-        arches = [p.rsplit('.',2)[1] for p in paths]
+        arches = [p.rsplit('.', 2)[1] for p in paths]
         if set(arches) == set(['noarch']):
             buildarch = 'noarch'
         else:
             buildarch = [a for a in arches if not a is 'noarch'][0]
-        macros['%buildarch'] =  buildarch
+        macros['%buildarch'] = buildarch
         if buildarch == 'x86_64':
             macros['%_libdir'] = '/usr/lib64'
             macros['%_isa'] = '(x86-64)'
@@ -282,15 +283,13 @@ class _Mock(HelpersMixin):
 
     def get_macro(self, macro, spec):
         ''' Return value of one of the system-defined rpm macros. '''
-        import pdb; pdb.set_trace()
         if not self._macros:
             if Settings.prebuilt:
-                self.macros = self._get_prebuilt_macros(spec)
+                self._macros = self._get_prebuilt_macros(spec)
             else:
-                self.macros = self._get_default_macros()
+                self._macros = self._get_default_macros()
         key = macro if macro.startswith('%') else '%' + macro
         return self._macros[key] if key in self._macros else macro
-        
 
     @staticmethod
     def get_mock_options():
