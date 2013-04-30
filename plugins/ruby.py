@@ -221,7 +221,7 @@ class GemCheckFilePlacement(GemCheckBase):
         GemCheckBase.__init__(self, base)
         self.url = _gl_fmt_uri({'section': '.25install'})
         self.text = 'Platform dependent files must all go under ' \
-            '%{gem_extdir}, platform independent under %{gem_dir}.'
+            '%{gem_extdir_mri}, platform independent under %{gem_dir}.'
         self.automatic = False
 
 
@@ -351,7 +351,7 @@ class GemCheckUsesMacros(GemCheckBase):
 
     def run_on_applicable(self):
         gem_libdir_re = re.compile(rpm.expandMacro('%{gem_libdir}'), re.I)
-        gem_extdir_re = re.compile(rpm.expandMacro('%{gem_extdir}'), re.I)
+        gem_extdir_re = re.compile(rpm.expandMacro('%{gem_extdir_mri}'), re.I)
         doc_gem_docdir_re = \
             re.compile(rpm.expandMacro(r'%doc\s+%{gem_docdir}'), re.I)
         exclude_gem_cache_re = \
