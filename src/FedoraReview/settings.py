@@ -117,8 +117,9 @@ def _add_optionals(optional):
                           metavar='<bugzilla url>', dest='other_bz',
                           help='Alternative bugzilla URL')
     optional.add_argument('-p', '--prebuilt', action='store_true',
-                          dest='prebuilt', help='When using -n <name>, use'
-                          ' prebuilt rpms in current directory.')
+                          dest='prebuilt', default = False,
+                          help='When using -n <name>, use'
+                              ' prebuilt rpms in current directory.')
     optional.add_argument('-s', '--single', metavar='<test>',
                           help='Single test to run, as named by '
                           '--display-checks.')
