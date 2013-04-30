@@ -75,17 +75,30 @@ class NonGemCheckBase(CheckBase):
         return _is_nongem(self.spec)
 
 
-class RubyCheckRequiresRubyAbi(RubyCheckBase):
-    """ Check if package requires ruby(abi) """
+class RubyCheckNotRequiresRubyAbi(RubyCheckBase):
+    """ Check if package doesn't require ruby(abi) """
     def __init__(self, base):
         RubyCheckBase.__init__(self, base)
-        self.url = _gl_fmt_uri({'section': 'Ruby_ABI'})
-        self.text = 'Package contains Requires: ruby(abi).'
+        self.url = _gl_fmt_uri({'section': 'Ruby_Compatibility'})
+        self.text = 'Package does not contain Requires: ruby(abi).'
         self.automatic = True
 
     def run_on_applicable(self):
         br = self.spec.get_requires()
-        self.set_passed('ruby(abi)' in br)
+        self.set_passed('ruby(abi)' not in br)
+
+
+class RubyCheckRequiresRubyRelease(RubyCheckBase):
+    """ Check if package requires ruby(release) """
+    def __init__(self, base):
+        RubyCheckBase.__init__(self, base)
+        self.url = _gl_fmt_uri({'section': 'Ruby_Compatibility'})
+        self.text = 'Package contains Requires: ruby(release).'
+        self.automatic = True
+
+    def run_on_applicable(self):
+        br = self.spec.get_requires()
+        self.set_passed('ruby(release)' in br)
 
 
 class RubyCheckBuildArchitecture(RubyCheckBase):
