@@ -338,17 +338,18 @@ class GemCheckRequiresRubygems(GemCheckBase):
 
 
 class GemCheckGemInstallMacro(GemCheckBase):
-    """ gems should use %%gem_install macro """
+    """ gems should use %gem_install macro """
     def __init__(self, base):
         GemCheckBase.__init__(self, base)
         self.url = _gl_fmt_uri({'section': 'Building_gems'})
-        self.text = 'Gem should use %%gem_install macro.'
+        self.text = 'Gem should use %gem_install macro.'
         self.automatic = True
         self.type = 'SHOULD'
 
     def run_on_applicable(self):
-        gem_install = self.spec.find_re(r'^.*gem\s+install')
-        self.set_passed(self.FAIL if gem_install else self.PASS)
+        gem_install_re = re.compile(r'^.*gem\s+install', re.I)
+        self.set_passed(
+            self.FAIL if gem_install_re.match(self.spec) else self.PASS)
 
 
 class GemCheckExcludesGemCache(GemCheckBase):
