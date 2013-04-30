@@ -1,3 +1,8 @@
+0.5.0
+=====
+- Automate several directory ownership checks (#187)
+- Add hint if package has ExclusiveArch in deps (#166)
+
 0.4.1
 =====
 - Updated and improved Java checks for latest packaging guidelines
