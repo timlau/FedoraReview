@@ -288,7 +288,7 @@ class CheckFullVerReqSub(GenericShouldCheckBase):
         if len(archs) == 1 and archs[0].lower() == 'noarch':
             isa = ''
         else:
-            isa = Mock.rpm_eval('%{?_isa}')
+            isa = Mock.get_macro('%_isa', self.spec)
         regex = self.REGEX.replace('%{?_isa}', isa)
         regex = rpm.expandMacro(regex)
         regex = re.sub('[.](fc|el)[0-9]+', '', regex)

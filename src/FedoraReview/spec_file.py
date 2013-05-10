@@ -53,20 +53,21 @@ class SpecFile(object):
             ''' Update build macros from mock target configuration. '''
             macros = ['%rhel', '%fedora', '%_build_arch', '%_arch']
             expanded = Mock.rpm_eval(' '.join(macros)).split()
-            for i in range(0, len(macros)):
-                if not expanded[i].startswith('%'):
-                    rpm.addMacro(macros[i][1:], expanded[i])
+            for macro in macros:
+                expanded = Mock.get_macro(macro, self)
+                if not expanded.startswith('%'):
+                    rpm.addMacro(macro, expanded)
 
         self.log = Settings.get_logger()
         self.filename = filename
         self.lines = []
-        self._get_lines(filename)
-        update_macros()
         self.spec = rpm.TransactionSet().parseSpec(self.filename)
         self.name_vers_rel = [self.expand_tag(rpm.RPMTAG_NAME),
                               self.expand_tag(rpm.RPMTAG_VERSION),
                               self.expand_tag(rpm.RPMTAG_RELEASE)]
         self._packages = None
+        self._get_lines(filename)
+        update_macros()
 
     name = property(lambda self: self.name_vers_rel[0])
     version = property(lambda self: self.name_vers_rel[1])

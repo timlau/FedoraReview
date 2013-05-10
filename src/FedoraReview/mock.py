@@ -59,6 +59,7 @@ def _run_script(script):
 
 class _Mock(HelpersMixin):
     """ Some basic operations on the mock chroot env, a singleton. """
+    # pylint: disable=R0904
 
     def __init__(self):
         HelpersMixin.__init__(self)
@@ -67,9 +68,59 @@ class _Mock(HelpersMixin):
         self.mock_root = None
         self._rpmlint_output = None
         self._topdir = None
+        self._macros = None
+
+    def _get_default_macros(self):
+        ''' Evaluate macros using rpm in mock. '''
+        tags = '%fedora %epel %buildarch %_libdir %_isa %arch'
+        macros = {}
+        values = self.rpm_eval(tags).split()
+        taglist = tags.split()
+        for i in range(0, len(taglist)):
+            macros[taglist[i]] = values[i]
+        return macros
+
+    def _get_prebuilt_macros(self, spec):
+        ''' Evaluate macros based on prebuilt packages (#208).'''
+        macros = {}
+        paths = self.get_package_rpm_paths(spec)
+        tags = []
+        for path in paths:
+            rel = path.rsplit('-', 2)[2]
+            tags.append(rel.rsplit('.', 3)[1])
+        if len(set(tags)) == 1:
+            if tags[0].startswith('fc'):
+                macros['%fedora'] = tags[0]
+                macros['%epel'] = '%epel'
+            elif tags[0].startswith('el'):
+                macros['%epel'] = tags[0]
+                macros['%fedora'] = '%fedora'
+            else:
+                raise ReviewError("Illegal prebuilt dist: " + tags[0])
+        else:
+            raise ReviewError("Prebuilt packages release differs")
+        arches = [p.rsplit('.', 2)[1] for p in paths]
+        if set(arches) == set(['noarch']):
+            buildarch = 'noarch'
+        else:
+            buildarch = [a for a in arches if not a is 'noarch'][0]
+        macros['%buildarch'] = buildarch
+        if buildarch == 'x86_64':
+            macros['%_libdir'] = '/usr/lib64'
+            macros['%_isa'] = '(x86-64)'
+        else:
+            macros['%_libdir'] = '/usr/lib'
+            macros['%_isa'] = '(x86-32)'
+        try:
+            _arch = check_output('rpm --eval %_arch'.split()).strip()
+        except CalledProcessError:
+            raise ReviewError("Can't evaluate 'rpm --eval %_arch")
+        if buildarch is 'x86_64' and not _arch is 'x86_64':
+            raise ReviewError("Can't build x86_64 on i86 host")
+        return macros
 
     def _get_root(self):
-        '''Return mock's root according to Settings. '''
+        ''' Return mock's root according to Settings. '''
         config = 'default'
         if Settings.mock_config:
             config = Settings.mock_config
@@ -229,6 +280,16 @@ class _Mock(HelpersMixin):
         cmd = self._mock_cmd()
         cmd.extend(['--quiet', '--shell', 'rpm --eval \\"' + arg + '\\"'])
         return check_output(cmd).decode('utf-8').strip()
+
+    def get_macro(self, macro, spec):
+        ''' Return value of one of the system-defined rpm macros. '''
+        if not self._macros:
+            if Settings.prebuilt:
+                self._macros = self._get_prebuilt_macros(spec)
+            else:
+                self._macros = self._get_default_macros()
+        key = macro if macro.startswith('%') else '%' + macro
+        return self._macros[key] if key in self._macros else macro
 
     @staticmethod
     def get_mock_options():
