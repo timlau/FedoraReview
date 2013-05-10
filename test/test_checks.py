@@ -169,6 +169,7 @@ class TestChecks(FR_TestCase):
                         ('fail', 'RubyCheckNotRequiresRubyAbi'),
                         ('fail', 'RubyCheckRequiresRubyRelease'),
                         ('fail', 'GemCheckGemInstallMacro'),
+                        ('pass', 'GemCheckGemExtdirMacro'),
                         ('pass', 'CheckMakeinstall'),
                         ('pass', 'CheckSourceComment'),
                         ('pending', 'CheckTimeStamps'),

@@ -225,6 +225,19 @@ class GemCheckFilePlacement(GemCheckBase):
         self.automatic = False
 
 
+class GemCheckGemExtdirMacro(GemCheckBase):
+    """ Check for deprecated macro %{gem_extdir} """
+    def __init__(self, base):
+        GemCheckBase.__init__(self, base)
+        self.url = _gl_fmt_uri({'section': '.25install'})
+        self.text = 'Macro %{gem_extdir} is deprecated.'
+        self.automatic = True
+
+    def run_on_applicable(self):
+        gem_extdir_macro = self.spec.find_re(r'\%\{gem_extdir\}')
+        self.set_passed(self.FAIL if gem_extdir_macro else self.PASS)
+
+
 class GemCheckRequiresProperDevel(GemCheckBase):
     """ Check that gem packages contain proper BuildRequires """
     def __init__(self, base):
