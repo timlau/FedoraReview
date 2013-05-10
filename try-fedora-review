@@ -19,6 +19,25 @@ import subprocess
 
 main_dir = os.path.dirname(os.path.realpath(__file__))
 
+os.chdir(main_dir)
+pkg_dir = os.path.join(main_dir, 'src')
+sys.path.insert(0, pkg_dir)
+
+try:
+    from subprocess import check_output
+except ImportError:
+    from FedoraReview.el_compat import check_output
+
+from FedoraReview.review_helper import ReviewHelper
+
+cmd = ["git", "rev-parse", "--abbrev-ref", "HEAD"]
+cur_branch = check_output(cmd).strip()
+if cur_branch == "master":
+    print "\033[91mYou are running fedora-review from 'master' branch. This " \
+          "is probably not what you want to do. Master branch is equal to " \
+          "latest stable release. For development/bugreporting use " \
+          "'devel' branch. See CONTRIBUTE file for more details\033[0m"
+
 # let's setup a proper git commit hooks so people don't commit ugly code
 # accidentally
 devnull = open('/dev/null', 'w')
@@ -29,26 +48,5 @@ subprocess.call(['ln', '-s', '../../git-hooks/post-commit',
                  os.path.join(main_dir, '.git/hooks/post-commit')],
                  stderr=devnull)
 
-pkg_dir = os.path.join(main_dir, 'src')
-sys.path.insert(0, pkg_dir)
-
-try:
-    from subprocess import check_output
-except ImportError:
-    from FedoraReview.el_compat import check_output
-
-
-from FedoraReview.review_helper import ReviewHelper
-
 review = ReviewHelper()
 review.run()
-
-os.chdir(main_dir)
-
-cmd = ["git", "rev-parse", "--abbrev-ref", "HEAD"]
-cur_branch = check_output(cmd).strip()
-if cur_branch == "master":
-    print "\033[91mYou are running fedora-review from 'master' branch. This " \
-          "is probably not what you want to do. Master branch is equal to " \
-          "latest stable release. For development/bugreporting use " \
-          "'devel' branch. See CONTRIBUTE file for more details\033[0m"
