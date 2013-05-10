@@ -42,7 +42,7 @@ class SpecFile(object):
     whereas the find_* methods works on the raw lines of spec data.
     Properties:
        - filename: spec path
-       - lines: all lines in spec, raw data.
+       - lines: list of all lines in spec file
        - spec: rpm python spec object.
     '''
     # pylint: disable=W0212
