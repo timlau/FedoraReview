@@ -22,6 +22,7 @@ Base class for FedoraReview tests
 
 import os
 import os.path
+import shutil
 import subprocess
 import sys
 import unittest2 as unittest
@@ -131,7 +132,10 @@ class FR_TestCase(unittest.TestCase):
         helper = ReviewHelper()
         Mock.clear_builddir()
         if os.path.exists('BUILD'):
-            os.unlink('BUILD')
+            if os.path.islink('BUILD'):
+                os.unlink('BUILD')
+            else:
+                shutil.rmtree('BUILD')
         stdout = sys.stdout
         sys.stdout = Null()
         rc = helper.run('review.txt')

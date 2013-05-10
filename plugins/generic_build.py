@@ -29,6 +29,7 @@ tests by default depends on.
 import glob
 import os
 import os.path
+import shutil
 
 # pylint: disable=W0611
 try:
@@ -324,7 +325,10 @@ class CheckBuildCompleted(BuildCheckBase):
             Mock.install(self.spec.build_requires)
             Mock.rpmbuild_bp(self.srpm)
         if os.path.lexists('BUILD'):
-            os.unlink('BUILD')
+            if os.path.islink('BUILD'):
+                os.unlink('BUILD')
+            else:
+                shutil.rmtree('BUILD')
         os.symlink(Mock.get_builddir('BUILD'), 'BUILD')
         self.set_passed(self.NA)
 
