@@ -115,10 +115,12 @@ class CheckBundledLibs(GenericCheckBase):
             m = regex.match(i)
             if m:
                 check_dirs.add(m.group(1) + m.group(2))
-
-        self.set_passed(self.PENDING,
+        if check_dirs:
+            self.set_passed(self.PENDING,
                         'Especially check following dirs for bundled code: '
                         + ', '.join(check_dirs))
+        else:
+            self.set_passed(self.PENDING)
 
 
 class CheckBuildCompilerFlags(GenericCheckBase):
