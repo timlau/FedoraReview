@@ -103,8 +103,22 @@ class CheckBundledLibs(GenericCheckBase):
                    'Packaging:Guidelines#Duplication_of_system_libraries'
         self.text = 'Package contains no bundled libraries without' \
                     ' FPC exception.'
-        self.automatic = False
+        self.automatic = True
         self.type = 'MUST'
+
+    def run(self):
+        pattern = '(.*?/)(3rdparty|thirdparty|libraries|libs|ext|external' \
+            '|include)/.*'
+        regex = re.compile(pattern, re.IGNORECASE)
+        check_dirs = set()
+        for i in self.sources.get_filelist():
+            m = regex.match(i)
+            if m:
+                check_dirs.add(m.group(1) + m.group(2))
+
+        self.set_passed(self.PENDING,
+                        'Especially check following dirs for bundled code: '
+                        + ', '.join(check_dirs))
 
 
 class CheckBuildCompilerFlags(GenericCheckBase):
