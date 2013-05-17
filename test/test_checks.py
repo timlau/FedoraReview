@@ -198,6 +198,17 @@ class TestChecks(FR_TestCase):
                         ('pass', 'check-srv-opt-local')]
         self.run_spec(spec)
 
+    def test_rubygem_RedCloth(self):
+        ''' Run automated generic + rubygem tests. '''
+        spec = Testspec()
+        spec.args = []
+        spec.testcase = 'rubygem-RedCloth'
+        spec.workdir = 'rubygem-RedCloth'
+        spec.groups_ok = ['Generic.build', 'Generic', 'Generic.should', 'Ruby']
+        spec.expected = [('pass', 'GemCheckGemInstallMacro'),
+                         ('fail', 'GemCheckGemExtdirMacro')]
+        self.run_spec(spec)
+
     def test_logback(self):
         ''' Run automated generic+ java tests. '''
         spec = Testspec()
