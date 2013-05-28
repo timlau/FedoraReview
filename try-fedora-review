@@ -19,7 +19,6 @@ import subprocess
 
 main_dir = os.path.dirname(os.path.realpath(__file__))
 
-os.chdir(main_dir)
 pkg_dir = os.path.join(main_dir, 'src')
 sys.path.insert(0, pkg_dir)
 
@@ -30,7 +29,7 @@ except ImportError:
 
 from FedoraReview.review_helper import ReviewHelper
 
-cmd = ["git", "rev-parse", "--abbrev-ref", "HEAD"]
+cmd = ["git", "--git-dir", os.path.join(main_dir, '.git'), "rev-parse", "--abbrev-ref", "HEAD"]
 cur_branch = check_output(cmd).strip()
 if cur_branch == "master":
     print "\033[91mYou are running fedora-review from 'master' branch. This " \
