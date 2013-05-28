@@ -384,7 +384,6 @@ class Checks(_ChecksLoader):
                 fail.set_leader('- ')
                 fail.set_indent(2)
                 output.write(fail.get_text() + "\n")
-                output.write("  See: %s\n" % fail.url)
             results = [r for r in results if not r in issues]
 
         output.write("\n\n===== MUST items =====\n")
