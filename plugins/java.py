@@ -358,8 +358,8 @@ class CheckTestSkip(JavaCheckBase):
         xmvn_skip_regex = re.compile(r'mvn-build\s+.*(-f|--force|'
                                       '--skip-tests).*')
         build_section = self.spec.get_section('%build', raw=True)
-        if (skip_regex.search(build_section) or
-            xmvn_skip_regex.search(build_section)):
+        if build_section and (skip_regex.search(build_section) or
+                              xmvn_skip_regex.search(build_section)):
             self.set_passed(self.PENDING, """Tests seem to be skipped. Verify
         there is a commment giving a reason for this""")
         else:

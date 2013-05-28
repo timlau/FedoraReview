@@ -204,6 +204,10 @@ class RCheckInstallSection(RCheckBase):
         b_rm = False
         b_install = False
         section = self.spec.get_section('%install')
+        if not section:
+            self.set_passed(self.FAIL)
+            return
+
         for line in section:
             if 'mkdir -p' in line and \
                 ('/R/library' in line or 'rlibdir' in line):

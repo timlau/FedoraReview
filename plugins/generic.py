@@ -257,6 +257,9 @@ class CheckCleanBuildroot(GenericCheckBase):
         buildroot = buildroot.replace('+', r'\+')
         regex = regex.replace('@buildroot@', buildroot)
         install_sec = self.spec.get_section('%install', raw=True)
+        if not install_sec:
+            self.set_passed(self.NA)
+            return
         self.log.debug('regex: ' + regex)
         self.log.debug('install_sec: ' + install_sec)
         has_clean = install_sec and re.search(regex, install_sec)
@@ -807,7 +810,7 @@ class CheckMakeinstall(GenericCheckBase):
 
     def run_on_applicable(self):
         install = self.spec.get_section('%install', raw=True)
-        if '%makeinstall' in install:
+        if install and '%makeinstall' in install:
             self.set_passed(self.PENDING,
                             '%makeinstall used in %install section')
         else:
@@ -1463,6 +1466,10 @@ class CheckUpdateDesktopDatabase(GenericCheckBase):
         using = []
         failed = False
         install = self.spec.get_section('%install', raw=True)
+        if not install:
+            self.set_passed(self.NA)
+            return
+
         for pkg in self.spec.packages:
             if self.rpms.find('*.desktop', pkg):
                 using.append(pkg)
