@@ -108,7 +108,7 @@ class CheckBundledLibs(GenericCheckBase):
 
     def run(self):
         pattern = '(.*?/)(3rdparty|thirdparty|libraries|libs|ext|external' \
-            '|include)/.*'
+            '|include|3rd_party|third_party)/.*'
         regex = re.compile(pattern, re.IGNORECASE)
         check_dirs = set()
         for i in self.sources.get_filelist():
