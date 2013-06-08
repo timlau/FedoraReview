@@ -130,8 +130,10 @@ class CheckClean(GenericShouldCheckBase):
         sec_clean = self.spec.find_re('%clean')
         if sec_clean:
             sec_clean = self.spec.get_section('%clean', raw=True)
+            buildroot = rpm.expandMacro('%{buildroot}')
+            buildroot = buildroot.replace('+', r'\+')
             regex = r'rm\s+\-[rf][rf]\s+(%{buildroot}|\$RPM_BUILD_ROOT)'
-            regex = rpm.expandMacro(regex)
+            regex = regex.replace('%{buildroot}', buildroot)
             has_clean = re.search(regex, sec_clean)
         if self.flags['EPEL5']:
             self.text = 'EPEL5 requires explicit %clean with rm -rf' \
