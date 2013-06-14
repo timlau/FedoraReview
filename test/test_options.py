@@ -87,7 +87,7 @@ class TestOptions(FR_TestCase):
 
         bug.download_files()
         expected = os.path.abspath(
-                             'srpm/openerp-client-6.1-2.fc16.src.rpm')
+                                 'srpm/openerp-client-6.1-2.fc16.src.rpm')
         self.assertEqual(expected, bug.srpm_file)
         expected = os.path.abspath('srpm/openerp-client.spec')
         self.assertEqual(expected, bug.spec_file)
@@ -203,7 +203,7 @@ class TestOptions(FR_TestCase):
 
     def test_mock_options(self):
         ''' test -o/--mock-options and -m/mock-config '''
-        v = '16' if '17' in self.BUILDROOT else '17'
+        v = '18' if '17' in self.BUILDROOT else '17'
         buildroot = 'fedora-%s-i386' % v
         self.init_test('mock-options',
                        argv = ['-n', 'python-test', '--cache'],
