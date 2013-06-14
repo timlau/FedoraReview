@@ -1457,12 +1457,26 @@ class CheckUpdateDesktopDatabase(GenericCheckBase):
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging' \
-                   ':ScriptletSnippets#Icon_Cache'
-        self.text = 'update-desktop-database is invoked when required'
+                   ':ScriptletSnippets#desktop-database'
+        self.text = 'update-desktop-database is invoked as required'
         self.automatic = True
+        self.needs.append('check-large-docs')   # Needed to unpack rpms
         self.type = 'MUST'
 
     def run(self):
+
+        def has_mimetype(pkg, fname):
+            ''' Return True if the file fname contains a MimeType entry. '''
+            version = self.spec.expand_tag('Version')
+            rpm_dirs = glob(os.path.join(ReviewDirs.root,
+                                        'rpms-unpacked',
+                                        pkg + '-' + version + '*'))
+            with open(os.path.join(rpm_dirs[0], fname[1:])) as f:
+                for line in f.readlines():
+                    if line.strip().lower().startswith('mimetype'):
+                        return True
+            return False
+
         using = []
         failed = False
         install = self.spec.get_section('%install', raw=True)
@@ -1471,20 +1485,21 @@ class CheckUpdateDesktopDatabase(GenericCheckBase):
             return
 
         for pkg in self.spec.packages:
-            if self.rpms.find('*.desktop', pkg):
+            dt_files = self.rpms.find_all('*.desktop', pkg)
+            dt_files = [f for f in dt_files if has_mimetype(pkg, f)]
+            if dt_files:
                 using.append(pkg)
-                if not 'update-desktop-database' in install and \
-                       not 'desktop-file-validate' in install:
+                if not 'update-desktop-database' in install:
                     failed = True
         if not using:
             self.set_passed(self.NA)
             return
-        text = "desktop file(s) in " + ', '.join(using)
+        text = "desktop file(s) with MimeType entry in " + ', '.join(using)
         self.set_passed(self.FAIL if failed else self.PENDING, text)
 
 
 class CheckGioQueryModules(GenericCheckBase):
-    ''' Check that update-desktop-database is run if required. '''
+    ''' Check that gio-querymodules is run if required. '''
 
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
