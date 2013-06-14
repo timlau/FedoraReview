@@ -237,6 +237,7 @@ class TestChecks(FR_TestCase):
                          ('pending', 'CheckGuidelines'),
                          ('pass', 'CheckSourceUrl'),
                          ('pending', 'check-excludearch'),
+                         ('na', 'CheckAutotoolsObsoletedMacros'),
                          ('pending', 'CheckAddMavenDepmap'),
                          ('pending', 'CheckLicenseInSubpackages'),
                          ('pass', 'CheckOwnOther'),
@@ -326,7 +327,7 @@ class TestChecks(FR_TestCase):
         spec.testcase = 'FreeSOLID'
         spec.workdir = 'FreeSOLID'
         spec.groups_ok = ['Generic.build', 'Generic.should', 'Generic',
-                          'C/C++']
+                          'Generic.autotools', 'C/C++']
         spec.expected = [('na', 'CheckResultdir'),
                          ('pending', 'CheckBuild'),
                          ('pass', 'CheckRpmlint'),
@@ -388,6 +389,7 @@ class TestChecks(FR_TestCase):
                          ('pass', 'CheckNameCharset'),
                          ('pass', 'CheckLibToolArchives'),
                          ('pass', 'CheckIllegalSpecTags'),
+                         ('pass', 'CheckAutotoolsObsoletedMacros'),
                          ('pass', 'CheckSpecName'),
                          ('pending', 'CheckDevelFilesInDevel'),
                          ('pending', 'CheckSpecLegibility'),

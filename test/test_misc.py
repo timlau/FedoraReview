@@ -75,7 +75,7 @@ class TestMisc(FR_TestCase):
     def test_version(self):
         ''' Test version and update-version. '''
         vers_path = os.path.join(
-                          srcpath.SRC_PATH, 'FedoraReview', 'version')
+                           srcpath.SRC_PATH, 'FedoraReview', 'version')
         if os.path.exists(vers_path):
             os.unlink(vers_path)
         import FedoraReview.version
@@ -178,6 +178,46 @@ class TestMisc(FR_TestCase):
         note = check.result.output_extra
         self.assertTrue(check.is_failed)
         self.assertTrue('Archive *.a files found in' in note)
+
+    def test_autotools(self):
+        ''' test ccpp static -a checs  '''
+        # pylint: disable=F0401,R0201,C0111,W0613
+
+        from plugins.generic_autotools import CheckAutotoolsObsoletedMacros
+
+        class BuildSrcMockup(object):
+            def __init__(self):
+                self.containers = ['configure.ac']
+
+            def find_all(self, what):
+                return ["configure.ac"] if what.endswith('ac') else []
+
+        class ChecksMockup(object):
+            pass
+
+        class RpmsMockup(object):
+            def find(self, what, where):
+                return True
+
+        self.init_test('test_misc',
+                       argv=['-n', 'python-test', '--cache',
+                             '--no-build'])
+        checks_mockup = ChecksMockup()
+        checks_mockup.log = self.log
+        checks_mockup.buildsrc = BuildSrcMockup()
+        check = CheckAutotoolsObsoletedMacros(checks_mockup)
+        check.checks.spec = SpecFile(os.path.join(os.getcwd(),
+                                                  'gc.spec'))
+        check.checks.rpms = RpmsMockup()
+        check.run()
+        note = check.result.output_extra
+        self.assertTrue(check.is_failed)
+        self.assertTrue('Some obsoleted macros' in note)
+        self.assertEqual(len(check.result.attachments), 1)
+        self.assertIn('AC_PROG_LIBTOOL found in: configure.ac:519',
+                      check.result.attachments[0].text)
+        self.assertIn('AM_CONFIG_HEADER found in: configure.ac:29',
+                      check.result.attachments[0].text)
 
     def test_flags_1(self):
         ''' test a flag defined in python, set by user' '''
