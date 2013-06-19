@@ -105,6 +105,10 @@ flag=value.
 .B -k, --checksum <md5|sha1|sha224|sha256|sha384|sha512>
 Algorithm used for checksum.
 .TP 4
+.B -L, --local-repo <rpm directory>
+Directory with rpms to install together with reviewed
+package during build and install phases.
+.TP 4
 .B -m, --mock-config <configuration>
 Specify which mock config to use, one of the files in /etc/mock,
 with the .cfg suffix stripped. Defaults to the root defined in
