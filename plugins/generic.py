@@ -1534,7 +1534,7 @@ class CheckGtkQueryModules(GenericCheckBase):
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging' \
-                   ':ScriptletSnippets#GIO_modules'
+                   ':ScriptletSnippets#GTK.2B_modules'
         self.text = 'gtk-query-immodules is invoked when required'
         self.automatic = True
         self.type = 'MUST'
