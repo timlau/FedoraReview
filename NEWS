@@ -2,6 +2,16 @@
 =====
 - Automate several directory ownership checks (#187)
 - Add hint if package has ExclusiveArch in deps (#166)
+- Fix URL for gtk-query-immodules (bz 980308)
+- Add checks for autotools obsolete macro usage (#206)
+- Fix bug for packages with a '++' in their name (bz 971977)
+- Fix bug for check-desktop-datase (#127, bz 952593)
+- Don't use and require mock when using --prebuilt (#208)
+- Update ruby macro usage (#212)
+
+0.4.2
+=====
+- Fix crash for specfiles missing a %install section (bz 967571)
 
 0.4.1
 =====
@@ -14,7 +24,7 @@
 - Fix attachment name for 'MD5-sum check' (bz 861716)
 - Fix %files section handling for font-packages (#209)
 - Handle %20 in source URLs correctly (bz 920376)
-- Fix CheckLicenseField for multiple files without license (#205)  
+- Fix CheckLicenseField for multiple files without license (#205)
 - Don't write licenses in random order
 - Fix several bugs in koji-download-scratch script
 - Output ANSI color sequences only on color terminals (bz 955719)
