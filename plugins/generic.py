@@ -251,7 +251,7 @@ class CheckCleanBuildroot(GenericCheckBase):
 
     def run(self):
         has_clean = False
-        regex = r'rm\s+\-[rf][rf]\s+(@buildroot@|$RPM_BUILD_ROOT)'
+        regex = r'rm\s+\-[rf][rf]\s+(@buildroot@|$RPM_BUILD_ROOT)[^/]'
         buildroot = rpm.expandMacro('%{buildroot}')
         # BZ 908830: handle '+' in package name.
         buildroot = buildroot.replace('+', r'\+')
