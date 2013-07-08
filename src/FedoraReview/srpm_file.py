@@ -52,7 +52,7 @@ class SRPMFile(HelpersMixin):
         oldpwd = os.getcwd()
         os.chdir(wdir)
         src = src if src else self.filename
-        cmd = 'rpm2cpio ' + src + ' | cpio -u -i --quiet'
+        cmd = 'rpm2cpio ' + src + ' | cpio -u -i -m --quiet'
         rc = call(cmd, shell=True)
         if rc != 0:
             self.log.warn(
