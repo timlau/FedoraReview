@@ -103,7 +103,7 @@ function unpack_rpms()
         rpm=$( basename $rpm_path)
         mkdir $rpm
         cd $rpm
-        rpm2cpio ../../$rpm_path | cpio -id &>/dev/null
+        rpm2cpio ../../$rpm_path | cpio -imd &>/dev/null
         cd ..
     done
     cd ..
