@@ -179,6 +179,28 @@ class TestMisc(FR_TestCase):
         self.assertTrue(check.is_failed)
         self.assertTrue('Archive *.a files found in' in note)
 
+    def test_rm_buildroot(self):
+        ''' test rm -rf $BUILDROOT/a_path '''
+        # pylint: disable=F0401,R0201,C0111,W0613
+
+        from plugins.generic import CheckCleanBuildroot
+
+        class ChecksMockup(object):
+            pass
+
+        self.init_test('test_misc',
+                       argv=['-n', 'python-test', '--cache',
+                             '--no-build'])
+        checks = ChecksMockup()
+        flags = { 'EPEL5': False }
+        checks.log = self.log
+        checks.flags = flags
+        check = CheckCleanBuildroot(checks)
+        check.checks.spec = SpecFile(os.path.join(os.getcwd(),
+                                                  'rm_buildroot.spec'))
+        check.run()
+        self.assertTrue(check.is_passed)
+
     def test_autotools(self):
         ''' test ccpp static -a checs  '''
         # pylint: disable=F0401,R0201,C0111,W0613
