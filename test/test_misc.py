@@ -75,7 +75,7 @@ class TestMisc(FR_TestCase):
     def test_version(self):
         ''' Test version and update-version. '''
         vers_path = os.path.join(
-                           srcpath.SRC_PATH, 'FedoraReview', 'version')
+                            srcpath.SRC_PATH, 'FedoraReview', 'version')
         if os.path.exists(vers_path):
             os.unlink(vers_path)
         import FedoraReview.version
@@ -192,7 +192,7 @@ class TestMisc(FR_TestCase):
                        argv=['-n', 'python-test', '--cache',
                              '--no-build'])
         checks = ChecksMockup()
-        flags = { 'EPEL5': False }
+        flags = {'EPEL5': False}
         checks.log = self.log
         checks.flags = flags
         check = CheckCleanBuildroot(checks)
@@ -272,7 +272,7 @@ class TestMisc(FR_TestCase):
         bug = NameBug('python-test')
         bug.find_urls()
         bug.download_files()
-        with  self.assertRaises(ReviewError):
+        with self.assertRaises(ReviewError):
             # pylint: disable=W0612
             checks = Checks(bug.spec_file, bug.srpm_file)
 
@@ -314,7 +314,7 @@ class TestMisc(FR_TestCase):
     def test_sources_data(self):
         ''' Test a SourcesDataSource. '''
         self.init_test('test_misc',
-                       argv=['-n', 'python-test', '--cache', \
+                       argv=['-n', 'python-test', '--cache',
                              '--no-build'])
         bug = NameBug('python-test')
         bug.find_urls()
@@ -384,7 +384,7 @@ class TestMisc(FR_TestCase):
     def test_mock_clear(self):
         ''' test mock.clear_builddir(). '''
         self.init_test('test_misc',
-                       argv=['-n', 'python-test', '--cache', \
+                       argv=['-n', 'python-test', '--cache',
                              '--no-build'])
         wdir = Mock.get_builddir('BUILD')
         len1 = len(glob.glob(os.path.join(wdir, "*")))
@@ -446,7 +446,7 @@ class TestMisc(FR_TestCase):
                 return path
             lead = path.split('/')[1]
             if lead in ['bin', 'sbin', 'lib', 'lib64']:
-                return  '/usr' + path
+                return '/usr' + path
             return path
 
         self.init_test('test_misc',
@@ -509,12 +509,12 @@ class TestMisc(FR_TestCase):
         self.assertTrue(srpm._unpacked_src != None)
         src_dir = srpm._unpacked_src
         src_files = glob.glob(os.path.expanduser(src_dir) + '/*')
-        src_files = [os.path.basename(f) for f in  src_files]
+        src_files = [os.path.basename(f) for f in src_files]
         self.assertTrue('python-test-1.0.tar.gz' in src_files)
         self.log.info("Starting mock build (patience...)")
         Mock.clear_builddir()
         Mock.build(srpm.filename)
-        rpms = glob.glob(os.path.join(Mock.resultdir, \
+        rpms = glob.glob(os.path.join(Mock.resultdir,
                                       'python-test-1.0-1*noarch.rpm'))
         self.assertEqual(1, len(rpms))
 
@@ -608,7 +608,7 @@ class TestMisc(FR_TestCase):
     def test_rpm_spec(self):
         ''' Internal -r check. '''
         self.init_test('test_misc',
-                       argv=['-rn', 'python-test', '--cache', \
+                       argv=['-rn', 'python-test', '--cache',
                              '--no-build'])
         bug = NameBug('python-test')
         bug.find_urls()
@@ -620,7 +620,7 @@ class TestMisc(FR_TestCase):
     def test_md5sum_diff_ok(self):
         ''' Complete MD5sum test expected to pass. '''
         self.init_test('md5sum-diff-ok',
-                       argv=['-rpn', 'python-test', '--cache', \
+                       argv=['-rpn', 'python-test', '--cache',
                              '--no-build'])
         bug = NameBug('python-test')
         bug.find_urls()
@@ -636,7 +636,7 @@ class TestMisc(FR_TestCase):
     def test_md5sum_diff_fail(self):
         ''' Complete MD5sum test expected to fail. '''
         self.init_test('md5sum-diff-fail',
-                       argv=['-rpn', 'python-test', '--cache', \
+                       argv=['-rpn', 'python-test', '--cache',
                              '--no-build'])
         bug = NameBug('python-test')
         bug.find_urls()
@@ -693,7 +693,7 @@ class TestMisc(FR_TestCase):
     def test_bad_specfile(self):
         ''' Specfile with syntactic errors test. '''
         self.init_test('bad-spec',
-                       argv=['-n', 'python-test', '-p', '--cache', \
+                       argv=['-n', 'python-test', '-p', '--cache',
                              '--no-build'])
         bug = NameBug('python-test')
         check = self.run_single_check(bug, 'CheckSpecAsInSRPM')
@@ -704,7 +704,7 @@ class TestMisc(FR_TestCase):
         ''' desktop file handling test. '''
 
         self.init_test('desktop-file',
-                       argv=['-n', 'python-test', '--cache', \
+                       argv=['-n', 'python-test', '--cache',
                              '--no-build'])
         bug = NameBug('python-test')
         check = self.run_single_check(bug, 'CheckDesktopFileInstall', True)
@@ -764,7 +764,7 @@ class TestMisc(FR_TestCase):
     def test_local_repo(self):
         ''' Local repo with prebuilt rpms test. '''
         self.init_test('test_misc',
-                       argv=['-rn', 'python-test', '--local-repo', \
+                       argv=['-rn', 'python-test', '--local-repo',
                              'repo', '--cache'])
         bug = NameBug('python-test')
         bug.find_urls()
