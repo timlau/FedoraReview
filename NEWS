@@ -8,6 +8,9 @@
 - Fix bug for check-desktop-datase (#127, bz 952593)
 - Don't use and require mock when using --prebuilt (#208)
 - Update ruby macro usage (#212)
+- Preserve modification times when unpacking srpm and rpms (bz 982101).
+- Don't flag remove %buildroot/path as error (bz 972672)
+- Run rpmlint also on srpm (bz 981977)
 
 0.4.2
 =====
