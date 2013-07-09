@@ -286,7 +286,7 @@ class TestChecks(FR_TestCase):
         spec = Testspec()
         spec.testcase = 'scriptlets-fail'
         spec.workdir = 'scriptlets-fail'
-        spec.args = ['-x', 'CheckPackageInstalls,CheckUTF8Filenames']
+        spec.args = ['-px', 'CheckPackageInstalls,CheckUTF8Filenames']
         spec.groups_ok = ['Generic.build', 'Generic.should', 'Generic']
         spec.expected = [('fail', 'CheckGconfSchemaInstall'),
                          ('fail', 'CheckGtkQueryModules'),
@@ -305,7 +305,7 @@ class TestChecks(FR_TestCase):
         spec = Testspec()
         spec.testcase = 'scriptlets-ok'
         spec.workdir = 'scriptlets-ok'
-        spec.args = ['-x', 'CheckPackageInstalls,CheckUTF8Filenames']
+        spec.args = ['-px', 'CheckPackageInstalls,CheckUTF8Filenames']
         spec.groups_ok = ['Generic.build', 'Generic.should', 'Generic']
         spec.expected = [('pending', 'CheckGconfSchemaInstall'),
                          ('pending', 'CheckGtkQueryModules'),

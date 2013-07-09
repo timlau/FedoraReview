@@ -67,7 +67,7 @@ class TestExt(FR_TestCase):
         ''' Test  -x test cli option. '''
         self.init_test('test_ext', argv=['-b', '1'], wd='review-python-test')
         os.chdir('..')
-        check_call(srcpath.REVIEW_PATH + ' -n python-test'
+        check_call(srcpath.REVIEW_PATH + ' -pn python-test'
                    '  -x unittest-test1' +
                    ' -m ' + self.BUILDROOT +
                    ' --cache --no-build >/dev/null',
