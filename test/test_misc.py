@@ -392,7 +392,6 @@ class TestMisc(FR_TestCase):
         check_output(s, shell=True)
         Mock.builddir_cleanup()
         len2 = len(glob.glob(os.path.join(wdir, "*")))
-        print wdir
         self.assertEqual(len2, len1)
 
     @unittest.skipIf(FAST_TEST, 'slow test disabled by REVIEW_FAST_TEST')
