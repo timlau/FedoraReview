@@ -25,7 +25,7 @@ import os
 
 from glob import glob
 from operator import attrgetter
-from straight.plugin import load
+from straight.plugin import load                  # pylint: disable=F0401
 
 from datasrc import RpmDataSource, BuildFilesSource, SourcesDataSource
 from settings import Settings

@@ -90,6 +90,7 @@ class BuildCheckBase(CheckBase):
     def rpmlint_rpms(self):
         """ Runs rpmlint against the used rpms - prebuilt or built in mock.
         """
+        # pylint: disable=E1123
         rpms = Mock.get_package_rpm_paths(self.spec, with_srpm=True)
         no_errors, result = self.run_rpmlint(rpms)
         return no_errors, result + '\n'
