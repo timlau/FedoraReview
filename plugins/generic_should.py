@@ -235,8 +235,8 @@ class CheckFileRequires(GenericShouldCheckBase):
                     wrong_req.append(req)
             req_txt += get_requires(pkg, requires) + '\n'
             prov_txt += get_provides(pkg, rpm_pkg.provides) + '\n'
-        attachments = [self.Attachment('Requires', req_txt, 10),
-                       self.Attachment('Provides', prov_txt, 10)]
+        attachments = [self.Attachment('Requires', req_txt),
+                       self.Attachment('Provides', prov_txt)]
         if len(wrong_req) == 0:
             self.set_passed(self.PASS, None, attachments)
         else:
@@ -536,8 +536,7 @@ class CheckSpecAsInSRPM(GenericShouldCheckBase):
             return
         if output and len(output) > 0:
             a = self.Attachment("Diff spec file in url and in SRPM",
-                                output,
-                                8)
+                                output)
             text = ('Spec file as given by url is not the same as in '
                     'SRPM (see attached diff).')
             self.set_passed(self.FAIL, text, [a])

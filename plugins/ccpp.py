@@ -194,7 +194,7 @@ class CheckSoFiles(CCppCheckBase):
 
         if bad_list:
             attachments = [self.Attachment('Unversioned so-files',
-                "\n".join(bad_list), 10)]
+                "\n".join(bad_list))]
 
         self.set_passed(passed, extra, attachments)
 

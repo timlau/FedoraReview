@@ -1264,8 +1264,7 @@ class CheckSourceMD5(GenericCheckBase):
             if passed:
                 msg = None
             if text:
-                attachments = [
-                    self.Attachment('Source checksums', text, 10)]
+                attachments = [self.Attachment('Source checksums', text)]
             else:
                 attachments = []
             self.set_passed(passed, msg, attachments)
