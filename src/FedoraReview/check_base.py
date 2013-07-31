@@ -173,6 +173,7 @@ class GenericCheck(AbstractCheck):
         self.description = 'This test has no description'
         self.type = 'MUST'
         self.needs = ['CheckBuildCompleted']
+        self.attachments = []      # Keep attachments here to support NA
 
     spec       = property(lambda self: self.checks.spec)
     flags      = property(lambda self: self.checks.flags)
@@ -193,6 +194,7 @@ class GenericCheck(AbstractCheck):
         extra output and/or attachments to be shown in repost.
         '''
 
+        self.attachments = attachments if attachments else []
         if result in ['not_applicable', self.NA, None]:
             self.result = None
             return

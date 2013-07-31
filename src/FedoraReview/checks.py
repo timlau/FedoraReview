@@ -336,11 +336,11 @@ class Checks(_ChecksLoader):
             self.log.debug('    %s completed: %.3f seconds'
                                % (name, (now - self._clock)))
             self._clock = now
+            attachments.extend(check.attachments)
             result = check.result
             if not result:
                 return
             results.append(result)
-            attachments.extend(result.attachments)
             if result.type == 'MUST' and result.result == "fail":
                 issues.append(result)
 
