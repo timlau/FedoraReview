@@ -186,7 +186,7 @@ class AbstractBug(HelpersMixin):
                 self._get_spec_from_srpm()
             else:
                 self.find_spec_url()
-            self.log.info("  --> Spec url: " + self.spec_url)
+                self.log.info("  --> Spec url: " + self.spec_url)
         except ReviewError as fre:
             raise fre
         except:
