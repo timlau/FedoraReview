@@ -260,6 +260,20 @@ class _ChecksLoader(object):
         ''' Return the Checkdict instance holding all checks. '''
         return self.checkdict
 
+    def get_plugins(self, state='true_or_false'):
+        ''' Return list of groups (i. e., plugins) being active/passive. '''
+        plugins = []
+        for p in self.groups.iterkeys():
+            if state != 'true_or_false':
+                r = self.groups[p]
+                if r.is_user_enabled():
+                    if r.user_enabled_value() != state:
+                        continue
+                elif not bool(r.is_applicable()) == state:
+                    continue
+            plugins.append(p.split('.')[0] if '.' in p else p)
+        return list(set(plugins))
+
 
 class ChecksLister(_ChecksLoader):
     ''' A class only exporting get_checks() and checkdict. '''

@@ -317,6 +317,18 @@ class CheckBuildCompleted(BuildCheckBase):
         self.type = 'EXTRA'
         self.needs = ['CheckInitDeps']
 
+    def setup_attachment(self):
+        ''' Return a setup info attachment. '''
+        plugins = self.checks.get_plugins(True)
+        text = 'Active plugins: ' + ', '.join(plugins) + '\n'
+        plugins = self.checks.get_plugins(False)
+        text += 'Disabled plugins: ' + ', '.join(plugins) + '\n'
+        flags = [f for f in self.checks.flags.iterkeys()
+            if not self.checks.flags[f]]
+        flags = ', '.join(flags) if flags else 'None'
+        text += 'Disabled flags: ' + flags + '\n'
+        return self.Attachment('', text, 10)
+
     def run(self):
         if not Mock.is_available():
             self.set_passed(self.NA)
@@ -334,7 +346,9 @@ class CheckBuildCompleted(BuildCheckBase):
             else:
                 shutil.rmtree('BUILD')
         os.symlink(Mock.get_builddir('BUILD'), 'BUILD')
-        self.set_passed(self.NA)
+        self.log.info('Active plugins: ' +
+                          ', '.join(self.checks.get_plugins(True)))
+        self.set_passed(self.NA, None, [self.setup_attachment()])
 
 
 # vim: set expandtab ts=4 sw=4:
