@@ -13,6 +13,8 @@ class Registry(RegistryBase):
 
     def is_applicable(self):
         """Need more comprehensive check and return True in valid cases"""
+        if self.is_user_enabled():
+            return self.user_enabled_value()
         archs = self.checks.spec.expand_tag('BuildArchs')
         if len(archs) == 1 and archs[0].lower() == 'noarch':
             return False

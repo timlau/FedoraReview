@@ -29,6 +29,8 @@ class Registry(RegistryBase):
     group = 'SugarActivity'
 
     def is_applicable(self):
+        if self.is_user_enabled():
+            return self.user_enabled_value()
         regex = '^/usr/(share|lib|lib64)/sugar/activities/'
         return bool(self.checks.rpms.find(regex))
 

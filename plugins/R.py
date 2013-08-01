@@ -23,6 +23,8 @@ class Registry(RegistryBase):
         """ Check is the tests are applicable, here it checks whether
         it is a R package (spec starts with 'R-') or not.
         """
+        if self.is_user_enabled():
+            return self.user_enabled_value()
         return self.checks.spec.name.startswith("R-")
 
 

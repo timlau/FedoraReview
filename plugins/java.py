@@ -12,6 +12,8 @@ class Registry(RegistryBase):
 
     def is_applicable(self):
         ''' Return True if this is a java package. '''
+        if self.is_user_enabled():
+            return self.user_enabled_value()
         rpms = self.checks.rpms
         return (rpms.find("*.jar") or rpms.find("*.pom") or
                 self.checks.sources.find('pom.xml') or
