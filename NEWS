@@ -11,6 +11,8 @@
 - Preserve modification times when unpacking srpm and rpms (bz 982101).
 - Don't flag remove %buildroot/path as error (bz 972672)
 - Run rpmlint also on srpm (bz 981977)
+- Support display and modification of active plugins, initiated by
+  discussion in bz 989946. Adds plugin and flag feedback to template.
 
 0.4.2
 =====
