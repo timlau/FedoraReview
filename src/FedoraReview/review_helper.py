@@ -120,6 +120,13 @@ class ReviewHelper(object):
             print flag.name + ': ' + flag.doc
 
     @staticmethod
+    def _list_plugins():
+        ''' --display-plugins implementation. '''
+        checks_lister = ChecksLister()
+        plugins = checks_lister.get_plugins()
+        print ', '.join(plugins)
+
+    @staticmethod
     def _list_checks():
         """ List all the checks and flags available.  """
 
@@ -181,6 +188,9 @@ class ReviewHelper(object):
             make_report = False
         elif Settings.version:
             _print_version()
+            make_report = False
+        elif Settings.list_plugins:
+            self._list_plugins()
             make_report = False
         elif Settings.url:
             self.log.info("Processing bug on url: " + Settings.url)

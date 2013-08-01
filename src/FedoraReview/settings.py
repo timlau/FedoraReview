@@ -72,6 +72,9 @@ def _add_modes(modes):
     modes.add_argument('-f', '--display-flags', default = False,
                        action='store_true', dest='list_flags',
                        help='List all available flags.')
+    modes.add_argument('-g', '--display-plugins', default = False,
+                       action='store_true', dest='list_plugins',
+                       help='List all available plugins.')
     modes.add_argument('-V', '--version', default = False,
                        action='store_true',
                        help='Display version information and exit.')
@@ -116,6 +119,11 @@ def _add_optionals(optional):
     optional.add_argument('--other-bz', default=None,
                           metavar='<bugzilla url>', dest='other_bz',
                           help='Alternative bugzilla URL')
+    optional.add_argument('-P', '--plugins',
+                          metavar='<plugin>',
+                          dest='plugins_arg', default = None,
+                          help='List of plugins to enable or disable hard'
+                             ' e. g., "Java:off,C/C++"')
     optional.add_argument('-p', '--prebuilt', action='store_true',
                           dest='prebuilt', default = False,
                           help='When using -n <name>, use'
@@ -150,6 +158,22 @@ def _make_log_dir():
         else:
             raise ReviewError('Cannot create log directory: ' +
                               SESSION_LOG)
+
+
+def _parse_plugins(args):
+    """ Parse plugins_arg and store as dict in plugins. """
+    if not args.plugins_arg:
+        args.plugins = {}
+        return
+    _dict = {}
+    for p in args.plugins_arg.split(','):
+        p = p.strip()
+        if ':' in p:
+            plugin, suffix = p.split(':')
+            _dict[plugin] = False if suffix == 'off' else True
+        else:
+            _dict[p] = True
+    args.plugins = _dict
 
 
 class ColoredFormatter(logging.Formatter):
@@ -272,7 +296,7 @@ class _Settings(object):                         # pylint: disable=R0902,R0924
             args = parser.parse_args()
         except:
             raise self.SettingsError()
-
+        _parse_plugins(args)
         self.add_args(args)
         self.do_logger_setup(logging.DEBUG if args.verbose else None)
         if self.nobuild:

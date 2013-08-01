@@ -322,6 +322,9 @@ class Checks(_ChecksLoader):
         check = self.checkdict[name]
         if check.is_run:
             return False
+        if check.registry.is_user_enabled() and not \
+            check.registry.user_enabled_value():
+                return False
         for dep in check.needs:
             if not dep in self.checkdict:
                 self.log.warning('%s depends on deprecated %s' %
