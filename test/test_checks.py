@@ -52,7 +52,8 @@ class TestChecks(FR_TestCase):
                         ('pending', 'CheckObeysFHS'),
                         ('pass', 'CheckFileRequires'),
                         ('pass', 'CheckUTF8Filenames'),
-                        ('pass', 'RubyCheckRequiresRubyAbi'),
+                        ('fail', 'RubyCheckNotRequiresRubyAbi'),
+                        ('fail', 'RubyCheckRequiresRubyRelease'),
                         ('pending', 'CheckNoConflicts'),
                         ('pass', 'RubyCheckBuildArchitecture'),
                         ('pending', 'CheckTestSuites'),
@@ -165,7 +166,10 @@ class TestChecks(FR_TestCase):
                         ('fail', 'CheckBuildInMock'),
                         ('pending', 'CheckBuildRequires'),
                         ('pending', 'CheckOwnDirs'),
-                        ('pass', 'RubyCheckRequiresRubyAbi'),
+                        ('fail', 'RubyCheckNotRequiresRubyAbi'),
+                        ('fail', 'RubyCheckRequiresRubyRelease'),
+                        ('fail', 'GemCheckGemInstallMacro'),
+                        ('pass', 'GemCheckGemExtdirMacro'),
                         ('pass', 'CheckMakeinstall'),
                         ('pass', 'CheckSourceComment'),
                         ('pending', 'CheckTimeStamps'),
@@ -192,6 +196,17 @@ class TestChecks(FR_TestCase):
                         ('pending', 'CheckChangelogFormat'),
                         ('pass', 'check-large-data'),
                         ('pass', 'check-srv-opt-local')]
+        self.run_spec(spec)
+
+    def test_rubygem_RedCloth(self):
+        ''' Run automated generic + rubygem tests. '''
+        spec = Testspec()
+        spec.args = []
+        spec.testcase = 'rubygem-RedCloth'
+        spec.workdir = 'rubygem-RedCloth'
+        spec.groups_ok = ['Generic.build', 'Generic', 'Generic.should', 'Ruby']
+        spec.expected = [('pass', 'GemCheckGemInstallMacro'),
+                         ('fail', 'GemCheckGemExtdirMacro')]
         self.run_spec(spec)
 
     def test_logback(self):
