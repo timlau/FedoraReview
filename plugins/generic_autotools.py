@@ -99,7 +99,8 @@ class AutotoolsCheckBase(CheckBase):
         am_pkgs = ['automake', 'automake14', 'automake15', 'automake16',
                    'automake17']
         check_for('automake', am_pkgs)
-        check_for('autoconf', ['autoconf', 'autoconf213'])
+        # Re-enable once some autoconf-related checkers are added
+        # check_for('autoconf', ['autoconf', 'autoconf213'])
         check_for('libtool', ['libtool'])
 
         self.log.debug("autotools used: " + ' '.join(self.used_tools))
