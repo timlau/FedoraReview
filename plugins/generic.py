@@ -180,8 +180,8 @@ class CheckBuildRequires(GenericCheckBase):
                 self.set_passed(self.PASS)
         else:
             self.set_passed(self.FAIL,
-                            'The package did not build '
-                            'BR could therefore not be checked or the'
+                            'The package did not build.'
+                            ' BR could therefore not be checked or the'
                             ' package failed to build because of'
                             ' missing BR')
 
