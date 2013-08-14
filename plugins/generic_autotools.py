@@ -152,7 +152,10 @@ class CheckAutotoolsObsoletedMacros(AutotoolsCheckBase):
             return simple
 
         # find traced files
-        src = self.checks.buildsrc
+        if self.checks.buildsrc.is_available:
+            src = self.checks.buildsrc
+        else:
+            src = self.checks.sources
         trace_files = src.find_all('*configure.ac') \
                     + src.find_all('*configure.in')
 
