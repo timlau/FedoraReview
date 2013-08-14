@@ -23,6 +23,7 @@ Tools for helping Fedora package reviewers
 import logging
 import os
 import os.path
+import re
 
 from glob import glob
 from subprocess import call, Popen, PIPE, STDOUT, CalledProcessError
@@ -82,23 +83,29 @@ class _Mock(HelpersMixin):
 
     def _get_prebuilt_macros(self, spec):
         ''' Evaluate macros based on prebuilt packages (#208).'''
+
+        def get_tag(paths):
+            ''' Return common disttag from prebuilt files. '''
+            releases = [p.rsplit('-', 2)[2] for p in paths]
+            releases = [r.rsplit('.', 2)[0] for r in releases]
+            if not len(set(releases)) == 1:
+                raise ReviewError("Prebuilt packages release differs")
+            match = re.search('(fc|el)[0-9][0-9]', releases[0])
+            if not match:
+                raise ReviewError("Illegal prebuilt release: " + releases[0])
+            return match.group()
+
         macros = {}
         paths = self.get_package_rpm_paths(spec)
-        tags = []
-        for path in paths:
-            rel = path.rsplit('-', 2)[2]
-            tags.append(rel.rsplit('.', 3)[1])
-        if len(set(tags)) == 1:
-            if tags[0].startswith('fc'):
-                macros['%fedora'] = tags[0]
-                macros['%epel'] = '%epel'
-            elif tags[0].startswith('el'):
-                macros['%epel'] = tags[0]
-                macros['%fedora'] = '%fedora'
-            else:
-                raise ReviewError("Illegal prebuilt dist: " + tags[0])
+        tag = get_tag(paths)
+        if tag.startswith('fc'):
+            macros['%fedora'] = tag
+            macros['%epel'] = '%epel'
+        elif tag.startswith('el'):
+            macros['%epel'] = tag
+            macros['%fedora'] = '%fedora'
         else:
-            raise ReviewError("Prebuilt packages release differs")
+            raise ReviewError("Illegal prebuilt disttag: " + tag)
         arches = [p.rsplit('.', 2)[1] for p in paths]
         if set(arches) == set(['noarch']):
             buildarch = 'noarch'
