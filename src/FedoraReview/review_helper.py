@@ -19,10 +19,11 @@
 Tools for helping Fedora package reviewers
 '''
 
-import sys
-import os.path
-
 import ansi
+import os.path
+import sys
+import time
+
 from bugzilla_bug import BugzillaBug
 from checks import Checks, ChecksLister
 from mock import Mock
@@ -64,12 +65,16 @@ class ReviewHelper(object):
 
     def _do_report(self, outfile=None):
         ''' Create a review report'''
+        clock = time.clock()
         self.log.info('Getting .spec and .srpm Urls from : '
                        + self.bug.get_location())
 
         Settings.dump()
         if not self.bug.find_urls():
             raise self.HelperError('Cannot find .spec or .srpm URL(s)')
+        self.log.debug("find_urls completed: %.3f"
+                           % (time.clock() - clock))
+        clock = time.clock()
 
         if not ReviewDirs.is_inited:
             wd = self.bug.get_dirname()
@@ -78,6 +83,7 @@ class ReviewHelper(object):
 
         if not self.bug.download_files():
             raise self.HelperError('Cannot download .spec and .srpm')
+        self.log.debug("Url download completed: %.3f" % (time.clock() - clock))
 
         Settings.name = self.bug.get_name()
         self._run_checks(self.bug.spec_file, self.bug.srpm_file, outfile)
@@ -187,6 +193,7 @@ class ReviewHelper(object):
 
     def run(self, outfile=None):
         ''' Load urls, run checks and make report, '''
+        started_at = time.clock()
         self.log.debug('fedora-review ' + __version__ + ' ' +
                          BUILD_FULL + ' started')
         self.log.debug("Command  line: " + ' '.join(sys.argv))
@@ -206,6 +213,8 @@ class ReviewHelper(object):
             self.log.error('Exception down the road...'
                            '(logs in ' + Settings.session_log + ')')
             rcode = 1
+        self.log.debug("Report completed:  %.3f seconds"
+                           % (time.clock() - started_at))
         return rcode
 
 
