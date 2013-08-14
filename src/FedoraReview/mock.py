@@ -200,7 +200,7 @@ class _Mock(HelpersMixin):
             self.log.debug("_topdir: " + str(self._topdir))
         except CalledProcessError:
             self.log.warning("Cannot evaluate %topdir in mock, using"
-                             "hardcoded /builddir/build")
+                             " hardcoded /builddir/build")
             self._topdir = '/builddir/build'
 
     def _clear_rpm_db(self):
