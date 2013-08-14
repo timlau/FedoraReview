@@ -52,7 +52,6 @@ class SpecFile(object):
         def update_macros():
             ''' Update build macros from mock target configuration. '''
             macros = ['%rhel', '%fedora', '%_build_arch', '%_arch']
-            expanded = Mock.rpm_eval(' '.join(macros)).split()
             for macro in macros:
                 expanded = Mock.get_macro(macro, self)
                 if not expanded.startswith('%'):

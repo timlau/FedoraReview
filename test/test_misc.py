@@ -214,6 +214,9 @@ class TestMisc(FR_TestCase):
             def find_all(self, what):
                 return ["configure.ac"] if what.endswith('ac') else []
 
+            def is_available():
+                return True
+
         class ChecksMockup(object):
             pass
 

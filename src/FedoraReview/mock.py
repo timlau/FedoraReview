@@ -74,7 +74,7 @@ class _Mock(HelpersMixin):
         ''' Evaluate macros using rpm in mock. '''
         tags = '%fedora %epel %buildarch %_libdir %_isa %arch'
         macros = {}
-        values = self.rpm_eval(tags).split()
+        values = self._rpm_eval(tags).split()
         taglist = tags.split()
         for i in range(0, len(taglist)):
             macros[taglist[i]] = values[i]
@@ -217,7 +217,13 @@ class _Mock(HelpersMixin):
             paths = glob(os.path.join(self.get_resultdir(), pattern))
         return paths
 
-    # Last (cached?) output from rpmlint, list of lines.
+    def _rpm_eval(self, arg):
+        ''' Run rpm --eval <arg> inside mock, return output. '''
+        cmd = self._mock_cmd()
+        cmd.extend(['--quiet', '--shell', 'rpm --eval \\"' + arg + '\\"'])
+        return check_output(cmd).decode('utf-8').strip()
+
+# Last (cached?) output from rpmlint, list of lines.
     rpmlint_output = property(_get_rpmlint_output)
 
     # The directory where mock leaves built rpms and logs
@@ -294,12 +300,6 @@ class _Mock(HelpersMixin):
         p = self._get_dir(os.path.join('root', self._topdir[1:]))
         return os.path.join(p, subdir) if subdir else p
 
-    def rpm_eval(self, arg):
-        ''' Run rpm --eval <arg> inside mock, return output. '''
-        cmd = self._mock_cmd()
-        cmd.extend(['--quiet', '--shell', 'rpm --eval \\"' + arg + '\\"'])
-        return check_output(cmd).decode('utf-8').strip()
-
     def get_macro(self, macro, spec):
         ''' Return value of one of the system-defined rpm macros. '''
         if not self._macros:
@@ -333,6 +333,15 @@ class _Mock(HelpersMixin):
             self.log.debug('Cannot clear build area: ' + errmsg +
                            ' (ignored)')
         return None
+
+    @staticmethod
+    def is_available():
+        ''' Test if mock command is installed and usable. '''
+        try:
+            check_output(['mock', '--version'])
+            return True
+        except CalledProcessError:
+            return False
 
     def is_installed(self, package):
         ''' Return true iff package is installed in mock chroot. '''
@@ -437,7 +446,7 @@ class _Mock(HelpersMixin):
     def init(self):
         """ Run a mock --init command. """
         try:
-            self.rpm_eval('%{_libdir}')
+            self._rpm_eval('%{_libdir}')
             self.log.debug("Avoiding init of working mock root")
             return
         except CalledProcessError:

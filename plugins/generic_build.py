@@ -318,6 +318,9 @@ class CheckBuildCompleted(BuildCheckBase):
         self.needs = ['CheckInitDeps']
 
     def run(self):
+        if not Mock.is_available():
+            self.set_passed(self.NA)
+            return
         Mock.clear_builddir()
         errmsg = Mock.rpmbuild_bp(self.srpm)
         if errmsg:

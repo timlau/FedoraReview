@@ -79,7 +79,8 @@ class ReviewHelper(object):
         if not ReviewDirs.is_inited:
             wd = self.bug.get_dirname()
             ReviewDirs.workdir_setup(wd)
-        Mock.init()
+        if Mock.is_available():
+            Mock.init()
 
         if not self.bug.download_files():
             raise self.HelperError('Cannot download .spec and .srpm')
@@ -169,6 +170,8 @@ class ReviewHelper(object):
     def _do_run(self, outfile=None):
         ''' Initiate, download url:s, run checks a write report. '''
         Settings.init()
+        if not Mock.is_available() and not Settings.prebuilt:
+            raise ReviewError("Mock unavailable, --prebuilt must be used.")
         make_report = True
         if Settings.list_checks:
             self._list_checks()
