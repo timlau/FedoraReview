@@ -284,6 +284,7 @@ def _create_env(checks):
 
 class Registry(AbstractRegistry):
     ''' Registers all script plugins. '''
+    # pylint: disable=R0201
 
     group = 'Shell-api'
 
@@ -308,6 +309,18 @@ class Registry(AbstractRegistry):
         self.groups = checks.groups
         self.checks = checks
         self.log = Settings.get_logger()
+
+    def is_applicable(self):
+        return True
+
+    def is_user_enabled(self):
+        ''' Not modifiable.... '''
+        return False
+
+    def user_enabled_value(self):
+        ''' The actual value set if is_user_enabled() is True '''
+        self.log.warning("shell-api: illegal user_enabled_value() call")
+        return True
 
     def register(self, plugin):
         ''' Return all available scripts as ShellCheck instances. '''

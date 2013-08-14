@@ -22,6 +22,7 @@ Test module registration support
 import inspect
 
 from review_error import ReviewError
+from settings import Settings
 
 
 class _Flag(object):
@@ -132,6 +133,16 @@ class RegistryBase(AbstractRegistry):
     def find(self, glob_pattern):
         ''' Files in rpms matching glob_pattern. '''
         return self.checks.rpms.find(glob_pattern)
+
+    def is_user_enabled(self):
+        '''' True if this group is enabled/disabled using --plugins. '''
+        g = self.group.split('.')[0] if '.' in self.group else self.group
+        return g in Settings.plugins
+
+    def user_enabled_value(self):
+        '''' The actual value set if is_user_enabled() is True '''
+        g = self.group.split('.')[0] if '.' in self.group else self.group
+        return Settings.plugins[g]
 
 
 # vim: set expandtab ts=4 sw=4:

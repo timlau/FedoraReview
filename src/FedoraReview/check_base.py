@@ -30,10 +30,10 @@ from helpers_mixin import HelpersMixin
 class _Attachment(object):
     """ Text written after the test lines. """
 
-    def __init__(self, header, text, order_hint=10):
+    def __init__(self, header, text, order_hint=8):
         """
         Setup an attachment. Args:
-         -  header: short header, < 40 char.
+         -  header: short header, < 40 char, possibly None.
          -  text: printed as-is.
          -  order_hint: Sorting hint, lower hint goes first.
                 0 <= order_hint <= 10
@@ -44,6 +44,8 @@ class _Attachment(object):
         self.order_hint = order_hint
 
     def __str__(self):
+        if not self.header:
+            return self.text
         s = self.header + '\n'
         s += '-' * len(self.header) + '\n'
         s += self.text
@@ -171,6 +173,7 @@ class GenericCheck(AbstractCheck):
         self.description = 'This test has no description'
         self.type = 'MUST'
         self.needs = ['CheckBuildCompleted']
+        self.attachments = []      # Keep attachments here to support NA
 
     spec       = property(lambda self: self.checks.spec)
     flags      = property(lambda self: self.checks.flags)
@@ -191,6 +194,7 @@ class GenericCheck(AbstractCheck):
         extra output and/or attachments to be shown in repost.
         '''
 
+        self.attachments = attachments if attachments else []
         if result in ['not_applicable', self.NA, None]:
             self.result = None
             return

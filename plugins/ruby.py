@@ -46,6 +46,8 @@ class Registry(RegistryBase):
         """ Check if the tests are applicable, here it checks whether
         it is either ruby or rubygem package
         """
+        if self.is_user_enabled():
+            return self.user_enabled_value()
         return _is_gem(self.checks.spec) or _is_nongem(self.checks.spec)
 
 

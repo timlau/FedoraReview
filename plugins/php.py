@@ -14,6 +14,8 @@ class Registry(RegistryBase):
         """ Check is the tests are applicable, here it checks whether
         it is a PHP package (spec starts with 'php-') or not.
         """
+        if self.is_user_enabled():
+            return self.user_enabled_value()
         return self.checks.spec.name.startswith("php-")
 
 

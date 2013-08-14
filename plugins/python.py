@@ -12,6 +12,8 @@ class Registry(RegistryBase):
 
     def is_applicable(self):
         ''' Return true if this is a python package. '''
+        if self.is_user_enabled():
+            return self.user_enabled_value()
         return self.checks.spec.name.startswith("python") or \
            self.checks.rpms.find('*.pyc')
 

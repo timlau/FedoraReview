@@ -83,6 +83,9 @@ List all available checks, usable as arguments to --exclude and
 .B  -f, --display-flags
 List all available flags, usable as arguments to --define or -D.
 .TP 4
+.B  -g, --display-plugins
+List all plugins which can be enabled/disabled using --plugins.
+.TP 4
 .B  -V, --version
 Show version info
 .SH GENERAL OPTIONS
@@ -133,6 +136,18 @@ https://bugzilla.redhat.com
 .B -p, --prebuilt
 When using -n <name>, use prebuilt rpms in current directory instead
 of building new ones in mock
+.TP 4
+.B -P, --plugins
+Normally, the right plugin(s) to run are autodetected. Using --plugins
+overrides the decision to run a plugin or not. The argument is a
+comma-separated list of plugins, each possibly with a :off suffix e. g.,
+.IP "" 8
+--plugins Java:off,C/C++
+.PP
+.IP "" 4
+Use --display-plugins to see available plugins. Enabling plugins has no 
+well-defined semantics: some tests might leave no trace in the report
+even though they are actually run.
 .TP 4
 .B -r, --rpm-spec
 Instead of using a spec file URL, use the spec file bundled in the srpm file.

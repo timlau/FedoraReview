@@ -199,7 +199,7 @@ class _Mock(HelpersMixin):
             self._topdir = check_output(cmd).strip()
             self.log.debug("_topdir: " + str(self._topdir))
         except CalledProcessError:
-            self.log.warning("Cannot evaluate %topdir in mock, using"
+            self.log.info("Cannot evaluate %topdir in mock, using"
                              " hardcoded /builddir/build")
             self._topdir = '/builddir/build'
 
