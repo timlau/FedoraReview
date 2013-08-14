@@ -347,7 +347,7 @@ class Checks(_ChecksLoader):
                 return
             self.log.debug('Running check: ' + name)
             check.run()
-            now = time.clock()
+            now = time.time()
             self.log.debug('    %s completed: %.3f seconds'
                                % (name, (now - self._clock)))
             self._clock = now
@@ -366,7 +366,7 @@ class Checks(_ChecksLoader):
         names = list(self.checkdict.iterkeys())
 
         tests_to_run = filter(self._ready_to_run, names)
-        self._clock = time.clock()
+        self._clock = time.time()
         while tests_to_run != []:
             for name in tests_to_run:
                 run_check(name)
