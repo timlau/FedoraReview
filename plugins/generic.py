@@ -60,7 +60,10 @@ class Registry(RegistryBase):
 
     def register_flags(self):
         epel5 = self.Flag('EPEL5', 'Review package for EPEL5', __file__)
+        disttag = self.Flag('DISTTAG', 'Default disttag e. g. "fc21".',
+                            __file__)
         self.checks.flags.add(epel5)
+        self.checks.flags.add(disttag)
 
     def is_applicable(self):
         return True
@@ -1511,7 +1514,7 @@ class CheckGioQueryModules(GenericCheckBase):
     def run(self):
         using = []
         failed = False
-        libdir = Mock.get_macro('%_libdir', self.spec)
+        libdir = Mock.get_macro('%_libdir', self.spec, self.flags)
         gio_pattern = os.path.join(libdir, 'gio/modules/', '*')
         for pkg in self.spec.packages:
             if self.rpms.find(gio_pattern, pkg):
@@ -1541,7 +1544,7 @@ class CheckGtkQueryModules(GenericCheckBase):
     def run(self):
         using = []
         failed = False
-        libdir = Mock.get_macro('%_libdir', self.spec)
+        libdir = Mock.get_macro('%_libdir', self.spec, self.flags)
         pattern = os.path.join(libdir, 'gtk-3.0/', '*')
         for pkg in self.spec.packages:
             if self.rpms.find(pattern, pkg):

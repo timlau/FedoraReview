@@ -293,14 +293,14 @@ class Checks(_ChecksLoader):
         ''' Create a Checks set. srpm_file and spec_file are required,
         unless invoked from ChecksLister.
         '''
-        self.spec = SpecFile(spec_file)
+        _ChecksLoader.__init__(self)
+        self.spec = SpecFile(spec_file, self.flags)
         self.srpm = SRPMFile(srpm_file)
         self.data = self.Data()
         self.data.rpms = RpmDataSource(self.spec)
         self.data.buildsrc = BuildFilesSource()
         self.data.sources = SourcesDataSource(self.spec)
         self._clock = None
-        _ChecksLoader.__init__(self)
 
     rpms = property(lambda self: self.data.rpms)
     sources = property(lambda self: self.data.sources)

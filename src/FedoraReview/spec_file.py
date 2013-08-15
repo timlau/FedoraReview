@@ -47,13 +47,13 @@ class SpecFile(object):
     '''
     # pylint: disable=W0212
 
-    def __init__(self, filename):
+    def __init__(self, filename, flags=None):
 
         def update_macros():
             ''' Update build macros from mock target configuration. '''
             macros = ['%rhel', '%fedora', '%_build_arch', '%_arch']
             for macro in macros:
-                expanded = Mock.get_macro(macro, self)
+                expanded = Mock.get_macro(macro, self, flags)
                 if not expanded.startswith('%'):
                     rpm.addMacro(macro, expanded)
 

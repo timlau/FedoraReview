@@ -58,6 +58,57 @@ def _run_script(script):
     return True, output
 
 
+def _get_tag(paths):
+    ''' Return common disttag from prebuilt files. '''
+    releases = [p.rsplit('-', 2)[2] for p in paths]
+    releases = [r.rsplit('.', 2)[0] for r in releases]
+    if not len(set(releases)) == 1:
+        raise ReviewError("Prebuilt packages release differs")
+    match = re.search('(fc|el)[0-9][0-9]', releases[0])
+    return match.group() if match else ''
+
+
+def _get_tag_from_flags(self, flags):
+    ''' Retrieve disttag from user defined falg value. '''
+    if flags['DISTTAG']:
+        self.log.info("Using disttag from DISTTAG flag.")
+        return flags['DISTTAG'].value
+    self.log.warning('No disttag found in prebuilt packages')
+    self.log.info('Use --define DISTTAG to set proper dist.'
+                  ' e. g. --define DISTTAG fc21.')
+    raise ReviewError('No disttag in package and no DISTTAG flag.'
+                      ' Use --define DISTTAG to set proper dist'
+                      ' e. g., --define DISTTAG=fc21.')
+
+
+def _add_disttag_macros(macros, tag):
+    ''' Add macros derived from disttag. '''
+    if tag.startswith('el'):
+        macros['%epel'] = tag
+        macros['%fedora'] = '%fedora'
+    else:
+        macros['%fedora'] = tag
+        macros['%epel'] = '%epel'
+    return macros
+
+
+def _add_buildarch_macros(macros, paths):
+    ''' Add macros derived from buildarch. '''
+    arches = [p.rsplit('.', 2)[1] for p in paths]
+    if set(arches) == set(['noarch']):
+        buildarch = 'noarch'
+    else:
+        buildarch = [a for a in arches if not a is 'noarch'][0]
+    macros['%buildarch'] = buildarch
+    if buildarch == 'x86_64':
+        macros['%_libdir'] = '/usr/lib64'
+        macros['%_isa'] = '(x86-64)'
+    else:
+        macros['%_libdir'] = '/usr/lib'
+        macros['%_isa'] = '(x86-32)'
+    return buildarch, macros
+
+
 class _Mock(HelpersMixin):
     """ Some basic operations on the mock chroot env, a singleton. """
     # pylint: disable=R0904
@@ -81,43 +132,15 @@ class _Mock(HelpersMixin):
             macros[taglist[i]] = values[i]
         return macros
 
-    def _get_prebuilt_macros(self, spec):
+    def _get_prebuilt_macros(self, spec, flags):
         ''' Evaluate macros based on prebuilt packages (#208).'''
 
-        def get_tag(paths):
-            ''' Return common disttag from prebuilt files. '''
-            releases = [p.rsplit('-', 2)[2] for p in paths]
-            releases = [r.rsplit('.', 2)[0] for r in releases]
-            if not len(set(releases)) == 1:
-                raise ReviewError("Prebuilt packages release differs")
-            match = re.search('(fc|el)[0-9][0-9]', releases[0])
-            if not match:
-                raise ReviewError("Illegal prebuilt release: " + releases[0])
-            return match.group()
-
-        macros = {}
         paths = self.get_package_rpm_paths(spec)
-        tag = get_tag(paths)
-        if tag.startswith('fc'):
-            macros['%fedora'] = tag
-            macros['%epel'] = '%epel'
-        elif tag.startswith('el'):
-            macros['%epel'] = tag
-            macros['%fedora'] = '%fedora'
-        else:
-            raise ReviewError("Illegal prebuilt disttag: " + tag)
-        arches = [p.rsplit('.', 2)[1] for p in paths]
-        if set(arches) == set(['noarch']):
-            buildarch = 'noarch'
-        else:
-            buildarch = [a for a in arches if not a is 'noarch'][0]
-        macros['%buildarch'] = buildarch
-        if buildarch == 'x86_64':
-            macros['%_libdir'] = '/usr/lib64'
-            macros['%_isa'] = '(x86-64)'
-        else:
-            macros['%_libdir'] = '/usr/lib'
-            macros['%_isa'] = '(x86-32)'
+        tag = _get_tag(paths)
+        if not tag.startswith('fc') and not tag.startswith('el'):
+            tag = _get_tag_from_flags(self, flags)
+        macros = _add_disttag_macros({}, tag)
+        buildarch, macros = _add_buildarch_macros(macros, paths)
         try:
             _arch = check_output('rpm --eval %_arch'.split()).strip()
         except CalledProcessError:
@@ -307,11 +330,11 @@ class _Mock(HelpersMixin):
         p = self._get_dir(os.path.join('root', self._topdir[1:]))
         return os.path.join(p, subdir) if subdir else p
 
-    def get_macro(self, macro, spec):
+    def get_macro(self, macro, spec, flags):
         ''' Return value of one of the system-defined rpm macros. '''
         if not self._macros:
             if Settings.prebuilt:
-                self._macros = self._get_prebuilt_macros(spec)
+                self._macros = self._get_prebuilt_macros(spec, flags)
             else:
                 self._macros = self._get_default_macros()
         key = macro if macro.startswith('%') else '%' + macro
