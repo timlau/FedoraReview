@@ -60,7 +60,8 @@ class CheckLDConfig(CCppCheckBase):
         ''' Run the test, called if is_applicable() is True. '''
         bad_pkgs = []
         for pkg in self.spec.packages:
-            rpm = RpmFile(pkg, self.spec.version, self.spec.release)
+            nvr = self.spec.get_package_nvr(pkg)
+            rpm = RpmFile(pkg, nvr.version, nvr.release)
             if not self.rpms.find_re(self.sofiles_regex, pkg):
                 continue
             if not rpm.post or not '/sbin/ldconfig' in rpm.post or \

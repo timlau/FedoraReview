@@ -281,19 +281,20 @@ class _Mock(HelpersMixin):
         else:
             return ReviewDirs.results
 
-    def get_package_rpm_path(self, pkg_name, rpm_or_spec):
+    def get_package_rpm_path(self, nvr):
         '''
         Return path to generated pkg_name rpm, throws ReviewError
-        on missing or multiple matches
+        on missing or multiple matches. Argument should have
+        have name, version and release attributes.
         '''
-        pattern = '%s-%s*' % (pkg_name, rpm_or_spec.version)
+        pattern = '%s-%s*' % (nvr.name, nvr.version)
         paths = self._get_rpm_paths(pattern)
         paths = filter(lambda p: p.endswith('.rpm')
                        and not p.endswith('.src.rpm'), paths)
         if len(paths) == 0:
-            raise ReviewError('No built package found for ' + pkg_name)
+            raise ReviewError('No built package found for ' + nvr.name)
         elif len(paths) > 1:
-            raise ReviewError('Multiple packages found for ' + pkg_name)
+            raise ReviewError('Multiple packages found for ' + nvr.name)
         else:
             return paths[0]
 
@@ -317,7 +318,8 @@ class _Mock(HelpersMixin):
 
         result = []
         for pkg in spec.packages:
-            result.append(self.get_package_rpm_path(pkg, spec))
+            nvr = spec.get_package_nvr(pkg)
+            result.append(self.get_package_rpm_path(nvr))
         if with_srpm:
             result.append(get_package_srpm_path(spec))
         return result

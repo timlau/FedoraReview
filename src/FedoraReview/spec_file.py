@@ -77,8 +77,9 @@ class SpecFile(object):
 
         def check_pkg_path(pkg):
             ''' Check that pkg is available (built or supplied w -p).'''
+            nvr = self.get_package_nvr(pkg)
             try:
-                return Mock.get_package_rpm_path(pkg, self)
+                return Mock.get_package_rpm_path(nvr)
             except ReviewError:
                 self.log.warning("Package %s not built" % pkg)
                 return None
@@ -228,6 +229,21 @@ class SpecFile(object):
         ''' Return list of requirements i. e., Requires: '''
         package = self._get_pkg_by_name(pkg_name)
         return package.header[rpm.RPMTAG_REQUIRES]
+
+    def get_package_nvr(self, pkg_name=None):
+        ''' Return object with name, version, release for a package. '''
+        # pylint: disable=W0201
+
+        class NVR(object):
+            ''' Simple name-version-release container. '''
+            pass
+
+        package = self._get_pkg_by_name(pkg_name)
+        nvr = NVR()
+        nvr.version = package.header[rpm.RPMTAG_VERSION]
+        nvr.release = package.header[rpm.RPMTAG_RELEASE]
+        nvr.name = package.header[rpm.RPMTAG_NAME]
+        return nvr
 
     def get_files(self, pkg_name=None):
         ''' Return %files section for base or specified package.

@@ -724,7 +724,8 @@ class CheckLicensInDoc(GenericCheckBase):
 
         docs = []
         for pkg in self.spec.packages:
-            rpm_path = Mock.get_package_rpm_path(pkg, self.spec)
+            nvr = self.spec.get_package_nvr(pkg)
+            rpm_path = Mock.get_package_rpm_path(nvr)
             cmd = 'rpm -qldp ' + rpm_path
             doclist = check_output(cmd.split())
             docs.extend(doclist.split())

@@ -70,7 +70,7 @@ class RpmFile(object):
         ''' Lazy init, we have no rpms until they are built. '''
         if self._inited:
             return
-        self.filename = Mock.get_package_rpm_path(self.name, self)
+        self.filename = Mock.get_package_rpm_path(self)
         fd = os.open(self.filename, os.O_RDONLY)
         self.header = rpm.TransactionSet().hdrFromFdno(fd)
         os.close(fd)

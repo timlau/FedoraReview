@@ -163,7 +163,8 @@ class CheckBuild(BuildCheckBase):
             ''' Generate listing of dirs and files in each package. '''
             with open('files.dir', 'w') as f:
                 for pkg in self.spec.packages:
-                    path = Mock.get_package_rpm_path(pkg, self.spec)
+                    nvr = self.spec.get_package_nvr(pkg)
+                    path = Mock.get_package_rpm_path(nvr)
                     dirs, files = deps.listpaths(path)
                     f.write(pkg + '\n')
                     f.write('=' * len(pkg) + '\n')
@@ -232,7 +233,8 @@ class CheckPackageInstalls(BuildCheckBase):
         bad_ones = []
         for pkg in self.spec.packages:
             try:
-                Mock.get_package_rpm_path(pkg, self.spec)
+                nvr = self.spec.get_package_nvr(pkg)
+                Mock.get_package_rpm_path(nvr)
             except ReviewError:
                 bad_ones.append(pkg)
         return bad_ones

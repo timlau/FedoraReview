@@ -210,8 +210,8 @@ class RpmDataSource(AbstractDataSource):
         self.containers = self.spec.packages
         self.rpms_by_pkg = {}
         for pkg in self.spec.packages:
-            self.rpms_by_pkg[pkg] = \
-                RpmFile(pkg, self.spec.version, self.spec.release)
+            nvr = self.spec.get_package_nvr(pkg)
+            self.rpms_by_pkg[pkg] = RpmFile(pkg, nvr.version, nvr.release)
 
     def get_filelist(self, container=None):
         self.init()
