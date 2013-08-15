@@ -177,8 +177,6 @@ class ReviewHelper(object):
     def _do_run(self, outfile=None):
         ''' Initiate, download url:s, run checks a write report. '''
         Settings.init()
-        if not Mock.is_available() and not Settings.prebuilt:
-            raise ReviewError("Mock unavailable, --prebuilt must be used.")
         make_report = True
         if Settings.list_checks:
             self._list_checks()
@@ -202,6 +200,8 @@ class ReviewHelper(object):
             self.log.info("Processing local files: " + Settings.name)
             self.bug = NameBug(Settings.name)
         if make_report:
+            if not Mock.is_available() and not Settings.prebuilt:
+                raise ReviewError("Mock unavailable, --prebuilt must be used.")
             self._do_report(outfile)
 
     def run(self, outfile=None):
