@@ -1,46 +1,59 @@
 dist-check README
+-----------------
 
 Here are two scripts which together will run fedora-review on all packages.
 It takes a long, long time but seems to work somehow.
 
 The basic idea is that we need to
-- List all packages (done from the webpages).
+- List all packages (done from the webpages, code from url_bug).
 - Find out the srpm for each package and lump package(s) and srpm together
+  (repoquery)
 - Download the packages when it's time for review, in parallel with
   review work.
 - Discard all downloaded packages when the review goes well.
 
 The first script is dist-check-setup. It will create a directory for each
-source package. In the directory are references to all package built from the
-source. This is not big (~100 MB) and can be reused.
+source package. In the directory are references to all packages built from
+the source. This is not big (<100 MB) and can be reused.
 
-Second script is dist-check-run. It will download packages and run 
-fedora-review on them. It wants a list of directories created by 
+Second script is dist-check-run. It will download packages and run
+fedora-review on them. It wants a list of directories created by
 dist-check-setup on stdin.
 
-You probably want to use  export REVIEW_LOGLEVEL=warning to decrease
+Usage
+-----
+
+The way I use it is to create a subdir under dist-check and run the scripts
+there:
+    $ cd dist-check
+    $ mkdir  work
+    $ cd work
+    $ ../dist-check-setup # wait for hours
+    $ ls | ../dist-check-run |& tee run.log  # wait for days...
+
+You probably want to use "export REVIEW_LOGLEVEL=warning" to decrease the
 noise.
 
-To optimize you can skip the CheckInitDeps test (takes long time). If so
-you need a manual init first:
-     $yum makecache
-
-You probably also want to disable mock:
-     $ mkdir bin
-     $ cat > bin/mock << EOF
-#!/bin/sh
-exit 1
-EOF
-     $ chmod 755 bin/mock
-     $ export PATH=$PWD/bin:$PATH
+Also you might want to disable mock (speeds up). Do so by including
+dist-check/bin in PATH in the beginning, so f-r finds "our" mock mock (sic!)
+instead of /usr/bin/mock. See run-dir for examples
 
 If you get signing errors for the rawhide packages you will find the keys
 to install in the generic-release package (also in rawhide!)
 
-Other run instructions in dist-check-run.py.
+
+Post checks:
+-----------
+
+dist-check-run creates a pkg.results dir for each run with review template
+and logfile.
+
+If you want to re-run a directory after patching f-r there is scripts to
+download rpms and run f-r (download-dir + run-dir)
 
 Oneliners:
+----------
 
 All timing info in a logfile, sorted:
-    $ grep ted: pkg.results/fedora-review.log | sort -n -t : -k 3 -r 
+    $ grep ted: pkg.results/fedora-review.log | sort -n -t : -k 3 -r
 

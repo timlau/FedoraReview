@@ -23,7 +23,7 @@ YUM_CMD = "yum --disablerepo=* --enablerepo=fedora* --releasever=rawhide"
 BASE_URL = 'https://dl.fedoraproject.org/pub' \
                 '/fedora/linux/development/rawhide/%s/os/Packages' % ARCH
 REPOQUERY_CMD = "repoquery --disablerepo=* --enablerepo=fedora*" \
-                    " --releasever=rawhide --archlist=%s" % ARCH
+                    " --releasever=rawhide "
 
 
 def find_subdirs(url):

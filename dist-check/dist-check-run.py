@@ -103,7 +103,7 @@ def run_review(pkg):
     cmd += "CheckRpmlintInstalled,"
     cmd += "CheckNoNameConflict,"
     cmd += "CheckOwnDirs,"
-    cmd += "CheckInitdeps,"
+    cmd += "CheckInitDeps,"
     cmd += "CheckRpmlint"
     try:
         subprocess.check_call(cmd.split())
