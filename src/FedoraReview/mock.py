@@ -228,7 +228,7 @@ class _Mock(HelpersMixin):
         try:
             self._topdir = check_output(cmd).strip()
             self.log.debug("_topdir: " + str(self._topdir))
-        except CalledProcessError:
+        except (CalledProcessError, OSError):
             self.log.info("Cannot evaluate %topdir in mock, using"
                              " hardcoded /builddir/build")
             self._topdir = '/builddir/build'
@@ -372,7 +372,7 @@ class _Mock(HelpersMixin):
         try:
             check_output(['mock', '--version'])
             return True
-        except CalledProcessError:
+        except (CalledProcessError, OSError):
             return False
 
     def is_installed(self, package):
