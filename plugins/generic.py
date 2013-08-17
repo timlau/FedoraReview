@@ -1470,10 +1470,10 @@ class CheckUpdateDesktopDatabase(GenericCheckBase):
 
         def has_mimetype(pkg, fname):
             ''' Return True if the file fname contains a MimeType entry. '''
-            version = self.spec.expand_tag('Version')
+            nvr = self.spec.get_package_nvr(pkg)
             rpm_dirs = glob(os.path.join(ReviewDirs.root,
                                         'rpms-unpacked',
-                                        pkg + '-' + version + '*'))
+                                        pkg + '-' + nvr.version + '*'))
             with open(os.path.join(rpm_dirs[0], fname[1:])) as f:
                 for line in f.readlines():
                     if line.strip().lower().startswith('mimetype'):
