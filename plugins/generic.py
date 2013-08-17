@@ -1474,7 +1474,10 @@ class CheckUpdateDesktopDatabase(GenericCheckBase):
             rpm_dirs = glob(os.path.join(ReviewDirs.root,
                                         'rpms-unpacked',
                                         pkg + '-' + nvr.version + '*'))
-            with open(os.path.join(rpm_dirs[0], fname[1:])) as f:
+            path = os.path.join(rpm_dirs[0], fname[1:])
+            if os.path.isdir(path):
+                return False
+            with open(path) as f:
                 for line in f.readlines():
                     if line.strip().lower().startswith('mimetype'):
                         return True
