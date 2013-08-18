@@ -172,8 +172,11 @@ class AbstractBug(HelpersMixin):
         self.do_download_srpm()
 
         SRPMFile(self.srpm_file).unpack()
-        path = glob(os.path.join(ReviewDirs.srpm_unpacked,
-                                 name + '*.spec'))[0]
+        try:
+            path = glob(os.path.join(ReviewDirs.srpm_unpacked,
+                                     name + '*.spec'))[0]
+        except IndexError:
+            raise ReviewError("Cannot find spec file in srpm")
         self.spec_file = path
         self.spec_url = 'file://' + path
 
