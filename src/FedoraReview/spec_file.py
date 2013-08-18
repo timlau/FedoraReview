@@ -137,6 +137,7 @@ class SpecFile(object):
 
     def _parse_files_pkg_name(self, line):
         ''' Figure out the package name in a %files line. '''
+        line = rpm.expandMacro(line)
         tokens = line.split()
         assert tokens.pop(0) == '%files'
         while tokens:
