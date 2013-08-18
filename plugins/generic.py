@@ -1477,6 +1477,9 @@ class CheckUpdateDesktopDatabase(GenericCheckBase):
             path = os.path.join(rpm_dirs[0], fname[1:])
             if os.path.isdir(path):
                 return False
+            elif not os.path.exists(path):
+                self.log.warning("Can't access desktop file: " + path)
+                return False
             with open(path) as f:
                 for line in f.readlines():
                     if line.strip().lower().startswith('mimetype'):
