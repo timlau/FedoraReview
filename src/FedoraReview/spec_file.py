@@ -127,8 +127,12 @@ class SpecFile(object):
             if _type != srctype:
                 continue
             tag = srctype + str(num)
-            result[tag] = \
-                self.spec.sourceHeader.format(urllib.unquote(url))
+            try:
+                result[tag] = \
+                    self.spec.sourceHeader.format(urllib.unquote(url))
+            except Exception:
+                raise ReviewError("Cannot parse %s url %s"
+                                       % (tag, url))
         return result
 
     def _parse_files_pkg_name(self, line):
