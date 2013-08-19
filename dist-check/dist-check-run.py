@@ -78,7 +78,8 @@ def download_urls(pkg):
         logging.warning("Download error on %s: %s" % (pkg, error.__str__()))
         with open(pkg + '/urlerror', 'w') as f:
             f.write(error.__str__())
-
+        for rpm in glob(pkg + '/*.rpm'):
+            os.unlink(rpm)
     logging.info("Done: downloading URL:s for " + pkg)
 
 
@@ -97,6 +98,7 @@ def run_review(pkg):
     os.environ['XDG_CACHE_HOME'] = os.getcwd()
     cmd = "try-fedora-review -B -rpn  %s " % srpm
     cmd += "-m fedora-rawhide-%s " % ARCH
+    cmd += "-D DISTTAG=fc20 "
     cmd += '-x '
     cmd += "CheckBuild,"
     cmd += "CheckPackageInstalls,"

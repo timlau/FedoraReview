@@ -3,7 +3,7 @@
 # Run f-r in a directory created by dist-check-setup and with
 # everything downloaded e. g. using download-dir.
 
-
+readonly DISTTAG='fc20'
 export XDG_CACHE_HOME=$PWD
 export REVIEW_LOGLEVEL=${REVIEW_LOGLEVEL:-info}
 [ -x ../../bin/mock ] && export PATH="../../bin:$PATH"
@@ -16,5 +16,5 @@ my_skipped="$my_skipped,CheckRpmlint"
 echo PATH: $PATH
 
 try-fedora-review -rpn ${PWD##*/} -m fedora-rawhide-$arch \
-    -x ${REVIEW_SKIP:-$my_skipped}
+    -x ${REVIEW_SKIP:-$my_skipped} -D DISTTAG=fc20
 
