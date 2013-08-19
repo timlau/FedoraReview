@@ -30,7 +30,7 @@ function irc_log()
     echo "Sending build complete message: $*"
     python << EOF
 import socket
-s = socket.create_connection(("mumin.dnsalias.net",12345))
+s = socket.create_connection(("mumin.crabdance.com",12345))
 s.send("${IRC_MSG_PREFIX}$*")
 s.send('\n')
 s.close()
