@@ -13,6 +13,13 @@
 - Run rpmlint also on srpm (bz 981977)
 - Support display and modification of active plugins, initiated by
   discussion in bz 989946. Adds plugin and flag feedback to template.
+  New --display-plugins and --plugins options.
+- Stability tested on > 12000 packages. Fixes
+    + corner case  .desktop files (544eca2, 18cc82f)
+    + macros in %files line (7566e91)
+    + subpackages with version <> base package (4a6597a).
+- New DISTFLAG used when disttag can't be deduced from prebuilt
+  packages (09304f2).
 
 0.4.2
 =====
