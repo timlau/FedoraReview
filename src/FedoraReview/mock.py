@@ -59,11 +59,11 @@ def _run_script(script):
 
 
 def _get_tag(paths):
-    ''' Return common disttag from prebuilt files. '''
+    ''' Return common disttag from prebuilt files, possibly "" '''
     releases = [p.rsplit('-', 2)[2] for p in paths]
     releases = [r.rsplit('.', 2)[0] for r in releases]
     if not len(set(releases)) == 1:
-        raise ReviewError("Prebuilt packages release differs")
+        return ""
     match = re.search('(fc|el)[0-9][0-9]', releases[0])
     return match.group() if match else ''
 
