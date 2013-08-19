@@ -15,9 +15,9 @@ class Registry(RegistryBase):
         if self.is_user_enabled():
             return self.user_enabled_value()
         rpms = self.checks.rpms
-        return (rpms.find("*.jar") or rpms.find("*.pom") or
-                self.checks.sources.find('pom.xml') or
-                self.checks.sources.find('*.java'))
+        return (rpms.find("*.pom") or rpms.find("pom.xml") or
+                rpms.find("*.class") or rpms.find("*.jar") or
+                rpms.find("*.ear") or rpms.find("*.war"))
 
 
 class JavaCheckBase(CheckBase):
