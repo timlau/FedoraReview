@@ -60,7 +60,10 @@ class SpecFile(object):
         self.log = Settings.get_logger()
         self.filename = filename
         self.lines = []
-        self.spec = rpm.TransactionSet().parseSpec(self.filename)
+        try:
+            self.spec = rpm.TransactionSet().parseSpec(self.filename)
+        except Exception as ex:
+            raise ReviewError("Can't parse specfile: " + ex.__str__())
         self.name_vers_rel = [self.expand_tag(rpm.RPMTAG_NAME),
                               self.expand_tag(rpm.RPMTAG_VERSION),
                               self.expand_tag(rpm.RPMTAG_RELEASE)]
