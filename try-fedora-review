@@ -15,7 +15,7 @@
 import os
 import os.path
 import sys
-import subprocess 
+import subprocess
 
 main_dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -48,4 +48,5 @@ subprocess.call(['ln', '-s', '../../git-hooks/post-commit',
                  stderr=devnull)
 
 review = ReviewHelper()
-review.run()
+rc = review.run()
+sys.exit(rc)
