@@ -38,6 +38,23 @@ from xdg_dirs import XdgDirs
 
 
 HEADER = """
+This is a review *template*. Besides handling the [ ]-marked tests you are
+also supposed to fix the template before pasting into bugzilla:
+- Add issues you find to the list of issues on top. If there isn't such
+  a list, create one.
+- Add your own remarks to the template checks.
+- Add new lines marked [!] or [?] when you discover new things not
+  listed by fedora-review.
+- Change or remove any text in the template which is plain wrong. In this
+  case you could also file a bug against fedora-review
+- Remove the "[ ] Manual check required", you will not have any such lines
+  in what you paste.
+- Remove attachments which you deem not really useful (the rpmlint
+  ones are mandatory, though)
+- Remove this text
+
+
+
 Package Review
 ==============
 
