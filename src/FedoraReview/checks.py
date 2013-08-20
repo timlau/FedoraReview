@@ -23,6 +23,8 @@ This module contains misc helper funtions and classes
 import os
 import sys
 import time
+import xml.etree.ElementTree as ET
+import xml.dom.minidom
 
 from glob import glob
 from operator import attrgetter
@@ -34,6 +36,7 @@ from srpm_file import SRPMFile
 from spec_file import SpecFile
 from review_dirs import ReviewDirs
 from review_error import ReviewError
+from version import __version__, BUILD_FULL
 from xdg_dirs import XdgDirs
 
 
@@ -410,11 +413,55 @@ class Checks(_ChecksLoader):
                              sorted(results, key=key_getter),
                              issues,
                              attachments)
+            self.write_xml_report(results)
         else:
             with open('.testlog.txt', 'w') as f:
                 for r in results:
                     f.write('\n' + 24 * ' '
                             + "('%s', '%s')," % (r.state, r.name))
+
+    def write_xml_report(self, results):
+        ''' Create the firehose-compatible xml report, see
+            https://github.com/fedora-static-analysis/firehose/
+        '''
+
+        def create_xmltree(spec):
+            ''' Create the basic xml report complete with <metadata>. '''
+            root = ET.Element('analysis')
+            metadata = ET.SubElement(root, 'metadata')
+            ET.SubElement(metadata,
+                          'generator',
+                          {'name': 'fedora-review',
+                           'version': __version__,
+                           'build': BUILD_FULL})
+            sut = ET.SubElement(metadata, 'sut')
+            nvr = {'name': spec.name,
+                   'version': spec.version,
+                   'release': spec.release}
+            ET.SubElement(sut, 'source-rpm', nvr)
+            ET.SubElement(root, 'results')
+            return root
+
+        def add_xml_result(root, result):
+            ''' Add a failed result to the xml report as a <result> tag. '''
+            results = root.find('results')
+            xml_result = ET.SubElement(results,
+                                        'issue',
+                                        {'test-id': result.check.name})
+            message = ET.SubElement(xml_result, 'message')
+            message.text = result.text
+            if result.output_extra:
+                notes = ET.SubElement(xml_result, 'notes')
+                notes.text = result.output_extra
+            return root
+
+        root = create_xmltree(self.spec)
+        for result in results:
+            if result.check.is_failed:
+                root = add_xml_result(root, result)
+        dom = xml.dom.minidom.parseString(ET.tostring(root))
+        with open('report.xml', 'w') as f:
+            f.write(dom.toprettyxml(indent='    '))
 
     @staticmethod
     def show_output(output, results, issues, attachments):
