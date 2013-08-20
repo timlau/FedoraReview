@@ -39,6 +39,8 @@ from review_error import ReviewError
 from version import __version__, BUILD_FULL
 from xdg_dirs import XdgDirs
 
+_BATCH_EXCLUDED = 'CheckBuild,CheckPackageInstalls,CheckRpmlintInstalled,' \
+    'CheckNoNameConflict,CheckInitDeps,CheckRpmlint'
 
 HEADER = """
 This is a review *template*. Besides handling the [ ]-marked tests you are
@@ -228,6 +230,8 @@ class _ChecksLoader(object):
         elif Settings.exclude:
             self.exclude_checks(Settings.exclude)
         self._update_flags()
+        if self.flags['BATCH']:
+            self.exclude_checks(_BATCH_EXCLUDED)
 
     def _update_flags(self):
         ''' Update registered flags with user -D settings. '''
