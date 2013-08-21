@@ -109,14 +109,8 @@ def do_run_review(pkg):
     cmd = "try-fedora-review -B -rpn  %s " % srpm
     cmd += "-m fedora-rawhide-%s " % ARCH
     cmd += "-D DISTTAG=fc20 "
-    cmd += '-x '
-    cmd += "CheckBuild,"
-    cmd += "CheckPackageInstalls,"
-    cmd += "CheckRpmlintInstalled,"
-    cmd += "CheckNoNameConflict,"
-    cmd += "CheckOwnDirs,"
-    cmd += "CheckInitDeps,"
-    cmd += "CheckRpmlint"
+    cmd += "-D BATCH "
+    cmd += '-x CheckNoNameConflict,CheckOwnDirs'
     ok = True
     try:
         subprocess.check_call(cmd.split())
@@ -128,7 +122,9 @@ def do_run_review(pkg):
         if os.path.exists(resultdir):
             shutil.rmtree(resultdir)
         os.mkdir(resultdir)
-        for f in [pkg + '/review.txt', 'fedora-review.log']:
+        for f in [pkg + '/review.txt',
+                  'fedora-review.log',
+                  pkg + '/report.xml']:
             if os.path.exists(f):
                 shutil.move(f, resultdir)
         shutil.rmtree(pkg)
