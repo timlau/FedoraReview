@@ -1488,17 +1488,14 @@ class CheckUpdateDesktopDatabase(GenericCheckBase):
 
         using = []
         failed = False
-        install = self.spec.get_section('%install', raw=True)
-        if not install:
-            self.set_passed(self.NA)
-            return
-
         for pkg in self.spec.packages:
             dt_files = self.rpms.find_all('*.desktop', pkg)
             dt_files = [f for f in dt_files if has_mimetype(pkg, f)]
             if dt_files:
                 using.append(pkg)
-                if not 'update-desktop-database' in install:
+                rpm_pkg = self.rpms.get(pkg)
+                if not in_list('update-desktop-database',
+                               [rpm_pkg.post, rpm_pkg.postun]):
                     failed = True
         if not using:
             self.set_passed(self.NA)
