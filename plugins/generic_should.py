@@ -361,7 +361,7 @@ class CheckParallelMake(GenericShouldCheckBase):
     def __init__(self, base):
         GenericShouldCheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
-        self.text = 'Uses parallel make.'
+        self.text = 'Uses parallel make %{?_smp_mflags} macro.'
         self.automatic = False
         self.type = 'SHOULD'
 
