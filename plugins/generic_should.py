@@ -156,18 +156,20 @@ class CheckDistTag(GenericShouldCheckBase):
 
     def __init__(self, base):
         GenericShouldCheckBase.__init__(self, base)
-        self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
-        self.text = 'Dist tag is present.'
+        self.url = 'https://fedoraproject.org/wiki/Packaging:DistTag'
+        self.text = 'Dist tag is present (not strictly required in GL).'
         self.automatic = True
         self.type = 'SHOULD'
 
     def run(self):
         rel_tags = self.spec.find_all_re(r'^Release\s*:')
+        found = in_list('%{?dist}', rel_tags)
         if len(rel_tags) > 1:
-            self.set_passed(self.FAIL, 'Multiple Release tags found')
-            return
-        rel = rel_tags[0]
-        self.set_passed(rel.endswith('%{?dist}'))
+            self.set_passed(found, 'Multiple Release: tags found')
+        elif len(rel_tags) == 0:
+            self.set_passed(found, 'No Release: tags found')
+        else:
+            self.set_passed(found)
 
 
 class CheckContainsLicenseText(GenericShouldCheckBase):
@@ -704,7 +706,7 @@ class CheckUpdateMimeDatabase(GenericShouldCheckBase):
                 using.append(pkg)
                 rpm_pkg = self.rpms.get(pkg)
                 if not in_list('update-mime-database',
-                                [rpm_pkg.post, rpm_pkg.postun]):
+                                [rpm_pkg.postun, rpm_pkg.post]):
                     failed = True
         if not using:
             self.set_passed(self.NA)
