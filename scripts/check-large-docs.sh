@@ -2,7 +2,8 @@
 # @deprecates: CheckLargeDocs
 # @group: Generic
 # @url: http://fedoraproject.org/wiki/Packaging/Guidelines#PackageDocumentation
-# @text: Large documentation must go in a -doc subpackage.
+# @text: Large documentation must go in a -doc subpackage. Large could be size
+# @text: (~1MB) or number of files.
 
 min=10000
 max=1000000
