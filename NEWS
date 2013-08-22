@@ -1,13 +1,17 @@
 0.5.0
 =====
+- Removing the only php test which is outdated (5addbb4)
+- Add checks for autotools obsolete macro usage (#206)
+- Update ruby macro usage (#212)
 - Automate several directory ownership checks (#187)
+- Support display and modification of active plugins, initiated by
+  discussion in bz 989946. Adds plugin and flag feedback to template.
+  New --display-plugins and --plugins options.
 - Add hint if package has ExclusiveArch in deps (#166)
 - Fix URL for gtk-query-immodules (bz 980308)
-- Add checks for autotools obsolete macro usage (#206)
 - Fix bug for packages with a '++' in their name (bz 971977)
 - Fix bug for check-desktop-datase (#127, bz 952593)
 - Don't use and require mock when using --prebuilt (#208)
-- Update ruby macro usage (#212)
 - Preserve modification times when unpacking srpm and rpms (bz 982101).
 - Don't flag remove %buildroot/path as error (bz 972672)
 - Run rpmlint also on srpm (bz 981977)
@@ -20,6 +24,13 @@
     + subpackages with version <> base package (4a6597a).
     + Clean up check-large-data output(ef604d2)
 - New DISTFLAG used when disttag can't be deduced from prebuilt
+- Stability tested on > 12000 packages. Fixes:
+    + Corner case  .desktop files (544eca2, 18cc82f).
+    + Macros in %files line (7566e91).
+    + Subpackages with version <> base package (4a6597a).
+    + CheckDisttag: many fixes (ee87f44).
+    + Look in %post/%postun for update-mime-database (7e73f89)
+- New DISTTAG flag used when disttag can't be deduced from prebuilt
   packages (09304f2).
 
 0.4.2
