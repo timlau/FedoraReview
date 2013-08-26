@@ -24,8 +24,11 @@ if unpack_rpms; then
     test $sum -lt $min && exit $FR_PASS
     echo "Arch-ed rpms have a total of $sum bytes in /usr/share"
     for rpm in ${!sizes[@]}; do
-        printf "    %-10s%50s\n" "${sizes[$rpm]}" $rpm
+        [ ${sizes[$rpm]} -gt $max ] && \
+            msg=$( printf "$msg, %s:%s" $rpm "${sizes[$rpm]}" )
     done
+    msg=${msg#, }
+    [ -n "$msg" ] && echo $msg
     test $sum -lt $max && exit $FR_PENDING
     exit $FR_FAIL
 else
