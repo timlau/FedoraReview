@@ -18,6 +18,7 @@
     + corner case  .desktop files (544eca2, 18cc82f)
     + macros in %files line (7566e91)
     + subpackages with version <> base package (4a6597a).
+    + Clean up check-large-data output(ef604d2)
 - New DISTFLAG used when disttag can't be deduced from prebuilt
   packages (09304f2).
 
