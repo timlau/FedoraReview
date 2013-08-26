@@ -30,6 +30,7 @@
     + Subpackages with version <> base package (4a6597a).
     + CheckDisttag: many fixes (ee87f44).
     + Look in %post/%postun for update-mime-database (7e73f89)
+    + Clean up check-large-data ouput (8a37267).
 - New DISTTAG flag used when disttag can't be deduced from prebuilt
   packages (09304f2).
 
