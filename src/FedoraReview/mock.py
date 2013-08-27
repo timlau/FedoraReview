@@ -481,7 +481,7 @@ class _Mock(HelpersMixin):
             self._rpm_eval('%{_libdir}')
             self.log.debug("Avoiding init of working mock root")
             return
-        except CalledProcessError:
+        except (CalledProcessError, OSError):
             pass
         self.log.info("Re-initializing mock build root")
         cmd = ["mock"]
