@@ -264,6 +264,7 @@ class TestResult(object):
     type = property(lambda self: self.check.type)
     group = property(lambda self: self.check.group)
     deprecates = property(lambda self: self.check.deprecates)
+    is_failed = property(lambda self: self.check.is_failed)
 
     state = property(lambda self: self.result)
 
@@ -289,16 +290,34 @@ class TestResult(object):
                                 self.wrapper.subsequent_indent +
                                 "Note: " + self.output_extra)
             strbuf.write('\n'.join(extra_lines))
-            if self.check.is_failed:
+            if self.is_failed:
                 see = self.wrapper.wrap(
                                 self.wrapper.subsequent_indent +
-                                "See: " + self.check.url)
+                                "See: " + self.url)
                 strbuf.write("\n" + "\n".join(see))
 
         return strbuf.getvalue()
 
     def __str__(self):
         self.get_text()
+
+
+class SimpleTestResult(TestResult):
+    ''' Simple, failed result not based on a check. '''
+    # pylint: disable=W0212,W0231
+
+    def __init__(self, name, text, extra):
+        ''' Create a  printable, failed result. '''
+        self._name = name
+        self._text = text
+        self._output_extra = extra
+        self.type = 'ERROR'
+
+    name = property(lambda self: self._name)
+    text = property(lambda self: self._text)
+    output_extra = property(lambda self: self._output_extra)
+    is_failed = property(lambda self: True)
+
 
 
 

@@ -52,7 +52,7 @@ def write_xml_report(spec, results):
         results = root.find('results')
         xml_result = ET.SubElement(results,
                                     'issue',
-                                    {'test-id': result.check.name})
+                                    {'test-id': result.name})
         message = ET.SubElement(xml_result, 'message')
         message.text = result.text
         if result.output_extra:
@@ -62,7 +62,7 @@ def write_xml_report(spec, results):
 
     root = create_xmltree(spec)
     for result in results:
-        if result.check.is_failed:
+        if result.is_failed:
             root = add_xml_result(root, result)
     dom = xml.dom.minidom.parseString(ET.tostring(root))
     with open('report.xml', 'w') as f:
