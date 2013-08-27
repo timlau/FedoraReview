@@ -374,7 +374,7 @@ class CheckDesktopFileInstall(GenericCheckBase):
         self.url = 'http://fedoraproject.org/wiki/' \
                    'Packaging/Guidelines#desktop'
         self.text = 'Package installs a  %{name}.desktop using' \
-                    ' desktop-file-install' \
+                    ' desktop-file-install or desktop-file-validate' \
                     ' if there is such a file.'
         self.automatic = True
         self.type = 'MUST'
@@ -1433,7 +1433,8 @@ class CheckUpdateIconCache(GenericCheckBase):
         GenericCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging' \
                    ':ScriptletSnippets#Icon_Cache'
-        self.text = 'gtk-update-icon-cache is invoked when required'
+        self.text = 'gtk-update-icon-cache is invoked in %postun' \
+                    ' and %posttrans if package contains icons.'
         self.automatic = True
         self.type = 'MUST'
 
@@ -1461,7 +1462,9 @@ class CheckUpdateDesktopDatabase(GenericCheckBase):
         GenericCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging' \
                    ':ScriptletSnippets#desktop-database'
-        self.text = 'update-desktop-database is invoked as required'
+        self.text = 'update-desktop-database is invoked in %post and' \
+                    ' %postun if package contains desktop file(s)' \
+                    ' with a MimeType: entry.'
         self.automatic = True
         self.needs.append('check-large-docs')   # Needed to unpack rpms
         self.type = 'MUST'
@@ -1511,7 +1514,9 @@ class CheckGioQueryModules(GenericCheckBase):
         GenericCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging' \
                    ':ScriptletSnippets#GIO_modules'
-        self.text = 'gio-querymodules is invoked as required'
+        self.text = 'gio-querymodules is invoked in %postun and %post' \
+                    ' if package has /lib/gio/modules/* files'
+
         self.automatic = True
         self.type = 'MUST'
 
@@ -1571,7 +1576,8 @@ class CheckGlibCompileSchemas(GenericCheckBase):
         GenericCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging' \
                    ':ScriptletSnippets#GSettings_Schema'
-        self.text = 'glib-compile-schemas is run if required'
+        self.text = 'glib-compile-schemas is run in %postun and' \
+                    ' %posttrans if package has *.gschema.xml files. '
         self.automatic = True
         self.type = 'MUST'
 
@@ -1627,7 +1633,8 @@ class CheckInfoInstall(GenericCheckBase):
         GenericCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging' \
                    ':ScriptletSnippets#Texinfo'
-        self.text = 'Texinfo files are properly installed'
+        self.text = 'Texinfo files are installed using install-info' \
+                    ' in %post and %preun if package has .info files.'
         self.automatic = True
         self.type = 'MUST'
 

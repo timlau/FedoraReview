@@ -694,7 +694,10 @@ class CheckUpdateMimeDatabase(GenericShouldCheckBase):
         GenericShouldCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging' \
                    ':ScriptletSnippets#mimeinfo'
-        self.text = 'update-mime-database is invoked as required'
+        self.text = 'update-mime-database is invoked in %post and' \
+                    ' %postun if package stores mime configuration' \
+                    ' in /usr/share/mime/packages.'
+
         self.automatic = True
         self.type = 'SHOULD'
 

@@ -1,7 +1,9 @@
 #!/bin/bash
 #
-# Invoke from a directory created by dist-check-setup. Downloads
+# Invoke with or from a directory created by dist-check-setup. Downloads
 # packages for this dir. No error checks, none.
+
+[[ -n "$1" && -d "$1" ]] && cd "$1"
 
 readonly ARCH=$(uname -i)
 
