@@ -788,6 +788,18 @@ class CheckMacros(GenericCheckBase):
                    'wiki/Packaging/Guidelines#macros'
         self.text = 'Package consistently uses macros' \
                     ' (instead of hard-coded directory names).'
+        self.automatic = False
+        self.type = 'MUST'
+
+
+class CheckBuildrootMacros(GenericCheckBase):
+    '''Package must use either %{buildroot} or $RPM_BUILD_ROOT.  '''
+
+    def __init__(self, base):
+        GenericCheckBase.__init__(self, base)
+        self.url = 'http://fedoraproject.org/' \
+                   'wiki/Packaging/Guidelines#macros'
+        self.text = 'Package uses either  %{buildroot} or $RPM_BUILD_ROOT'
         self.automatic = True
         self.type = 'MUST'
 
