@@ -385,7 +385,7 @@ class CheckDesktopFileInstall(GenericCheckBase):
             self.set_passed(self.NA)
             return
         pattern = r'(desktop-file-install|desktop-file-validate)' \
-                  '.*(desktop|SOURCE)'
+                    r'.*(desktop|SOURCE|\$\w+)'
         found = self.spec.find_re(re.compile(pattern))
         self.set_passed(self.PASS if found else self.FAIL)
 
