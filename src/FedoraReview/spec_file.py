@@ -23,7 +23,7 @@ import re
 import rpm
 import urllib
 
-from review_error import ReviewError
+from review_error import ReviewError, SpecParseReviewError
 from settings import Settings
 from mock import Mock
 
@@ -63,7 +63,8 @@ class SpecFile(object):
         try:
             self.spec = rpm.TransactionSet().parseSpec(self.filename)
         except Exception as ex:
-            raise ReviewError("Can't parse specfile: " + ex.__str__())
+            raise SpecParseReviewError(
+                "Can't parse specfile: " + ex.__str__())
         self.name_vers_rel = [self.expand_tag(rpm.RPMTAG_NAME),
                               self.expand_tag(rpm.RPMTAG_VERSION),
                               self.expand_tag(rpm.RPMTAG_RELEASE)]
@@ -124,6 +125,7 @@ class SpecFile(object):
 
     def _get_sources(self, _type='Source'):
         ''' Get SourceX/PatchX lines with macros resolved '''
+
         result = {}
         for (url, num, flags) in self.spec.sources:
             # rpmspec.h, rpm.org ticket #123
@@ -135,8 +137,8 @@ class SpecFile(object):
                 result[tag] = \
                     self.spec.sourceHeader.format(urllib.unquote(url))
             except Exception:
-                raise ReviewError("Cannot parse %s url %s"
-                                       % (tag, url))
+                raise SpecParseReviewError("Cannot parse %s url %s"
+                                            % (tag, url))
         return result
 
     def _parse_files_pkg_name(self, line):

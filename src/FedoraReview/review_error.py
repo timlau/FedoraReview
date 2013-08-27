@@ -38,4 +38,9 @@ class ReviewError(Exception):
         return repr(self.value)
 
 
+class SpecParseReviewError(ReviewError):
+    ''' Thrown at an early stage, no spec available. '''
+    pass
+
+
 # vim: set expandtab ts=4 sw=4:

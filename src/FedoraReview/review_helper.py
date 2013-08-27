@@ -25,14 +25,16 @@ import sys
 import time
 
 from bugzilla_bug import BugzillaBug
+from check_base import SimpleTestResult
 from checks import Checks, ChecksLister
 from mock import Mock
 from name_bug import NameBug
 from review_dirs import ReviewDirs
-from review_error import ReviewError
+from review_error import ReviewError, SpecParseReviewError
 from settings import Settings
 from url_bug import UrlBug
 from version import __version__, BUILD_FULL
+from xml_report import write_xml_report
 
 
 _EXIT_MESSAGE = """\
@@ -45,6 +47,15 @@ the results without understanding them.
 def _print_version():
     ''' Handle --version option. '''
     print('fedora-review version ' + __version__ + ' ' + BUILD_FULL)
+
+
+class _Nvr(object):
+    ''' Simple name-version-release container. '''
+
+    def __init__(self, name, version='?', release='?'):
+        self.name = name
+        self.version = version
+        self.release = release
 
 
 class ReviewHelper(object):
@@ -214,7 +225,12 @@ class ReviewHelper(object):
             rcode = 0
             self._do_run(outfile)
         except ReviewError as err:
-            rcode = err.exitcode
+            if isinstance(err, SpecParseReviewError):
+                nvr = _Nvr(self.bug.get_name())
+                result = SimpleTestResult("SpecFileParseError",
+                                          "Can't parse the spec file: ",
+                                          str(err))
+                write_xml_report(nvr, [result])
             self.log.debug("ReviewError: " + str(err), exc_info=True)
             if not err.silent:
                 msg = 'ERROR: ' + str(err)
