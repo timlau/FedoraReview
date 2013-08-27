@@ -165,8 +165,9 @@ class CheckBuildRequires(GenericCheckBase):
 
     def run(self):
 
-        if self.checks.checkdict['CheckBuild'].is_pending:
-            self.set_passed(self.PENDING, 'Using prebuilt rpms.')
+        if self.checks.checkdict['CheckBuild'].is_pending or \
+            Settings.prebuilt:
+                self.set_passed(self.PENDING, 'Using prebuilt rpms.')
         elif self.checks.checkdict['CheckBuild'].is_passed:
             brequires = self.spec.build_requires
             pkg_by_default = ['bash', 'bzip2', 'coreutils', 'cpio',
