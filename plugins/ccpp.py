@@ -109,13 +109,14 @@ class CheckHeaderFiles(CCppCheckBase):
 
 
 class CheckStaticLibs(CCppCheckBase):
-    ''' MUST: Static libraries must be in a -static package.  '''
+    ''' MUST: Static libraries must be in a -static or -devel package.  '''
 
     def __init__(self, base):
         CCppCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines' \
                    '#StaticLibraries'
-        self.text = 'Static libraries in -static subpackage, if present.'
+        self.text = 'Static libraries in -static or -devel subpackage, ' \
+                     'providing  -devel if present.'
         self.automatic = False
         self.type = 'MUST'
 
@@ -125,14 +126,28 @@ class CheckStaticLibs(CCppCheckBase):
 
     def run_on_applicable(self):
         ''' Run the test, called if is_applicable() is True. '''
-        extra = []
+        extra = ''
+        names = []
+        bad_names = []
+        no_provides = []
         for pkg in self.spec.packages:
             if self.rpms.find('*.a', pkg):
-                if not '-static' in pkg:
-                    extra.append(pkg)
-        if extra:
-            extra = 'Archive *.a files found in ' + ', '.join(extra)
-        self.set_passed(self.FAIL if extra else self.PASS, extra)
+                names.append(pkg)
+                if not (pkg.endswith('-static') or pkg.endswith('-devel')):
+                    bad_names.append(pkg)
+                rpm_pkg = self.rpms.get(pkg)
+                ok = [r for r in rpm_pkg.requires if r.endswith('-static')]
+                if not ok:
+                    no_provides.append(pkg)
+        if names:
+            extra = 'Package has .a files: ' + ', '.join(names) + '. '
+        if bad_names:
+            extra += 'Illegal package name: ' + ', '.join(bad_names)  + '. '
+        if no_provides:
+            extra += \
+                'Does not provide -static: ' + ', '.join(no_provides)  + '.'
+        failed = bool(bad_names) or bool(no_provides)
+        self.set_passed(self.FAIL if failed else self.PASS, extra)
 
 
 class CheckNoStaticExecutables(CCppCheckBase):
