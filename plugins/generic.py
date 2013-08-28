@@ -810,7 +810,7 @@ class CheckBuildrootMacros(GenericCheckBase):
             self.set_passed(self.FAIL,
                             'Using both %{buildroot} and $RPM_BUILD_ROOT')
         else:
-            self.set_passed(self.PENDING)
+            self.set_passed(self.PASS)
 
 
 class CheckMakeinstall(GenericCheckBase):
