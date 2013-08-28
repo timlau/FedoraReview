@@ -144,7 +144,7 @@ comma-separated list of plugins, each possibly with a :off suffix e. g.,
 --plugins Java:off,C/C++
 .PP
 .IP "" 4
-Use --display-plugins to see available plugins. Enabling plugins has no 
+Use --display-plugins to see available plugins. Enabling plugins has no
 well-defined semantics: some tests might leave no trace in the report
 even though they are actually run.
 .TP 4
@@ -162,8 +162,16 @@ Provides a more detailed output of what's going on.
 Comma-separated list of test(s) to exclude, as listed by --display-checks.
 A test which depends on an excluded test, will run.
 .SH THE REVIEW DIRECTORY
-The report template create by fedora-review lives in a review directory.
-Besides the report, here is:
+The review directory is created with a name corresponding to the command line
+options. The package name is always part of the name, sometime also the bug number.
+Here is:
+.TP 4
+review.txt
+The review template
+.TP 4
+report.xml
+Report with failed issues based on the firehose xml format. This is as yet
+experimental and not stable. See https://github.com/fedora-static-analysis/firehose.
 .TP 4
 srpm directory
 Holds whats downloaded, normally a src.rpm and a
