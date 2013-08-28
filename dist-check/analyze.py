@@ -11,10 +11,10 @@ prints a report. Valid report names:
     srpms:  Prints failing srpms for a given test.
     tests:  Prints failing tests for a given srpm.
     srpms-full:
-            As srpms, also prints notes about the tests
+            As srpms, also prints notes about the tests.
     tests-full:
-            As tests, also prints notes about the tests
-    mktree: Create a tree with reports on packagea and issues.
+            As tests, also prints notes about the tests.
+    mktree: Create a tree with reports on packages and issues.
 
 Examples:
 
@@ -40,7 +40,8 @@ def db_init():
     conn = sqlite3.connect(':memory:')
     c = conn.cursor()
     c.execute('create table issues (id text, srpm text, notes text)')
-    c.execute('create table tests (id text primary key, message text)')
+    c.execute('create table tests'
+              ' (id text primary key, message text, type text)')
     conn.commit()
     return conn
 
@@ -51,12 +52,17 @@ def db_insert(conn, tree):
     c = conn.cursor()
     for issue in tree.findall('results/issue'):
         name = issue.attrib['test-id']
+        try:
+            type_ = issue.attrib['severity']
+        except KeyError:
+            type_ = 'UNKNOWN'
         message = issue.find('message').text
-        notes = issue.find('notes')
-        notes = notes.text if notes is not None else ''
+        node = issue.find('notes')
+        notes = node.text.strip() if node is not None else ''
         c.execute('insert into issues  values (?,?,?)',
-                   (name, srpm, notes))
-        c.execute('replace into tests values(?,?)', (name, message))
+                      (name, srpm, notes))
+        c.execute('replace into tests values(?,?,?)',
+                      (name, message, type_))
     conn.commit()
 
 
@@ -65,10 +71,26 @@ def get_xmltree(path):
     return ET.ElementTree(file=path)
 
 
+def get_test_description(conn, test, prefix=''):
+    ''' Return description for a test, possibly prefixed with MUST/SHOULD.
+    '''
+    res = conn.execute(
+        'select message,type from tests where id="%s"' % test)
+    text_type = res.fetchone()
+    line = prefix
+    line += text_type[1].strip() + ': ' if text_type[1] else ''
+    line += text_type[0].strip()
+    return line
+
+
+def get_wrapper(indent='    '):
+    ''' Return a TextWrapper with a uniform indent. '''
+    return TextWrapper(initial_indent=indent, subsequent_indent=indent)
+
+
 def print_stats(conn):
     ''' Print summary of failed tests. '''
-    wrapper = TextWrapper(initial_indent="    -- ",
-                          subsequent_indent="    -- ")
+    wrapper = get_wrapper()
     c = conn.cursor()
     names = c.execute('select id from issues')
     results = []
@@ -77,8 +99,8 @@ def print_stats(conn):
         results.append([name[0], size.fetchone()[0]])
     for r in sorted(results, key=lambda r: r[1], reverse=True):
         print r[1], r[0]
-        text = c.execute('select message from tests where id="%s"' % r[0])
-        for l in wrapper.wrap(text.fetchone()[0].strip()):
+        line = get_test_description(c, r[0])
+        for l in wrapper.wrap(line):
             print l
 
 
@@ -93,12 +115,12 @@ def print_srpms(conn, test, f, comments=False):
     ''' Print srpms failing given a test. '''
     c = conn.cursor()
     if comments:
-        sql = 'select message from tests where id="%s"' % test
-        c.execute(sql)
-        message = c.fetchone()
-        f.write(test + ': ' + message[0].strip() + '\n')
-    wrapper = TextWrapper(initial_indent="    ")
-    wrapper.subsequent_indent = "    "
+        line = get_test_description(c, test)
+        wrapper = get_wrapper('    -- ')
+        for l in wrapper.wrap(line):
+            f.write(l + '\n')
+
+    wrapper = get_wrapper()
     sql = 'select srpm, notes from issues' \
           ' where id="%s" order by srpm' % test
     for row in c.execute(sql):
@@ -112,18 +134,16 @@ def print_tests(conn, srpm, f, comments=False):
     ''' Print failed tests for a given srpm. '''
     c = conn.cursor()
     c_ = conn.cursor()
-    wrapper = TextWrapper(initial_indent="    ", subsequent_indent="    ")
-    wrapper_ = TextWrapper(initial_indent="    -- ",
-                           subsequent_indent="    -- ")
+    notes_wrapper = get_wrapper()
+    comments_wrapper_ = get_wrapper("    -- ")
     sql = 'select id, notes from issues  where srpm="%s" order by id' % srpm
     for row in c.execute(sql):
         f.write(row[0].strip() + '\n')
         if comments:
-            sql = 'select message from tests where id="%s"' % row[0].strip()
-            c_.execute(sql)
-            for line in wrapper_.wrap(c_.fetchone()[0].strip()):
-                f.write(line + '\n')
-            for row in wrapper.wrap(row[1].strip()):
+            line = get_test_description(c_, row[0].strip())
+            for l in comments_wrapper_.wrap(line):
+                f.write(l + '\n')
+            for row in notes_wrapper.wrap(row[1].strip()):
                 f.write(row + '\n')
 
 
@@ -134,19 +154,16 @@ def make_tree(conn):
         sys.exit(1)
     os.makedirs("tree/issues")
     os.makedirs("tree/packages")
-    sql = "select distinct srpm from issues"
     c = conn.cursor()
-    for row in c.execute(sql):
+    for row in c.execute("select distinct srpm from issues"):
         srpm = row[0].strip()
         with open('tree/packages/' + srpm, 'w') as f:
-            f.write('----- Failed tests for %s ----\n\n-' % srpm)
+            f.write('----- Failed tests for %s ----\n\n' % srpm)
             print_tests(conn, srpm, f, True)
-    sql = "select id from tests"
-    c = conn.cursor()
-    for row in c.execute(sql):
+    for row in c.execute("select id from tests"):
         issue = row[0].strip()
         with open('tree/issues/' + issue, 'w') as f:
-            f.write('----- Packages failing test %s ----\n\n-' % issue)
+            f.write('----- Packages failing test %s ----\n\n' % issue)
             print_srpms(conn, issue, f, True)
 
 
