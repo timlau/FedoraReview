@@ -154,12 +154,18 @@ def make_tree(conn):
         sys.exit(1)
     os.makedirs("tree/issues")
     os.makedirs("tree/packages")
+    os.makedirs("tree/all-packages")
     c = conn.cursor()
     for row in c.execute("select distinct srpm from issues"):
         srpm = row[0].strip()
-        with open('tree/packages/' + srpm, 'w') as f:
+        letterdir = "tree/packages/" + srpm[0]
+        if not os.path.exists(letterdir):
+            os.mkdir(letterdir)
+        with open('%s/%s' % (letterdir, srpm), 'w') as f:
             f.write('----- Failed tests for %s ----\n\n' % srpm)
             print_tests(conn, srpm, f, True)
+        relpath = "../packages/" + srpm[0] + "/" + srpm
+        os.symlink(relpath, "tree/all-packages/" + srpm)
     for row in c.execute("select id from tests"):
         issue = row[0].strip()
         with open('tree/issues/' + issue, 'w') as f:
