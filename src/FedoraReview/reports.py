@@ -18,12 +18,15 @@
 
 """ Functions to create the xml report. """
 
+import os.path
 import subprocess
 import xml.etree.ElementTree as ET
 import xml.dom.minidom
 
 from glob import glob
 
+from review_dirs import ReviewDirs
+from settings import Settings
 from version import __version__, BUILD_FULL
 
 _HEADER = """
@@ -52,6 +55,17 @@ Legend:
 [ ] = Manual review needed
 
 """
+
+
+def _get_specfile():
+    ' Return a (specfile, sha224sum) tuple. '
+    spec = glob('srpm-unpacked/*.spec')
+    if len(spec) != 1:
+        return '?', '?'
+    path = spec[0].strip()
+    cs = subprocess.check_output(['sha224sum', path]).split()[0]
+    path = path.rsplit('/', 1)[1]
+    return path, cs
 
 
 def _write_section(results, output):
@@ -83,17 +97,6 @@ def _write_section(results, output):
         output.write('\n' + group + ':\n')
         for r in res:
             output.write(r.get_text() + '\n')
-
-
-def _get_specfile():
-    ' Return a (specfile, sha224sum) tuple. '
-    spec = glob('srpm-unpacked/*.spec')
-    if len(spec) != 1:
-        return '?', '?'
-    path = spec[0].strip()
-    cs = subprocess.check_output(['sha224sum', path]).split()[0]
-    path = path.rsplit('/', 1)[1]
-    return path, cs
 
 
 def write_template(output, results, issues, attachments):

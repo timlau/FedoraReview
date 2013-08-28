@@ -34,7 +34,7 @@ from review_error import ReviewError, SpecParseReviewError
 from settings import Settings
 from url_bug import UrlBug
 from version import __version__, BUILD_FULL
-from xml_report import write_xml_report
+from reports import write_xml_report
 
 
 _EXIT_MESSAGE = """\
