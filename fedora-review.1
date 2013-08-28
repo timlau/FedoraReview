@@ -69,12 +69,11 @@ When used together with --rpm-spec/-r, name can also be a complete path
 to a source rpm.
 .TP 4
 .B -u url, --url <url>
-Fetch data from given url, typically another bugzilla instance without
-xmlrpc support such as rpmfusion. For more modern sites with xmlrpc
-support, first try --bug <bug nr> --other-bz <url>.
+Fetch data from given url, typically another bugzilla instance
+such as rpmfusion. Before using this, first try
+the more convenient --bug <bug nr> --other-bz <url>.
 The option tries to retrieve the URL:s by scanning the page.
-As for --bug links has to end with '.src.rpm' and '.spec' to
-be found.
+See URL Limitations for how the url must look to be found.
 .TP 4
 .B  -d, --display-checks
 List all available checks, usable as arguments to --exclude and
@@ -123,7 +122,7 @@ want this along with other options
 you provide.
 .TP 4
 .B --no-report
-Do not generate the review report.
+Do not generate the review template.
 .TP 4
 .B --no-build
 Do not rebuild or install the source rpm, instead use the last installed
@@ -297,13 +296,13 @@ before proceeding since this is required to run mock in most setups.
 In cases this check is not useful it can be suppressed by this variable.
 .TP
 .B XDG_DATA_HOME
-fedora-review respects XDG_DATA_HOME which defaults to ~/.local/share. Eg g.,
+fedora-review respects XDG_DATA_HOME which defaults to ~/.local/share. E. g.,
 the personal data directory with plugins is by default ~/.local/share/fedora-review/plugins,
 but is $XDG_DATA_HOME/fedora-review/plugins if XDG_DATA_HOME is set. See FILES.
 .TP
 .B XDG_CACHE_HOME
 If set, defines the directory where the logfile fedora-review.log is written.
-Defaults to ~ /.cache.
+Defaults to ~/.cache.
 
 .SH AUTHORS
 Original author: Tim Lauridsen <tim.lauridsen@gmail.com>
