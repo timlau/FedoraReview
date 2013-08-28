@@ -52,7 +52,7 @@ FEDORA = os.path.exists('/etc/fedora-release')
 class FR_TestCase(unittest.TestCase):
     ''' Common base class for all tests. '''
 
-    BUILDROOT = "fedora-17-i386"
+    BUILDROOT = "fedora-18-i386"
     BASE_URL  = 'https://fedorahosted.org/releases/F/e/FedoraReview/'
 
     @staticmethod

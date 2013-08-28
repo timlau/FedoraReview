@@ -87,7 +87,7 @@ class TestOptions(FR_TestCase):
 
         bug.download_files()
         expected = os.path.abspath(
-                                 'srpm/openerp-client-6.1-2.fc16.src.rpm')
+                                'srpm/openerp-client-6.1-2.fc16.src.rpm')
         self.assertEqual(expected, bug.srpm_file)
         expected = os.path.abspath('srpm/openerp-client.spec')
         self.assertEqual(expected, bug.spec_file)
@@ -145,7 +145,7 @@ class TestOptions(FR_TestCase):
         self.init_test('git-source',
                        argv= ['-rpn', 'get-flash-videos', '--cache'],
                        wd='get-flash-videos',
-                       buildroot='fedora-17-i386')
+                       buildroot='fedora-18-i386')
         os.chdir('..')
 
         bug = NameBug('get-flash-videos')
@@ -268,7 +268,7 @@ class TestOptions(FR_TestCase):
         bug.find_urls()
         bug.download_files()
         checks = Checks(bug.spec_file, bug.srpm_file)
-        self.assertTrue(checks.checkdict['CheckRequires'].result == None)
+        self.assertTrue(checks.checkdict['CheckRequires'].result is None)
 
 
 if __name__ == '__main__':
