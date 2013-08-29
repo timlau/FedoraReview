@@ -237,6 +237,7 @@ class ReviewHelper(object):
                 if err.show_logs:
                     msg += ' (logs in ' + Settings.session_log + ')'
                 self.log.error(msg)
+            rcode = err.exitcode
         except:
             self.log.debug("Exception down the road...", exc_info=True)
             self.log.error('Exception down the road...'
