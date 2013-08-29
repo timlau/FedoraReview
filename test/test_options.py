@@ -42,7 +42,7 @@ from FedoraReview.bugzilla_bug import BugzillaBug
 from FedoraReview.name_bug import NameBug
 from FedoraReview.url_bug import UrlBug
 
-from fr_testcase import FR_TestCase, NO_NET, FAST_TEST, VERSION
+from fr_testcase import FR_TestCase, NO_NET, FAST_TEST, VERSION, RELEASE
 
 
 class TestOptions(FR_TestCase):
@@ -145,7 +145,7 @@ class TestOptions(FR_TestCase):
         self.init_test('git-source',
                        argv= ['-rpn', 'get-flash-videos', '--cache'],
                        wd='get-flash-videos',
-                       buildroot='fedora-18-i386')
+                       buildroot='fedora-%s-i386' % RELEASE)
         os.chdir('..')
 
         bug = NameBug('get-flash-videos')

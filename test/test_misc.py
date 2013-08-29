@@ -51,9 +51,10 @@ from FedoraReview.name_bug import NameBug
 from FedoraReview.review_helper import ReviewHelper
 from FedoraReview.source import Source
 from FedoraReview.spec_file import SpecFile
+from FedoraReview.rpm_file import RpmFile
 from FedoraReview.srpm_file import SRPMFile
 
-from fr_testcase import FR_TestCase, FAST_TEST, NO_NET, VERSION
+from fr_testcase import FR_TestCase, FAST_TEST, NO_NET, VERSION, RELEASE
 
 
 class TestMisc(FR_TestCase):
@@ -150,20 +151,25 @@ class TestMisc(FR_TestCase):
         check.run()
         self.assertTrue(check.is_failed)
 
-    def test_ccpp_static(self):
-        ''' test ccpp static -a checs  '''
+    def test_generic_static(self):
+        ''' test generic static -a checks  '''
         # pylint: disable=F0401,R0201,C0111,W0613
 
-        from plugins.ccpp import CheckStaticLibs
+        from plugins.generic import CheckStaticLibs
 
         class ChecksMockup(object):
             pass
 
         class RpmsMockup(object):
+
             def find(self, what, where):
                 return True
 
+            def get(self, pkg_name):
+                return RpmFile("python-test", "1.0", "1.fc" + RELEASE)
+
         class ApplicableCheckStaticLibs(CheckStaticLibs):
+
             def is_applicable(self):
                 return True
 
@@ -177,11 +183,12 @@ class TestMisc(FR_TestCase):
         check.run()
         note = check.result.output_extra
         self.assertTrue(check.is_failed)
-        self.assertTrue('Archive *.a files found in' in note)
+        self.assertTrue('Illegal package name: python-test' in note)
+        self.assertTrue('Does not provide -static: python-test' in note)
 
     def test_rm_buildroot(self):
         ''' test rm -rf $BUILDROOT/a_path '''
-        # pylint: disable=F0401,R0201,C0111,W0613
+        # pylint: disable=F0401,R0201,C0111,W0613,W0201
 
         from plugins.generic import CheckCleanBuildroot
 
@@ -203,7 +210,7 @@ class TestMisc(FR_TestCase):
 
     def test_autotools(self):
         ''' test ccpp static -a checs  '''
-        # pylint: disable=F0401,R0201,C0111,W0613
+        # pylint: disable=F0401,R0201,C0111,W0613,W0201
 
         from plugins.generic_autotools import CheckAutotoolsObsoletedMacros
 
@@ -214,7 +221,7 @@ class TestMisc(FR_TestCase):
             def find_all(self, what):
                 return ["configure.ac"] if what.endswith('ac') else []
 
-            def is_available():
+            def is_available(self):
                 return True
 
         class ChecksMockup(object):
@@ -508,7 +515,7 @@ class TestMisc(FR_TestCase):
         srpm = SRPMFile(self.srpm_file)
         # install the srpm
         srpm.unpack()
-        self.assertTrue(srpm._unpacked_src != None)
+        self.assertTrue(srpm._unpacked_src is not None)
         src_dir = srpm._unpacked_src
         src_files = glob.glob(os.path.expanduser(src_dir) + '/*')
         src_files = [os.path.basename(f) for f in src_files]

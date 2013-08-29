@@ -108,33 +108,6 @@ class CheckHeaderFiles(CCppCheckBase):
         self.set_passed(passed, extra)
 
 
-class CheckStaticLibs(CCppCheckBase):
-    ''' MUST: Static libraries must be in a -static package.  '''
-
-    def __init__(self, base):
-        CCppCheckBase.__init__(self, base)
-        self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines' \
-                   '#StaticLibraries'
-        self.text = 'Static libraries in -static subpackage, if present.'
-        self.automatic = False
-        self.type = 'MUST'
-
-    def is_applicable(self):
-        ''' check if this test is applicable '''
-        return self.rpms.find('*.a')
-
-    def run_on_applicable(self):
-        ''' Run the test, called if is_applicable() is True. '''
-        extra = []
-        for pkg in self.spec.packages:
-            if self.rpms.find('*.a', pkg):
-                if not '-static' in pkg:
-                    extra.append(pkg)
-        if extra:
-            extra = 'Archive *.a files found in ' + ', '.join(extra)
-        self.set_passed(self.FAIL if extra else self.PASS, extra)
-
-
 class CheckNoStaticExecutables(CCppCheckBase):
     ''' We do not packaga static executables, do we? '''
 
