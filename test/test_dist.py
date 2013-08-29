@@ -31,7 +31,7 @@ try:
 except ImportError:
     from FedoraReview.el_compat import check_output
 
-from fr_testcase import FR_TestCase
+from fr_testcase import FR_TestCase, RELEASE
 
 
 def _proper_dist_os():
@@ -66,7 +66,7 @@ class TestDist(FR_TestCase):
         Run fedora-review on itself (not found by discover et. al.)
         '''
         os.chdir('..')
-        check_call('./try-fedora-review -m fedora-18-i386' +
+        check_call('./try-fedora-review -m fedora-%s-i386'  % RELEASE +
                        ' -o "--without tests"' +
                        ' -rn dist/fedora-review*.src.rpm',
                    shell=True)
