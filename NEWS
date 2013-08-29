@@ -1,29 +1,34 @@
 0.5.0
 =====
-- Removing the only php test which is outdated (5addbb4)
-- Add checks for autotools obsolete macro usage (#206)
-- Update ruby macro usage (#212)
-- Automate several directory ownership checks (#187)
+- Removing the only php test which is outdated (5addbb4).
+- Add checks for autotools obsolete macro usage (#206).
+- Update ruby macro usage (#212).
+- Automate several directory ownership checks (#187).
 - Support display and modification of active plugins, initiated by
   discussion in bz 989946. Adds plugin and flag feedback to template.
   New --display-plugins and --plugins options.
-- Add hint if package has ExclusiveArch in deps (#166)
-- Fix URL for gtk-query-immodules (bz 980308)
-- Fix bug for packages with a '++' in their name (bz 971977)
-- Fix bug for check-desktop-datase (#127, bz 952593)
-- Don't use and require mock when using --prebuilt (#208)
+- New DISTTAG flag used when disttag can't be deduced from prebuilt
+  packages (09304f2).
+- Add hint if package has ExclusiveArch in deps (#166).
+- Don't use and require mock when using --prebuilt (#208).
+- Fix macro usage test which was misleading and plain wrong (#227).
+- Fix bug for packages with a '++' in their name (bz 971977).
+- Fix bug for check-desktop-database (#127, bz 952593).
 - Preserve modification times when unpacking srpm and rpms (bz 982101).
-- Don't flag remove %buildroot/path as error (bz 972672)
-- Run rpmlint also on srpm (bz 981977)
+- Don't flag remove %buildroot/path as error (bz 972672).
+- Run rpmlint also on srpm (bz 981977).
 - Stability tested on > 12000 packages. Fixes:
     + Corner case  .desktop files (544eca2, 18cc82f).
     + Macros in %files line (7566e91).
     + Subpackages with version <> base package (4a6597a).
     + CheckDisttag: many fixes (ee87f44).
-    + Look in %post/%postun for update-mime-database (7e73f89)
-    + Clean up check-large-data ouput (8a37267).
-- New DISTTAG flag used when disttag can't be deduced from prebuilt
-  packages (09304f2).
+    + Look in %post/%postun for update-mime-database (7e73f89).
+    + Clean up check-large-data output (8a37267).
+    + Don't require R:rubygems on -doc, -devel and -fonts (#224).
+    + Update check for static libs to current GL (#222).
+    + Corner case checking desktop-file-validate w bash variabLe (#223).
+    + Handle upstream rpm bug making %check test in ruby hard (#225).
+- Fix URL for gtk-query-immodules (bz 980308).
 
 0.4.2
 =====
