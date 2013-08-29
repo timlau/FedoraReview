@@ -203,7 +203,8 @@ class TestOptions(FR_TestCase):
 
     def test_mock_options(self):
         ''' test -o/--mock-options and -m/mock-config '''
-        v = '18' if '17' in self.BUILDROOT else '17'
+        nextrelease = '%d' % (int(RELEASE) + 1)
+        v = nextrelease if RELEASE in self.BUILDROOT else RELEASE
         buildroot = 'fedora-%s-i386' % v
         self.init_test('mock-options',
                        argv = ['-n', 'python-test', '--cache'],
