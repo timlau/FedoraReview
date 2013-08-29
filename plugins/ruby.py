@@ -332,6 +332,9 @@ class GemCheckRequiresRubygems(GemCheckBase):
         # than to examine %files
         failed = []
         for pkg_name in self.spec.packages:
+            for suffix in ['-doc', '-fonts', '-devel']:
+                if pkg_name.endswith(suffix):
+                    continue
             rpm_pkg = self.rpms.get(pkg_name)
             if not 'rubygems' in rpm_pkg.requires and \
                     not 'ruby(rubygems)' in rpm_pkg.requires:
