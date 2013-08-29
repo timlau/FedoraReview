@@ -38,6 +38,8 @@ STARTDIR = os.getcwd()
 
 VERSION = '0.5.0'
 
+RELEASE = '18'
+
 try:
     urlopen('http://bugzilla.redhat.com')
     NO_NET = False
@@ -52,7 +54,7 @@ FEDORA = os.path.exists('/etc/fedora-release')
 class FR_TestCase(unittest.TestCase):
     ''' Common base class for all tests. '''
 
-    BUILDROOT = "fedora-18-i386"
+    BUILDROOT = "fedora-%s-i386" % RELEASE
     BASE_URL  = 'https://fedorahosted.org/releases/F/e/FedoraReview/'
 
     @staticmethod
