@@ -106,7 +106,7 @@ python -m unittest discover -f
 
 
 %files
-%doc COPYING AUTHORS TODO README
+%doc COPYING AUTHORS README
 %{python_sitelib}/*
 %{_bindir}/fedora-review
 %{_bindir}/fedora-create-review
