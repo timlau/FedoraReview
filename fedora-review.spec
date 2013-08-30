@@ -2,10 +2,10 @@
 %bcond_with tests
 
 # See notes in make_release which patches this.
-%global     git_tag  .fa1afe1
+#global     git_tag  .fa1afe1
 
 Name:       fedora-review
-Version:    0.4.0
+Version:    0.5.0
 Release:    1%{?git_tag}%{?dist}
 Summary:    Review tool for fedora rpm packages
 
@@ -106,7 +106,7 @@ python -m unittest discover -f
 
 
 %files
-%doc COPYING AUTHORS TODO README
+%doc COPYING AUTHORS README
 %{python_sitelib}/*
 %{_bindir}/fedora-review
 %{_bindir}/fedora-create-review
@@ -127,6 +127,9 @@ python -m unittest discover -f
 
 
 %changelog
+* Mon Aug 19 2013 Stanislav Ochotnicky <sochotnicky@redhat.com> 0.5.0-1
+- Updating to upstream 0.5.0
+
 * Mon Jan 28 2013 Stanislav Ochotnicky <sochotnicky@redhat.com> - 0.4.0-1
 - Updating to upstream 0.4.0
 
@@ -180,5 +183,3 @@ python -m unittest discover -f
 
 * Thu Nov 10 2011 Pierre-Yves Chibon <pingou@pingoured.fr> - 0.1.0-1
 - Initial packaging work for Fedora
-
-
