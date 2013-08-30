@@ -6,7 +6,7 @@
 - Automate several directory ownership checks (#187).
 - Support display and modification of active plugins, initiated by
   discussion in bz 989946. Adds plugin and flag feedback to template.
-  New --display-plugins and --plugins options.
+- New --display-plugins and --plugins options.
 - New DISTTAG flag used when disttag can't be deduced from prebuilt
   packages (09304f2).
 - Add hint if package has ExclusiveArch in deps (#166).
@@ -17,9 +17,6 @@
 - Preserve modification times when unpacking srpm and rpms (bz 982101).
 - Don't flag remove %buildroot/path as error (bz 972672)
 - Run rpmlint also on srpm (bz 981977)
-- Support display and modification of active plugins, initiated by
-  discussion in bz 989946. Adds plugin and flag feedback to template.
-- New --display-plugins and --plugins options.
 - Stability tested on > 12000 packages. Fixes:
     + Corner case  .desktop files (544eca2, 18cc82f).
     + Macros in %files line (7566e91).
