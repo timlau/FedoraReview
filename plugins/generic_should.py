@@ -27,7 +27,7 @@ import rpm
 from glob import glob
 from subprocess import Popen, PIPE
 
-from FedoraReview import CheckBase, ReviewDirs
+from FedoraReview import CheckBase, Mock, ReviewDirs
 from FedoraReview import ReviewError             # pylint: disable=W0611
 from FedoraReview import RegistryBase, Settings
 
@@ -99,9 +99,9 @@ class CheckBuildroot(GenericShouldCheckBase):
         except IndexError:
             br = 'Illegal buildroot line:' + br_tags[0]
         legal_buildroots = [
-        '%(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)',
-        '%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)',
-        '%{_tmppath}/%{name}-%{version}-%{release}-root']
+            '%(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)',
+            '%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)',
+            '%{_tmppath}/%{name}-%{version}-%{release}-root']
         if br in legal_buildroots:
             if self.flags['EPEL5']:
                 self.set_passed(self.PASS)
@@ -130,12 +130,14 @@ class CheckClean(GenericShouldCheckBase):
         sec_clean = self.spec.find_re('%clean')
         if sec_clean:
             sec_clean = self.spec.get_section('%clean', raw=True)
+            buildroot = rpm.expandMacro('%{buildroot}')
+            buildroot = buildroot.replace('+', r'\+')
             regex = r'rm\s+\-[rf][rf]\s+(%{buildroot}|\$RPM_BUILD_ROOT)'
-            regex = rpm.expandMacro(regex)
+            regex = regex.replace('%{buildroot}', buildroot)
             has_clean = re.search(regex, sec_clean)
         if self.flags['EPEL5']:
             self.text = 'EPEL5 requires explicit %clean with rm -rf' \
-                             ' %{buildroot} (or $RPM_BUILD_ROOT)'
+                            ' %{buildroot} (or $RPM_BUILD_ROOT)'
             self.type = 'MUST'
             if has_clean:
                 self.set_passed(self.PASS)
@@ -154,18 +156,20 @@ class CheckDistTag(GenericShouldCheckBase):
 
     def __init__(self, base):
         GenericShouldCheckBase.__init__(self, base)
-        self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
-        self.text = 'Dist tag is present.'
+        self.url = 'https://fedoraproject.org/wiki/Packaging:DistTag'
+        self.text = 'Dist tag is present (not strictly required in GL).'
         self.automatic = True
         self.type = 'SHOULD'
 
     def run(self):
-        rel_tags = self.spec.find_all_re('^Release\s*:')
+        rel_tags = self.spec.find_all_re(r'^Release\s*:')
+        found = in_list('%{?dist}', rel_tags)
         if len(rel_tags) > 1:
-            self.set_passed(self.FAIL, 'Multiple Release tags found')
-            return
-        rel = rel_tags[0]
-        self.set_passed(rel.endswith('%{?dist}'))
+            self.set_passed(found, 'Multiple Release: tags found')
+        elif len(rel_tags) == 0:
+            self.set_passed(found, 'No Release: tags found')
+        else:
+            self.set_passed(found)
 
 
 class CheckContainsLicenseText(GenericShouldCheckBase):
@@ -233,8 +237,8 @@ class CheckFileRequires(GenericShouldCheckBase):
                     wrong_req.append(req)
             req_txt += get_requires(pkg, requires) + '\n'
             prov_txt += get_provides(pkg, rpm_pkg.provides) + '\n'
-        attachments = [self.Attachment('Requires', req_txt, 10),
-                       self.Attachment('Provides', prov_txt, 10)]
+        attachments = [self.Attachment('Requires', req_txt),
+                       self.Attachment('Provides', prov_txt)]
         if len(wrong_req) == 0:
             self.set_passed(self.PASS, None, attachments)
         else:
@@ -265,6 +269,47 @@ class CheckFunctionAsDescribed(GenericShouldCheckBase):
         self.text = 'Package functions as described.'
         self.automatic = False
         self.type = 'SHOULD'
+
+
+class CheckFullVerReqSub(GenericShouldCheckBase):
+    ''' Sub-packages requires base package using fully-versioned dep. '''
+
+    HDR = 'No Requires: %{name}%{?_isa} = %{version}-%{release} in '
+    REGEX = r'%{name}%{?_isa} = %{version}-%{release}'
+
+    def __init__(self, base):
+        GenericShouldCheckBase.__init__(self, base)
+        self.url = 'http://fedoraproject.org/wiki/' \
+                   'Packaging/Guidelines#RequiringBasePackage'
+        self.text = 'Fully versioned dependency in subpackages' \
+                    ' if applicable.'
+        self.automatic = True
+        self.type = 'SHOULD'
+
+    def run(self):
+        bad_pkgs = []
+        archs = self.checks.spec.expand_tag('BuildArchs')
+        if len(archs) == 1 and archs[0].lower() == 'noarch':
+            isa = ''
+        else:
+            isa = Mock.get_macro('%_isa', self.spec, self.flags)
+        regex = self.REGEX.replace('%{?_isa}', isa)
+        regex = rpm.expandMacro(regex)
+        regex = re.sub('[.](fc|el)[0-9]+', '', regex)
+        for pkg in self.spec.packages:
+            if pkg == self.spec.base_package:
+                continue
+            for pkg_end in ['debuginfo', '-javadoc', '-doc']:
+                if pkg.endswith(pkg_end):
+                    continue
+            reqs = ''.join(self.rpms.get(pkg).format_requires)
+            if not regex in reqs:
+                bad_pkgs.append(pkg)
+        if bad_pkgs:
+            self.set_passed(self.PENDING,
+                            self.HDR + ' , '.join(bad_pkgs))
+        else:
+            self.set_passed(self.PASS)
 
 
 class CheckLatestVersionIsPackaged(GenericShouldCheckBase):
@@ -318,7 +363,7 @@ class CheckParallelMake(GenericShouldCheckBase):
     def __init__(self, base):
         GenericShouldCheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
-        self.text = 'Uses parallel make.'
+        self.text = 'Uses parallel make %{?_smp_mflags} macro.'
         self.automatic = False
         self.type = 'SHOULD'
 
@@ -400,7 +445,7 @@ class CheckScriptletSanity(GenericShouldCheckBase):
         self.type = 'SHOULD'
 
     def is_applicable(self):
-        regex = re.compile('%(post|postun|posttrans|preun|pretrans|pre)\s+')
+        regex = re.compile(r'%(post|postun|posttrans|preun|pretrans|pre)\s+')
         return self.spec.find_re(regex)
 
 
@@ -434,12 +479,12 @@ class CheckSourceUrl(GenericShouldCheckBase):
         GenericShouldCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/SourceURL'
         self.text = 'SourceX is a working URL.'
-        self.automatic = True
         self.type = 'SHOULD'
+        self.automatic = True
 
     def run(self):
-        passed = True
         output = ''
+        passed = True
         for source_tag in self.sources.get_all():
             source = self.sources.get(source_tag)
             if not source.url.startswith('file:'):
@@ -493,8 +538,7 @@ class CheckSpecAsInSRPM(GenericShouldCheckBase):
             return
         if output and len(output) > 0:
             a = self.Attachment("Diff spec file in url and in SRPM",
-                                output,
-                                8)
+                                output)
             text = ('Spec file as given by url is not the same as in '
                     'SRPM (see attached diff).')
             self.set_passed(self.FAIL, text, [a])
@@ -579,18 +623,18 @@ class CheckUseGlobal(GenericShouldCheckBase):
         GenericShouldCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/' \
                    'Guidelines#.25global_preferred_over_.25define'
-        self.text = 'Spec use %global instead of %define.'
+        self.text = 'Spec use %global instead of %define unless' \
+                    ' justified.'
         self.automatic = True
         self.type = 'SHOULD'
 
     def run(self):
-        regex = re.compile('(\%define.*)')
+        regex = re.compile(r'(\%define.*)')
         result = self.spec.find_all_re(regex, skip_changelog=True)
         if result:
-            extra = ''
-            for res in result:
-                extra += res + '\n'
-            self.set_passed(self.FAIL, extra)
+            extra = '%define requiring justification: ' +  \
+                    ', '.join(result)
+            self.set_passed(self.PENDING, extra)
         else:
             self.set_passed(self.PASS)
 
@@ -650,7 +694,10 @@ class CheckUpdateMimeDatabase(GenericShouldCheckBase):
         GenericShouldCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging' \
                    ':ScriptletSnippets#mimeinfo'
-        self.text = 'update-mime-database is invoked as required'
+        self.text = 'update-mime-database is invoked in %post and' \
+                    ' %postun if package stores mime configuration' \
+                    ' in /usr/share/mime/packages.'
+
         self.automatic = True
         self.type = 'SHOULD'
 
@@ -662,7 +709,7 @@ class CheckUpdateMimeDatabase(GenericShouldCheckBase):
                 using.append(pkg)
                 rpm_pkg = self.rpms.get(pkg)
                 if not in_list('update-mime-database',
-                                [rpm_pkg.post, rpm_pkg.postun]):
+                                [rpm_pkg.postun, rpm_pkg.post]):
                     failed = True
         if not using:
             self.set_passed(self.NA)
@@ -673,4 +720,4 @@ class CheckUpdateMimeDatabase(GenericShouldCheckBase):
 
 
 #
-# vim: set expandtab: ts=4:sw=4:
+# vim: set expandtab ts=4 sw=4:

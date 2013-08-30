@@ -1,0 +1,14 @@
+#!/bin/bash
+#
+# fedora-review post-commit
+#
+cd $( dirname $( readlink -fn $0 ))/..
+commit=$( git rev-parse HEAD )
+commit=${commit:0:7}
+host=$( uname -n )
+isodate=( $( git show -s --pretty=format:%ci HEAD ) )
+cd src/FedoraReview
+sed -e "s/@commit@/$commit/g" \
+    -e "s/@host@/$host/g" \
+    -e "s/@date@/${isodate[0]}/g" \
+    -e "s/@time@/${isodate[1]}/g" < version.tmpl > version

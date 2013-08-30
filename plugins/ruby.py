@@ -46,6 +46,8 @@ class Registry(RegistryBase):
         """ Check if the tests are applicable, here it checks whether
         it is either ruby or rubygem package
         """
+        if self.is_user_enabled():
+            return self.user_enabled_value()
         return _is_gem(self.checks.spec) or _is_nongem(self.checks.spec)
 
 
@@ -75,17 +77,30 @@ class NonGemCheckBase(CheckBase):
         return _is_nongem(self.spec)
 
 
-class RubyCheckRequiresRubyAbi(RubyCheckBase):
-    """ Check if package requires ruby(abi) """
+class RubyCheckNotRequiresRubyAbi(RubyCheckBase):
+    """ Check if package doesn't require ruby(abi) """
     def __init__(self, base):
         RubyCheckBase.__init__(self, base)
-        self.url = _gl_fmt_uri({'section': 'Ruby_ABI'})
-        self.text = 'Package contains Requires: ruby(abi).'
+        self.url = _gl_fmt_uri({'section': 'Ruby_Compatibility'})
+        self.text = 'Package does not contain Requires: ruby(abi).'
         self.automatic = True
 
     def run_on_applicable(self):
         br = self.spec.get_requires()
-        self.set_passed('ruby(abi)' in br)
+        self.set_passed('ruby(abi)' not in br)
+
+
+class RubyCheckRequiresRubyRelease(RubyCheckBase):
+    """ Check if package requires ruby(release) """
+    def __init__(self, base):
+        RubyCheckBase.__init__(self, base)
+        self.url = _gl_fmt_uri({'section': 'Ruby_Compatibility'})
+        self.text = 'Package contains Requires: ruby(release).'
+        self.automatic = True
+
+    def run_on_applicable(self):
+        br = self.spec.get_requires()
+        self.set_passed('ruby(release)' in br)
 
 
 class RubyCheckBuildArchitecture(RubyCheckBase):
@@ -99,7 +114,7 @@ class RubyCheckBuildArchitecture(RubyCheckBase):
 
     def run_on_applicable(self):
         arch = self.spec.expand_tag('arch')
-        if  _has_extension(self):
+        if _has_extension(self):
             self.set_passed('noarch' not in arch,
                             "Package with binary extension can't be built"
                             " as noarch.")
@@ -144,8 +159,12 @@ class RubyCheckTestsRun(RubyCheckBase):
         self.type = 'SHOULD'
 
     def run_on_applicable(self):
-        check_section = self.spec.get_section('%check')
-        self.set_passed(self.PASS if check_section else self.FAIL)
+        # check_section = self.spec.get_section('%check')
+        # Bug in rpm, see
+        # http://lists.rpm.org/pipermail/rpm-maint/2013-August/thread.html
+        # (or perhaps later) for patch from leamas.
+        found = bool(self.spec.find_re('^[^#]*%check'))
+        self.set_passed(self.PASS if found else self.FAIL)
 
 
 class RubyCheckTestsNotRunByRake(RubyCheckBase):
@@ -208,8 +227,21 @@ class GemCheckFilePlacement(GemCheckBase):
         GemCheckBase.__init__(self, base)
         self.url = _gl_fmt_uri({'section': '.25install'})
         self.text = 'Platform dependent files must all go under ' \
-            '%{gem_extdir}, platform independent under %{gem_dir}.'
+            '%{gem_extdir_mri}, platform independent under %{gem_dir}.'
         self.automatic = False
+
+
+class GemCheckGemExtdirMacro(GemCheckBase):
+    """ Check for deprecated macro %{gem_extdir} """
+    def __init__(self, base):
+        GemCheckBase.__init__(self, base)
+        self.url = _gl_fmt_uri({'section': '.25install'})
+        self.text = 'Macro %{gem_extdir} is deprecated.'
+        self.automatic = True
+
+    def run_on_applicable(self):
+        gem_extdir_macro = self.spec.find_re(r'\%\{gem_extdir\}')
+        self.set_passed(self.FAIL if gem_extdir_macro else self.PASS)
 
 
 class GemCheckRequiresProperDevel(GemCheckBase):
@@ -264,7 +296,7 @@ class GemCheckProperName(GemCheckBase):
         self.automatic = True
 
     def run_on_applicable(self):
-        name = self.spec.find_re('^Name\s*:')
+        name = self.spec.find_re(r'^Name\s*:')
         self.set_passed('rubygem-%{gem_name}' in name)
 
 
@@ -300,6 +332,9 @@ class GemCheckRequiresRubygems(GemCheckBase):
         # than to examine %files
         failed = []
         for pkg_name in self.spec.packages:
+            for suffix in ['-doc', '-fonts', '-devel']:
+                if pkg_name.endswith(suffix):
+                    continue
             rpm_pkg = self.rpms.get(pkg_name)
             if not 'rubygems' in rpm_pkg.requires and \
                     not 'ruby(rubygems)' in rpm_pkg.requires:
@@ -309,6 +344,21 @@ class GemCheckRequiresRubygems(GemCheckBase):
             self.set_passed(self.FAIL, text)
         else:
             self.set_passed(self.PASS)
+
+
+class GemCheckGemInstallMacro(GemCheckBase):
+    """ gems should use %gem_install macro """
+    def __init__(self, base):
+        GemCheckBase.__init__(self, base)
+        self.url = _gl_fmt_uri({'section': 'Building_gems'})
+        self.text = 'Gem should use %gem_install macro.'
+        self.automatic = True
+        self.type = 'SHOULD'
+
+    def run_on_applicable(self):
+        gem_install_re = re.compile(r'^.*gem\s+install', re.I)
+        self.set_passed(
+            self.FAIL if self.spec.find_re(gem_install_re) else self.PASS)
 
 
 class GemCheckExcludesGemCache(GemCheckBase):
@@ -337,11 +387,13 @@ class GemCheckUsesMacros(GemCheckBase):
         self.type = 'SHOULD'
 
     def run_on_applicable(self):
-        gem_libdir_re = re.compile('%{gem_libdir}', re.I)
-        gem_extdir_re = re.compile('%{gem_extdir}', re.I)
-        doc_gem_docdir_re = re.compile('%doc\s+%{gem_docdir}', re.I)
-        exclude_gem_cache_re = re.compile(r'%exclude\s+%{gem_cache}', re.I)
-        gem_spec_re = re.compile('%{gem_spec}', re.I)
+        gem_libdir_re = re.compile(rpm.expandMacro('%{gem_libdir}'), re.I)
+        gem_extdir_re = re.compile(rpm.expandMacro('%{gem_extdir_mri}'), re.I)
+        doc_gem_docdir_re = \
+            re.compile(rpm.expandMacro(r'%doc\s+%{gem_docdir}'), re.I)
+        exclude_gem_cache_re = \
+            re.compile(rpm.expandMacro(r'%exclude\s+%{gem_cache}'), re.I)
+        gem_spec_re = re.compile(rpm.expandMacro('%{gem_spec}'), re.I)
 
         re_dict = {gem_libdir_re: False,
                    doc_gem_docdir_re: False,
@@ -366,8 +418,8 @@ class GemCheckUsesMacros(GemCheckBase):
         if len(err_message) == 0:
             self.set_passed(self.PASS)
         else:
-            self.set_passed(self.FAIL,
+            self.set_passed(self.PENDING,
                             'The specfile doesn\'t use these macros: %s'
                             % ', '.join(err_message))
 
-# vim: set expandtab: ts=4:sw=4:
+# vim: set expandtab ts=4 sw=4:

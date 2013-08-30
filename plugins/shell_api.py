@@ -20,6 +20,7 @@ Plugin module acting as an interface between, simple, shell-based plugins
 and the regular python plugins.
 '''
 
+import logging                                   # pylint: disable=W0611
 import os
 import os.path
 import re
@@ -31,6 +32,8 @@ from subprocess import Popen, PIPE
 from FedoraReview import AbstractRegistry, GenericCheck
 from FedoraReview import ReviewDirs, Settings, XdgDirs
 
+
+# pylint:  disable=W1401
 ENVIRON_TEMPLATE = """
 #
 # This file is not needed for review, and is only used for the
@@ -100,7 +103,7 @@ function unpack_rpms()
         rpm=$( basename $rpm_path)
         mkdir $rpm
         cd $rpm
-        rpm2cpio ../../$rpm_path | cpio -id &>/dev/null
+        rpm2cpio ../../$rpm_path | cpio -imd &>/dev/null
         cd ..
     done
     cd ..
@@ -281,6 +284,7 @@ def _create_env(checks):
 
 class Registry(AbstractRegistry):
     ''' Registers all script plugins. '''
+    # pylint: disable=R0201
 
     group = 'Shell-api'
 
@@ -305,6 +309,18 @@ class Registry(AbstractRegistry):
         self.groups = checks.groups
         self.checks = checks
         self.log = Settings.get_logger()
+
+    def is_applicable(self):
+        return True
+
+    def is_user_enabled(self):
+        ''' Not modifiable.... '''
+        return False
+
+    def user_enabled_value(self):
+        ''' The actual value set if is_user_enabled() is True '''
+        self.log.warning("shell-api: illegal user_enabled_value() call")
+        return True
 
     def register(self, plugin):
         ''' Return all available scripts as ShellCheck instances. '''
@@ -445,6 +461,21 @@ class ShellCheck(GenericCheck):
             os.unlink(path)
         return attachments
 
+    def _handle_log_messages(self):
+        ''' Handle log messages from plugin. '''
+        logfile = os.path.join(ReviewDirs.root, '.log')
+        if not os.path.exists(logfile):
+            return
+        with open(logfile) as f:
+            for line in f.readlines():
+                try:
+                    tag, msg = line.split(':')
+                    level = eval('logging.' + tag.upper())
+                except (ValueError, AttributeError):
+                    self.log.error("Malformed plugin log: " + line)
+                self.log.log(level, msg)
+        os.unlink(logfile)
+
     def run(self):
         ''' Run the check. '''
         if self.is_run:
@@ -460,6 +491,7 @@ class ShellCheck(GenericCheck):
             return
         cmd = 'source ./review-env.sh; source ' + self.defined_in
         retval, stdout, stderr = self._do_run(cmd)
+        self._handle_log_messages()
         attachments = self._get_attachments()
         if retval == -1:
             self.set_passed(self.PENDING,
@@ -479,4 +511,4 @@ class ShellCheck(GenericCheck):
                 'stdout:' + str(stdout) + ' stderr:' + str(stderr)))
             self.set_passed(self.PENDING, 'Test run failed')
 
-# vim: set expandtab: ts=4:sw=4:
+# vim: set expandtab ts=4 sw=4:

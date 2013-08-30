@@ -12,6 +12,8 @@ class Registry(RegistryBase):
     group = 'Perl'
 
     def is_applicable(self):
+        if self.is_user_enabled():
+            return self.user_enabled_value()
         return self.checks.spec.name.startswith("perl-") or \
             self.checks.rpms.find('*.pm') or self.checks.rpms.find('*.pl')
 

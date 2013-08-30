@@ -42,7 +42,7 @@ from FedoraReview.bugzilla_bug import BugzillaBug
 from FedoraReview.name_bug import NameBug
 from FedoraReview.url_bug import UrlBug
 
-from fr_testcase import FR_TestCase, NO_NET, FAST_TEST, VERSION
+from fr_testcase import FR_TestCase, NO_NET, FAST_TEST, VERSION, RELEASE
 
 
 class TestOptions(FR_TestCase):
@@ -87,7 +87,7 @@ class TestOptions(FR_TestCase):
 
         bug.download_files()
         expected = os.path.abspath(
-                             'srpm/openerp-client-6.1-2.fc16.src.rpm')
+                                'srpm/openerp-client-6.1-2.fc16.src.rpm')
         self.assertEqual(expected, bug.srpm_file)
         expected = os.path.abspath('srpm/openerp-client.spec')
         self.assertEqual(expected, bug.spec_file)
@@ -116,10 +116,28 @@ class TestOptions(FR_TestCase):
 
     def test_display(self):
         """ test -d/--display option. """
-        cmd = srcpath.REVIEW_PATH + ' --display-checks'
-        output = check_output(cmd, shell=True)
-        output = output.decode('utf-8')
-        self.assertTrue(len(output) > 20)
+        # pylint: disable=C0111
+
+        class Logger:
+
+            def __init__(self):
+                self.lines = []
+
+            def write(self, message):
+                self.lines.append(message)
+
+        if not srcpath.PLUGIN_PATH in sys.path:
+            sys.path.append(srcpath.PLUGIN_PATH)
+        from FedoraReview.review_helper import ReviewHelper
+        sys.argv = ['fedora-review', '-d', '--no-build']
+        Settings.init(True)
+        helper = ReviewHelper()
+        stdout = sys.stdout
+        logger = Logger()
+        sys.stdout = logger
+        helper.run()
+        sys.stdout = stdout
+        self.assertTrue(len(logger.lines) > 20)
 
     def test_git_source(self):
         ''' test use of local source0 tarball '''
@@ -127,7 +145,7 @@ class TestOptions(FR_TestCase):
         self.init_test('git-source',
                        argv= ['-rpn', 'get-flash-videos', '--cache'],
                        wd='get-flash-videos',
-                       buildroot='fedora-17-i386')
+                       buildroot='fedora-%s-i386' % RELEASE)
         os.chdir('..')
 
         bug = NameBug('get-flash-videos')
@@ -185,7 +203,8 @@ class TestOptions(FR_TestCase):
 
     def test_mock_options(self):
         ''' test -o/--mock-options and -m/mock-config '''
-        v = '16' if '17' in self.BUILDROOT else '17'
+        nextrelease = '%d' % (int(RELEASE) + 1)
+        v = nextrelease if RELEASE in self.BUILDROOT else RELEASE
         buildroot = 'fedora-%s-i386' % v
         self.init_test('mock-options',
                        argv = ['-n', 'python-test', '--cache'],
@@ -250,7 +269,7 @@ class TestOptions(FR_TestCase):
         bug.find_urls()
         bug.download_files()
         checks = Checks(bug.spec_file, bug.srpm_file)
-        self.assertTrue(checks.checkdict['CheckRequires'].result == None)
+        self.assertTrue(checks.checkdict['CheckRequires'].result is None)
 
 
 if __name__ == '__main__':
@@ -261,3 +280,5 @@ if __name__ == '__main__':
     else:
         suite = unittest.TestLoader().loadTestsFromTestCase(TestOptions)
     unittest.TextTestRunner(verbosity=2).run(suite)
+
+# vim: set expandtab ts=4 sw=4:

@@ -98,8 +98,8 @@ class AbstractBug(HelpersMixin):
 
         def has_srpm():
             ''' Return true iff self.srpmfile is a valid path. '''
-            return hasattr(self, 'srpm_file')  and self.srpm_file and  \
-                   os.path.exists(self.srpm_file)
+            return hasattr(self, 'srpm_file') and self.srpm_file and \
+                os.path.exists(self.srpm_file)
 
         if not self.dir:
             self.dir = ReviewDirs.srpm
@@ -125,8 +125,8 @@ class AbstractBug(HelpersMixin):
     def is_downloaded(self):
         ''' Return true iff self.{specfile, srpmfile} are valid. '''
         ok = (self.spec_file and os.path.exists(self.spec_file)
-                and self.srpm_file and
-                os.path.exists(self.srpm_file))
+              and self.srpm_file and
+              os.path.exists(self.srpm_file))
         return ok
 
     def _check_cache(self):
@@ -172,8 +172,11 @@ class AbstractBug(HelpersMixin):
         self.do_download_srpm()
 
         SRPMFile(self.srpm_file).unpack()
-        path = glob(os.path.join(ReviewDirs.srpm_unpacked,
-                                 name + '*.spec'))[0]
+        try:
+            path = glob(os.path.join(ReviewDirs.srpm_unpacked,
+                                     name + '*.spec'))[0]
+        except IndexError:
+            raise ReviewError("Cannot find spec file in srpm")
         self.spec_file = path
         self.spec_url = 'file://' + path
 
@@ -186,7 +189,7 @@ class AbstractBug(HelpersMixin):
                 self._get_spec_from_srpm()
             else:
                 self.find_spec_url()
-            self.log.info("  --> Spec url: " + self.spec_url)
+                self.log.info("  --> Spec url: " + self.spec_url)
         except ReviewError as fre:
             raise fre
         except:
@@ -203,7 +206,7 @@ class AbstractBug(HelpersMixin):
             basename = os.path.basename(urlparse(self.spec_url).path)
             return basename.rsplit('.', 1)[0]
         elif self.srpm_file:
-            return  os.path.basename(self.srpm_file).rsplit('-', 2)[0]
+            return os.path.basename(self.srpm_file).rsplit('-', 2)[0]
         elif self.srpm_url:
             basename = os.path.basename(urlparse(self.srpm_url).path)
             return basename.rsplit('-', 2)[0]
@@ -236,4 +239,4 @@ class AbstractBug(HelpersMixin):
                     '--' + opt + ' can not be used with ' + mode)
 
 
-# vim: set expandtab: ts=4:sw=4:
+# vim: set expandtab ts=4 sw=4:

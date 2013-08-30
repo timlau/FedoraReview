@@ -37,6 +37,12 @@ from FedoraReview import CheckBase, Mock, ReviewDirs
 from FedoraReview import ReviewError             # pylint: disable=W0611
 from FedoraReview import RegistryBase, Settings
 
+import FedoraReview.deps as deps
+
+_DIR_SORT_KEY = '30'
+_LICENSE_SORT_KEY = '20'
+_GL_SORT_KEY = '90'
+
 
 def in_list(what, list_):
     ''' test if 'what' is in each item in list_. '''
@@ -54,7 +60,10 @@ class Registry(RegistryBase):
 
     def register_flags(self):
         epel5 = self.Flag('EPEL5', 'Review package for EPEL5', __file__)
+        disttag = self.Flag('DISTTAG', 'Default disttag e. g. "fc21".',
+                            __file__)
         self.checks.flags.add(epel5)
+        self.checks.flags.add(disttag)
 
     def is_applicable(self):
         return True
@@ -72,6 +81,9 @@ class CheckApprovedLicense(GenericCheckBase):
     MUST: The package must be licensed with a Fedora approved license and
     meet the Licensing Guidelines .
     '''
+
+    sort_key = _LICENSE_SORT_KEY
+
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
@@ -94,8 +106,24 @@ class CheckBundledLibs(GenericCheckBase):
                    'Packaging:Guidelines#Duplication_of_system_libraries'
         self.text = 'Package contains no bundled libraries without' \
                     ' FPC exception.'
-        self.automatic = False
+        self.automatic = True
         self.type = 'MUST'
+
+    def run(self):
+        pattern = '(.*?/)(3rdparty|thirdparty|libraries|libs|ext|external' \
+            '|include|3rd_party|third_party)/.*'
+        regex = re.compile(pattern, re.IGNORECASE)
+        check_dirs = set()
+        for i in self.sources.get_filelist():
+            m = regex.match(i)
+            if m:
+                check_dirs.add(m.group(1) + m.group(2))
+        if check_dirs:
+            self.set_passed(self.PENDING,
+                        'Especially check following dirs for bundled code: '
+                        + ', '.join(check_dirs))
+        else:
+            self.set_passed(self.PENDING)
 
 
 class CheckBuildCompilerFlags(GenericCheckBase):
@@ -137,8 +165,9 @@ class CheckBuildRequires(GenericCheckBase):
 
     def run(self):
 
-        if  self.checks.checkdict['CheckBuild'].is_pending:
-            self.set_passed(self.PENDING, 'Using prebuilt rpms.')
+        if self.checks.checkdict['CheckBuild'].is_pending or \
+            Settings.prebuilt:
+                self.set_passed(self.PENDING, 'Using prebuilt rpms.')
         elif self.checks.checkdict['CheckBuild'].is_passed:
             brequires = self.spec.build_requires
             pkg_by_default = ['bash', 'bzip2', 'coreutils', 'cpio',
@@ -155,8 +184,8 @@ class CheckBuildRequires(GenericCheckBase):
                 self.set_passed(self.PASS)
         else:
             self.set_passed(self.FAIL,
-                            'The package did not build '
-                            'BR could therefore not be checked or the'
+                            'The package did not build.'
+                            ' BR could therefore not be checked or the'
                             ' package failed to build because of'
                             ' missing BR')
 
@@ -226,12 +255,15 @@ class CheckCleanBuildroot(GenericCheckBase):
 
     def run(self):
         has_clean = False
-        regex = r'rm\s+\-[rf][rf]\s+(@buildroot@|$RPM_BUILD_ROOT)'
+        regex = r'rm\s+\-[rf][rf]\s+(@buildroot@|$RPM_BUILD_ROOT)[^/]'
         buildroot = rpm.expandMacro('%{buildroot}')
         # BZ 908830: handle '+' in package name.
         buildroot = buildroot.replace('+', r'\+')
         regex = regex.replace('@buildroot@', buildroot)
         install_sec = self.spec.get_section('%install', raw=True)
+        if not install_sec:
+            self.set_passed(self.NA)
+            return
         self.log.debug('regex: ' + regex)
         self.log.debug('install_sec: ' + install_sec)
         has_clean = install_sec and re.search(regex, install_sec)
@@ -343,7 +375,7 @@ class CheckDesktopFileInstall(GenericCheckBase):
         self.url = 'http://fedoraproject.org/wiki/' \
                    'Packaging/Guidelines#desktop'
         self.text = 'Package installs a  %{name}.desktop using' \
-                    ' desktop-file-install' \
+                    ' desktop-file-install or desktop-file-validate' \
                     ' if there is such a file.'
         self.automatic = True
         self.type = 'MUST'
@@ -353,7 +385,7 @@ class CheckDesktopFileInstall(GenericCheckBase):
             self.set_passed(self.NA)
             return
         pattern = r'(desktop-file-install|desktop-file-validate)' \
-                  '.*(desktop|SOURCE)'
+                    r'.*(desktop|SOURCE|\$\w+)'
         found = self.spec.find_re(re.compile(pattern))
         self.set_passed(self.PASS if found else self.FAIL)
 
@@ -373,12 +405,41 @@ class CheckDevelFilesInDevel(GenericCheckBase):
 class CheckDirectoryRequire(GenericCheckBase):
     ''' Package should require directories it uses. '''
 
+    sort_key = _DIR_SORT_KEY
+
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
         self.text = 'Package requires other packages for directories it uses.'
-        self.automatic = False
+        self.automatic = True
         self.type = 'MUST'
+
+    def run_on_applicable(self):
+        '''
+        Build raw list of directory paths in pkg, package owning the
+        leaf.
+        Split list into /part1 /part1/part2 /part1/part2/part3...
+        Remove all paths part of filesystem.
+        Remove all paths part of package.
+        Remaining dirs must have a owner, test one by one (painful).
+        '''
+        dirs = []
+        for path in self.rpms.get_filelist():
+            path = path.rsplit('/', 1)[0]  # We own the leaf.
+            while path:
+                dirs.append(path)
+                path = path.rsplit('/', 1)[0]
+        dirs = set(dirs)
+        filesys_dirs = set(deps.list_paths('filesystem'))
+        dirs -= filesys_dirs
+        rpm_paths = set(self.rpms.get_filelist())
+        dirs -= rpm_paths
+        bad_dirs = [d for d in dirs if not deps.list_owners(d)]
+        if bad_dirs:
+            self.set_passed(self.PENDING,
+                            "No known owner of " + ", ".join(bad_dirs))
+        else:
+            self.set_passed(self.PASS)
 
 
 class CheckDocRuntime(GenericCheckBase):
@@ -462,7 +523,7 @@ class CheckFilePermissions(GenericCheckBase):
         self.needs.append('CheckRpmlint')
 
     def run(self):
-        if  self.checks.checkdict['CheckRpmlint'].is_disabled:
+        if self.checks.checkdict['CheckRpmlint'].is_disabled:
             self.set_passed(self.PENDING, 'Rpmlint run disabled')
             return
         for line in Mock.rpmlint_output:
@@ -472,44 +533,10 @@ class CheckFilePermissions(GenericCheckBase):
         self.set_passed(self.PASS)
 
 
-class CheckFullVerReqSub(GenericCheckBase):
-    ''' Sub-packages requires base package using fully-versioned dep. '''
-
-    HDR = 'No Requires: %{name}%{?_isa} = %{version}-%{release} in '
-    REGEX = r'%{name}%{?_isa} = %{version}-%{release}'
-
-    def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
-        self.url = 'http://fedoraproject.org/wiki/' \
-                   'Packaging/Guidelines#RequiringBasePackage'
-        self.text = 'Fully versioned dependency in subpackages,' \
-                    ' if present.'
-        self.automatic = True
-        self.type = 'MUST'
-
-    def run(self):
-        bad_pkgs = []
-        isa = Mock.rpm_eval('%{?_isa}')
-        regex = self.REGEX.replace('%{?_isa}', isa)
-        regex = rpm.expandMacro(regex)
-        regex = re.sub('[.](fc|el)[0-9]+', '', regex)
-        for pkg in self.spec.packages:
-            if pkg == self.spec.base_package:
-                continue
-            if pkg.endswith('debuginfo'):
-                continue
-            reqs = ''.join(self.rpms.get(pkg).format_requires)
-            if not regex in reqs:
-                bad_pkgs.append(pkg)
-        if bad_pkgs:
-            self.set_passed(self.PENDING,
-                            self.HDR + ' , '.join(bad_pkgs))
-        else:
-            self.set_passed(self.PASS)
-
-
 class CheckGuidelines(GenericCheckBase):
     ''' MUST: The package complies to the Packaging Guidelines.  '''
+
+    sort_key = _GL_SORT_KEY
 
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
@@ -567,6 +594,7 @@ class CheckLicenseField(GenericCheckBase):
     actual license.
     '''
 
+    sort_key = _LICENSE_SORT_KEY
     unknown_license = 'Unknown or generated'
 
     def __init__(self, base):
@@ -666,6 +694,8 @@ class CheckLicenseField(GenericCheckBase):
 class CheckLicensInDoc(GenericCheckBase):
     ''' Package includes license text files. '''
 
+    sort_key = _LICENSE_SORT_KEY
+
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
@@ -695,7 +725,8 @@ class CheckLicensInDoc(GenericCheckBase):
 
         docs = []
         for pkg in self.spec.packages:
-            rpm_path = Mock.get_package_rpm_path(pkg, self.spec)
+            nvr = self.spec.get_package_nvr(pkg)
+            rpm_path = Mock.get_package_rpm_path(nvr)
             cmd = 'rpm -qldp ' + rpm_path
             doclist = check_output(cmd.split())
             docs.extend(doclist.split())
@@ -713,6 +744,8 @@ class CheckLicensInDoc(GenericCheckBase):
 
 class CheckLicenseInSubpackages(GenericCheckBase):
     ''' License should always be installed when subpackages.'''
+
+    sort_key = _LICENSE_SORT_KEY
 
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
@@ -753,19 +786,31 @@ class CheckMacros(GenericCheckBase):
         GenericCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/' \
                    'wiki/Packaging/Guidelines#macros'
-        self.text = 'Package consistently uses macro' \
-                    ' is (instead of hard-coded directory names).'
+        self.text = 'Package consistently uses macros' \
+                    ' (instead of hard-coded directory names).'
+        self.automatic = False
+        self.type = 'MUST'
+
+
+class CheckBuildrootMacros(GenericCheckBase):
+    '''Package must use either %{buildroot} or $RPM_BUILD_ROOT.  '''
+
+    def __init__(self, base):
+        GenericCheckBase.__init__(self, base)
+        self.url = 'http://fedoraproject.org/' \
+                   'wiki/Packaging/Guidelines#macros'
+        self.text = 'Package uses either  %{buildroot} or $RPM_BUILD_ROOT'
         self.automatic = True
         self.type = 'MUST'
 
     def run(self):
         br_tag1 = self.spec.find_all_re('.*%{buildroot}.*', True)
-        br_tag2 = self.spec.find_all_re('.*\$RPM_BUILD_ROOT.*', True)
+        br_tag2 = self.spec.find_all_re(r'.*\$RPM_BUILD_ROOT.*', True)
         if br_tag1 and br_tag2:
             self.set_passed(self.FAIL,
                             'Using both %{buildroot} and $RPM_BUILD_ROOT')
         else:
-            self.set_passed(self.PENDING)
+            self.set_passed(self.PASS)
 
 
 class CheckMakeinstall(GenericCheckBase):
@@ -782,7 +827,7 @@ class CheckMakeinstall(GenericCheckBase):
 
     def run_on_applicable(self):
         install = self.spec.get_section('%install', raw=True)
-        if '%makeinstall' in install:
+        if install and '%makeinstall' in install:
             self.set_passed(self.PENDING,
                             '%makeinstall used in %install section')
         else:
@@ -791,6 +836,8 @@ class CheckMakeinstall(GenericCheckBase):
 
 class CheckMultipleLicenses(GenericCheckBase):
     ''' If multiple licenses, we should provide a break-down. '''
+
+    sort_key = _LICENSE_SORT_KEY
 
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
@@ -899,7 +946,7 @@ class CheckNoConflicts(GenericCheckBase):
         text = None
         if self.spec.expand_tag('Conflicts'):
             text = 'Package contains Conflicts: tag(s)' \
-                       ' needing fix or justification.'
+                        ' needing fix or justification.'
         self.set_passed(self.PENDING, text)
 
 
@@ -934,13 +981,78 @@ class CheckOwnDirs(GenericCheckBase):
     does not create a directory that it uses, then it should require a
     package which does create that directory.
     '''
+
+    sort_key = _DIR_SORT_KEY
+
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
                    'Packaging/Guidelines#FileAndDirectoryOwnership'
         self.text = 'Package must own all directories that it creates.'
-        self.automatic = False
+        self.automatic = True
         self.type = 'MUST'
+
+    def run_on_applicable(self):
+        ''' Test if all directories created by us are owned by us or
+        of a dependency. Dependency resolution recurses one level, but
+        no more. This is partly to limit the result set, partly a
+        a best practise not to trust deep dependency chains for
+        package directory ownership.
+        '''
+
+        # pylint: disable=R0912
+        def resolve(requires):
+            '''
+            Resolve list of symbols to packages in srpm or by repoquery.
+            '''
+            pkgs = []
+            requires_to_process = list(requires)
+            for r in requires:
+                if r.startswith('rpmlib'):
+                    requires_to_process.remove(r)
+                    continue
+                for pkg in self.spec.packages:
+                    if r in self.rpms.get(pkg).provides:
+                        pkgs.append(pkg)
+                        requires_to_process.remove(r)
+                        break
+            if requires_to_process:
+                pkgs.extend(deps.resolve(requires_to_process))
+                pkgs.extend(deps.list_deps(pkgs))
+            return list(set(pkgs))
+
+        def get_deps_paths(pkg_deps):
+            ''' Return aggregated  list of files in all pkg_deps. '''
+            if not pkg_deps:
+                return []
+            paths = deps.list_paths(pkg_deps)
+            for dep in pkg_deps:
+                if dep in self.spec.packages:
+                    paths.extend(self.rpms.get_filelist(dep))
+            return paths
+
+        bad_dirs = []
+        for pkg in self.spec.packages:
+            pkg_deps = resolve(self.rpms.get(pkg).requires)
+            pkg_deps.append('filesystem')
+            pkg_deps_paths = get_deps_paths(pkg_deps)
+            rpm_paths = self.rpms.get_filelist(pkg)
+            for p in rpm_paths:
+                path = p.rsplit('/', 1)[0]  # We own leaf, for sure.
+                while path:
+                    if not path in rpm_paths:
+                        if path in pkg_deps_paths:
+                            break
+                        else:
+                            bad_dirs.append(path)
+                    path = path.rsplit('/', 1)[0]
+        if bad_dirs:
+            bad_dirs = list(set(bad_dirs))
+            self.set_passed(self.PENDING,
+                            "Directories without known owners: "
+                                 + ', '.join(bad_dirs))
+        else:
+            self.set_passed(self.PASS)
 
 
 class CheckOwnOther(GenericCheckBase):
@@ -955,14 +1067,55 @@ class CheckOwnOther(GenericCheckBase):
     another package owns, then please present that at package review
     time.
     '''
+
+    sort_key = _DIR_SORT_KEY
+
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
                    'Packaging/Guidelines#FileAndDirectoryOwnership'
         self.text = 'Package does not own files or directories' \
                     ' owned by other packages.'
-        self.automatic = False
+        self.automatic = True
         self.type = 'MUST'
+
+    def run_on_applicable(self):
+
+        def format_msg(owners_by_dir):
+            ''' Message string for PENDING message. '''
+            items = []
+            for d in owners_by_dir:
+                owners = ', '.join(owners_by_dir[d])
+                items.append("{0}({1})".format(d, owners))
+            return "Dirs in package are owned also by: " + \
+                ', '.join(items)
+
+        def skip_rpm(path):
+            ' Return True if this rpm  should not be checked. '
+            if path.endswith('.src.rpm'):
+                return True
+            pkg = path.rsplit('-', 2)[0]
+            return pkg.endswith('-debuginfo')
+
+        bad_owners_by_dir = {}
+        rpm_files = glob(os.path.join(Mock.resultdir, '*.rpm'))
+        rpm_files = [r for r in rpm_files if not skip_rpm(r)]
+        for rpm_file in rpm_files:
+            rpm_dirs = sorted(deps.list_dirs(rpm_file))
+            my_dirs = []
+            allowed = set(self.spec.packages)
+            for rpm_dir in rpm_dirs:
+                if [d for d in my_dirs if rpm_dir.startswith(d)]:
+                    continue
+                owners = set(deps.list_owners(rpm_dir))
+                if owners.issubset(allowed):
+                    my_dirs.append(rpm_dir)
+                    continue
+                bad_owners_by_dir[rpm_dir] = owners
+        if bad_owners_by_dir:
+            self.set_passed(self.PENDING, format_msg(bad_owners_by_dir))
+        else:
+            self.set_passed(self.PASS)
 
 
 class CheckRelocatable(GenericCheckBase):
@@ -1128,8 +1281,7 @@ class CheckSourceMD5(GenericCheckBase):
             if passed:
                 msg = None
             if text:
-                attachments = [
-                    self.Attachment('Source checksums', text, 10)]
+                attachments = [self.Attachment('Source checksums', text)]
             else:
                 attachments = []
             self.set_passed(passed, msg, attachments)
@@ -1169,6 +1321,48 @@ class CheckSpecName(GenericCheckBase):
                             (os.path.basename(self.spec.filename), spec_name))
 
 
+class CheckStaticLibs(GenericCheckBase):
+    ''' MUST: Static libraries must be in a -static or -devel package.  '''
+
+    def __init__(self, base):
+        GenericCheckBase.__init__(self, base)
+        self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines' \
+                   '#StaticLibraries'
+        self.text = 'Static libraries in -static or -devel subpackage, ' \
+                     'providing  -devel if present.'
+        self.automatic = False
+        self.type = 'MUST'
+
+    def is_applicable(self):
+        ''' check if this test is applicable '''
+        return self.rpms.find('*.a')
+
+    def run_on_applicable(self):
+        ''' Run the test, called if is_applicable() is True. '''
+        extra = ''
+        names = []
+        bad_names = []
+        no_provides = []
+        for pkg in self.spec.packages:
+            if self.rpms.find('*.a', pkg):
+                names.append(pkg)
+                if not (pkg.endswith('-static') or pkg.endswith('-devel')):
+                    bad_names.append(pkg)
+                rpm_pkg = self.rpms.get(pkg)
+                ok = [r for r in rpm_pkg.requires if r.endswith('-static')]
+                if not ok:
+                    no_provides.append(pkg)
+        if names:
+            extra = 'Package has .a files: ' + ', '.join(names) + '. '
+        if bad_names:
+            extra += 'Illegal package name: ' + ', '.join(bad_names)  + '. '
+        if no_provides:
+            extra += \
+                'Does not provide -static: ' + ', '.join(no_provides)  + '.'
+        failed = bool(bad_names) or bool(no_provides)
+        self.set_passed(self.FAIL if failed else self.PASS, extra)
+
+
 class CheckSystemdScripts(GenericCheckBase):
     ''' systemd files if applicable. '''
 
@@ -1193,7 +1387,7 @@ class CheckUTF8Filenames(GenericCheckBase):
         self.needs.append('CheckRpmlint')
 
     def run(self):
-        if  self.checks.checkdict['CheckRpmlint'].is_disabled:
+        if self.checks.checkdict['CheckRpmlint'].is_disabled:
             self.set_passed(self.PENDING, 'Rpmlint run disabled')
             return
         for line in Mock.rpmlint_output:
@@ -1294,7 +1488,8 @@ class CheckUpdateIconCache(GenericCheckBase):
         GenericCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging' \
                    ':ScriptletSnippets#Icon_Cache'
-        self.text = 'gtk-update-icon-cache is invoked when required'
+        self.text = 'gtk-update-icon-cache is invoked in %postun' \
+                    ' and %posttrans if package contains icons.'
         self.automatic = True
         self.type = 'MUST'
 
@@ -1321,43 +1516,69 @@ class CheckUpdateDesktopDatabase(GenericCheckBase):
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging' \
-                   ':ScriptletSnippets#Icon_Cache'
-        self.text = 'update-desktop-database is invoked when required'
+                   ':ScriptletSnippets#desktop-database'
+        self.text = 'update-desktop-database is invoked in %post and' \
+                    ' %postun if package contains desktop file(s)' \
+                    ' with a MimeType: entry.'
         self.automatic = True
+        self.needs.append('check-large-docs')   # Needed to unpack rpms
         self.type = 'MUST'
 
     def run(self):
+
+        def has_mimetype(pkg, fname):
+            ''' Return True if the file fname contains a MimeType entry. '''
+            nvr = self.spec.get_package_nvr(pkg)
+            rpm_dirs = glob(os.path.join(ReviewDirs.root,
+                                        'rpms-unpacked',
+                                        pkg + '-' + nvr.version + '*'))
+            path = os.path.join(rpm_dirs[0], fname[1:])
+            if os.path.isdir(path):
+                return False
+            elif not os.path.exists(path):
+                self.log.warning("Can't access desktop file: " + path)
+                return False
+            with open(path) as f:
+                for line in f.readlines():
+                    if line.strip().lower().startswith('mimetype'):
+                        return True
+            return False
+
         using = []
         failed = False
-        install = self.spec.get_section('%install', raw=True)
         for pkg in self.spec.packages:
-            if self.rpms.find('*.desktop', pkg):
+            dt_files = self.rpms.find_all('*.desktop', pkg)
+            dt_files = [f for f in dt_files if has_mimetype(pkg, f)]
+            if dt_files:
                 using.append(pkg)
-                if not 'update-desktop-database' in install and \
-                       not 'desktop-file-validate' in install:
+                rpm_pkg = self.rpms.get(pkg)
+                if not in_list('update-desktop-database',
+                               [rpm_pkg.post, rpm_pkg.postun]):
                     failed = True
         if not using:
             self.set_passed(self.NA)
             return
-        text = "desktop file(s) in " + ', '.join(using)
+        text = "desktop file(s) with MimeType entry in " + ', '.join(using)
         self.set_passed(self.FAIL if failed else self.PENDING, text)
 
 
 class CheckGioQueryModules(GenericCheckBase):
-    ''' Check that update-desktop-database is run if required. '''
+    ''' Check that gio-querymodules is run if required. '''
 
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging' \
                    ':ScriptletSnippets#GIO_modules'
-        self.text = 'gio-querymodules is invoked as required'
+        self.text = 'gio-querymodules is invoked in %postun and %post' \
+                    ' if package has /lib/gio/modules/* files'
+
         self.automatic = True
         self.type = 'MUST'
 
     def run(self):
         using = []
         failed = False
-        libdir = Mock.rpm_eval('%{_libdir}')
+        libdir = Mock.get_macro('%_libdir', self.spec, self.flags)
         gio_pattern = os.path.join(libdir, 'gio/modules/', '*')
         for pkg in self.spec.packages:
             if self.rpms.find(gio_pattern, pkg):
@@ -1379,7 +1600,7 @@ class CheckGtkQueryModules(GenericCheckBase):
     def __init__(self, base):
         GenericCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging' \
-                   ':ScriptletSnippets#GIO_modules'
+                   ':ScriptletSnippets#GTK.2B_modules'
         self.text = 'gtk-query-immodules is invoked when required'
         self.automatic = True
         self.type = 'MUST'
@@ -1387,7 +1608,7 @@ class CheckGtkQueryModules(GenericCheckBase):
     def run(self):
         using = []
         failed = False
-        libdir = Mock.rpm_eval('%{_libdir}')
+        libdir = Mock.get_macro('%_libdir', self.spec, self.flags)
         pattern = os.path.join(libdir, 'gtk-3.0/', '*')
         for pkg in self.spec.packages:
             if self.rpms.find(pattern, pkg):
@@ -1410,7 +1631,8 @@ class CheckGlibCompileSchemas(GenericCheckBase):
         GenericCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging' \
                    ':ScriptletSnippets#GSettings_Schema'
-        self.text = 'glib-compile-schemas is run if required'
+        self.text = 'glib-compile-schemas is run in %postun and' \
+                    ' %posttrans if package has *.gschema.xml files. '
         self.automatic = True
         self.type = 'MUST'
 
@@ -1466,7 +1688,8 @@ class CheckInfoInstall(GenericCheckBase):
         GenericCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging' \
                    ':ScriptletSnippets#Texinfo'
-        self.text = 'Texinfo files are properly installed'
+        self.text = 'Texinfo files are installed using install-info' \
+                    ' in %post and %preun if package has .info files.'
         self.automatic = True
         self.type = 'MUST'
 
@@ -1515,4 +1738,4 @@ class CheckSourceDownloads(GenericCheckBase):
 
 
 #
-# vim: set expandtab: ts=4:sw=4:
+# vim: set expandtab ts=4 sw=4:

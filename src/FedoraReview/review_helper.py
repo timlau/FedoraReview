@@ -19,10 +19,11 @@
 Tools for helping Fedora package reviewers
 '''
 
-import sys
-import os.path
-
 import ansi
+import os.path
+import sys
+import time
+
 from bugzilla_bug import BugzillaBug
 from checks import Checks, ChecksLister
 from mock import Mock
@@ -62,45 +63,50 @@ class ReviewHelper(object):
         self.outfile = None
         self.prebuilt = False
 
-    def __do_report(self):
+    def _do_report(self, outfile=None):
         ''' Create a review report'''
+        clock = time.time()
         self.log.info('Getting .spec and .srpm Urls from : '
                        + self.bug.get_location())
 
         Settings.dump()
         if not self.bug.find_urls():
             raise self.HelperError('Cannot find .spec or .srpm URL(s)')
+        self.log.debug("find_urls completed: %.3f"
+                           % (time.time() - clock))
+        clock = time.time()
 
         if not ReviewDirs.is_inited:
             wd = self.bug.get_dirname()
             ReviewDirs.workdir_setup(wd)
-        Mock.init()
+        if Mock.is_available():
+            Mock.init()
 
         if not self.bug.download_files():
             raise self.HelperError('Cannot download .spec and .srpm')
+        self.log.debug("Url download completed: %.3f" % (time.time() - clock))
 
         Settings.name = self.bug.get_name()
-        self.__run_checks(self.bug.spec_file, self.bug.srpm_file)
+        self._run_checks(self.bug.spec_file, self.bug.srpm_file, outfile)
 
-    def __run_checks(self, spec, srpm):
+    def _run_checks(self, spec, srpm, outfile=None):
         ''' Register and run all checks. '''
 
         def apply_color(s, formatter):
             ''' Return s formatted by formatter or plain s. '''
-            if Settings.use_colors:
-                return formatter(s)
-            return s
+            return formatter(s) if Settings.use_colors else s
 
         self.checks = Checks(spec, srpm)
-        if Settings.no_report:
+        if outfile:
+            self.outfile = outfile
+        elif Settings.no_report:
             self.outfile = '/dev/null'
         else:
             self.outfile = ReviewDirs.report_path()
         with open(self.outfile, "w") as output:
-            self.log.info('Running checks and generating report\n')
+            self.log.info('Running checks and generating report')
             self.checks.run_checks(output=output,
                                    writedown=not Settings.no_report)
-            output.close()
         if not Settings.no_report:
             print apply_color("Review template in: " + self.outfile,
                               ansi.green)
@@ -112,6 +118,13 @@ class ReviewHelper(object):
         checks_lister = ChecksLister()
         for flag in checks_lister.flags.itervalues():
             print flag.name + ': ' + flag.doc
+
+    @staticmethod
+    def _list_plugins():
+        ''' --display-plugins implementation. '''
+        checks_lister = ChecksLister()
+        plugins = checks_lister.get_plugins()
+        print ', '.join(plugins)
 
     @staticmethod
     def _list_checks():
@@ -161,7 +174,7 @@ class ReviewHelper(object):
             for victim in dep.deprecates:
                 print '    ' + victim
 
-    def _do_run(self):
+    def _do_run(self, outfile=None):
         ''' Initiate, download url:s, run checks a write report. '''
         Settings.init()
         make_report = True
@@ -174,6 +187,9 @@ class ReviewHelper(object):
         elif Settings.version:
             _print_version()
             make_report = False
+        elif Settings.list_plugins:
+            self._list_plugins()
+            make_report = False
         elif Settings.url:
             self.log.info("Processing bug on url: " + Settings.url)
             self.bug = UrlBug(Settings.url)
@@ -184,16 +200,19 @@ class ReviewHelper(object):
             self.log.info("Processing local files: " + Settings.name)
             self.bug = NameBug(Settings.name)
         if make_report:
-            self.__do_report()
+            if not Mock.is_available() and not Settings.prebuilt:
+                raise ReviewError("Mock unavailable, --prebuilt must be used.")
+            self._do_report(outfile)
 
-    def run(self):
+    def run(self, outfile=None):
         ''' Load urls, run checks and make report, '''
+        started_at = time.time()
         self.log.debug('fedora-review ' + __version__ + ' ' +
                          BUILD_FULL + ' started')
         self.log.debug("Command  line: " + ' '.join(sys.argv))
         try:
             rcode = 0
-            self._do_run()
+            self._do_run(outfile)
         except ReviewError as err:
             rcode = err.exitcode
             self.log.debug("ReviewError: " + str(err), exc_info=True)
@@ -207,10 +226,12 @@ class ReviewHelper(object):
             self.log.error('Exception down the road...'
                            '(logs in ' + Settings.session_log + ')')
             rcode = 1
+        self.log.debug("Report completed:  %.3f seconds"
+                           % (time.time() - started_at))
         return rcode
 
 
 if __name__ == "__main__":
     ReviewHelper().run()
 
-# vim: set expandtab: ts=4:sw=4:
+# vim: set expandtab ts=4 sw=4:

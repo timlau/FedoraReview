@@ -23,6 +23,7 @@ Tools for helping Fedora package reviewers
 import logging
 import os
 import os.path
+import re
 
 from glob import glob
 from subprocess import call, Popen, PIPE, STDOUT, CalledProcessError
@@ -57,8 +58,60 @@ def _run_script(script):
     return True, output
 
 
+def _get_tag(paths):
+    ''' Return common disttag from prebuilt files, possibly "" '''
+    releases = [p.rsplit('-', 2)[2] for p in paths]
+    releases = [r.rsplit('.', 2)[0] for r in releases]
+    if not len(set(releases)) == 1:
+        return ""
+    match = re.search('(fc|el)[0-9][0-9]', releases[0])
+    return match.group() if match else ''
+
+
+def _get_tag_from_flags(self, flags):
+    ''' Retrieve disttag from user defined falg value. '''
+    if flags['DISTTAG']:
+        self.log.info("Using disttag from DISTTAG flag.")
+        return flags['DISTTAG'].value
+    self.log.warning('No disttag found in prebuilt packages')
+    self.log.info('Use --define DISTTAG to set proper dist.'
+                  ' e. g. --define DISTTAG fc21.')
+    raise ReviewError('No disttag in package and no DISTTAG flag.'
+                      ' Use --define DISTTAG to set proper dist'
+                      ' e. g., --define DISTTAG=fc21.')
+
+
+def _add_disttag_macros(macros, tag):
+    ''' Add macros derived from disttag. '''
+    if tag.startswith('el'):
+        macros['%epel'] = tag
+        macros['%fedora'] = '%fedora'
+    else:
+        macros['%fedora'] = tag
+        macros['%epel'] = '%epel'
+    return macros
+
+
+def _add_buildarch_macros(macros, paths):
+    ''' Add macros derived from buildarch. '''
+    arches = [p.rsplit('.', 2)[1] for p in paths]
+    if set(arches) == set(['noarch']):
+        buildarch = 'noarch'
+    else:
+        buildarch = [a for a in arches if not a is 'noarch'][0]
+    macros['%buildarch'] = buildarch
+    if buildarch == 'x86_64':
+        macros['%_libdir'] = '/usr/lib64'
+        macros['%_isa'] = '(x86-64)'
+    else:
+        macros['%_libdir'] = '/usr/lib'
+        macros['%_isa'] = '(x86-32)'
+    return buildarch, macros
+
+
 class _Mock(HelpersMixin):
     """ Some basic operations on the mock chroot env, a singleton. """
+    # pylint: disable=R0904
 
     def __init__(self):
         HelpersMixin.__init__(self)
@@ -66,19 +119,48 @@ class _Mock(HelpersMixin):
         self.build_failed = None
         self.mock_root = None
         self._rpmlint_output = None
+        self._topdir = None
+        self._macros = None
+
+    def _get_default_macros(self):
+        ''' Evaluate macros using rpm in mock. '''
+        tags = '%fedora %epel %buildarch %_libdir %_isa %arch'
+        macros = {}
+        values = self._rpm_eval(tags).split()
+        taglist = tags.split()
+        for i in range(0, len(taglist)):
+            macros[taglist[i]] = values[i]
+        return macros
+
+    def _get_prebuilt_macros(self, spec, flags):
+        ''' Evaluate macros based on prebuilt packages (#208).'''
+
+        paths = self.get_package_rpm_paths(spec)
+        tag = _get_tag(paths)
+        if not tag.startswith('fc') and not tag.startswith('el'):
+            tag = _get_tag_from_flags(self, flags)
+        macros = _add_disttag_macros({}, tag)
+        buildarch, macros = _add_buildarch_macros(macros, paths)
+        try:
+            _arch = check_output('rpm --eval %_arch'.split()).strip()
+        except CalledProcessError:
+            raise ReviewError("Can't evaluate 'rpm --eval %_arch")
+        if buildarch is 'x86_64' and not _arch is 'x86_64':
+            raise ReviewError("Can't build x86_64 on i86 host")
+        return macros
 
     def _get_root(self):
-        '''Return mock's root according to Settings. '''
+        ''' Return mock's root according to Settings. '''
         config = 'default'
         if Settings.mock_config:
-            config  = Settings.mock_config
+            config = Settings.mock_config
         mockdir = Settings.configdir if Settings.configdir \
             else '/etc/mock'
         path = os.path.join(mockdir, config + '.cfg')
 
         config_opts = {}
         with open(path) as f:
-            config = [line for line in f.readlines() if \
+            config = [line for line in f.readlines() if
                       line.find("config_opts['root']") >= 0]
         exec config[0]                           # pylint: disable=W0122
         self.mock_root = config_opts['root']
@@ -90,70 +172,17 @@ class _Mock(HelpersMixin):
                           'Rawhide should be used for most package reviews')
 
     def _get_dir(self, subdir=None):
-        ''' Return a directory under root, create if non-existing. '''
+        ''' Return a directory under root, try to create if non-existing. '''
         if not self.mock_root:
             self._get_root()
         p = os.path.join('/var/lib/mock', self.mock_root)
         p = os.path.join(p, subdir) if subdir else p
         if not os.path.exists(p):
-            os.makedirs(p)
+            try:
+                os.makedirs(p)
+            except OSError:
+                pass
         return p
-
-    def reset(self):
-        """ Clear all persistent state. """
-        if self.mock_root:
-            self.mock_root = None
-
-    def get_resultdir(self):                     # pylint: disable=R0201
-        ''' Return resultdir used by mock. '''
-        if Settings.resultdir:
-            return Settings.resultdir
-        else:
-            return ReviewDirs.results
-
-    @property
-    def buildroot(self):
-        ''' Return path to current buildroot' '''
-        if not self.mock_root:
-            self._get_root()
-        return self.mock_root
-
-    def get_package_rpm_path(self, pkg_name, rpm_or_spec):
-        '''
-        Return path to generated pkg_name rpm, throws ReviewError
-        on missing or multiple matches
-        '''
-        pattern = '%s-%s*' % (pkg_name, rpm_or_spec.version)
-
-        if Settings.prebuilt:
-            paths = glob(os.path.join(ReviewDirs.startdir, pattern))
-        else:
-            paths = glob(os.path.join(self.get_resultdir(), pattern))
-        paths = filter(lambda p: p.endswith('.rpm')
-                       and not p.endswith('.src.rpm'), paths)
-        if len(paths) == 0:
-            raise ReviewError('No built package found for ' + pkg_name)
-        elif len(paths) > 1:
-            raise ReviewError('Multiple packages found for ' + pkg_name)
-        else:
-            return paths[0]
-
-    def get_package_rpm_paths(self, spec):
-        '''
-        Return a list of paths to binary rpms corresponding to
-        the packages generated by given spec.
-        '''
-        result = []
-        for pkg in spec.packages:
-            result.append(self.get_package_rpm_path(pkg, spec))
-        return result
-
-    def get_builddir(self, subdir=None):
-        """ Return the directory which corresponds to %_topdir inside
-        mock. Optional subdir argument is added to returned path.
-        """
-        p = self._get_dir('root/builddir/build')
-        return os.path.join(p, subdir) if subdir else p
 
     def _get_rpmlint_output(self):
         ''' Return output from last rpmlint, list of lines. '''
@@ -162,15 +191,6 @@ class _Mock(HelpersMixin):
                 with open('rpmlint.txt') as f:
                     self._rpmlint_output = f.readlines()
         return self._rpmlint_output
-
-    # Last (cached?) output from rpmlint, list of lines.
-    rpmlint_output = property(_get_rpmlint_output)
-
-    # The directory where mock leaves built rpms and logs
-    resultdir = property(get_resultdir)
-
-    # Mock's %_topdir seen from the outside.
-    topdir = property(lambda self: self.get_builddir())
 
     def _mock_cmd(self):
         ''' Return mock +  default options, a list of strings. '''
@@ -184,7 +204,7 @@ class _Mock(HelpersMixin):
 
         def log_text(out, err):
             ''' Format stdout + stderr. '''
-            return  header + " output: " + str(out) + ' ' + str(err)
+            return header + " output: " + str(out) + ' ' + str(err)
 
         self.log.debug(header + ' command: ' + ', '.join(cmd))
         try:
@@ -199,17 +219,128 @@ class _Mock(HelpersMixin):
                          p.returncode)
         return None if p.returncode == 0 else str(output)
 
+    def _get_topdir(self):
+        ''' Update _topdir to reflect %_topdir in current mock config. '''
+        if self._topdir:
+            return
+        cmd = self._mock_cmd()
+        cmd.extend(['-q', '--shell', 'rpm --eval %_topdir'])
+        try:
+            self._topdir = check_output(cmd).strip()
+            self.log.debug("_topdir: " + str(self._topdir))
+        except (CalledProcessError, OSError):
+            self.log.info("Cannot evaluate %topdir in mock, using"
+                             " hardcoded /builddir/build")
+            self._topdir = '/builddir/build'
+
     def _clear_rpm_db(self):
         """ Mock install uses host's yum -> bad rpm database. """
         cmd = self._mock_cmd()
         cmd.extend(['--shell', 'rm -f /var/lib/rpm/__db*'])
         self._run_cmd(cmd)
 
-    def rpm_eval(self, arg):
+    def _get_rpm_paths(self, pattern):
+        ''' Return paths matching a rpm name pattern. '''
+        if Settings.prebuilt:
+            paths = glob(os.path.join(ReviewDirs.startdir, pattern))
+        else:
+            paths = glob(os.path.join(self.get_resultdir(), pattern))
+        return paths
+
+    def _rpm_eval(self, arg):
         ''' Run rpm --eval <arg> inside mock, return output. '''
         cmd = self._mock_cmd()
         cmd.extend(['--quiet', '--shell', 'rpm --eval \\"' + arg + '\\"'])
         return check_output(cmd).decode('utf-8').strip()
+
+# Last (cached?) output from rpmlint, list of lines.
+    rpmlint_output = property(_get_rpmlint_output)
+
+    # The directory where mock leaves built rpms and logs
+    resultdir = property(lambda self: self.get_resultdir())
+
+    # Mock's %_topdir seen from the outside.
+    topdir = property(lambda self: self.get_builddir())
+
+    @property
+    def buildroot(self):
+        ''' Return path to current buildroot' '''
+        if not self.mock_root:
+            self._get_root()
+        return self.mock_root
+
+    def reset(self):
+        """ Clear all persistent state. """
+        if self.mock_root:
+            self.mock_root = None
+
+    def get_resultdir(self):                     # pylint: disable=R0201
+        ''' Return resultdir used by mock. '''
+        if Settings.resultdir:
+            return Settings.resultdir
+        else:
+            return ReviewDirs.results
+
+    def get_package_rpm_path(self, nvr):
+        '''
+        Return path to generated pkg_name rpm, throws ReviewError
+        on missing or multiple matches. Argument should have
+        have name, version and release attributes.
+        '''
+        pattern = '%s-%s*' % (nvr.name, nvr.version)
+        paths = self._get_rpm_paths(pattern)
+        paths = filter(lambda p: p.endswith('.rpm')
+                       and not p.endswith('.src.rpm'), paths)
+        if len(paths) == 0:
+            raise ReviewError('No built package found for ' + nvr.name)
+        elif len(paths) > 1:
+            raise ReviewError('Multiple packages found for ' + nvr.name)
+        else:
+            return paths[0]
+
+    def get_package_rpm_paths(self, spec, with_srpm=False):
+        '''
+        Return a list of paths to binary rpms corresponding to
+        the packages generated by given spec.
+        '''
+
+        def get_package_srpm_path(spec):
+            ''' Return path to srpm given a spec. '''
+            pattern = '%s-%s*' % (spec.name, spec.version)
+            paths = self._get_rpm_paths(pattern)
+            paths = [p for p in paths if p.endswith('.src.rpm')]
+            if len(paths) == 0:
+                raise ReviewError('No srpm found for ' + spec.name)
+            elif len(paths) > 1:
+                raise ReviewError('Multiple srpms found for ' + spec.name)
+            else:
+                return paths[0]
+
+        result = []
+        for pkg in spec.packages:
+            nvr = spec.get_package_nvr(pkg)
+            result.append(self.get_package_rpm_path(nvr))
+        if with_srpm:
+            result.append(get_package_srpm_path(spec))
+        return result
+
+    def get_builddir(self, subdir=None):
+        """ Return the directory which corresponds to %_topdir inside
+        mock. Optional subdir argument is added to returned path.
+        """
+        self._get_topdir()
+        p = self._get_dir(os.path.join('root', self._topdir[1:]))
+        return os.path.join(p, subdir) if subdir else p
+
+    def get_macro(self, macro, spec, flags):
+        ''' Return value of one of the system-defined rpm macros. '''
+        if not self._macros:
+            if Settings.prebuilt:
+                self._macros = self._get_prebuilt_macros(spec, flags)
+            else:
+                self._macros = self._get_default_macros()
+        key = macro if macro.startswith('%') else '%' + macro
+        return self._macros[key] if key in self._macros else macro
 
     @staticmethod
     def get_mock_options():
@@ -228,12 +359,21 @@ class _Mock(HelpersMixin):
         ''' Remove all sources installed in BUILD. '''
         cmd = self._mock_cmd()
         cmd.append('--shell')
-        cmd.append('rm -rf /builddir/build/BUILD/*')
+        cmd.append('rm -rf $(rpm --eval %_builddir)/*')
         errmsg = self._run_cmd(cmd)
-        if  errmsg:
+        if errmsg:
             self.log.debug('Cannot clear build area: ' + errmsg +
                            ' (ignored)')
         return None
+
+    @staticmethod
+    def is_available():
+        ''' Test if mock command is installed and usable. '''
+        try:
+            check_output(['mock', '--version'])
+            return True
+        except (CalledProcessError, OSError):
+            return False
 
     def is_installed(self, package):
         ''' Return true iff package is installed in mock chroot. '''
@@ -243,7 +383,7 @@ class _Mock(HelpersMixin):
         cmd = ' '.join(cmd)
         rc = call(cmd, shell=True)
         self.log.debug('is_installed: Tested ' + package +
-                        ', result: ' + str(rc))
+                       ', result: ' + str(rc))
         return rc == 0
 
     def rpmbuild_bp(self, srpm):
@@ -254,18 +394,18 @@ class _Mock(HelpersMixin):
         cmd.append(srpm.filename)
         cmd.append(os.path.basename(srpm.filename))
         errmsg = self._run_cmd(cmd)
-        if  errmsg:
+        if errmsg:
             self.log.warning("Cannot run mock --copyin: " + errmsg)
             return errmsg
         cmd = self._mock_cmd()
         cmd.append('--shell')
         script = 'rpm -i ' + os.path.basename(srpm.filename) + '; '
-        script += 'rpmbuild --nodeps -bp /builddir/build/SPECS/' \
+        script += 'rpmbuild --nodeps -bp $(rpm --eval %_specdir)/' \
                   + srpm.name + '.spec;'
-        script += 'chmod -R  go+r  /builddir/build/BUILD/* || :'
+        script += 'chmod -R  go+r  $(rpm --eval %_builddir)/* || :'
         cmd.append(script)
         errmsg = self._run_cmd(cmd)
-        if  errmsg:
+        if errmsg:
             self.log.warning("Cannot run mock --shell rpmbuild -bp: "
                              + errmsg)
             return errmsg
@@ -301,7 +441,7 @@ class _Mock(HelpersMixin):
         else:
             self.log.debug('Build failed rc = ' + rc)
             error = ReviewError('mock build failed, see ' + self.resultdir
-                                 + '/build.log')
+                                + '/build.log')
             error.show_logs = False
             raise error
 
@@ -313,7 +453,7 @@ class _Mock(HelpersMixin):
 
         def log_text(out, err):                  # pylint: disable=W0612
             ''' Log message + default prefix. '''
-            return  "Install output: " + str(out) + ' ' + str(err)
+            return "Install output: " + str(out) + ' ' + str(err)
 
         def is_not_installed(package):
             ''' Test if package (path or name) isn't installed. '''
@@ -338,10 +478,10 @@ class _Mock(HelpersMixin):
     def init(self):
         """ Run a mock --init command. """
         try:
-            self.rpm_eval('%{_libdir}')
+            self._rpm_eval('%{_libdir}')
             self.log.debug("Avoiding init of working mock root")
             return
-        except CalledProcessError:
+        except (CalledProcessError, OSError):
             pass
         self.log.info("Re-initializing mock build root")
         cmd = ["mock"]
@@ -411,16 +551,10 @@ class _Mock(HelpersMixin):
         ''' Remove broken symlinks left by mock command. '''
         paths = glob(os.path.join(self.get_builddir('BUILD'), '*'))
         for p in paths:
-            try:
-                os.stat(p)
-            except IOError:
-                try:
-                    os.lstat(p)
-                    os.unlink(p)
-                except IOError:
-                    pass
+            if not os.path.exists(p) and os.path.lexists(p):
+                os.unlink(p)
 
 
 Mock = _Mock()
 
-# vim: set expandtab: ts=4:sw=4:
+# vim: set expandtab ts=4 sw=4:

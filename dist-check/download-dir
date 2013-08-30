@@ -1,0 +1,18 @@
+#!/bin/bash
+#
+# Invoke with or from a directory created by dist-check-setup. Downloads
+# packages for this dir. No error checks, none.
+
+[[ -n "$1" && -d "$1" ]] && cd "$1"
+
+readonly ARCH=$(uname -i)
+
+for p in *.url; do
+    [[ "$p" == srpm.url ]] && continue
+    pkgs="$pkgs ${p%.url}.$ARCH ${p%.url}.noarch"
+done
+
+set -x
+yumdownloader --disablerepo=\* --enablerepo=fedora\* --releasever=rawhide $pkgs
+
+yumdownloader --disablerepo=\* --enablerepo=fedora\* --releasever=rawhide --source ${PWD##*/}

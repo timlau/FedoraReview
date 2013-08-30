@@ -25,8 +25,12 @@ from distutils.sysconfig import get_python_lib
 if os.path.exists('../src'):
     SRC_PATH = os.path.abspath('../src')
     REVIEW_PATH = os.path.abspath('../src/fedora-review')
+    PLUGIN_PATH = os.path.abspath('..')
 else:
     SRC_PATH = os.path.join(get_python_lib(), 'FedoraReview')
+    PLUGIN_PATH = SRC_PATH
     REVIEW_PATH = '/usr/bin/fedora-review'
 assert os.path.exists(SRC_PATH), "Can't find src path"
 sys.path.insert(0, SRC_PATH)
+
+# vim: set expandtab ts=4 sw=4:

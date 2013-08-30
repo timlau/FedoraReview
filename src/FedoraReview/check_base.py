@@ -30,10 +30,10 @@ from helpers_mixin import HelpersMixin
 class _Attachment(object):
     """ Text written after the test lines. """
 
-    def __init__(self, header, text, order_hint=10):
+    def __init__(self, header, text, order_hint=8):
         """
         Setup an attachment. Args:
-         -  header: short header, < 40 char.
+         -  header: short header, < 40 char, possibly None.
          -  text: printed as-is.
          -  order_hint: Sorting hint, lower hint goes first.
                 0 <= order_hint <= 10
@@ -44,6 +44,8 @@ class _Attachment(object):
         self.order_hint = order_hint
 
     def __str__(self):
+        if not self.header:
+            return self.text
         s = self.header + '\n'
         s += '-' * len(self.header) + '\n'
         s += self.text
@@ -70,6 +72,7 @@ class AbstractCheck(object):
       - group: 'Generic', 'C/C++', 'PHP': binds the test to a
                 Registry.
       - implementation: 'python'|'shell', defaults to 'python'.
+      - sort_key: used to sort checks in output.
 
     Properties:
       - name: Unique string.
@@ -99,6 +102,7 @@ class AbstractCheck(object):
 
     version        = '0.1'
     implementation = 'python'
+    sort_key       = 50
 
     def __init__(self, defined_in):
         self.defined_in = defined_in
@@ -130,7 +134,7 @@ class AbstractCheck(object):
     @property
     def state(self):
         ''' None for (not is_run or is_na), else result.result '''
-        assert self != None
+        assert self
         if hasattr(self, 'result'):
             return self.result.result if self.result else None
         return None
@@ -139,8 +143,7 @@ class AbstractCheck(object):
     is_failed  = property(lambda self: self.state == self.FAIL)
     is_passed  = property(lambda self: self.state == self.PASS)
     is_pending = property(lambda self: self.state == self.PENDING)
-    is_na      = property(
-                     lambda self: self.is_run and self.state == None)
+    is_na      = property(lambda self: self.is_run and not self.state)
 
 
 class GenericCheck(AbstractCheck):
@@ -170,6 +173,7 @@ class GenericCheck(AbstractCheck):
         self.description = 'This test has no description'
         self.type = 'MUST'
         self.needs = ['CheckBuildCompleted']
+        self.attachments = []      # Keep attachments here to support NA
 
     spec       = property(lambda self: self.checks.spec)
     flags      = property(lambda self: self.checks.flags)
@@ -189,12 +193,14 @@ class GenericCheck(AbstractCheck):
         Set if the test is passed, failed or N/A and set optional
         extra output and/or attachments to be shown in repost.
         '''
+
+        self.attachments = attachments if attachments else []
         if result in ['not_applicable', self.NA, None]:
             self.result = None
             return
-        elif result == True or result == self.PASS:
+        elif result is True or result == self.PASS:
             state = self.PASS
-        elif result == False or result == self.FAIL:
+        elif result is False or result == self.FAIL:
             state = self.FAIL
         elif result == 'inconclusive' or result == self.PENDING:
             state = self.PENDING
@@ -240,17 +246,17 @@ class TestResult(object):
     ''' The printable outcome of a test, stored in check.result. '''
 
     TEST_STATES = {
-         'pending': '[ ]', 'pass': '[x]', 'fail': '[!]', 'na': '[-]'}
+        'pending': '[ ]', 'pass': '[x]', 'fail': '[!]', 'na': '[-]'}
 
     def __init__(self, check, result, output_extra, attachments=None):
         self.check = check
-        self.text = re.sub("\s+", " ", check.text) if check.text else ''
+        self.text = re.sub(r"\s+", " ", check.text) if check.text else ''
         self.result = result
         self._leader = self.TEST_STATES[result] + ': '
         self.output_extra = output_extra
         self.attachments = attachments if attachments else []
         if self.output_extra:
-            self.output_extra = re.sub("\s+", " ", self.output_extra)
+            self.output_extra = re.sub(r"\s+", " ", self.output_extra)
         self.set_indent(5)
 
     url = property(lambda self: self.check.url)
@@ -280,9 +286,14 @@ class TestResult(object):
         if self.output_extra and self.output_extra != "":
             strbuf.write("\n")
             extra_lines = self.wrapper.wrap(
-                              self.wrapper.subsequent_indent +
-                              "Note: " + self.output_extra)
+                                self.wrapper.subsequent_indent +
+                                "Note: " + self.output_extra)
             strbuf.write('\n'.join(extra_lines))
+            if self.check.is_failed:
+                see = self.wrapper.wrap(
+                                self.wrapper.subsequent_indent +
+                                "See: " + self.check.url)
+                strbuf.write("\n" + "\n".join(see))
 
         return strbuf.getvalue()
 
@@ -291,4 +302,4 @@ class TestResult(object):
 
 
 
-# vim: set expandtab: ts=4:sw=4:
+# vim: set expandtab ts=4 sw=4:

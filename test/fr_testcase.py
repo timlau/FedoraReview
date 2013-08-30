@@ -22,6 +22,7 @@ Base class for FedoraReview tests
 
 import os
 import os.path
+import shutil
 import subprocess
 import sys
 import unittest2 as unittest
@@ -31,11 +32,13 @@ from urllib import urlopen
 import srcpath                                   # pylint: disable=W0611
 from FedoraReview import Mock, ReviewDirs, Settings
 from FedoraReview.checks import Checks
-from FedoraReview.name_bug import NameBug
+from FedoraReview.review_helper import ReviewHelper
 
 STARTDIR = os.getcwd()
 
-VERSION = '0.4.1'
+VERSION = '0.5.0'
+
+RELEASE = '18'
 
 try:
     urlopen('http://bugzilla.redhat.com')
@@ -45,11 +48,13 @@ except IOError:
 
 FAST_TEST = 'REVIEW_FAST_TEST' in os.environ
 
+FEDORA = os.path.exists('/etc/fedora-release')
 
-class  FR_TestCase(unittest.TestCase):
+
+class FR_TestCase(unittest.TestCase):
     ''' Common base class for all tests. '''
 
-    BUILDROOT = "fedora-17-i386"
+    BUILDROOT = "fedora-%s-i386" % RELEASE
     BASE_URL  = 'https://fedorahosted.org/releases/F/e/FedoraReview/'
 
     @staticmethod
@@ -116,21 +121,29 @@ class  FR_TestCase(unittest.TestCase):
 
     def run_spec(self, spec):
         ''' Run all tests for a test spec.... '''
+        # pylint: disable=C0111,W0212
+
+        class Null:
+            def write(self, msg):
+                pass
 
         argv = ['-rn', spec.testcase, '-x', 'check-large-docs',
                 '--no-build']
         argv.extend(spec.args)
         self.init_test(spec.testcase, wd=spec.workdir, argv=argv)
-        bug = NameBug(spec.testcase)
-        bug.find_urls()
-        bug.download_files()
-        checks = Checks(bug.spec_file, bug.srpm_file)
+        helper = ReviewHelper()
         Mock.clear_builddir()
         if os.path.exists('BUILD'):
-            os.unlink('BUILD')
-        with open('review.txt', 'w') as review:
-            checks.run_checks(output=review)
-        checkdict = checks.get_checks()
+            if os.path.islink('BUILD'):
+                os.unlink('BUILD')
+            else:
+                shutil.rmtree('BUILD')
+        stdout = sys.stdout
+        sys.stdout = Null()
+        rc = helper.run('review.txt')
+        self.assertEqual(rc, 0)
+        sys.stdout = stdout
+        checkdict = helper.checks.get_checks()
         for check in checkdict.itervalues():
             self.assertTrue(check.is_run)
             if check.is_passed or check.is_pending or check.is_failed:
@@ -149,3 +162,5 @@ class  FR_TestCase(unittest.TestCase):
                               checkdict[check].attachments[0].text)
             else:
                 self.assertFalse(what)
+
+# vim: set expandtab ts=4 sw=4:

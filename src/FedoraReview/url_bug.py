@@ -78,4 +78,4 @@ class UrlBug(AbstractBug):
         AbstractBug.do_check_options('--url', ['prebuilt', 'other_bz'])
 
 
-# vim: set expandtab: ts=4:sw=4:
+# vim: set expandtab ts=4 sw=4:

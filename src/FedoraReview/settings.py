@@ -42,10 +42,10 @@ def _check_mock_grp():
     ''' Raise ReviewError unless mock installation is OK. '''
 
     mock_msg = \
-    'No mock group - mock not installed or mock not in effective' \
-    'groups. Try running  "newgrp" or logging out from all your local '\
-    'sessions and logging back in. Or disable test using ' \
-    'REVIEW_NO_MOCKGROUP_CHECK, see manpage'
+        'No mock group - mock not installed or mock not in effective' \
+        'groups. Try running  "newgrp" or logging out from all your local ' \
+        'sessions and logging back in. Or disable test using ' \
+        'REVIEW_NO_MOCKGROUP_CHECK, see manpage'
 
     if 'REVIEW_NO_MOCKGROUP_CHECK' in os.environ:
         return
@@ -57,82 +57,95 @@ def _check_mock_grp():
 def _add_modes(modes):
     ''' Add all mode arguments to the option parser group modes. '''
     modes.add_argument('-b', '--bug', metavar='<bug>',
-                help='Operate on fedora bugzilla using its bug number.')
+                       help='Operate on fedora bugzilla using its bug number.')
     modes.add_argument('-n', '--name', metavar='<name>',
-                help='Use local files <name>.spec and <name>*.src.rpm'
-                     ' in current dir or, when using --rpm-spec, use'
-                     ' <name> as path to srpm.')
+                       help='Use local files <name>.spec and <name>*.src.rpm'
+                       ' in current dir or, when using --rpm-spec, use'
+                       ' <name> as path to srpm.')
     modes.add_argument('-u', '--url', default = None, dest='url',
-                metavar='<url>',
-                 help='Use another bugzilla, using complete'
-                      ' url to bug page.')
+                       metavar='<url>',
+                       help='Use another bugzilla, using complete'
+                       ' url to bug page.')
     modes.add_argument('-d', '--display-checks', default = False,
-                action='store_true', dest='list_checks',
-                help='List all available checks.')
+                       action='store_true', dest='list_checks',
+                       help='List all available checks.')
     modes.add_argument('-f', '--display-flags', default = False,
-                action='store_true', dest='list_flags',
-                help='List all available flags.')
+                       action='store_true', dest='list_flags',
+                       help='List all available flags.')
+    modes.add_argument('-g', '--display-plugins', default = False,
+                       action='store_true', dest='list_plugins',
+                       help='List all available plugins.')
     modes.add_argument('-V', '--version', default = False,
-                action='store_true',
-                help='Display version information and exit.')
+                       action='store_true',
+                       help='Display version information and exit.')
     modes.add_argument('-h', '--help', action='help',
-                help = 'Display this help message')
+                       help = 'Display this help message')
 
 
 def _add_optionals(optional):
     ''' Add all optional arguments to option parser group optionals. '''
 
     optional.add_argument('-B', '--no-colors', action='store_false',
-                help='No colors in output', default=True, dest='use_colors')
+                          help='No colors in output',
+                          default=True, dest='use_colors')
     optional.add_argument('-c', '--cache', action='store_true',
-                dest='cache',
-                help = 'Do not redownload files from bugzilla,'
-                       ' use the ones in the cache.')
+                          dest='cache',
+                          help = 'Do not redownload files from bugzilla,'
+                          ' use the ones in the cache.')
     optional.add_argument('-D', '--define', metavar='<flag>',
-                action='append', dest='flags', default=[],
-                help = 'Define a flag like --define EPEL5 or '
-                       ' -D EPEL5=1')
+                          action='append', dest='flags', default=[],
+                          help = 'Define a flag like --define EPEL5 or '
+                          ' -D EPEL5=1')
     optional.add_argument('-L', '--local-repo', metavar='<rpm directory>',
-                dest='repo',
-                help = 'directory with rpms to install together with'
-                ' reviewed package during build and install phases.')
+                          dest='repo',
+                          help = 'directory with rpms to install together with'
+                          ' reviewed package during build and install phases.')
     optional.add_argument('-m', '--mock-config', metavar='<config>',
-                dest='mock_config',
-                help='Configuration to use for the mock build,'
-                     " defaults to 'default' i. e.,"
-                     ' /etc/mock/default.cfg')
+                          dest='mock_config',
+                          help='Configuration to use for the mock build,'
+                          " defaults to 'default' i. e.,"
+                          ' /etc/mock/default.cfg')
     optional.add_argument('--no-report', action='store_true',
-                help='Do not print review report.')
+                          help='Do not print review report.')
     optional.add_argument('--no-build', action='store_true',
-                dest='nobuild',
-                help = 'Do not rebuild or install the srpm, use last '
-                       ' built one in mock. Implies --cache')
+                          dest='nobuild',
+                          help = 'Do not rebuild or install the srpm, use last'
+                          ' built one in mock. Implies --cache')
     optional.add_argument('-o', '--mock-options', metavar='<mock options>',
-                default = '--no-cleanup-after --no-clean',
-                dest='mock_options',
-                help='Options to specify to mock for the build,'
-                     ' defaults to --no-cleanup-after --no-clean')
+                          default = '--no-cleanup-after --no-clean',
+                          dest='mock_options',
+                          help='Options to specify to mock for the build,'
+                          ' defaults to --no-cleanup-after --no-clean')
     optional.add_argument('--other-bz', default=None,
-                metavar='<bugzilla url>', dest='other_bz',
-                help='Alternative bugzilla URL')
+                          metavar='<bugzilla url>', dest='other_bz',
+                          help='Alternative bugzilla URL')
+    optional.add_argument('-P', '--plugins',
+                          metavar='<plugin>',
+                          dest='plugins_arg', default = None,
+                          help='List of plugins to enable or disable hard'
+                             ' e. g., "Java:off,C/C++"')
     optional.add_argument('-p', '--prebuilt', action='store_true',
-                dest='prebuilt', help='When using -n <name>, use'
-                ' prebuilt rpms in current directory.')
+                          dest='prebuilt', default = False,
+                          help='When using -n <name>, use'
+                              ' prebuilt rpms in current directory.')
     optional.add_argument('-s', '--single', metavar='<test>',
-                help='Single test to run, as named by --display-checks.')
+                          help='Single test to run, as named by '
+                          '--display-checks.')
     optional.add_argument('-r', '--rpm-spec', action='store_true',
-                dest='rpm_spec', default=False,
-                help='Take spec file from srpm instead of separate url.')
+                          dest='rpm_spec', default=False,
+                          help='Take spec file from srpm instead of separate'
+                          'url.')
     optional.add_argument('-v', '--verbose', action='store_true',
-                help='Show more output.', default=False, dest='verbose')
+                          help='Show more output.', default=False,
+                          dest='verbose')
     optional.add_argument('-x', '--exclude',
-                dest='exclude', metavar='"test,..."',
-                help='Comma-separated list of tests to exclude.')
+                          dest='exclude', metavar='"test,..."',
+                          help='Comma-separated list of tests to exclude.')
     optional.add_argument('-k', '--checksum', dest='checksum',
-                default='sha256',
-                choices=['md5', 'sha1', 'sha224', 'sha256',
-                         'sha384', 'sha512'],
-                help='Algorithm used for checksum')
+                          default='sha256',
+                          choices=['md5', 'sha1', 'sha224', 'sha256',
+                                   'sha384', 'sha512'],
+                          help='Algorithm used for checksum')
 
 
 def _make_log_dir():
@@ -143,8 +156,24 @@ def _make_log_dir():
         if exc.errno == errno.EEXIST:
             pass
         else:
-            raise ReviewError(
-                      'Cannot create log directory: ' + SESSION_LOG)
+            raise ReviewError('Cannot create log directory: ' +
+                              SESSION_LOG)
+
+
+def _parse_plugins(args):
+    """ Parse plugins_arg and store as dict in plugins. """
+    if not args.plugins_arg:
+        args.plugins = {}
+        return
+    _dict = {}
+    for p in args.plugins_arg.split(','):
+        p = p.strip()
+        if ':' in p:
+            plugin, suffix = p.split(':')
+            _dict[plugin] = False if suffix == 'off' else True
+        else:
+            _dict[p] = True
+    args.plugins = _dict
 
 
 class ColoredFormatter(logging.Formatter):
@@ -171,7 +200,7 @@ class ColoredFormatter(logging.Formatter):
         return ret
 
 
-class _Settings(object):                         # pylint: disable=R0902
+class _Settings(object):                         # pylint: disable=R0902,R0924
     """
     FedoraReview singleton Config Setting based on command line options.
     All config values are accessed as attributes.
@@ -220,23 +249,6 @@ class _Settings(object):                         # pylint: disable=R0902
             raise KeyError(key)
         return self._dict.get(my_key)
 
-    def _populate(self):
-        '''Set option values from INI file section.
-        '''
-        if self.parser.has_section(PARSER_SECTION):
-            opts = set(self.parser.options(PARSER_SECTION))
-        else:
-            opts = set()
-
-        for name in self._dict.iterkeys():
-            value = None
-            if name in opts:
-                value = self.parser.get(PARSER_SECTION, name)
-                setattr(self, name, value)
-                self.parser.set(PARSER_SECTION, name, value)
-            else:
-                self.parser.set(PARSER_SECTION, name, self._dict[name])
-
     def _fix_mock_options(self):
         '''
         Update resultdir, uniqueext and configdir from mock_options.
@@ -272,8 +284,8 @@ class _Settings(object):                         # pylint: disable=R0902
                 self.init_done = True
                 raise self.SettingsError()
         parser = argparse.ArgumentParser(
-                    description='Review a package using Fedora Guidelines',
-                    add_help=False)
+            description='Review a package using Fedora Guidelines',
+            add_help=False)
 
         mode = parser.add_argument_group('Operation mode - one is required')
         modes = mode.add_mutually_exclusive_group(required=True)
@@ -284,7 +296,7 @@ class _Settings(object):                         # pylint: disable=R0902
             args = parser.parse_args()
         except:
             raise self.SettingsError()
-
+        _parse_plugins(args)
         self.add_args(args)
         self.do_logger_setup(logging.DEBUG if args.verbose else None)
         if self.nobuild:
@@ -303,7 +315,7 @@ class _Settings(object):                         # pylint: disable=R0902
     @property
     def current_bz_url(self):
         ''' Effective value of --bz-url, not empty. '''
-        return  self.other_bz if self.other_bz else self.bz_url
+        return self.other_bz if self.other_bz else self.bz_url
 
     def dump(self):
         ''' Debug output of all settings. '''
@@ -352,8 +364,8 @@ class _Settings(object):                         # pylint: disable=R0902
         # define a Handler which writes INFO  or higher to sys.stderr
         console = logging.StreamHandler()
         console.setLevel(lvl)
-        formatter = ColoredFormatter(
-                        '%(message)s', "%H:%M:%S", self.use_colors)
+        formatter = ColoredFormatter('%(message)s',
+                                     "%H:%M:%S", self.use_colors)
         console.setFormatter(formatter)
         if self._con_handler:
             self.log.removeHandler(self._con_handler)
@@ -373,4 +385,4 @@ class _Settings(object):                         # pylint: disable=R0902
 
 Settings = _Settings()
 
-# vim: set expandtab: ts=4:sw=4:
+# vim: set expandtab ts=4 sw=4:

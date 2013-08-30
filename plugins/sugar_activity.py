@@ -29,8 +29,10 @@ class Registry(RegistryBase):
     group = 'SugarActivity'
 
     def is_applicable(self):
+        if self.is_user_enabled():
+            return self.user_enabled_value()
         regex = '^/usr/(share|lib|lib64)/sugar/activities/'
-        return self.checks.rpms.find(regex) != None
+        return bool(self.checks.rpms.find(regex))
 
 
 class SugarActivityCheckBase(CheckBase):
@@ -53,8 +55,6 @@ class SugarActivityCheckNaming(SugarActivityCheckBase):
         if not self.spec.name.startswith('sugar-'):
             self.set_passed(self.FAIL)
             return
-        # TODO check if sugar-foo is valid or if there is specific
-        # need for activity name
         self.set_passed(self.PENDING)
 
 

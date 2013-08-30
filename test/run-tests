@@ -1,0 +1,99 @@
+#!/bin/bash
+#
+# Run tests, the jenkins way.
+#
+# Usage: run-tests [-q] [nosetests options]
+#
+#    -q  Don't run static checks, just run test
+#
+# Requires: python-virtualenv, python-pip
+
+
+function install_virtenv()
+{
+    echo "Installing new virtual env"
+    rm -fr fedorareviewenv
+    virtualenv --system-site-packages fedorareviewenv
+    source fedorareviewenv/bin/activate
+
+    pip  install -q nose --upgrade --force ## Needed within the venv
+    pip  install -q nosexcover --upgrade
+    hash -r  ## Reload where the nosetests app is (within the venv)
+}
+#   pip install nose-cov --upgrade
+
+function init_mockroot()
+{
+    if [ "$*" = '-' ]; then
+       root=''
+       rootmsg=default
+    else
+       root="-r $*"
+       rootmsg="$*"
+    fi
+    mock -q $root --shell  "echo $rootmsg OK >/dev/null" || {
+        echo "Re-initializing mock root $rootmsg"
+        mock -q $root  --init
+    }
+}
+
+if [ "$1" = '-q' ]; then
+    quick=1
+    REVIEW_NOSEWITH=${REVIEW_NOSEWITH:- -x}
+    shift
+fi
+args="$@"
+
+export PATH=/bin:/usr/bin:/sbin:/usr/sbin
+
+cd $(dirname $(readlink -fn $0))
+cd ..
+
+logfile="$PWD/dist/build.log"
+{
+    if [[ -n "$PIP_INSTALL" || ! -d fedorareviewenv ]]; then
+        install_virtenv
+    fi
+    source fedorareviewenv/bin/activate
+    hash -r
+
+    nose_vers=$(nosetests --version) || :
+    if [[ "$nose_vers" != *1.2* ]]; then
+        install_virtenv
+        source fedorareviewenv/bin/activate
+        hash -r
+    fi
+
+    PYTHONPATH=src ./update-version || :
+    cd test
+        export REVIEW_LOGLEVEL=${REVIEW_LOGLEVEL:-warning}
+        for root in '-' fedora-18-i386 fedora-19-i386 \
+                    "fedora-18-i386 --uniqueext=hugo"
+        do
+            init_mockroot $root
+        done
+
+        echo "Running tests:"
+        ln -sf ../fedorareviewenv .
+        PYTHONPATH=../src:virtualenv/lib/python2.7/site-packages \
+        nosetests -x --nocapture -e init_test -e init_opt_test --cover-erase \
+            --cover-package=plugins,FedoraReview \
+            ${REVIEW_NOSEWITH:- --with-xunit --with-xcoverage} \
+            "${args[@]}"
+        status=$?
+        deactivate
+    cd ..
+    if [ -z "$quick" ]; then
+        echo
+        echo '---- pylint ----'
+        PYTHONPATH=src pylint --rcfile=pylint.conf -f parseable src plugins
+        echo
+        echo '---- pep8 ----'
+        pep8 --config pep8.conf src/FedoraReview plugins
+    fi
+
+} 2>&1 | tee $logfile
+
+exit $status
+
+# vim: set expandtab ts=4 sw=4:

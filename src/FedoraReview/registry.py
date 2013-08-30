@@ -22,6 +22,7 @@ Test module registration support
 import inspect
 
 from review_error import ReviewError
+from settings import Settings
 
 
 class _Flag(object):
@@ -93,7 +94,7 @@ class AbstractRegistry(object):
         Return True if these tests are applicable for current srpm.
         """
         raise ReviewError(
-             'abstract Registry.is_applicable() called')
+            'abstract Registry.is_applicable() called')
 
 
 class RegistryBase(AbstractRegistry):
@@ -133,5 +134,15 @@ class RegistryBase(AbstractRegistry):
         ''' Files in rpms matching glob_pattern. '''
         return self.checks.rpms.find(glob_pattern)
 
+    def is_user_enabled(self):
+        '''' True if this group is enabled/disabled using --plugins. '''
+        g = self.group.split('.')[0] if '.' in self.group else self.group
+        return g in Settings.plugins
 
-# vim: set expandtab: ts=4:sw=4:
+    def user_enabled_value(self):
+        '''' The actual value set if is_user_enabled() is True '''
+        g = self.group.split('.')[0] if '.' in self.group else self.group
+        return Settings.plugins[g]
+
+
+# vim: set expandtab ts=4 sw=4:

@@ -2,7 +2,16 @@
 #
 # fedora-review git pre-commit hook: run pep8 and pylint
 
-IGNORE=E221,E251
+branch_name=$(git symbolic-ref -q HEAD)
+branch_name=${branch_name##refs/heads/}
+branch_name=${branch_name:-HEAD}
+
+if [ "$branch_name" = "master" ];then
+    echo "You are on master branch. If you want to contribute patches "
+    echo "you should work on devel branch. Please read CONTRIBUTE file. "
+    echo "To ignore this warning run 'git commit --no-verify'."
+    exit 1
+fi
 
 ALL_FILES=$( git diff --cached --name-status |
               grep -v ^D | awk '$1 $2 { print $2}' | grep -e '.py$' )
@@ -11,7 +20,7 @@ if [ -z "$ALL_FILES" ]; then
     exit 0
 fi
 
-pep8 --ignore $IGNORE $ALL_FILES || {
+pep8 --config pep8.conf  $ALL_FILES || {
     echo "pep8 failed. Fix your code!"
     echo "*If* you know what you are doing, use 'git commit --no-verify'"
     exit 1

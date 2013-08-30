@@ -42,31 +42,34 @@ class SpecFile(object):
     whereas the find_* methods works on the raw lines of spec data.
     Properties:
        - filename: spec path
-       - lines: all lines in spec, raw data.
+       - lines: list of all lines in spec file
        - spec: rpm python spec object.
     '''
     # pylint: disable=W0212
 
-    def __init__(self, filename):
+    def __init__(self, filename, flags=None):
 
         def update_macros():
             ''' Update build macros from mock target configuration. '''
             macros = ['%rhel', '%fedora', '%_build_arch', '%_arch']
-            expanded = Mock.rpm_eval(' '.join(macros)).split()
-            for i in range(0, len(macros)):
-                if not expanded[i].startswith('%'):
-                    rpm.addMacro(macros[i][1:], expanded[i])
+            for macro in macros:
+                expanded = Mock.get_macro(macro, self, flags)
+                if not expanded.startswith('%'):
+                    rpm.addMacro(macro, expanded)
 
         self.log = Settings.get_logger()
         self.filename = filename
         self.lines = []
-        self._get_lines(filename)
-        update_macros()
-        self.spec = rpm.TransactionSet().parseSpec(self.filename)
+        try:
+            self.spec = rpm.TransactionSet().parseSpec(self.filename)
+        except Exception as ex:
+            raise ReviewError("Can't parse specfile: " + ex.__str__())
         self.name_vers_rel = [self.expand_tag(rpm.RPMTAG_NAME),
                               self.expand_tag(rpm.RPMTAG_VERSION),
                               self.expand_tag(rpm.RPMTAG_RELEASE)]
         self._packages = None
+        self._get_lines(filename)
+        update_macros()
 
     name = property(lambda self: self.name_vers_rel[0])
     version = property(lambda self: self.name_vers_rel[1])
@@ -77,16 +80,18 @@ class SpecFile(object):
 
         def check_pkg_path(pkg):
             ''' Check that pkg is available (built or supplied w -p).'''
+            nvr = self.get_package_nvr(pkg)
             try:
-                return Mock.get_package_rpm_path(pkg, self)
+                return Mock.get_package_rpm_path(nvr)
             except ReviewError:
                 self.log.warning("Package %s not built" % pkg)
                 return None
 
         pkgs = [p.header[rpm.RPMTAG_NAME] for p in self.spec.packages]
-        pkgs = [p for p in pkgs if self.get_files(p) != None]
+        pkgs = [p for p in pkgs if not self.get_files(p) is None]
         return [p for p in pkgs if check_pkg_path(p)]
 
+    # pylint: disable=W1401
     def _get_lines(self, filename):
         ''' Read line from specfile, fold \ continuation lines. '''
         with open(filename, "r") as f:
@@ -125,12 +130,17 @@ class SpecFile(object):
             if _type != srctype:
                 continue
             tag = srctype + str(num)
-            result[tag] = \
-                self.spec.sourceHeader.format(urllib.unquote(url))
+            try:
+                result[tag] = \
+                    self.spec.sourceHeader.format(urllib.unquote(url))
+            except Exception:
+                raise ReviewError("Cannot parse %s url %s"
+                                       % (tag, url))
         return result
 
     def _parse_files_pkg_name(self, line):
         ''' Figure out the package name in a %files line. '''
+        line = rpm.expandMacro(line)
         tokens = line.split()
         assert tokens.pop(0) == '%files'
         while tokens:
@@ -163,11 +173,14 @@ class SpecFile(object):
                         lines = []
                 continue
             line = rpm.expandMacro(line)
-            if line.startswith('%'):
-                token = re.split('\s|\(', line)[0]
+            if line.startswith('%{gem_'):
+                # Nasty F17/EPEL fix where  %gem_*  are not defined.
+                lines.append(line)
+            elif line.startswith('%'):
+                token = re.split(r'\s|\(', line)[0]
                 if not token in ['%ghost', '%doc', '%docdir', '%license',
-                '%verify', '%attr', '%config', '%dir', '%defattr']:
-                    break
+                    '%verify', '%attr', '%config', '%dir', '%defattr']:
+                        break
                 else:
                     lines.append(line)
             elif line:
@@ -177,7 +190,7 @@ class SpecFile(object):
     @property
     def base_package(self):
         ''' Base package name, normally %{name} unless -n is used. '''
-        return  self.spec.packages[0].header[rpm.RPMTAG_NAME]
+        return self.spec.packages[0].header[rpm.RPMTAG_NAME]
 
     @property
     def sources_by_tag(self):
@@ -211,7 +224,7 @@ class SpecFile(object):
     @property
     def packages(self):
         ''' Return list of package names built by this spec. '''
-        if self._packages == None:
+        if self._packages is None:
             self._packages = self._get_packages()
         return self._packages
 
@@ -224,6 +237,21 @@ class SpecFile(object):
         ''' Return list of requirements i. e., Requires: '''
         package = self._get_pkg_by_name(pkg_name)
         return package.header[rpm.RPMTAG_REQUIRES]
+
+    def get_package_nvr(self, pkg_name=None):
+        ''' Return object with name, version, release for a package. '''
+        # pylint: disable=W0201
+
+        class NVR(object):
+            ''' Simple name-version-release container. '''
+            pass
+
+        package = self._get_pkg_by_name(pkg_name)
+        nvr = NVR()
+        nvr.version = package.header[rpm.RPMTAG_VERSION]
+        nvr.release = package.header[rpm.RPMTAG_RELEASE]
+        nvr.name = package.header[rpm.RPMTAG_NAME]
+        return nvr
 
     def get_files(self, pkg_name=None):
         ''' Return %files section for base or specified package.
@@ -278,4 +306,4 @@ class SpecFile(object):
                 result.append(line.strip())
         return result
 
-# vim: set expandtab: ts=4:sw=4:
+# vim: set expandtab ts=4 sw=4:

@@ -34,6 +34,7 @@ SRPM_UNPACKED     = 'srpm-unpacked'
 UPSTREAM          = 'upstream'
 UPSTREAM_UNPACKED = 'upstream-unpacked'
 RESULTS           = 'results'
+DEPENDENCIES      = 'dependencies'
 
 
 class _ReviewDirs(object):
@@ -57,7 +58,8 @@ class _ReviewDirs(object):
         ''' Attempt to change directory already set. '''
         pass
 
-    WD_DIRS = [UPSTREAM, UPSTREAM_UNPACKED, SRPM, SRPM_UNPACKED, RESULTS]
+    WD_DIRS = [UPSTREAM, UPSTREAM_UNPACKED, SRPM, SRPM_UNPACKED,
+               RESULTS, DEPENDENCIES]
 
     def __init__(self):
         self.startdir = os.getcwd()
@@ -83,7 +85,7 @@ class _ReviewDirs(object):
                     shutil.move(os.path.join(wd, d), cache)
                 try:
                     buildlink = os.readlink(os.path.join(wd, 'BUILD'))
-                except  OSError:
+                except OSError:
                     buildlink = None
             logging.info("Clearing old review directory: " + wd)
             shutil.rmtree(wd)
@@ -183,4 +185,4 @@ try:
 except ImportError:
     ReviewDirs = _ReviewDirs()
 
-# vim: set expandtab: ts=4:sw=4:
+# vim: set expandtab ts=4 sw=4:

@@ -51,4 +51,4 @@ class BugzillaBug(UrlBug):
         AbstractBug.do_check_options('--bug', ['prebuilt'])
 
 
-# vim: set expandtab: ts=4:sw=4:
+# vim: set expandtab ts=4 sw=4:

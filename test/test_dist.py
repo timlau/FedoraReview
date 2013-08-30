@@ -31,7 +31,7 @@ try:
 except ImportError:
     from FedoraReview.el_compat import check_output
 
-from fr_testcase import FR_TestCase
+from fr_testcase import FR_TestCase, RELEASE
 
 
 def _proper_dist_os():
@@ -53,10 +53,10 @@ class TestDist(FR_TestCase):
         ''' Test  make_release_script. '''
         os.chdir('..')
         check_call('./make_release -q >/dev/null', shell=True)
-        self.assertEqual(len(glob('dist/*')), 3)
+        self.assertEqual(len(glob('dist/*')), 4)
         lint = check_output(
-                  'rpmlint -f test/rpmlint.conf dist/*spec dist/*rpm',
-                  shell=True)
+                    'rpmlint -f test/rpmlint.conf dist/*spec dist/*rpm',
+                    shell=True)
         self.assertIn('0 error', lint)
         self.assertIn('0 warning', lint)
 
@@ -66,7 +66,7 @@ class TestDist(FR_TestCase):
         Run fedora-review on itself (not found by discover et. al.)
         '''
         os.chdir('..')
-        check_call('./try-fedora-review -m fedora-17-i386' +
+        check_call('./try-fedora-review -m fedora-%s-i386'  % RELEASE +
                        ' -o "--without tests"' +
                        ' -rn dist/fedora-review*.src.rpm',
                    shell=True)
@@ -80,3 +80,5 @@ if __name__ == '__main__':
     else:
         suite = unittest.TestLoader().loadTestsFromTestCase(TestDist)
     unittest.TextTestRunner(verbosity=2).run(suite)
+
+# vim: set expandtab ts=4 sw=4:

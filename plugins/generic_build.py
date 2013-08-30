@@ -29,9 +29,21 @@ tests by default depends on.
 import glob
 import os
 import os.path
+import shutil
+import sys
 
+# pylint: disable=W0611
+try:
+    from subprocess import check_output
+except ImportError:
+    from FedoraReview.el_compat import check_output
+# pylint: enable=W0611
+
+
+import FedoraReview.deps as deps
 from FedoraReview import CheckBase, Mock, ReviewDirs, Settings
 from FedoraReview import RegistryBase, ReviewError
+from FedoraReview.version import __version__, BUILD_ID, BUILD_DATE
 
 
 class Registry(RegistryBase):
@@ -45,6 +57,8 @@ class Registry(RegistryBase):
 
 class BuildCheckBase(CheckBase):
     ''' Base class for all generic tests. '''
+
+    sort_key = '10'
 
     def __init__(self, checks):
         CheckBase.__init__(self, checks, __file__)
@@ -78,7 +92,8 @@ class BuildCheckBase(CheckBase):
     def rpmlint_rpms(self):
         """ Runs rpmlint against the used rpms - prebuilt or built in mock.
         """
-        rpms = Mock.get_package_rpm_paths(self.spec)
+        # pylint: disable=E1123
+        rpms = Mock.get_package_rpm_paths(self.spec, with_srpm=True)
         no_errors, result = self.run_rpmlint(rpms)
         return no_errors, result + '\n'
 
@@ -121,7 +136,7 @@ class CheckResultdir(BuildCheckBase):
 
     def run(self):
         if len(glob.glob(os.path.join(Mock.resultdir, '*.*'))) != 0 \
-            and not  (Settings.nobuild or Settings.prebuilt):
+            and not (Settings.nobuild or Settings.prebuilt):
                 raise self.NotEmptyError()       # pylint: disable=W0311
         self.set_passed(self.NA)
 
@@ -143,8 +158,26 @@ class CheckBuild(BuildCheckBase):
         self.needs = ['CheckResultdir']
 
     def run(self):
+
+        def listfiles():
+            ''' Generate listing of dirs and files in each package. '''
+            with open('files.dir', 'w') as f:
+                for pkg in self.spec.packages:
+                    nvr = self.spec.get_package_nvr(pkg)
+                    path = Mock.get_package_rpm_path(nvr)
+                    dirs, files = deps.listpaths(path)
+                    f.write(pkg + '\n')
+                    f.write('=' * len(pkg) + '\n')
+                    for line in sorted(dirs):
+                        f.write(line + '\n')
+                    f.write('\n')
+                    for line in sorted(files):
+                        f.write(line + '\n')
+                    f.write('\n')
+
         if Settings.prebuilt:
             self.set_passed(self.PENDING, 'Using prebuilt packages')
+            listfiles()
             return
         if Settings.nobuild:
             if Mock.have_cache_for(self.spec):
@@ -153,9 +186,10 @@ class CheckBuild(BuildCheckBase):
                 return
             else:
                 self.log.info(
-                     'No valid cache, building despite --no-build.')
+                        'No valid cache, building despite --no-build.')
         _mock_root_setup("While building")
         Mock.build(self.srpm.filename)
+        listfiles()
         self.set_passed(self.PASS)
 
 
@@ -199,7 +233,8 @@ class CheckPackageInstalls(BuildCheckBase):
         bad_ones = []
         for pkg in self.spec.packages:
             try:
-                Mock.get_package_rpm_path(pkg, self.spec)
+                nvr = self.spec.get_package_nvr(pkg)
+                Mock.get_package_rpm_path(nvr)
             except ReviewError:
                 bad_ones.append(pkg)
         return bad_ones
@@ -220,11 +255,11 @@ class CheckPackageInstalls(BuildCheckBase):
         rpms = Mock.get_package_rpm_paths(self.spec)
         self.log.info('Installing built package(s)')
         output = Mock.install(rpms)
-        if output == None:
+        if not output:
             self.set_passed(self.PASS)
         else:
             attachments = [
-               self.Attachment('Installation errors', output, 3)]
+                self.Attachment('Installation errors', output, 3)]
             self.set_passed(self.FAIL,
                            "Installation errors (see attachment)",
                             attachments)
@@ -258,6 +293,20 @@ class CheckRpmlintInstalled(BuildCheckBase):
             self.set_passed(self.FAIL, 'Mock build failed')
 
 
+class CheckInitDeps(BuildCheckBase):
+    ''' EXTRA: Setup the repoquery wrapper.  No output in report '''
+
+    def __init__(self, base):
+        BuildCheckBase.__init__(self, base)
+        self.automatic = True
+        self.type = 'EXTRA'
+        self.needs = ['CheckRpmlintInstalled']
+
+    def run(self):
+        deps.init()
+        self.set_passed(self.NA)
+
+
 class CheckBuildCompleted(BuildCheckBase):
     '''
     EXTRA: This test is the default dependency. Requiring this test means
@@ -270,9 +319,28 @@ class CheckBuildCompleted(BuildCheckBase):
         self.text = 'This text is never shown'
         self.automatic = True
         self.type = 'EXTRA'
-        self.needs = ['CheckRpmlintInstalled']
+        self.needs = ['CheckInitDeps']
+
+    def setup_attachment(self):
+        ''' Return a setup info attachment. '''
+        text = 'Generated by fedora-review %s (%s) last change: %s\n' % \
+            (__version__, BUILD_ID, BUILD_DATE)
+        text += 'Command line :' + ' '.join(sys.argv) + '\n'
+        text += 'Buildroot used: %s\n' % Mock.buildroot
+        plugins = self.checks.get_plugins(True)
+        text += 'Active plugins: ' + ', '.join(plugins) + '\n'
+        plugins = self.checks.get_plugins(False)
+        text += 'Disabled plugins: ' + ', '.join(plugins) + '\n'
+        flags = [f for f in self.checks.flags.iterkeys()
+            if not self.checks.flags[f]]
+        flags = ', '.join(flags) if flags else 'None'
+        text += 'Disabled flags: ' + flags + '\n'
+        return self.Attachment('', text, 10)
 
     def run(self):
+        if not Mock.is_available():
+            self.set_passed(self.NA)
+            return
         Mock.clear_builddir()
         errmsg = Mock.rpmbuild_bp(self.srpm)
         if errmsg:
@@ -280,9 +348,15 @@ class CheckBuildCompleted(BuildCheckBase):
                 "Cannot do rpmbuild -bp, trying with builddeps")
             Mock.install(self.spec.build_requires)
             Mock.rpmbuild_bp(self.srpm)
-        if not os.path.exists('BUILD'):
-            os.symlink(Mock.get_builddir('BUILD'), 'BUILD')
-        self.set_passed(self.NA)
+        if os.path.lexists('BUILD'):
+            if os.path.islink('BUILD'):
+                os.unlink('BUILD')
+            else:
+                shutil.rmtree('BUILD')
+        os.symlink(Mock.get_builddir('BUILD'), 'BUILD')
+        self.log.info('Active plugins: ' +
+                          ', '.join(self.checks.get_plugins(True)))
+        self.set_passed(self.NA, None, [self.setup_attachment()])
 
 
-# vim: set expandtab: ts=4:sw=4:
+# vim: set expandtab ts=4 sw=4:

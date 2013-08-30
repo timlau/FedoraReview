@@ -12,10 +12,12 @@ class Registry(RegistryBase):
 
     def is_applicable(self):
         ''' Return True if this is a java package. '''
+        if self.is_user_enabled():
+            return self.user_enabled_value()
         rpms = self.checks.rpms
-        return (rpms.find("*.jar") or rpms.find("*.pom") or
-                self.checks.sources.find('pom.xml') or
-                self.checks.sources.find('*.java'))
+        return (rpms.find("*.pom") or rpms.find("pom.xml") or
+                rpms.find("*.class") or rpms.find("*.jar") or
+                rpms.find("*.ear") or rpms.find("*.war"))
 
 
 class JavaCheckBase(CheckBase):
@@ -132,7 +134,7 @@ class CheckJavadocdirName(JavaCheckBase):
             self.set_passed(self.FAIL, "No javadoc subpackage present")
             return
         name_ver_pattern = "/usr/share/javadoc/%s-%s/*" \
-                                       % (self.spec.name, self.spec.version)
+            % (self.spec.name, self.spec.version)
         if self.rpms.find_all(name_ver_pattern, pkg):
             self.set_passed(self.FAIL,
                             "Found deprecated versioned javadoc paths " +
@@ -193,7 +195,7 @@ class CheckJavadocJPackageRequires(JavaCheckBase):
     def run_on_applicable(self):
         """ run check for java packages """
         pkgs = [pkg for pkg in self.spec.packages
-                     if pkg.endswith('-javadoc')]
+                if pkg.endswith('-javadoc')]
         if len(pkgs) == 0:
             self.set_passed(self.NA)
         elif len(pkgs) > 1:
@@ -205,38 +207,6 @@ class CheckJavadocJPackageRequires(JavaCheckBase):
             ok = 'jpackage-utils' not in self.spec.get_requires(pkgs[0])
             self.set_passed(self.PASS if ok else self.FAIL,
                             extra if not ok else None)
-
-
-class CheckJavaFullVerReqSub(JavaCheckBase):
-    """Check if subpackages have proper Requires on main package
-    except javadoc subpackage that doesn't have this requirement"""
-
-    deprecates = ['CheckFullVerReqSub']
-    MSG = "Missing: Requires: %{name} = %{version}-%{release} in "
-
-    def __init__(self, base):
-        JavaCheckBase.__init__(self, base)
-        self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines' \
-                   '#RequiringBasePackage'
-        self.text = 'Fully versioned dependency in subpackages, if present.'
-        self.automatic = True
-        self.type = 'MUST'
-
-    def run_on_applicable(self):
-        """ Run check for java packages """
-        req = "%s = %s-%s" % tuple(self.spec.name_vers_rel)
-        bad_ones = []
-        extra = None
-        for pkg_name in self.spec.packages:
-            if pkg_name.endswith("-javadoc"):
-                continue
-            if pkg_name == self.spec.base_package:
-                continue
-            if not req in self.rpms.get(pkg_name).requires:
-                bad_ones.append(pkg_name)
-        if bad_ones:
-            extra = self.MSG + ', '.join(bad_ones)
-        self.set_passed(self.FAIL if extra else self.PASS, extra)
 
 
 class CheckNoOldMavenDepmap(JavaCheckBase):
@@ -390,8 +360,8 @@ class CheckTestSkip(JavaCheckBase):
         xmvn_skip_regex = re.compile(r'mvn-build\s+.*(-f|--force|'
                                       '--skip-tests).*')
         build_section = self.spec.get_section('%build', raw=True)
-        if (skip_regex.search(build_section) or
-            xmvn_skip_regex.search(build_section)):
+        if build_section and (skip_regex.search(build_section) or
+                              xmvn_skip_regex.search(build_section)):
             self.set_passed(self.PENDING, """Tests seem to be skipped. Verify
         there is a commment giving a reason for this""")
         else:
@@ -412,8 +382,8 @@ class CheckLocalDepmap(JavaCheckBase):
         self.type = 'MUST'
 
     def run(self):
-        depmap_regex = re.compile(r'^\s+-Dmaven.local.depmap.*')
-        mvn_regex = re.compile(r'^\s*mvn-rpmbuild\s+')
+        depmap_regex = re.compile(r'\s+-Dmaven.local.depmap.*')
+        mvn_regex = re.compile(r'\s*mvn-rpmbuild\s+')
         comment_regex = re.compile(r'^\s*#.*')
         build_sec = self.spec.get_section('%build')
         if not self.spec.find_re(depmap_regex) or not build_sec:
@@ -450,7 +420,7 @@ class JarFilename(JavaCheckBase):
 
     def __init__(self, base):
         JavaCheckBase.__init__(self, base)
-        self.text = """Jar files are installed to %{_javadir}/%{name}.jar"""
+        self.text = "Jar files are named and installed according to guidelines"
         self.url = 'https://fedoraproject.org/wiki/Packaging:Java' \
                    '#JAR_file_installation'
         self.automatic = False

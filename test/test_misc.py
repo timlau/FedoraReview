@@ -22,6 +22,7 @@ Unit tests for bugzilla bug handling
 '''
 
 import glob
+import logging
 import shutil
 import os
 import os.path
@@ -32,7 +33,7 @@ import sys
 import unittest2 as unittest
 
 try:
-    from subprocess import check_output
+    from subprocess import check_output          # pylint: disable=E0611
 except ImportError:
     from FedoraReview.el_compat import check_output
 
@@ -47,17 +48,21 @@ from FedoraReview.check_base import AbstractCheck
 from FedoraReview.checks import _CheckDict
 from FedoraReview.helpers_mixin import HelpersMixin
 from FedoraReview.name_bug import NameBug
+from FedoraReview.review_helper import ReviewHelper
 from FedoraReview.source import Source
 from FedoraReview.spec_file import SpecFile
+from FedoraReview.rpm_file import RpmFile
 from FedoraReview.srpm_file import SRPMFile
 
-from fr_testcase import FR_TestCase, FAST_TEST, NO_NET
+from fr_testcase import FR_TestCase, FAST_TEST, NO_NET, VERSION, RELEASE
 
 
 class TestMisc(FR_TestCase):
     ''' Low-level, true unit tests. '''
 
     def setUp(self):
+        if not srcpath.PLUGIN_PATH in sys.path:
+            sys.path.append(srcpath.PLUGIN_PATH)
         sys.argv = ['fedora-review', '-b', '1']
         Settings.init(True)
         self.log = Settings.get_logger()
@@ -65,10 +70,19 @@ class TestMisc(FR_TestCase):
         self.srpm_file = os.path.join(os.path.abspath('.'),
                                       'test_misc',
                                       'python-test-1.0-1.fc17.src.rpm')
-        self.spec_file = os.path.join(Mock.get_builddir('SOURCES'),
-                                      'python-test.spec')
         self.startdir = os.getcwd()
         Mock.reset()
+
+    def test_version(self):
+        ''' Test version and update-version. '''
+        vers_path = os.path.join(
+                            srcpath.SRC_PATH, 'FedoraReview', 'version')
+        if os.path.exists(vers_path):
+            os.unlink(vers_path)
+        import FedoraReview.version
+        reload(FedoraReview.version)
+        self.assertTrue(os.path.exists(vers_path))
+        self.assertEqual(FedoraReview.__version__, VERSION)
 
     def test_rpm_source(self):
         ''' Test a rpm datasource. '''
@@ -109,6 +123,134 @@ class TestMisc(FR_TestCase):
         all_files = src.find_all('*')
         self.assertEqual(len(all_files), 8)
 
+    def test_ccpp_gnulib(self):
+        ''' test ccpp bundled gnulib  '''
+        # pylint: disable=F0401,R0201,C0111,W0613
+
+        from plugins.ccpp import CheckBundledGnulib
+
+        class ChecksMockup(object):
+            pass
+
+        class BuildSrcMockup(object):
+            def find(self, what):
+                return True
+
+        class ApplicableCheckBundledGnulib(CheckBundledGnulib):
+            def is_applicable(self):
+                return True
+
+        self.init_test('test_misc',
+                       argv=['-n', 'python-test', '--cache',
+                             '--no-build'])
+        check = ApplicableCheckBundledGnulib(ChecksMockup())
+        check.checks.spec = SpecFile(os.path.join(os.getcwd(),
+                                                  'python-test.spec'))
+        check.checks.buildsrc = BuildSrcMockup()
+        check.checks.rpms = RpmDataSource(check.checks.spec)
+        check.run()
+        self.assertTrue(check.is_failed)
+
+    def test_generic_static(self):
+        ''' test generic static -a checks  '''
+        # pylint: disable=F0401,R0201,C0111,W0613
+
+        from plugins.generic import CheckStaticLibs
+
+        class ChecksMockup(object):
+            pass
+
+        class RpmsMockup(object):
+
+            def find(self, what, where):
+                return True
+
+            def get(self, pkg_name):
+                return RpmFile("python-test", "1.0", "1.fc" + RELEASE)
+
+        class ApplicableCheckStaticLibs(CheckStaticLibs):
+
+            def is_applicable(self):
+                return True
+
+        self.init_test('test_misc',
+                       argv=['-n', 'python-test', '--cache',
+                             '--no-build'])
+        check = ApplicableCheckStaticLibs(ChecksMockup())
+        check.checks.spec = SpecFile(os.path.join(os.getcwd(),
+                                                  'python-test.spec'))
+        check.checks.rpms = RpmsMockup()
+        check.run()
+        note = check.result.output_extra
+        self.assertTrue(check.is_failed)
+        self.assertTrue('Illegal package name: python-test' in note)
+        self.assertTrue('Does not provide -static: python-test' in note)
+
+    def test_rm_buildroot(self):
+        ''' test rm -rf $BUILDROOT/a_path '''
+        # pylint: disable=F0401,R0201,C0111,W0613,W0201
+
+        from plugins.generic import CheckCleanBuildroot
+
+        class ChecksMockup(object):
+            pass
+
+        self.init_test('test_misc',
+                       argv=['-n', 'python-test', '--cache',
+                             '--no-build'])
+        checks = ChecksMockup()
+        flags = {'EPEL5': False}
+        checks.log = self.log
+        checks.flags = flags
+        check = CheckCleanBuildroot(checks)
+        check.checks.spec = SpecFile(os.path.join(os.getcwd(),
+                                                  'rm_buildroot.spec'))
+        check.run()
+        self.assertTrue(check.is_passed)
+
+    def test_autotools(self):
+        ''' test ccpp static -a checs  '''
+        # pylint: disable=F0401,R0201,C0111,W0613,W0201
+
+        from plugins.generic_autotools import CheckAutotoolsObsoletedMacros
+
+        class BuildSrcMockup(object):
+            def __init__(self):
+                self.containers = ['configure.ac']
+
+            def find_all(self, what):
+                return ["configure.ac"] if what.endswith('ac') else []
+
+            def is_available(self):
+                return True
+
+        class ChecksMockup(object):
+            pass
+
+        class RpmsMockup(object):
+            def find(self, what, where):
+                return True
+
+        self.init_test('test_misc',
+                       argv=['-n', 'python-test', '--cache',
+                             '--no-build'])
+        checks_mockup = ChecksMockup()
+        checks_mockup.log = self.log
+        checks_mockup.buildsrc = BuildSrcMockup()
+        check = CheckAutotoolsObsoletedMacros(checks_mockup)
+        check.checks.spec = SpecFile(os.path.join(os.getcwd(),
+                                                  'gc.spec'))
+        check.checks.rpms = RpmsMockup()
+        check.run()
+        note = check.result.output_extra
+        self.assertTrue(check.is_failed)
+        self.assertTrue('Some obsoleted macros' in note)
+        self.assertEqual(len(check.result.attachments), 1)
+        self.assertIn('AC_PROG_LIBTOOL found in: configure.ac:519',
+                      check.result.attachments[0].text)
+        self.assertIn('AM_CONFIG_HEADER found in: configure.ac:29',
+                      check.result.attachments[0].text)
+
     def test_flags_1(self):
         ''' test a flag defined in python, set by user' '''
         self.init_test('test_misc',
@@ -140,7 +282,7 @@ class TestMisc(FR_TestCase):
         bug = NameBug('python-test')
         bug.find_urls()
         bug.download_files()
-        with  self.assertRaises(ReviewError):
+        with self.assertRaises(ReviewError):
             # pylint: disable=W0612
             checks = Checks(bug.spec_file, bug.srpm_file)
 
@@ -162,7 +304,6 @@ class TestMisc(FR_TestCase):
         self.init_test('test_misc',
                        argv=['-n', 'python-test', '--cache',
                              '--no-build'])
-
         source = Source('Source0',
                         self.BASE_URL + 'python-test-1.0.tar.gz')
         # source exists and source.filename point to the right location?
@@ -173,6 +314,12 @@ class TestMisc(FR_TestCase):
         self.assertEqual(source.check_source_checksum(),
                          "7ef644ee4eafa62cfa773cad4056cdcea592e27dacd5ae"
                          "b4e8b11f51f5bf60d3")
+        source.extract()
+        self.assertTrue(os.path.exists(ReviewDirs.upstream_unpacked +
+                                       '/Source0/python-test-1.0'))
+        source.log.setLevel(logging.ERROR)
+        source = Source('Source0', 'http://nowhere.internet/a_file.txt')
+        self.assertFalse(source.downloaded)
 
     def test_sources_data(self):
         ''' Test a SourcesDataSource. '''
@@ -191,6 +338,48 @@ class TestMisc(FR_TestCase):
         if result.output_extra:
             self.log.debug("Result extra text: " + result.output_extra)
         self.assertTrue(check.is_passed)
+        paths = check.checks.sources.find_all_re('.*[.]py')
+        files = [os.path.basename(p) for p in paths]
+        self.assertEqual(set(files), set(['setup.py', '__init__.py']))
+        files = check.checks.sources.get_filelist()
+        self.assertEqual(len(files), 10)
+
+    def test_review_helper(self):
+        ''' Test review_helper error handling. '''
+        # pylint: disable=C0111,W0212
+
+        class Null:
+            def write(self, msg):
+                pass
+
+        loglevel = None
+        argv = ['-rn', 'foo', '--no-build']
+        self.init_test('.', argv)
+        helper = ReviewHelper()
+        stdout = sys.stdout
+        sys.stdout = Null()
+        helper.log.setLevel(logging.CRITICAL)
+        rc = helper.run('review.txt')
+        sys.stdout = stdout
+        if loglevel:
+            os.environ['REVIEW_LOGLEVEL'] = loglevel
+        self.assertEqual(rc, 2)
+
+    def test_review_dir(self):
+        ''' Test ReviewDir setup functions. '''
+        self.init_test('.', argv=['-n', 'python-test', '--no-build'])
+        from FedoraReview.review_dirs import _ReviewDirs
+        os.chdir('review_dir')
+        check_output('rm -rf testdirs; mkdir testdirs', shell=True)
+        ReviewDirs.workdir_setup('testdirs', 'testing')
+        check_output(['touch', 'results/dummy.rpm'])
+        os.chdir('..')
+        rd = _ReviewDirs()
+        rd.workdir_setup('testdirs')
+        self.assertEqual(len(glob.glob('*')), 7)
+        self.assertEqual(os.path.basename(os.getcwd()), 'testdirs')
+        self.assertTrue(os.path.exists('results/dummy.rpm'))
+        self.assertEqual(glob.glob('BUILD/*'), ['BUILD/pkg-1.0'])
 
     def test_mock_configdir(self):
         ''' Test internal scanning of --configdir option. '''
@@ -201,6 +390,19 @@ class TestMisc(FR_TestCase):
         Mock.reset()
         Mock._get_root()
         self.assertEqual(Mock.mock_root, 'fedora-12-i786')
+
+    def test_mock_clear(self):
+        ''' test mock.clear_builddir(). '''
+        self.init_test('test_misc',
+                       argv=['-n', 'python-test', '--cache',
+                             '--no-build'])
+        wdir = Mock.get_builddir('BUILD')
+        len1 = len(glob.glob(os.path.join(wdir, "*")))
+        s = "cd {0}; ln -sf foo bar || :".format(wdir)
+        check_output(s, shell=True)
+        Mock.builddir_cleanup()
+        len2 = len(glob.glob(os.path.join(wdir, "*")))
+        self.assertEqual(len2, len1)
 
     @unittest.skipIf(FAST_TEST, 'slow test disabled by REVIEW_FAST_TEST')
     def test_mock_uniqueext(self):
@@ -223,6 +425,27 @@ class TestMisc(FR_TestCase):
         for dirt in glob.glob('results/*.*'):
             os.unlink(dirt)
 
+    def test_java_spec(self):
+        ''' Test the ChecktestSkip check. '''
+        # pylint: disable=F0401,R0201,C0111
+
+        from plugins.java import CheckTestSkip
+
+        class ChecksMockup(object):
+            pass
+
+        class ApplicableCheckTestSkip(CheckTestSkip):
+            def is_applicable(self):
+                return True
+
+        self.init_test('test_misc',
+                       argv=['-n', 'python-test', '--no-build'])
+        spec = SpecFile(os.path.join(os.getcwd(), 'jettison.spec'))
+        check = ApplicableCheckTestSkip(ChecksMockup())
+        check.checks.spec = spec
+        check.run()
+        self.assertTrue(check.is_pending)
+
     def test_spec_file(self):
         ''' Test the SpecFile class'''
 
@@ -232,7 +455,7 @@ class TestMisc(FR_TestCase):
                 return path
             lead = path.split('/')[1]
             if lead in ['bin', 'sbin', 'lib', 'lib64']:
-                return  '/usr' + path
+                return '/usr' + path
             return path
 
         self.init_test('test_misc',
@@ -292,10 +515,10 @@ class TestMisc(FR_TestCase):
         srpm = SRPMFile(self.srpm_file)
         # install the srpm
         srpm.unpack()
-        self.assertTrue(srpm._unpacked_src != None)
+        self.assertTrue(srpm._unpacked_src is not None)
         src_dir = srpm._unpacked_src
         src_files = glob.glob(os.path.expanduser(src_dir) + '/*')
-        src_files = [os.path.basename(f) for f in  src_files]
+        src_files = [os.path.basename(f) for f in src_files]
         self.assertTrue('python-test-1.0.tar.gz' in src_files)
         self.log.info("Starting mock build (patience...)")
         Mock.clear_builddir()
@@ -598,3 +821,5 @@ if __name__ == '__main__':
     else:
         suite = unittest.TestLoader().loadTestsFromTestCase(TestMisc)
     unittest.TextTestRunner(verbosity=2).run(suite)
+
+# vim: set expandtab ts=4 sw=4:

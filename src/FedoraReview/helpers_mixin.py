@@ -35,7 +35,7 @@ class DownloadError(ReviewError):
     ''' Error in urlretrieve(). '''
     def __init__(self, code, url):
         ReviewError.__init__(
-           self, "Error %s downloading %s" % (code, url))
+            self, "Error %s downloading %s" % (code, url))
 
 
 class HelpersMixin(object):
@@ -101,7 +101,7 @@ class HelpersMixin(object):
             if logger:
                 logger(True)
             logging.debug('Using cached source: ' + fname)
-            return  path
+            return path
         self.log.debug("  --> %s : %s" % (directory, link))
         if logger:
             logger(False)
@@ -133,7 +133,7 @@ class HelpersMixin(object):
         reflected in errmsg. If not ok and msg == None parsing
         is ok but there are warnings/errors"""
 
-        problems = re.compile('(\d+)\serrors\,\s(\d+)\swarnings')
+        problems = re.compile(r'(\d+)\serrors\,\s(\d+)\swarnings')
         lines = out.split('\n')[:-1]
         err_lines = filter(lambda l: l.lower().find('error') != -1,
                            lines)
@@ -154,4 +154,4 @@ class HelpersMixin(object):
             return False, 'Cannot parse rpmlint output:'
 
 
-# vim: set expandtab: ts=4:sw=4:
+# vim: set expandtab ts=4 sw=4:

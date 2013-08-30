@@ -20,25 +20,41 @@
 This module contains misc helper funtions and classes
 '''
 
-import sys
 import os
+import sys
+import time
 
 from glob import glob
 from operator import attrgetter
-from straight.plugin import load
+from straight.plugin import load                  # pylint: disable=F0401
 
 from datasrc import RpmDataSource, BuildFilesSource, SourcesDataSource
-from settings import  Settings
-from mock import Mock
-from srpm_file import  SRPMFile
-from spec_file import  SpecFile
+from settings import Settings
+from srpm_file import SRPMFile
+from spec_file import SpecFile
 from review_dirs import ReviewDirs
-from version import  __version__, BUILD_ID, BUILD_DATE
 from review_error import ReviewError
 from xdg_dirs import XdgDirs
 
 
 HEADER = """
+This is a review *template*. Besides handling the [ ]-marked tests you are
+also supposed to fix the template before pasting into bugzilla:
+- Add issues you find to the list of issues on top. If there isn't such
+  a list, create one.
+- Add your own remarks to the template checks.
+- Add new lines marked [!] or [?] when you discover new things not
+  listed by fedora-review.
+- Change or remove any text in the template which is plain wrong. In this
+  case you could also file a bug against fedora-review
+- Remove the "[ ] Manual check required", you will not have any such lines
+  in what you paste.
+- Remove attachments which you deem not really useful (the rpmlint
+  ones are mandatory, though)
+- Remove this text
+
+
+
 Package Review
 ==============
 
@@ -61,13 +77,13 @@ def _write_section(results, output):
     def result_key(result):
         ''' Return key used to sort results. '''
         if result.check.is_failed:
-            return '0'
+            return '0' + str(result.check.sort_key)
         elif result.check.is_pending:
-            return '1'
+            return '1' + str(result.check.sort_key)
         elif result.check.is_passed:
-            return '2'
+            return '2' + str(result.check.sort_key)
         else:
-            return '3'
+            return '3' + str(result.check.sort_key)
 
     groups = list(set([hdr(test.group) for test in results]))
     for group in sorted(groups):
@@ -227,7 +243,7 @@ class _ChecksLoader(object):
         self.groups = {}
 
         appdir = os.path.realpath(
-                     os.path.join(os.path.dirname(__file__)))
+                        os.path.join(os.path.dirname(__file__)))
         sys.path.insert(0, appdir)
         sys.path.insert(0, XdgDirs.app_datadir)
         plugins = load('plugins')
@@ -242,7 +258,7 @@ class _ChecksLoader(object):
     def exclude_checks(self, exclude_arg):
         ''' Mark all checks in exclude_arg (string) as already done. '''
         for c in [l.strip() for l in exclude_arg.split(',')]:
-            if  c in self.checkdict:
+            if c in self.checkdict:
                 # Mark check as run, don't delete it. We want
                 # checks depending on this to run.
                 self.checkdict[c].result = None
@@ -258,6 +274,20 @@ class _ChecksLoader(object):
     def get_checks(self):
         ''' Return the Checkdict instance holding all checks. '''
         return self.checkdict
+
+    def get_plugins(self, state='true_or_false'):
+        ''' Return list of groups (i. e., plugins) being active/passive. '''
+        plugins = []
+        for p in self.groups.iterkeys():
+            if state != 'true_or_false':
+                r = self.groups[p]
+                if r.is_user_enabled():
+                    if r.user_enabled_value() != state:
+                        continue
+                elif not bool(r.is_applicable()) == state:
+                    continue
+            plugins.append(p.split('.')[0] if '.' in p else p)
+        return list(set(plugins))
 
 
 class ChecksLister(_ChecksLoader):
@@ -280,13 +310,14 @@ class Checks(_ChecksLoader):
         ''' Create a Checks set. srpm_file and spec_file are required,
         unless invoked from ChecksLister.
         '''
-        self.spec = SpecFile(spec_file)
+        _ChecksLoader.__init__(self)
+        self.spec = SpecFile(spec_file, self.flags)
         self.srpm = SRPMFile(srpm_file)
         self.data = self.Data()
         self.data.rpms = RpmDataSource(self.spec)
         self.data.buildsrc = BuildFilesSource()
         self.data.sources = SourcesDataSource(self.spec)
-        _ChecksLoader.__init__(self)
+        self._clock = None
 
     rpms = property(lambda self: self.data.rpms)
     sources = property(lambda self: self.data.sources)
@@ -308,6 +339,9 @@ class Checks(_ChecksLoader):
         check = self.checkdict[name]
         if check.is_run:
             return False
+        if check.registry.is_user_enabled() and not \
+            check.registry.user_enabled_value():
+                return False
         for dep in check.needs:
             if not dep in self.checkdict:
                 self.log.warning('%s depends on deprecated %s' %
@@ -330,11 +364,15 @@ class Checks(_ChecksLoader):
                 return
             self.log.debug('Running check: ' + name)
             check.run()
+            now = time.time()
+            self.log.debug('    %s completed: %.3f seconds'
+                               % (name, (now - self._clock)))
+            self._clock = now
+            attachments.extend(check.attachments)
             result = check.result
             if not result:
                 return
             results.append(result)
-            attachments.extend(result.attachments)
             if result.type == 'MUST' and result.result == "fail":
                 issues.append(result)
 
@@ -345,6 +383,7 @@ class Checks(_ChecksLoader):
         names = list(self.checkdict.iterkeys())
 
         tests_to_run = filter(self._ready_to_run, names)
+        self._clock = time.time()
         while tests_to_run != []:
             for name in tests_to_run:
                 run_check(name)
@@ -384,7 +423,6 @@ class Checks(_ChecksLoader):
                 fail.set_leader('- ')
                 fail.set_indent(2)
                 output.write(fail.get_text() + "\n")
-                output.write("  See: %s\n" % fail.url)
             results = [r for r in results if not r in issues]
 
         output.write("\n\n===== MUST items =====\n")
@@ -406,11 +444,5 @@ class Checks(_ChecksLoader):
         if Settings.repo:
             dump_local_repo()
 
-        output.write('\n\nGenerated by fedora-review'
-                     ' %s (%s) last change: %s\n' %
-                     (__version__, BUILD_ID, BUILD_DATE))
-        output.write('Buildroot used: %s\n' % Mock.buildroot)
-        output.write('Command line :' + ' '.join(sys.argv) + '\n')
 
-
-# vim: set expandtab: ts=4:sw=4:
+# vim: set expandtab ts=4 sw=4:

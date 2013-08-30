@@ -26,7 +26,7 @@ import unittest2 as unittest
 
 import srcpath                                   # pylint: disable=W0611
 
-from fr_testcase import FR_TestCase
+from fr_testcase import FR_TestCase, FEDORA
 
 
 class Testspec():
@@ -52,9 +52,9 @@ class TestChecks(FR_TestCase):
                         ('pending', 'CheckObeysFHS'),
                         ('pass', 'CheckFileRequires'),
                         ('pass', 'CheckUTF8Filenames'),
-                        ('pass', 'RubyCheckRequiresRubyAbi'),
+                        ('fail', 'RubyCheckNotRequiresRubyAbi'),
+                        ('fail', 'RubyCheckRequiresRubyRelease'),
                         ('pending', 'CheckNoConflicts'),
-                        ('pending', 'CheckDirectoryRequire'),
                         ('pass', 'RubyCheckBuildArchitecture'),
                         ('pending', 'CheckTestSuites'),
                         ('pending', 'CheckBuildroot'),
@@ -71,14 +71,14 @@ class TestChecks(FR_TestCase):
                         ('pass', 'CheckDescMacros'),
                         ('pending', 'NonGemCheckFilePlacement'),
                         ('pending', 'CheckSpecDescTranslation'),
-                        ('fail', 'CheckUseGlobal'),
+                        ('pending', 'CheckUseGlobal'),
                         ('pending', 'CheckDefattr'),
                         ('pending', 'CheckGuidelines'),
                         ('pass', 'NonGemCheckRequiresProperDevel'),
                         ('pass', 'CheckSourceUrl'),
-                        ('pending', 'CheckExcludeArch'),
-                        ('fail', 'RubyCheckTestsRun'),
-                        ('pending', 'CheckOwnOther'),
+                        ('pending', 'check-excludearch'),
+                        ('pass', 'RubyCheckTestsRun'),
+                        ('pass', 'CheckOwnOther'),
                         ('pass', 'CheckFullVerReqSub'),
                         ('pending', 'CheckApprovedLicense'),
                         ('pending', 'CheckDocRuntime'),
@@ -87,7 +87,9 @@ class TestChecks(FR_TestCase):
                         ('pending', 'CheckBundledLibs'),
                         ('fail', 'CheckBuildInMock'),
                         ('pending', 'CheckBuildRequires'),
-                        ('pending', 'CheckOwnDirs'),
+# Disable for now due to F18/F19 differences                         
+#                         ('pass' if FEDORA else 'pending',
+#                                    'CheckOwnDirs'),
                         ('pass', 'CheckSourceComment'),
                         ('pending', 'CheckTimeStamps'),
                         ('fail', 'CheckRelocatable'),
@@ -114,6 +116,100 @@ class TestChecks(FR_TestCase):
                         ('pass', 'check-srv-opt-local')]
         self.run_spec(spec)
 
+    def test_rubygem_fssm(self):
+        ''' Run automated generic + rubygem tests. '''
+        spec = Testspec()
+        spec.args = []
+        spec.testcase = 'rubygem-fssm'
+        spec.workdir = 'rubygem-fssm'
+        spec.groups_ok = ['Generic.build', 'Generic', 'Generic.should', 'Ruby']
+        spec.expected = [('pending', 'CheckBuild'),
+                        ('pass', 'CheckRpmlint'),
+                        ('pass', 'CheckPackageInstalls'),
+                        ('pass', 'CheckRpmlintInstalled'),
+                        ('fail', 'GemCheckRequiresRubygems'),
+                        ('pending', 'CheckObeysFHS'),
+                        ('pass', 'GemCheckProperName'),
+                        ('pass', 'CheckFileRequires'),
+                        ('pending', 'GemCheckUsesMacros'),
+                        ('pending', 'CheckSupportAllArchs'),
+                        ('pending', 'GemCheckFilePlacement'),
+                        ('pass', 'RubyCheckBuildArchitecture'),
+                        ('pending', 'CheckTestSuites'),
+                        ('pass', 'CheckBuildroot'),
+                        ('pending', 'CheckNaming'),
+                        ('pending', 'CheckFinalRequiresProvides'),
+                        ('pass', 'CheckDistTag'),
+                        ('pass', 'CheckFilePermissions'),
+                        ('pending', 'CheckLatestVersionIsPackaged'),
+                        ('pending', 'CheckObsoletesForRename'),
+                        ('pass', 'CheckClean'),
+                        ('pass', 'CheckCleanBuildroot'),
+                        ('pass', 'CheckDescMacros'),
+                        ('pass', 'CheckSourceDownloads'),
+                        ('pending', 'CheckSpecDescTranslation'),
+                        ('pass', 'CheckUseGlobal'),
+                        ('pass', 'GemCheckRequiresProperDevel'),
+                        ('pending', 'CheckGuidelines'),
+                        ('pass', 'CheckDefattr'),
+                        ('pass', 'CheckSourceUrl'),
+                        ('pending', 'check-excludearch'),
+                        ('pass', 'RubyCheckTestsRun'),
+                        ('pass', 'CheckUTF8Filenames'),
+                        ('pending', 'CheckLicenseInSubpackages'),
+                        ('pass', 'CheckOwnOther'),
+                        ('pass', 'CheckFullVerReqSub'),
+                        ('pending', 'CheckApprovedLicense'),
+                        ('pending', 'CheckDocRuntime'),
+                        ('pass', 'GemCheckSetsGemName'),
+                        ('pass', 'CheckSourceMD5'),
+                        ('pending', 'CheckBundledLibs'),
+                        ('fail', 'CheckBuildInMock'),
+                        ('pending', 'CheckBuildRequires'),
+                        ('pending', 'CheckOwnDirs'),
+                        ('fail', 'RubyCheckNotRequiresRubyAbi'),
+                        ('fail', 'RubyCheckRequiresRubyRelease'),
+                        ('fail', 'GemCheckGemInstallMacro'),
+                        ('pass', 'GemCheckGemExtdirMacro'),
+                        ('pass', 'CheckMakeinstall'),
+                        ('pass', 'CheckSourceComment'),
+                        ('pending', 'CheckTimeStamps'),
+                        ('pass', 'CheckFileDuplicates'),
+                        ('pass', 'CheckRelocatable'),
+                        ('pending', 'CheckLicenseUpstream'),
+                        ('pending', 'CheckSystemdScripts'),
+                        ('pending', 'CheckMacros'),
+                        ('pending', 'CheckFunctionAsDescribed'),
+                        ('pass', 'CheckLicensInDoc'),
+                        ('pending', 'CheckRequires'),
+                        ('pending', 'CheckCodeAndContent'),
+                        ('pass', 'CheckNameCharset'),
+                        ('pass', 'GemCheckExcludesGemCache'),
+                        ('pass', 'CheckIllegalSpecTags'),
+                        ('pass', 'CheckSpecName'),
+                        ('pending', 'CheckNoConflicts'),
+                        ('pass', 'GemCheckDoesntHaveNonGemSubpackage'),
+                        ('pending', 'CheckSpecLegibility'),
+                        ('pending', 'CheckContainsLicenseText'),
+                        ('pending', 'CheckDesktopFile'),
+                        ('pending', 'CheckDevelFilesInDevel'),
+                        ('fail', 'CheckNoNameConflict'),
+                        ('pending', 'CheckChangelogFormat'),
+                        ('pass', 'check-large-data'),
+                        ('pass', 'check-srv-opt-local')]
+        self.run_spec(spec)
+
+    def test_rubygem_RedCloth(self):
+        ''' Run automated generic + rubygem tests. '''
+        spec = Testspec()
+        spec.args = []
+        spec.testcase = 'rubygem-RedCloth'
+        spec.workdir = 'rubygem-RedCloth'
+        spec.groups_ok = ['Generic.build', 'Generic', 'Generic.should', 'Ruby']
+        spec.expected = [('pass', 'GemCheckGemInstallMacro'),
+                         ('fail', 'GemCheckGemExtdirMacro')]
+        self.run_spec(spec)
+
     def test_logback(self):
         ''' Run automated generic+ java tests. '''
         spec = Testspec()
@@ -135,7 +231,6 @@ class TestChecks(FR_TestCase):
                          ('pass', 'CheckNoRequiresPost'),
                          ('pass', 'CheckUTF8Filenames'),
                          ('pending', 'CheckNoConflicts'),
-                         ('pending', 'CheckDirectoryRequire'),
                          ('pass', 'CheckUseMavenpomdirMacro'),
                          ('pending', 'CheckTestSuites'),
                          ('pass', 'CheckBuildroot'),
@@ -157,10 +252,11 @@ class TestChecks(FR_TestCase):
                          ('pending', 'CheckMultipleLicenses'),
                          ('pending', 'CheckGuidelines'),
                          ('pass', 'CheckSourceUrl'),
-                         ('pending', 'CheckExcludeArch'),
+                         ('pending', 'check-excludearch'),
+                         ('na', 'CheckAutotoolsObsoletedMacros'),
                          ('pending', 'CheckAddMavenDepmap'),
                          ('pending', 'CheckLicenseInSubpackages'),
-                         ('pending', 'CheckOwnOther'),
+                         ('pass', 'CheckOwnOther'),
                          ('pending', 'CheckFullVerReqSub'),
                          ('pending', 'CheckApprovedLicense'),
                          ('pending', 'CheckDocRuntime'),
@@ -169,8 +265,8 @@ class TestChecks(FR_TestCase):
                          ('pending', 'CheckBundledLibs'),
                          ('fail', 'CheckBuildInMock'),
                          ('pending', 'CheckBuildRequires'),
-                         ('pending', 'CheckOwnDirs'),
-                         ('fail', 'CheckJavaFullVerReqSub'),
+                         ('pass' if FEDORA else 'pending',
+                                     'CheckOwnDirs'),
                          ('pass', 'CheckSourceComment'),
                          ('pending', 'CheckTimeStamps'),
                          ('pass', 'CheckRelocatable'),
@@ -198,8 +294,7 @@ class TestChecks(FR_TestCase):
                          ('pending', 'CheckChangelogFormat'),
                          ('pass', 'CheckSourceDownloads'),
                          ('pass', 'check-large-data'),
-                         ('pass', 'check-srv-opt-local'),
-                         ('pass', 'java-check-bundled-jars')]
+                         ('pass', 'check-srv-opt-local')]
         self.run_spec(spec)
 
     def test_scriptlets_fail(self):
@@ -207,7 +302,7 @@ class TestChecks(FR_TestCase):
         spec = Testspec()
         spec.testcase = 'scriptlets-fail'
         spec.workdir = 'scriptlets-fail'
-        spec.args = ['-x', 'CheckPackageInstalls,CheckUTF8Filenames']
+        spec.args = ['-px', 'CheckPackageInstalls,CheckUTF8Filenames']
         spec.groups_ok = ['Generic.build', 'Generic.should', 'Generic']
         spec.expected = [('fail', 'CheckGconfSchemaInstall'),
                          ('fail', 'CheckGtkQueryModules'),
@@ -226,7 +321,7 @@ class TestChecks(FR_TestCase):
         spec = Testspec()
         spec.testcase = 'scriptlets-ok'
         spec.workdir = 'scriptlets-ok'
-        spec.args = ['-x', 'CheckPackageInstalls,CheckUTF8Filenames']
+        spec.args = ['-px', 'CheckPackageInstalls,CheckUTF8Filenames']
         spec.groups_ok = ['Generic.build', 'Generic.should', 'Generic']
         spec.expected = [('pending', 'CheckGconfSchemaInstall'),
                          ('pending', 'CheckGtkQueryModules'),
@@ -248,7 +343,7 @@ class TestChecks(FR_TestCase):
         spec.testcase = 'FreeSOLID'
         spec.workdir = 'FreeSOLID'
         spec.groups_ok = ['Generic.build', 'Generic.should', 'Generic',
-                          'C/C++']
+                          'Generic.autotools', 'C/C++']
         spec.expected = [('na', 'CheckResultdir'),
                          ('pending', 'CheckBuild'),
                          ('pass', 'CheckRpmlint'),
@@ -259,7 +354,6 @@ class TestChecks(FR_TestCase):
                          ('pass', 'CheckFileRequires'),
                          ('pass', 'CheckUTF8Filenames'),
                          ('pending', 'CheckNoConflicts'),
-                         ('pending', 'CheckDirectoryRequire'),
                          ('pending', 'CheckTestSuites'),
                          ('pass', 'CheckBuildroot'),
                          ('pending', 'CheckNaming'),
@@ -280,10 +374,10 @@ class TestChecks(FR_TestCase):
                          ('pass', 'CheckDefattr'),
                          ('pending', 'CheckGuidelines'),
                          ('pass', 'CheckSourceUrl'),
-                         ('pending', 'CheckExcludeArch'),
+                         ('pending', 'check-excludearch'),
                          ('pending', 'CheckLicenseInSubpackages'),
                          ('pending', 'CheckNoKernelModules'),
-                         ('pending', 'CheckOwnOther'),
+                         ('pass', 'CheckOwnOther'),
                          ('pass', 'CheckFullVerReqSub'),
                          ('pending', 'CheckApprovedLicense'),
                          ('pending', 'CheckDocRuntime'),
@@ -293,7 +387,6 @@ class TestChecks(FR_TestCase):
                          ('fail', 'CheckBuildInMock'),
                          ('pass', 'CheckLDConfig'),
                          ('pending', 'CheckBuildRequires'),
-                         ('pending', 'CheckOwnDirs'),
                          ('pending', 'CheckNoStaticExecutables'),
                          ('pass', 'CheckRPATH'),
                          ('pending', 'CheckUsefulDebuginfo'),
@@ -312,6 +405,7 @@ class TestChecks(FR_TestCase):
                          ('pass', 'CheckNameCharset'),
                          ('pass', 'CheckLibToolArchives'),
                          ('pass', 'CheckIllegalSpecTags'),
+                         ('pass', 'CheckAutotoolsObsoletedMacros'),
                          ('pass', 'CheckSpecName'),
                          ('pending', 'CheckDevelFilesInDevel'),
                          ('pending', 'CheckSpecLegibility'),
@@ -334,3 +428,5 @@ if __name__ == '__main__':
     else:
         suite = unittest.TestLoader().loadTestsFromTestCase(TestChecks)
     unittest.TextTestRunner(verbosity=2).run(suite)
+
+# vim: set expandtab ts=4 sw=4:

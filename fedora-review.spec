@@ -5,7 +5,7 @@
 #global     git_tag  .fa1afe1
 
 Name:       fedora-review
-Version:    0.4.1
+Version:    0.5.0
 Release:    1%{?git_tag}%{?dist}
 Summary:    Review tool for fedora rpm packages
 
@@ -15,21 +15,23 @@ Source0:    https://fedorahosted.org/released/FedoraReview/%{name}-%{version}%{?
 
 BuildArch:  noarch
 
+BuildRequires:  python-argparse
 BuildRequires:  python-BeautifulSoup
 BuildRequires:  python-bugzilla
 BuildRequires:  python-straight-plugin
+BuildRequires:  python-unittest2
 BuildRequires:  python2-devel
 BuildRequires:  rpm-python
-BuildRequires:  python-argparse
 
 Requires:       fedora-packager
+Requires:       python-argparse
 Requires:       python-BeautifulSoup
 Requires:       python-bugzilla
 Requires:       python-kitchen
 Requires:       python-straight-plugin
 Requires:       rpm-python
 Requires:       rpmdevtools
-Requires:       python-argparse
+Requires:       yum-utils
 
 # Let's be consistent with the name used on fedorahosted
 provides:       FedoraReview = %{version}-%{release}
@@ -104,7 +106,7 @@ python -m unittest discover -f
 
 
 %files
-%doc COPYING AUTHORS TODO README
+%doc COPYING AUTHORS README
 %{python_sitelib}/*
 %{_bindir}/fedora-review
 %{_bindir}/fedora-create-review
@@ -125,8 +127,8 @@ python -m unittest discover -f
 
 
 %changelog
-* Mon Apr 29 2013 Stanislav Ochotnicky <sochotnicky@redhat.com> - 0.4.1-1
-- Updating to upstream 0.4.1
+* Mon Aug 19 2013 Stanislav Ochotnicky <sochotnicky@redhat.com> 0.5.0-1
+- Updating to upstream 0.5.0
 
 * Mon Jan 28 2013 Stanislav Ochotnicky <sochotnicky@redhat.com> - 0.4.0-1
 - Updating to upstream 0.4.0
@@ -181,5 +183,3 @@ python -m unittest discover -f
 
 * Thu Nov 10 2011 Pierre-Yves Chibon <pingou@pingoured.fr> - 0.1.0-1
 - Initial packaging work for Fedora
-
-

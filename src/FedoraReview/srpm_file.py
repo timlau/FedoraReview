@@ -52,11 +52,11 @@ class SRPMFile(HelpersMixin):
         oldpwd = os.getcwd()
         os.chdir(wdir)
         src = src if src else self.filename
-        cmd = 'rpm2cpio ' + src + ' | cpio -u -i --quiet'
+        cmd = 'rpm2cpio ' + src + ' | cpio -u -i -m --quiet'
         rc = call(cmd, shell=True)
         if rc != 0:
             self.log.warn(
-                  "Cannot unpack %s into %s" % (self.filename, wdir))
+                    "Cannot unpack %s into %s" % (self.filename, wdir))
         else:
             self._unpacked_src = wdir
         os.chdir(oldpwd)
@@ -68,7 +68,7 @@ class SRPMFile(HelpersMixin):
         files = glob(os.path.join(self._unpacked_src, '*'))
         if not self.filename in [os.path.basename(f) for f in files]:
             self.log.error(
-               'Trying to unpack non-existing source: ' + path)
+                'Trying to unpack non-existing source: ' + path)
             return None
         extract_dir = os.path.join(self._unpacked_src,
                                    self.filename + '-extract')
@@ -105,4 +105,4 @@ class SRPMFile(HelpersMixin):
         return self._checksum(path)
 
 
-# vim: set expandtab: ts=4:sw=4:
+# vim: set expandtab ts=4 sw=4:
