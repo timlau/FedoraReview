@@ -87,7 +87,7 @@ class TestChecks(FR_TestCase):
                         ('pending', 'CheckBundledLibs'),
                         ('fail', 'CheckBuildInMock'),
                         ('pending', 'CheckBuildRequires'),
-# Disable for now due to F18/F19 differences                         
+# Disable for now due to F18/F19 differences
 #                         ('pass' if FEDORA else 'pending',
 #                                    'CheckOwnDirs'),
                         ('pass', 'CheckSourceComment'),
@@ -112,7 +112,7 @@ class TestChecks(FR_TestCase):
                         ('pending', 'CheckPatchComments'),
                         ('pending', 'CheckChangelogFormat'),
                         ('pass', 'CheckSourceDownloads'),
-                        ('pass', 'check-large-data'),
+                        ('na', 'check-large-data'),
                         ('pass', 'check-srv-opt-local')]
         self.run_spec(spec)
 
@@ -195,7 +195,7 @@ class TestChecks(FR_TestCase):
                         ('pending', 'CheckDevelFilesInDevel'),
                         ('fail', 'CheckNoNameConflict'),
                         ('pending', 'CheckChangelogFormat'),
-                        ('pass', 'check-large-data'),
+                        ('na', 'check-large-data'),
                         ('pass', 'check-srv-opt-local')]
         self.run_spec(spec)
 
@@ -293,7 +293,7 @@ class TestChecks(FR_TestCase):
                          ('pending', 'CheckPatchComments'),
                          ('pending', 'CheckChangelogFormat'),
                          ('pass', 'CheckSourceDownloads'),
-                         ('pass', 'check-large-data'),
+                         ('na', 'check-large-data'),
                          ('pass', 'check-srv-opt-local')]
         self.run_spec(spec)
 
