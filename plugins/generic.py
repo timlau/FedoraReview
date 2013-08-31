@@ -319,7 +319,7 @@ class CheckDefattr(GenericCheckBase):
             self.set_passed(self.FAIL,
                             '%defattr missing, required by EPEL5')
         else:
-            self.set_passed(self.PASS)
+            self.set_passed(self.NA)
 
 
 class CheckDescMacros(GenericCheckBase):
