@@ -469,7 +469,7 @@ class CheckSourceComment(GenericShouldCheckBase):
                 passed = False
 
         if passed:
-            self.set_passed(self.PASS)
+            self.set_passed(self.NA)
         else:
             self.set_passed(self.PENDING,
                 'Package contains tarball without URL, check comments')
