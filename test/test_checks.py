@@ -79,7 +79,7 @@ class TestChecks(FR_TestCase):
                         ('pending', 'check-excludearch'),
                         ('pass', 'RubyCheckTestsRun'),
                         ('pass', 'CheckOwnOther'),
-                        ('pass', 'CheckFullVerReqSub'),
+                        ('na', 'CheckFullVerReqSub'),
                         ('pending', 'CheckApprovedLicense'),
                         ('pending', 'CheckDocRuntime'),
                         ('pass', 'CheckFileDuplicates'),
