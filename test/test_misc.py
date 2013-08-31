@@ -151,6 +151,37 @@ class TestMisc(FR_TestCase):
         check.run()
         self.assertTrue(check.is_failed)
 
+    def test_disabled(self):
+        ''' test normally disabled checks  '''
+        # pylint: disable=F0401,R0201,C0111,W0613,W0201
+
+        from plugins.generic_should import CheckSourceComment
+        from plugins.generic import CheckDefattr
+        from FedoraReview.datasrc import SourcesDataSource
+
+        class ChecksMockup(object):
+
+            def __init__(self):
+
+                class Data(object):
+                    pass
+
+                self.data = Data()
+
+        self.init_test('test_misc',
+                       argv=['-pn', 'disabled', '--cache',
+                             '--no-build'])
+        checks = ChecksMockup()
+        checks.spec = SpecFile(os.path.join(os.getcwd(), 'disabled.spec'))
+        checks.sources = SourcesDataSource(checks.spec)
+        checks.flags = {'EPEL5': False}
+        check = CheckSourceComment(checks)
+        check.run()
+        self.assertTrue(check.is_pending)
+        check = CheckDefattr(checks)
+        check.run()
+        self.assertTrue(check.is_pending)
+
     def test_generic_static(self):
         ''' test generic static -a checks  '''
         # pylint: disable=F0401,R0201,C0111,W0613
