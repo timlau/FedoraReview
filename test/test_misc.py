@@ -123,6 +123,37 @@ class TestMisc(FR_TestCase):
         all_files = src.find_all('*')
         self.assertEqual(len(all_files), 8)
 
+    def test_generic_static(self):
+        ''' test generic static -a checks  '''
+        # pylint: disable=F0401,R0201,C0111,W0613
+
+        from plugins.generic import CheckStaticLibs
+
+        class ChecksMockup(object):
+            pass
+
+        class RpmsMockup(object):
+
+            def find(self, what, where):
+                return True
+
+            def get(self, pkg_name):
+                return RpmFile("python-test", "1.0", "1.fc" + RELEASE)
+
+        class ApplicableCheckStaticLibs(CheckStaticLibs):
+
+            def is_applicable(self):
+                return True
+
+        self.init_test('test_misc',
+                       argv=['-n', 'python-test', '--cache',
+                             '--no-build'])
+        check = ApplicableCheckStaticLibs(ChecksMockup())
+        check.checks.spec = SpecFile(os.path.join(os.getcwd(),
+                                                  'python-test.spec'))
+        check.checks.rpms = RpmsMockup()
+        check.run()
+
     def test_ccpp_gnulib(self):
         ''' test ccpp bundled gnulib  '''
         # pylint: disable=F0401,R0201,C0111,W0613
@@ -182,40 +213,34 @@ class TestMisc(FR_TestCase):
         check.run()
         self.assertTrue(check.is_pending)
 
-    def test_generic_static(self):
-        ''' test generic static -a checks  '''
+    def test_hardened_build(self):
+        ''' test %global _hardened_build  '''
         # pylint: disable=F0401,R0201,C0111,W0613
 
-        from plugins.generic import CheckStaticLibs
+        from plugins.generic import CheckDaemonCompileFlags
 
         class ChecksMockup(object):
             pass
 
         class RpmsMockup(object):
 
-            def find(self, what, where):
-                return True
-
-            def get(self, pkg_name):
-                return RpmFile("python-test", "1.0", "1.fc" + RELEASE)
-
-        class ApplicableCheckStaticLibs(CheckStaticLibs):
-
-            def is_applicable(self):
-                return True
+            def find_all(self, what):
+                return ['a_file']
 
         self.init_test('test_misc',
                        argv=['-n', 'python-test', '--cache',
                              '--no-build'])
-        check = ApplicableCheckStaticLibs(ChecksMockup())
+        check = CheckDaemonCompileFlags(ChecksMockup())
         check.checks.spec = SpecFile(os.path.join(os.getcwd(),
                                                   'python-test.spec'))
         check.checks.rpms = RpmsMockup()
+        check.checks.log = self.log
         check.run()
-        note = check.result.output_extra
+        self.assertTrue(check.is_passed)
+        check.checks.spec = SpecFile(os.path.join(os.getcwd(),
+                                                  'disabled.spec'))
+        check.run()
         self.assertTrue(check.is_failed)
-        self.assertTrue('Illegal package name: python-test' in note)
-        self.assertTrue('Does not provide -static: python-test' in note)
 
     def test_rm_buildroot(self):
         ''' test rm -rf $BUILDROOT/a_path '''

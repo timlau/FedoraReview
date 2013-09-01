@@ -297,6 +297,7 @@ class CheckDaemonCompileFlags(GenericCheckBase):
                    'rd=Packaging/Guidelines#Compiler_flags'
         self.text = 'Package uses hardened build flags if required to.'
         self.automatic = True
+        self.needs.append('check-large-data')      # Ensure unpacked rpms
 
     def run(self):
         extra = ''

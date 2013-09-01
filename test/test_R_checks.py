@@ -103,9 +103,12 @@ class TestRChecks(FR_TestCase):
         self.checks = Checks(self.bug.spec_file, self.bug.srpm_file)
         self.checks.run_checks(writedown=False)
         for check in self.checks.checkdict.itervalues():
+            #if not os.path.exists('test-R/rpms-unpacked'):
+            #    os.mkdir('test-R/rpms-unpacked')
             if check.is_passed or check.is_pending or check.is_failed:
                 ok_groups = ['Generic.build', 'Generic', 'Generic.should', 'R']
                 self.assertIn(check.group, ok_groups)
+            #shutil.rmtree('test-R/rpms-unpacked')
 
 
 if __name__ == '__main__':
