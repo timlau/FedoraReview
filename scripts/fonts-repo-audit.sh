@@ -10,7 +10,7 @@ rpm -q fontpackages-tools &> /dev/null || {
     exit $FR_FAIL
 }
 rpm -q createrepo &> /dev/null || {
-    msg="Cannot find repo-font-audit, install createrepo $msg"
+    msg="Cannot find createrepo, install createrepo $msg"
     exit $FR_FAIL
 }
 
