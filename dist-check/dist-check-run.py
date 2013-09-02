@@ -33,6 +33,9 @@ YUM_DL_CMD = 'yumdownloader --disablerepo=* --enablerepo=fedora*' \
              ' --quiet --releasever=rawhide --archlist=%s' % ARCH
 LOGLEVEL = logging.INFO
 LOGFORMAT = "%(levelname)s:dist-check-run: %(message)s"
+MAKECACHE_1 = 'yum makecache'
+MAKECACHE_2 = 'yum --disablerepo=* --enablerepo=fedora*' \
+              ' --releasever=rawhide makecache'
 
 
 def fetch(url):
@@ -48,7 +51,14 @@ def fetch_packages(packages, source=False):
         for p in packages:
             cmd += ' ' + p + '.noarch'
             cmd += ' ' + p + '.' + ARCH
-    subprocess.check_output(cmd.split())
+    try:
+        subprocess.check_output(cmd.split())
+    except (OSError, subprocess.CalledProcessError):
+        logging.info("Download failed, trying"
+                     " again after makecache")
+        subprocess.check_call(MAKECACHE_1.split())
+        subprocess.check_call(MAKECACHE_2.split())
+        subprocess.check_output(cmd.split())
 
 
 def download_urls(pkg):
@@ -83,7 +93,7 @@ def download_urls(pkg):
     logging.info("Done: downloading URL:s for " + pkg)
 
 
-def run_review(pkg):
+def do_run_review(pkg):
     pkg = pkg.strip()
     logging.info("Starting review: " + pkg)
     if os.path.exists(pkg + '/urlerror'):
@@ -99,24 +109,22 @@ def run_review(pkg):
     cmd = "try-fedora-review -B -rpn  %s " % srpm
     cmd += "-m fedora-rawhide-%s " % ARCH
     cmd += "-D DISTTAG=fc20 "
-    cmd += '-x '
-    cmd += "CheckBuild,"
-    cmd += "CheckPackageInstalls,"
-    cmd += "CheckRpmlintInstalled,"
-    cmd += "CheckNoNameConflict,"
-    cmd += "CheckOwnDirs,"
-    cmd += "CheckInitDeps,"
-    cmd += "CheckRpmlint"
+    cmd += "-D BATCH "
+    cmd += '-x CheckNoNameConflict,CheckOwnDirs'
+    ok = True
     try:
         subprocess.check_call(cmd.split())
     except:
         logging.error("Can't run review cmd: " + cmd)
+        ok = False
     else:
         resultdir = "../" + pkg + ".results"
         if os.path.exists(resultdir):
             shutil.rmtree(resultdir)
         os.mkdir(resultdir)
-        for f in [pkg + '/review.txt', 'fedora-review.log']:
+        for f in [pkg + '/review.txt',
+                  'fedora-review.log',
+                  pkg + '/report.xml']:
             if os.path.exists(f):
                 shutil.move(f, resultdir)
         shutil.rmtree(pkg)
@@ -124,6 +132,17 @@ def run_review(pkg):
             os.unlink(rpm)
     finally:
         os.chdir(startdir)
+    return ok
+
+
+def run_review(pkg):
+    if not do_run_review(pkg):
+        logging.info("Calling fedora-review failed, trying "
+                     " again after makecache")
+        subprocess.check_call(MAKECACHE_1.split())
+        subprocess.check_call(MAKECACHE_2.split())
+        do_run_review(pkg)
+
 
 logging.basicConfig(level=LOGLEVEL, format=LOGFORMAT)
 prev = None

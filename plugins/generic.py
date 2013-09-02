@@ -60,10 +60,15 @@ class Registry(RegistryBase):
 
     def register_flags(self):
         epel5 = self.Flag('EPEL5', 'Review package for EPEL5', __file__)
-        disttag = self.Flag('DISTTAG', 'Default disttag e. g. "fc21".',
+        disttag = self.Flag('DISTTAG',
+                            'Default disttag e. g., "fc21".',
                             __file__)
+        batch = self.Flag('BATCH',
+                          'Disable all build, install, rpmlint etc. tasks',
+                           __file__)
         self.checks.flags.add(epel5)
         self.checks.flags.add(disttag)
+        self.checks.flags.add(batch)
 
     def is_applicable(self):
         return True

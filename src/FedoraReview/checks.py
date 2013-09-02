@@ -24,7 +24,6 @@ import os
 import sys
 import time
 
-from glob import glob
 from operator import attrgetter
 from straight.plugin import load                  # pylint: disable=F0401
 
@@ -32,68 +31,13 @@ from datasrc import RpmDataSource, BuildFilesSource, SourcesDataSource
 from settings import Settings
 from srpm_file import SRPMFile
 from spec_file import SpecFile
-from review_dirs import ReviewDirs
 from review_error import ReviewError
 from xdg_dirs import XdgDirs
+from reports import write_xml_report, write_template
 
 
-HEADER = """
-This is a review *template*. Besides handling the [ ]-marked tests you are
-also supposed to fix the template before pasting into bugzilla:
-- Add issues you find to the list of issues on top. If there isn't such
-  a list, create one.
-- Add your own remarks to the template checks.
-- Add new lines marked [!] or [?] when you discover new things not
-  listed by fedora-review.
-- Change or remove any text in the template which is plain wrong. In this
-  case you could also file a bug against fedora-review
-- Remove the "[ ] Manual check required", you will not have any such lines
-  in what you paste.
-- Remove attachments which you deem not really useful (the rpmlint
-  ones are mandatory, though)
-- Remove this text
-
-
-
-Package Review
-==============
-
-Legend:
-[x] = Pass, [!] = Fail, [-] = Not applicable, [?] = Not evaluated
-[ ] = Manual review needed
-
-"""
-
-
-def _write_section(results, output):
-    ''' Print a {SHOULD,MUST, EXTRA} section. '''
-
-    def hdr(group):
-        ''' Return header this test is printed under. '''
-        if '.' in group:
-            return group.split('.')[0]
-        return group
-
-    def result_key(result):
-        ''' Return key used to sort results. '''
-        if result.check.is_failed:
-            return '0' + str(result.check.sort_key)
-        elif result.check.is_pending:
-            return '1' + str(result.check.sort_key)
-        elif result.check.is_passed:
-            return '2' + str(result.check.sort_key)
-        else:
-            return '3' + str(result.check.sort_key)
-
-    groups = list(set([hdr(test.group) for test in results]))
-    for group in sorted(groups):
-        res = filter(lambda t: hdr(t.group) == group, results)
-        if not res:
-            continue
-        res = sorted(res, key=result_key)
-        output.write('\n' + group + ':\n')
-        for r in res:
-            output.write(r.get_text() + '\n')
+_BATCH_EXCLUDED = 'CheckBuild,CheckPackageInstalls,CheckRpmlintInstalled,' \
+    'CheckNoNameConflict,CheckInitDeps,CheckRpmlint'
 
 
 class _CheckDict(dict):
@@ -225,6 +169,8 @@ class _ChecksLoader(object):
         elif Settings.exclude:
             self.exclude_checks(Settings.exclude)
         self._update_flags()
+        if self.flags['BATCH']:
+            self.exclude_checks(_BATCH_EXCLUDED)
 
     def _update_flags(self):
         ''' Update registered flags with user -D settings. '''
@@ -406,58 +352,17 @@ class Checks(_ChecksLoader):
 
         if writedown:
             key_getter = attrgetter('group', 'type', 'name')
-            self.show_output(output,
-                             sorted(results, key=key_getter),
-                             issues,
-                             attachments)
+            write_template(output,
+                           sorted(results, key=key_getter),
+                           issues,
+                           attachments)
+            write_xml_report(self.spec, results)
         else:
             with open('.testlog.txt', 'w') as f:
                 for r in results:
                     f.write('\n' + 24 * ' '
                             + "('%s', '%s')," % (r.state, r.name))
 
-    @staticmethod
-    def show_output(output, results, issues, attachments):
-        ''' Print test results on output. '''
-
-        def dump_local_repo():
-            ''' print info on --local-repo rpms used. '''
-            repodir = Settings.repo
-            if not repodir.startswith('/'):
-                repodir = os.path.join(ReviewDirs.startdir, repodir)
-            rpms = glob(os.path.join(repodir, '*.rpm'))
-            output.write("\nBuilt with local dependencies:\n")
-            for rpm in rpms:
-                output.write("    " + rpm + '\n')
-
-        output.write(HEADER)
-
-        if issues:
-            output.write("\nIssues:\n=======\n")
-            for fail in issues:
-                fail.set_leader('- ')
-                fail.set_indent(2)
-                output.write(fail.get_text() + "\n")
-            results = [r for r in results if not r in issues]
-
-        output.write("\n\n===== MUST items =====\n")
-        musts = filter(lambda r: r.type == 'MUST', results)
-        _write_section(musts, output)
-
-        output.write("\n===== SHOULD items =====\n")
-        shoulds = filter(lambda r: r.type == 'SHOULD', results)
-        _write_section(shoulds, output)
-
-        output.write("\n===== EXTRA items =====\n")
-        extras = filter(lambda r: r.type == 'EXTRA', results)
-        _write_section(extras, output)
-
-        for a in sorted(attachments):
-            output.write('\n\n')
-            output.write(a.__str__())
-
-        if Settings.repo:
-            dump_local_repo()
 
 
 # vim: set expandtab ts=4 sw=4:
