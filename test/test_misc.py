@@ -703,7 +703,7 @@ class TestMisc(FR_TestCase):
         ''' Specfile with syntactic errors test. '''
         self.init_test('bad-spec',
                        argv=['-n', 'python-test', '-p', '--cache',
-                             '--no-build'])
+                             '--no-build', '-D', 'DISTTAG=fc19'])
         bug = NameBug('python-test')
         check = self.run_single_check(bug, 'CheckSpecAsInSRPM')
         self.assertTrue(check.is_failed)
