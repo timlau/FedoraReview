@@ -8,6 +8,9 @@ class Registry(RegistryBase):
     ''' Register all checks in this file in group 'Java'. '''
 
     group = 'Java'
+    name = 'fedora-review-plugin-java'
+    version = '0.1'
+    build_id = Registry.get_build_id(__file__)
 
     def is_applicable(self):
         ''' Return True if this is a java package. '''
