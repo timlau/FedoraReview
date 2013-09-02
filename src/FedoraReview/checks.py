@@ -106,6 +106,7 @@ class _CheckDict(dict):
         - On insertion, items listed in the 'deprecates'property
           are removed.
     """
+    # pylint: disable=R0904
 
     def __init__(self, *args, **kwargs):
         dict.__init__(self)
@@ -115,26 +116,12 @@ class _CheckDict(dict):
 
     def __setitem__(self, key, value):
 
-        def log_kill(victim, killer):
-            ''' Log test skipped due to deprecation. '''
-            self.log.debug("Skipping %s in %s, deprecated by %s in %s" %
-                              (victim.name, victim.defined_in,
-                               killer.name, killer.defined_in))
-
         def log_duplicate(first, second):
             ''' Log warning for duplicate test. '''
             self.log.warning("Duplicate checks %s in %s, %s in %s" %
                               (first.name, first.defined_in,
                               second.name, second.defined_in))
 
-        for victim in value.deprecates:
-            if victim in self.iterkeys():
-                log_kill(self[victim], value)
-                del(self[victim])
-        for killer in self.itervalues():
-            if key in killer.deprecates:
-                log_kill(value, killer)
-                return
         if key in self.iterkeys():
             log_duplicate(value, self[key])
         dict.__setitem__(self, key, value)
@@ -172,6 +159,25 @@ class _CheckDict(dict):
         self.clear()
         self.extend(needed)
         delattr(self[check_name], 'result')
+
+    def fix_deprecations(self, key):
+        ''' Remove deprecated tests, needs Registry.is_applicable(). '''
+
+        def log_kill(victim, killer):
+            ''' Log test skipped due to deprecation. '''
+            self.log.debug("Skipping %s in %s, deprecated by %s in %s" %
+                              (victim.name, victim.defined_in,
+                               killer.name, killer.defined_in))
+
+        value = self[key]
+        for victim in value.deprecates:
+            if victim in self.iterkeys():
+                log_kill(self[victim], value)
+                del(self[victim])
+        for killer in self.itervalues():
+            if key in killer.deprecates:
+                log_kill(value, killer)
+                return
 
 
 class _Flags(dict):
@@ -252,6 +258,9 @@ class _ChecksLoader(object):
             tests = registry.register(plugin)
             self.checkdict.extend(tests)
             self.groups[registry.group] = registry
+        for c in self.checkdict:
+            if not self.checkdict[c].registry:
+                self.checkdict[c].registry = self.groups[c.group]
         sys.path.remove(XdgDirs.app_datadir)
         sys.path.remove(appdir)
 
@@ -317,6 +326,12 @@ class Checks(_ChecksLoader):
         self.data.rpms = RpmDataSource(self.spec)
         self.data.buildsrc = BuildFilesSource()
         self.data.sources = SourcesDataSource(self.spec)
+        allkeys = list(self.checkdict.iterkeys())
+        for c in allkeys:
+            if not c in self.checkdict:
+                continue
+            if self.checkdict[c].is_applicable():
+                self.checkdict.fix_deprecations(c)
         self._clock = None
 
     rpms = property(lambda self: self.data.rpms)
