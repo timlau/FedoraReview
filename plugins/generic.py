@@ -26,7 +26,7 @@ import rpm
 
 from glob import glob
 from StringIO import StringIO
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, CalledProcessError
 try:
     from subprocess import check_output          # pylint: disable=E0611
 except ImportError:
@@ -142,6 +142,7 @@ class CheckBuildCompilerFlags(GenericCheckBase):
                     'justifies otherwise.'
         self.automatic = True
         self.type = 'MUST'
+        self.needs.append('check-large-data')      # Ensure unpacked rpms
 
     def run(self):
         archs = self.checks.spec.expand_tag('BuildArchs')
@@ -284,6 +285,47 @@ class CheckCleanBuildroot(GenericCheckBase):
             self.set_passed(self.FAIL)
         else:
             self.set_passed(self.PASS)
+
+
+class CheckDaemonCompileFlags(GenericCheckBase):
+    '''
+    MUST: Sensitive code should use hardened build flags.
+    '''
+    def __init__(self, base):
+        GenericCheckBase.__init__(self, base)
+        self.url = 'http://fedoraproject.org/wiki/Packaging:Guidelines?' \
+                   'rd=Packaging/Guidelines#Compiler_flags'
+        self.text = 'Package uses hardened build flags if required to.'
+        self.automatic = True
+        self.needs.append('check-large-data')      # Ensure unpacked rpms
+
+    def run(self):
+        extra = ''
+        rpms_dir = os.path.join(ReviewDirs.root, 'rpms-unpacked')
+        try:
+            cmd = 'find %s -perm -4000' % rpms_dir
+            with open('/dev/null', 'w') as f:
+                suids = check_output(cmd.split(), stderr=f).strip().split()
+        except CalledProcessError:
+            self.log.info('Cannot run find command: ' + cmd)
+            suids = []
+        else:
+            suids = [os.path.basename(s) for s in suids]
+            if suids:
+                extra += 'suid files: ' + ', '.join(suids)
+
+        systemd_files = self.rpms.find_all('/lib/systemd/system/*')
+        if systemd_files:
+            files = [os.path.basename(f) for f in systemd_files]
+            extra += 'Systemd files (daemon?): ' + ', '.join(files)
+
+        if not extra:
+            self.set_passed(self.NA)
+        elif self.spec.find_re(r'[^# ]*%global\s+_hardened_build\s+1'):
+            self.set_passed(self.PASS, extra)
+        else:
+            extra += ' and not %global _hardened_build'
+            self.set_passed(self.FAIL, extra)
 
 
 class CheckDefattr(GenericCheckBase):
@@ -1375,8 +1417,15 @@ class CheckSystemdScripts(GenericCheckBase):
         GenericCheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
         self.text = 'Package contains  systemd file(s) if in need.'
-        self.automatic = False
+        self.automatic = True
         self.type = 'MUST'
+        self.needs.append('CheckDaemonCompileFlags')
+
+    def run_on_applicable(self):
+        if self.checks.checkdict['CheckDaemonCompileFlags'].is_na:
+            self.set_passed(self.PENDING)
+        else:
+            self.set_passed(self.PASS)
 
 
 class CheckUTF8Filenames(GenericCheckBase):

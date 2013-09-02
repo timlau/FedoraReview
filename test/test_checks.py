@@ -46,6 +46,7 @@ class TestChecks(FR_TestCase):
         spec.groups_ok = ['Generic.build', 'Generic', 'Generic.should', 'Ruby']
         spec.expected = [('na', 'CheckResultdir'),
                         ('pending', 'CheckBuild'),
+                        ('na', 'CheckDaemonCompileFlags'),
                         ('pass', 'CheckRpmlint'),
                         ('pass', 'CheckPackageInstalls'),
                         ('pass', 'CheckRpmlintInstalled'),
@@ -124,6 +125,7 @@ class TestChecks(FR_TestCase):
         spec.workdir = 'rubygem-fssm'
         spec.groups_ok = ['Generic.build', 'Generic', 'Generic.should', 'Ruby']
         spec.expected = [('pending', 'CheckBuild'),
+                        ('na', 'CheckDaemonCompileFlags'),
                         ('pass', 'CheckRpmlint'),
                         ('pass', 'CheckPackageInstalls'),
                         ('pass', 'CheckRpmlintInstalled'),
@@ -221,6 +223,7 @@ class TestChecks(FR_TestCase):
                           'Java', 'Maven']
         spec.expected = [('na', 'CheckResultdir'),
                          ('pending', 'CheckBuild'),
+                         ('na', 'CheckDaemonCompileFlags'),
                          ('pass', 'CheckRpmlint'),
                          ('pass', 'CheckPackageInstalls'),
                          ('pass', 'CheckRpmlintInstalled'),
@@ -346,6 +349,7 @@ class TestChecks(FR_TestCase):
                           'Generic.autotools', 'C/C++']
         spec.expected = [('na', 'CheckResultdir'),
                          ('pending', 'CheckBuild'),
+                         ('na', 'CheckDaemonCompileFlags'),
                          ('pass', 'CheckRpmlint'),
                          ('pass', 'CheckPackageInstalls'),
                          ('pass', 'CheckRpmlintInstalled'),
