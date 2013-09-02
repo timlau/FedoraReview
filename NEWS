@@ -1,3 +1,16 @@
+0.5.1
+=====
+- Hide some tests when they are not applicable (#229).
+- Fix a bug in make_dist (#228).
+- Added stub plugins for Ocaml and Haskell allowing static linkage
+  (#220, #221).
+- Add a fonts plugin running repo-fonts-audit (#215).
+- Enhance systemd config files handling (#214, #193).
+- Update CheckStaticLibs to current GL (#222).
+- Added new XML report designed for batch testing( #197).
+- Fixed a bad bug where deprecations was honored in non-applicable
+  shell tests (498fa464b).
+
 0.5.0
 =====
 - Removing the only php test which is outdated (5addbb4).
