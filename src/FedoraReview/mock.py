@@ -60,6 +60,8 @@ def _run_script(script):
 
 def _get_tag(paths):
     ''' Return common disttag from prebuilt files, possibly "" '''
+    if not paths:
+        return ''
     releases = [p.rsplit('-', 2)[2] for p in paths]
     releases = [r.rsplit('.', 2)[0] for r in releases]
     if not len(set(releases)) == 1:
@@ -94,6 +96,8 @@ def _add_disttag_macros(macros, tag):
 
 def _add_buildarch_macros(macros, paths):
     ''' Add macros derived from buildarch. '''
+    if not paths:
+        return '', macros
     arches = [p.rsplit('.', 2)[1] for p in paths]
     if set(arches) == set(['noarch']):
         buildarch = 'noarch'
