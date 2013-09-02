@@ -79,7 +79,7 @@ class TestChecks(FR_TestCase):
                         ('pending', 'check-excludearch'),
                         ('pass', 'RubyCheckTestsRun'),
                         ('pass', 'CheckOwnOther'),
-                        ('pass', 'CheckFullVerReqSub'),
+                        ('na', 'CheckFullVerReqSub'),
                         ('pending', 'CheckApprovedLicense'),
                         ('pending', 'CheckDocRuntime'),
                         ('pass', 'CheckFileDuplicates'),
@@ -87,10 +87,10 @@ class TestChecks(FR_TestCase):
                         ('pending', 'CheckBundledLibs'),
                         ('fail', 'CheckBuildInMock'),
                         ('pending', 'CheckBuildRequires'),
-# Disable for now due to F18/F19 differences                         
+# Disable for now due to F18/F19 differences
 #                         ('pass' if FEDORA else 'pending',
 #                                    'CheckOwnDirs'),
-                        ('pass', 'CheckSourceComment'),
+                        ('na', 'CheckSourceComment'),
                         ('pending', 'CheckTimeStamps'),
                         ('fail', 'CheckRelocatable'),
                         ('pending', 'CheckLicenseUpstream'),
@@ -112,7 +112,7 @@ class TestChecks(FR_TestCase):
                         ('pending', 'CheckPatchComments'),
                         ('pending', 'CheckChangelogFormat'),
                         ('pass', 'CheckSourceDownloads'),
-                        ('pass', 'check-large-data'),
+                        ('na', 'check-large-data'),
                         ('pass', 'check-srv-opt-local')]
         self.run_spec(spec)
 
@@ -151,7 +151,7 @@ class TestChecks(FR_TestCase):
                         ('pass', 'CheckUseGlobal'),
                         ('pass', 'GemCheckRequiresProperDevel'),
                         ('pending', 'CheckGuidelines'),
-                        ('pass', 'CheckDefattr'),
+                        ('na', 'CheckDefattr'),
                         ('pass', 'CheckSourceUrl'),
                         ('pending', 'check-excludearch'),
                         ('pass', 'RubyCheckTestsRun'),
@@ -172,7 +172,7 @@ class TestChecks(FR_TestCase):
                         ('fail', 'GemCheckGemInstallMacro'),
                         ('pass', 'GemCheckGemExtdirMacro'),
                         ('pass', 'CheckMakeinstall'),
-                        ('pass', 'CheckSourceComment'),
+                        ('na', 'CheckSourceComment'),
                         ('pending', 'CheckTimeStamps'),
                         ('pass', 'CheckFileDuplicates'),
                         ('pass', 'CheckRelocatable'),
@@ -195,7 +195,7 @@ class TestChecks(FR_TestCase):
                         ('pending', 'CheckDevelFilesInDevel'),
                         ('fail', 'CheckNoNameConflict'),
                         ('pending', 'CheckChangelogFormat'),
-                        ('pass', 'check-large-data'),
+                        ('na', 'check-large-data'),
                         ('pass', 'check-srv-opt-local')]
         self.run_spec(spec)
 
@@ -248,7 +248,7 @@ class TestChecks(FR_TestCase):
                          ('pass', 'CheckDescMacros'),
                          ('pending', 'CheckSpecDescTranslation'),
                          ('pass', 'CheckUseGlobal'),
-                         ('pass', 'CheckDefattr'),
+                         ('na', 'CheckDefattr'),
                          ('pending', 'CheckMultipleLicenses'),
                          ('pending', 'CheckGuidelines'),
                          ('pass', 'CheckSourceUrl'),
@@ -267,7 +267,7 @@ class TestChecks(FR_TestCase):
                          ('pending', 'CheckBuildRequires'),
                          ('pass' if FEDORA else 'pending',
                                      'CheckOwnDirs'),
-                         ('pass', 'CheckSourceComment'),
+                         ('na', 'CheckSourceComment'),
                          ('pending', 'CheckTimeStamps'),
                          ('pass', 'CheckRelocatable'),
                          ('pending', 'CheckLicenseUpstream'),
@@ -293,7 +293,7 @@ class TestChecks(FR_TestCase):
                          ('pending', 'CheckPatchComments'),
                          ('pending', 'CheckChangelogFormat'),
                          ('pass', 'CheckSourceDownloads'),
-                         ('pass', 'check-large-data'),
+                         ('na', 'check-large-data'),
                          ('pass', 'check-srv-opt-local')]
         self.run_spec(spec)
 
@@ -371,7 +371,7 @@ class TestChecks(FR_TestCase):
                          ('pending', 'CheckSpecDescTranslation'),
                          ('pass', 'CheckUseGlobal'),
                          ('pass', 'CheckSoFiles'),
-                         ('pass', 'CheckDefattr'),
+                         ('na', 'CheckDefattr'),
                          ('pending', 'CheckGuidelines'),
                          ('pass', 'CheckSourceUrl'),
                          ('pending', 'check-excludearch'),
@@ -390,7 +390,7 @@ class TestChecks(FR_TestCase):
                          ('pending', 'CheckNoStaticExecutables'),
                          ('pass', 'CheckRPATH'),
                          ('pending', 'CheckUsefulDebuginfo'),
-                         ('pass', 'CheckSourceComment'),
+                         ('na', 'CheckSourceComment'),
                          ('pending', 'CheckTimeStamps'),
                          ('pass', 'CheckHeaderFiles'),
                          ('pass', 'CheckRelocatable'),
