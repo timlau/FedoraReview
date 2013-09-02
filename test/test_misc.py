@@ -407,9 +407,12 @@ class TestMisc(FR_TestCase):
     @unittest.skipIf(FAST_TEST, 'slow test disabled by REVIEW_FAST_TEST')
     def test_mock_uniqueext(self):
         ''' Test --uniqueext option. '''
+        loglevel = os.environ['REVIEW_LOGLEVEL']
+        os.environ['REVIEW_LOGLEVEL'] = 'ERROR'
         self.init_test('mock-uniqueext',
                        argv=['-cn', 'python-test'],
                        options='--uniqueext=hugo')
+        os.environ['REVIEW_LOGLEVEL'] = loglevel
         bug = NameBug('python-test')
         bug.find_urls()
         bug.download_files()
@@ -644,9 +647,12 @@ class TestMisc(FR_TestCase):
 
     def test_md5sum_diff_fail(self):
         ''' Complete MD5sum test expected to fail. '''
+        loglevel = os.environ['REVIEW_LOGLEVEL']
+        os.environ['REVIEW_LOGLEVEL'] = 'ERROR'
         self.init_test('md5sum-diff-fail',
                        argv=['-rpn', 'python-test', '--cache',
                              '--no-build'])
+        os.environ['REVIEW_LOGLEVEL'] = loglevel
         bug = NameBug('python-test')
         bug.find_urls()
         checks = Checks(bug.spec_file, bug.srpm_file).get_checks()
@@ -701,9 +707,12 @@ class TestMisc(FR_TestCase):
 
     def test_bad_specfile(self):
         ''' Specfile with syntactic errors test. '''
+        loglevel = os.environ['REVIEW_LOGLEVEL']
+        os.environ['REVIEW_LOGLEVEL'] = 'ERROR'
         self.init_test('bad-spec',
                        argv=['-n', 'python-test', '-p', '--cache',
                              '--no-build', '-D', 'DISTTAG=fc19'])
+        os.environ['REVIEW_LOGLEVEL'] = loglevel
         bug = NameBug('python-test')
         check = self.run_single_check(bug, 'CheckSpecAsInSRPM')
         self.assertTrue(check.is_failed)
@@ -785,8 +794,11 @@ class TestMisc(FR_TestCase):
 
     def test_bad_specname(self):
         ''' Specfile with bad name test. '''
+        loglevel = os.environ['REVIEW_LOGLEVEL']
+        os.environ['REVIEW_LOGLEVEL'] = 'ERROR'
         self.init_test('bad-specname',
                        argv=['-rn', 'python-test', '--cache'])
+        os.environ['REVIEW_LOGLEVEL'] = loglevel
         bug = NameBug('python-test')
         bug.find_urls()
         bug.download_files()
