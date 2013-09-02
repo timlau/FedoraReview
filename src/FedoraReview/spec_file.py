@@ -84,7 +84,8 @@ class SpecFile(object):
             try:
                 return Mock.get_package_rpm_path(nvr)
             except ReviewError:
-                self.log.warning("Package %s not built" % pkg)
+                self.log.warning("Package %s-%s-%s not built"
+                                     % (nvr.name, nvr.version, nvr.release))
                 return None
 
         pkgs = [p.header[rpm.RPMTAG_NAME] for p in self.spec.packages]
