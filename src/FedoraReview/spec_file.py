@@ -70,6 +70,7 @@ class SpecFile(object):
                               self.expand_tag(rpm.RPMTAG_RELEASE)]
         self._packages = None
         self._get_lines(filename)
+        self._process_fonts_pkg()
         update_macros()
 
     name = property(lambda self: self.name_vers_rel[0])
@@ -110,6 +111,22 @@ class SpecFile(object):
                 self.lines[last] = self.lines[last][:-1]
             else:
                 last = None
+
+    def _process_fonts_pkg(self):
+        ''' If found, expand %_font_pkg macro. '''
+        found = [l for l in self.lines if '%_font_pkg' in l]
+        if not found:
+            return
+        if len(found) > 1:
+            raise ReviewError('More than one %_font_pkg macro found')
+        expanded = rpm.expandMacro(found[0]).split('\n')
+        for ix, l in enumerate(self.lines):
+            if l == found[0]:
+                head = list(self.lines[:ix])
+                head.extend(expanded)
+                head.extend(self.lines[ix + 1:])
+                self.lines = head
+                break
 
     def _get_pkg_by_name(self, pkg_name):
         '''
@@ -166,11 +183,6 @@ class SpecFile(object):
         lines = None
         for line in [l.strip() for l in self.lines]:
             if lines is None:
-                # Dragons: nasty fix for #209. This will not produce a
-                # working %files list, but is seemingly "good enough"
-                # for font packages. Proper solution is to patch rpm.
-                if line.startswith('%_font_pkg'):
-                    line = '%files -n ' + pkg_name
                 if line.startswith('%files'):
                     if self._parse_files_pkg_name(line) == pkg_name:
                         lines = []
