@@ -18,8 +18,9 @@
 '''
 Test module registration support
 '''
-
 import inspect
+
+import rpm
 
 from review_error import ReviewError
 from settings import Settings
@@ -104,6 +105,33 @@ class RegistryBase(AbstractRegistry):
 
     def __init__(self, checks, path=None):      # pylint: disable=W0613
         AbstractRegistry.__init__(self, checks)
+
+    def get_plugin_nvr(self):
+        """
+        Return information about external plugin for current group
+
+        Return tuple is (name, version, release) or (None, None, None) if
+        plugin is not found
+        """
+        pkg_name = 'fedora-review-plugin-{group}'.format(
+            group=self.group.lower())
+        ts = rpm.TransactionSet()
+        match = ts.dbMatch('name', pkg_name)
+        if match.count() == 0:
+            return (None, None, None)
+        else:
+            headers = match.next()
+            return (headers[rpm.RPMTAG_NAME], headers[rpm.RPMTAG_VERSION],
+                    headers[rpm.RPMTAG_RELEASE])
+
+    def is_plugin_installed(self):
+        """
+        Return True if there is external plugin for current group is installed
+        or False otherwise
+        """
+        if self.get_plugin_nvr() != (None, None, None):
+            return True
+        return False
 
     def is_applicable(self):
         return self.registry.is_applicable()
