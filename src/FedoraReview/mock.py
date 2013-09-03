@@ -71,7 +71,7 @@ def _get_tag(paths):
 
 
 def _get_tag_from_flags(self, flags):
-    ''' Retrieve disttag from user defined falg value. '''
+    ''' Retrieve disttag from user defined flag value. '''
     if flags['DISTTAG']:
         self.log.info("Using disttag from DISTTAG flag.")
         return flags['DISTTAG'].value
@@ -91,6 +91,7 @@ def _add_disttag_macros(macros, tag):
     else:
         macros['%fedora'] = tag
         macros['%epel'] = '%epel'
+    macros['%dist'] = '.' + tag
     return macros
 
 
@@ -128,7 +129,7 @@ class _Mock(HelpersMixin):
 
     def _get_default_macros(self):
         ''' Evaluate macros using rpm in mock. '''
-        tags = '%fedora %epel %buildarch %_libdir %_isa %arch'
+        tags = '%dist %fedora %epel %buildarch %_libdir %_isa %arch'
         macros = {}
         values = self._rpm_eval(tags).split()
         taglist = tags.split()

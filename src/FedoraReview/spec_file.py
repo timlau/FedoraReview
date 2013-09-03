@@ -51,27 +51,34 @@ class SpecFile(object):
 
         def update_macros():
             ''' Update build macros from mock target configuration. '''
-            macros = ['%rhel', '%fedora', '%_build_arch', '%_arch']
+            macros = ['%dist', '%rhel', '%fedora', '%_build_arch', '%_arch']
             for macro in macros:
                 expanded = Mock.get_macro(macro, self, flags)
                 if not expanded.startswith('%'):
-                    rpm.addMacro(macro, expanded)
+                    rpm.delMacro(macro[1:])
+                    rpm.addMacro(macro[1:], expanded)
 
         self.log = Settings.get_logger()
         self.filename = filename
         self.lines = []
+        self._get_lines(filename)
+        self._process_fonts_pkg()
         try:
             self.spec = rpm.TransactionSet().parseSpec(self.filename)
         except Exception as ex:
             raise SpecParseReviewError(
                 "Can't parse specfile: " + ex.__str__())
+        self._packages = None
         self.name_vers_rel = [self.expand_tag(rpm.RPMTAG_NAME),
                               self.expand_tag(rpm.RPMTAG_VERSION),
-                              self.expand_tag(rpm.RPMTAG_RELEASE)]
-        self._packages = None
-        self._get_lines(filename)
-        self._process_fonts_pkg()
+                              '*']
         update_macros()
+        try:
+            self.spec = rpm.TransactionSet().parseSpec(self.filename)
+        except Exception as ex:
+            raise SpecParseReviewError(
+                "Can't parse specfile: " + ex.__str__())
+        self.name_vers_rel[2] = self.expand_tag(rpm.RPMTAG_RELEASE)
 
     name = property(lambda self: self.name_vers_rel[0])
     version = property(lambda self: self.name_vers_rel[1])
@@ -160,7 +167,10 @@ class SpecFile(object):
         while tokens:
             token = tokens.pop(0)
             if token == '-n':
-                return tokens.pop(0)
+                name = tokens.pop(0)
+                if name.startswith('-'):
+                    name = name[1:]
+                return name
             elif token == '-f':
                 tokens.pop(0)
             else:
@@ -178,7 +188,8 @@ class SpecFile(object):
         for line in [l.strip() for l in self.lines]:
             if lines is None:
                 if line.startswith('%files'):
-                    if self._parse_files_pkg_name(line) == pkg_name:
+                    name = self._parse_files_pkg_name(line)
+                    if pkg_name.endswith(name):
                         lines = []
                 continue
             line = rpm.expandMacro(line)

@@ -525,7 +525,7 @@ class TestMisc(FR_TestCase):
         spec = SpecFile(os.path.join(os.getcwd(), 'python-test.spec'))
         self.assertEqual(spec.name, 'python-test')
         self.assertEqual(spec.version, '1.0')
-        dist = check_output('rpm --eval %dist', shell=True).strip()
+        dist = Mock.get_macro('%dist', None, {})
         self.assertEqual(spec.release, '1' + dist)
         self.assertEqual(spec.expand_tag('Release'), '1' + dist)
         self.assertEqual(spec.expand_tag('License'), 'GPLv2+')
