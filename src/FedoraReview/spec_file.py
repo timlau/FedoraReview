@@ -114,19 +114,13 @@ class SpecFile(object):
 
     def _process_fonts_pkg(self):
         ''' If found, expand %_font_pkg macro. '''
-        found = [l for l in self.lines if '%_font_pkg' in l]
-        if not found:
-            return
-        if len(found) > 1:
-            raise ReviewError('More than one %_font_pkg macro found')
-        expanded = rpm.expandMacro(found[0]).split('\n')
-        for ix, l in enumerate(self.lines):
-            if l == found[0]:
-                head = list(self.lines[:ix])
-                head.extend(expanded)
-                head.extend(self.lines[ix + 1:])
-                self.lines = head
-                break
+        expanded = []
+        for l in self.lines:
+            if not '%_font_pkg' in l:
+                expanded.append(l)
+            else:
+                expanded.extend(rpm.expandMacro(l).split('\n'))
+        self.lines = expanded
 
     def _get_pkg_by_name(self, pkg_name):
         '''
