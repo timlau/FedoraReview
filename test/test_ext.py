@@ -86,7 +86,6 @@ class TestExt(FR_TestCase):
         checks.checkdict['CreateEnvCheck'].run()
         checks.checkdict['unittest-test2'].run()
         self.assertTrue(checks.checkdict['unittest-test2'].is_pending)
-        self.assertNotIn('CheckLargeDocs', checks.checkdict)
 
     def test_sh_attach(self):
         ''' Test shell attachments. '''
