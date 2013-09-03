@@ -272,12 +272,6 @@ class Checks(_ChecksLoader):
         self.data.rpms = RpmDataSource(self.spec)
         self.data.buildsrc = BuildFilesSource()
         self.data.sources = SourcesDataSource(self.spec)
-        allkeys = list(self.checkdict.iterkeys())
-        for c in allkeys:
-            if not c in self.checkdict:
-                continue
-            if self.checkdict[c].is_applicable():
-                self.checkdict.fix_deprecations(c)
         self._clock = None
 
     rpms = property(lambda self: self.data.rpms)
@@ -297,7 +291,10 @@ class Checks(_ChecksLoader):
         Check that check 'name' havn't already run and that all checks
         listed in 'needs' have run i. e., it's ready to run.
         """
-        check = self.checkdict[name]
+        try:
+            check = self.checkdict[name]
+        except KeyError:
+            return False
         if check.is_run:
             return False
         if check.registry.is_user_enabled() and not \
@@ -314,6 +311,23 @@ class Checks(_ChecksLoader):
             elif not self.checkdict[dep].is_run:
                 return False
         return True
+
+    def deprecate(self):
+        ''' Mark all deprecated tests as run. '''
+        allkeys = list(self.checkdict.iterkeys())
+        for c in allkeys:
+            if not c in self.checkdict:
+                continue
+            if self.checkdict[c].is_applicable():
+                self.checkdict.fix_deprecations(c)
+
+    def _get_ready_to_run(self):
+        ''' Return checks ready to run, deprecating checks first. '''
+        names = list(self.checkdict.iterkeys())
+        tests_to_run = filter(self._ready_to_run, names)
+        return sorted(tests_to_run,
+                      key=lambda t: len(self.checkdict[t].deprecates),
+                      reverse=True)
 
     def run_checks(self, output=sys.stdout, writedown=True):
         ''' Run all checks. '''
@@ -340,15 +354,18 @@ class Checks(_ChecksLoader):
         issues = []
         results = []
         attachments = []
+        has_deprecated = False
 
-        names = list(self.checkdict.iterkeys())
-
-        tests_to_run = filter(self._ready_to_run, names)
+        tests_to_run = self._get_ready_to_run()
         self._clock = time.time()
         while tests_to_run != []:
             for name in tests_to_run:
+                if self.checkdict[name].deprecates and not has_deprecated:
+                    self.deprecate()
+                    has_deprecated = True
+                    break
                 run_check(name)
-            tests_to_run = filter(self._ready_to_run, names)
+            tests_to_run = self._get_ready_to_run()
 
         if writedown:
             key_getter = attrgetter('group', 'type', 'name')
