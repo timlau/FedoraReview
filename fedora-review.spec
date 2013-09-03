@@ -4,9 +4,12 @@
 # See notes in make_release which patches this.
 %global     git_tag  .fa1afe1
 
+# Support jenkins build number if available.
+%global     build_nr %(echo "${BUILD_NUMBER:+.}${BUILD_NUMBER:-%%{nil\\}}")
+
 Name:       fedora-review
 Version:    0.5.0
-Release:    1%{?git_tag}%{?dist}
+Release:    1%{?build_nr}%{?git_tag}%{?dist}
 Summary:    Review tool for fedora rpm packages
 
 License:    GPLv2+
@@ -49,7 +52,7 @@ for the Fedora Package Collection like:
     * Generate a review template, which becomes the starting
       point for the review work.
 
-The tool is composed of a plugins, one for each supported language.
+The tool is composed of plugins, one for each supported language.
 As of today, there is plugins for C/C++, Ruby, java, R, perl and
 python.  There is also support for external tests that can be written
 in a simple way in bash.
