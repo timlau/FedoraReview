@@ -21,6 +21,7 @@ Spec file management.
 
 import re
 import rpm
+import sys
 import urllib
 
 from review_error import ReviewError, SpecParseReviewError
@@ -35,6 +36,14 @@ def _lines_in_string(s, raw):
     return [l.strip() for l in s.split('\n') if l]
 
 
+class _Null(object):
+    ''' Dummy sink. '''
+
+    def write(self, s):
+        ''' Like /dev/null. '''
+        pass
+
+
 class SpecFile(object):
     '''
     Wrapper class for getting information from a .spec file.'
@@ -45,7 +54,7 @@ class SpecFile(object):
        - lines: list of all lines in spec file
        - spec: rpm python spec object.
     '''
-    # pylint: disable=W0212
+    # pylint: disable=W0212,W0201
 
     def __init__(self, filename, flags=None):
 
@@ -58,26 +67,29 @@ class SpecFile(object):
                     rpm.delMacro(macro[1:])
                     rpm.addMacro(macro[1:], expanded)
 
+        def parse_spec():
+            ''' Let rpm parse the spec and build spec.spec (sic!). '''
+            try:
+                self.spec = rpm.TransactionSet().parseSpec(self.filename)
+            except Exception as ex:
+                raise SpecParseReviewError(
+                    "Can't parse specfile: " + ex.__str__())
+
         self.log = Settings.get_logger()
         self.filename = filename
         self.lines = []
         self._get_lines(filename)
         self._process_fonts_pkg()
-        try:
-            self.spec = rpm.TransactionSet().parseSpec(self.filename)
-        except Exception as ex:
-            raise SpecParseReviewError(
-                "Can't parse specfile: " + ex.__str__())
+        stdout = sys.stdout
+        sys.stdout = _Null()
+        parse_spec()
+        sys.stdout = stdout
         self._packages = None
         self.name_vers_rel = [self.expand_tag(rpm.RPMTAG_NAME),
                               self.expand_tag(rpm.RPMTAG_VERSION),
                               '*']
         update_macros()
-        try:
-            self.spec = rpm.TransactionSet().parseSpec(self.filename)
-        except Exception as ex:
-            raise SpecParseReviewError(
-                "Can't parse specfile: " + ex.__str__())
+        parse_spec()
         self.name_vers_rel[2] = self.expand_tag(rpm.RPMTAG_RELEASE)
 
     name = property(lambda self: self.name_vers_rel[0])
