@@ -6,11 +6,11 @@
 msg="package to make a comprehensive font review."
 
 rpm -q fontpackages-tools &> /dev/null || {
-    msg="Cannot find repo-font-audit, install fontpackages-tools $msg"
+    echo "Cannot find repo-font-audit, install fontpackages-tools $msg"
     exit $FR_FAIL
 }
 rpm -q createrepo &> /dev/null || {
-    msg="Cannot find createrepo, install createrepo $msg"
+    echo "Cannot find createrepo, install createrepo $msg"
     exit $FR_FAIL
 }
 
@@ -24,9 +24,9 @@ repo-font-audit results file:///$FR_REVIEWDIR/results \
         echo "Cannot run repo-font-audit"
         exit $FR_FAIL
 }
-for archive in repo-font-audit*xz; do
+for archive in $( find . -name repo-font-audit\*xz ); do
     tar xJf $archive && rm $archive || :
 done
 
-echo "repo-font-audit analyze results in $PWD/repo-font-audit* files"
+echo "repo-font-audit analyze results in $PWD directory."
 exit $FR_PASS
