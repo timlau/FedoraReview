@@ -15,11 +15,14 @@ rpm -q createrepo &> /dev/null || {
 }
 
 export TERM=${TERM:-dumb}
+[ -d fonts ] || mkdir fonts
+cd fonts
 
-createrepo results >repo-font-audit.log
-repo-font-audit results file:///$PWD/results >>repo-font-audit.log || {
-    echo "Cannot run repo-font-audit"
-    exit $FR_FAIL
+createrepo $FR_REVIEWDIR/results >repo-font-audit.log
+repo-font-audit results file:///$FR_REVIEWDIR/results \
+    >>repo-font-audit.log || {
+        echo "Cannot run repo-font-audit"
+        exit $FR_FAIL
 }
 for archive in repo-font-audit*xz; do
     tar xJf $archive && rm $archive || :
