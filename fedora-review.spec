@@ -116,7 +116,7 @@ python -m unittest discover -f
 
 
 %changelog
-* Wed Sep 4 2013 Alec Leamas <leamas@nowhere.net> 0.5.0-1.fa1afe1
+* Wed Sep 4 2013 Alec Leamas <leamas@nowhere.net> 0.5.0-1.001.fa1afe1
 - Generic post-release nightly build entry
 
 * Mon Aug 19 2013 Stanislav Ochotnicky <sochotnicky@redhat.com> 0.5.0-1
