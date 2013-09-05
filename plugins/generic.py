@@ -142,7 +142,7 @@ class CheckBuildCompilerFlags(GenericCheckBase):
                     'justifies otherwise.'
         self.automatic = True
         self.type = 'MUST'
-        self.needs.append('check-large-data')      # Ensure unpacked rpms
+        self.needs.append('generic-large-data')      # Ensure unpacked rpms
 
     def run(self):
         archs = self.checks.spec.expand_tag('BuildArchs')
@@ -297,7 +297,7 @@ class CheckDaemonCompileFlags(GenericCheckBase):
                    'rd=Packaging/Guidelines#Compiler_flags'
         self.text = 'Package uses hardened build flags if required to.'
         self.automatic = True
-        self.needs.append('check-large-data')      # Ensure unpacked rpms
+        self.needs.append('generic-large-data')      # Ensure unpacked rpms
 
     def run(self):
         extra = ''
@@ -1575,7 +1575,7 @@ class CheckUpdateDesktopDatabase(GenericCheckBase):
                     ' %postun if package contains desktop file(s)' \
                     ' with a MimeType: entry.'
         self.automatic = True
-        self.needs.append('check-large-docs')   # Needed to unpack rpms
+        self.needs.append('generic-large-docs')   # Needed to unpack rpms
         self.type = 'MUST'
 
     def run(self):

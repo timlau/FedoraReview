@@ -127,7 +127,7 @@ class FR_TestCase(unittest.TestCase):
             def write(self, msg):
                 pass
 
-        argv = ['-rn', spec.testcase, '-x', 'check-large-docs',
+        argv = ['-rn', spec.testcase, '-x', 'generic-large-docs',
                 '--no-build']
         argv.extend(spec.args)
         self.init_test(spec.testcase, wd=spec.workdir, argv=argv)

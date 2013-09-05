@@ -77,7 +77,7 @@ class TestChecks(FR_TestCase):
                         ('pending', 'CheckGuidelines'),
                         ('pass', 'NonGemCheckRequiresProperDevel'),
                         ('pass', 'CheckSourceUrl'),
-                        ('pending', 'check-excludearch'),
+                        ('pending', 'generic-excludearch'),
                         ('pass', 'RubyCheckTestsRun'),
                         ('pass', 'CheckOwnOther'),
                         ('na', 'CheckFullVerReqSub'),
@@ -113,8 +113,8 @@ class TestChecks(FR_TestCase):
                         ('pending', 'CheckPatchComments'),
                         ('pending', 'CheckChangelogFormat'),
                         ('pass', 'CheckSourceDownloads'),
-                        ('na', 'check-large-data'),
-                        ('pass', 'check-srv-opt-local')]
+                        ('na', 'generic-large-data'),
+                        ('pass', 'generic-srv-opt')]
         self.run_spec(spec)
 
     def test_rubygem_fssm(self):
@@ -155,7 +155,7 @@ class TestChecks(FR_TestCase):
                         ('pending', 'CheckGuidelines'),
                         ('na', 'CheckDefattr'),
                         ('pass', 'CheckSourceUrl'),
-                        ('pending', 'check-excludearch'),
+                        ('pending', 'generic-excludearch'),
                         ('pass', 'RubyCheckTestsRun'),
                         ('pass', 'CheckUTF8Filenames'),
                         ('pending', 'CheckLicenseInSubpackages'),
@@ -197,8 +197,8 @@ class TestChecks(FR_TestCase):
                         ('pending', 'CheckDevelFilesInDevel'),
                         ('fail', 'CheckNoNameConflict'),
                         ('pending', 'CheckChangelogFormat'),
-                        ('na', 'check-large-data'),
-                        ('pass', 'check-srv-opt-local')]
+                        ('na', 'generic-large-data'),
+                        ('pass', 'generic-srv-opt')]
         self.run_spec(spec)
 
     def test_rubygem_RedCloth(self):
@@ -255,7 +255,7 @@ class TestChecks(FR_TestCase):
                          ('pending', 'CheckMultipleLicenses'),
                          ('pending', 'CheckGuidelines'),
                          ('pass', 'CheckSourceUrl'),
-                         ('pending', 'check-excludearch'),
+                         ('pending', 'generic-excludearch'),
                          ('na', 'CheckAutotoolsObsoletedMacros'),
                          ('pending', 'CheckAddMavenDepmap'),
                          ('pending', 'CheckLicenseInSubpackages'),
@@ -296,8 +296,8 @@ class TestChecks(FR_TestCase):
                          ('pending', 'CheckPatchComments'),
                          ('pending', 'CheckChangelogFormat'),
                          ('pass', 'CheckSourceDownloads'),
-                         ('na', 'check-large-data'),
-                         ('pass', 'check-srv-opt-local')]
+                         ('na', 'generic-large-data'),
+                         ('pass', 'generic-srv-opt')]
         self.run_spec(spec)
 
     def test_scriptlets_fail(self):
@@ -378,7 +378,7 @@ class TestChecks(FR_TestCase):
                          ('na', 'CheckDefattr'),
                          ('pending', 'CheckGuidelines'),
                          ('pass', 'CheckSourceUrl'),
-                         ('pending', 'check-excludearch'),
+                         ('pending', 'generic-excludearch'),
                          ('pending', 'CheckLicenseInSubpackages'),
                          ('pending', 'CheckNoKernelModules'),
                          ('pass', 'CheckOwnOther'),
@@ -419,8 +419,8 @@ class TestChecks(FR_TestCase):
                          ('pending', 'CheckLicenseField'),
                          ('pending', 'CheckPatchComments'),
                          ('pending', 'CheckChangelogFormat'),
-                         ('pass', 'check-large-data'),
-                         ('pass', 'check-srv-opt-local')]
+                         ('pass', 'generic-large-data'),
+                         ('pass', 'generic-srv-opt')]
         self.run_spec(spec)
 
 
