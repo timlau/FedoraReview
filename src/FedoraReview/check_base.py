@@ -306,18 +306,25 @@ class SimpleTestResult(TestResult):
     ''' Simple, failed result not based on a check. '''
     # pylint: disable=W0212,W0231
 
-    def __init__(self, name, text, extra):
-        ''' Create a  printable, failed result. '''
-        self._name = name
-        self._text = text
-        self._output_extra = extra
-        self.type = 'ERROR'
+    def __set_name(self, n):
+        ''' property setter. '''
+        self._name = n
 
-    name = property(lambda self: self._name)
-    text = property(lambda self: self._text)
+    def __set_type(self, t):
+        ''' property setter. '''
+        self._type = t
+
+    name = property(lambda self: self._name, __set_name)
+    type = property(lambda self: self._type, __set_type)
     output_extra = property(lambda self: self._output_extra)
     is_failed = property(lambda self: True)
 
+    def __init__(self, name, text, extra):
+        ''' Create a  printable, failed result. '''
+        self._name = name
+        self._type = 'ERROR'
+        self.text = text
+        self._output_extra = extra
 
 
 
