@@ -86,10 +86,10 @@ def _get_tag_from_flags(self, flags):
 def _add_disttag_macros(macros, tag):
     ''' Add macros derived from disttag. '''
     if tag.startswith('el'):
-        macros['%epel'] = tag
+        macros['%epel'] = tag[2:]
         macros['%fedora'] = '%fedora'
     else:
-        macros['%fedora'] = tag
+        macros['%fedora'] = tag[2:]
         macros['%epel'] = '%epel'
     macros['%dist'] = '.' + tag
     return macros
