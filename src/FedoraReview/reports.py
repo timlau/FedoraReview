@@ -175,8 +175,7 @@ def write_xml_report(spec, results):
                               'issue',
                               {'test-id': result.name,
                                'severity': result.type})
-        message = ET.SubElement(issue, 'message')
-        message.text = result.text
+        ET.SubElement(issue, 'message').text = result.text
         location = ET.SubElement(issue, 'location')
         ET.SubElement(location, 'file', {'given-path': path})
         if result.output_extra:
@@ -188,5 +187,6 @@ def write_xml_report(spec, results):
         if result.is_failed:
             root = add_xml_result(root, result)
     dom = xml.dom.minidom.parseString(ET.tostring(root))
+    prettyxml = dom.toprettyxml(indent='    ')
     with open('report.xml', 'w') as f:
-        f.write(dom.toprettyxml(indent='    '))
+        f.write(prettyxml)
