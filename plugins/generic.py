@@ -1785,10 +1785,8 @@ class CheckSourceDownloads(GenericCheckBase):
         if not failed_src:
             self.set_passed(self.PASS)
             return
-        self.set_passed(self.FAIL, "Could not download " +
-                                   ', '.join([s.tag for s in failed_src]))
-
-
+        failed = ', '.join([s.tag  + ': ' + s.specurl for s in failed_src])
+        self.set_passed(self.FAIL, "Could not download " + failed)
 
 
 #
