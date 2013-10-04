@@ -1048,11 +1048,13 @@ class CheckOwnDirs(GenericCheckBase):
         '''
 
         # pylint: disable=R0912
-        def resolve(requires):
+        def resolve(requires_arg):
             '''
-            Resolve list of symbols to packages in srpm or by repoquery.
+            Resolve list of symbols to packages in srpm or by repoquery,
+            skipping any version requirements.
             '''
             pkgs = []
+            requires = [re.split('[<=>]+', r)[0] for r in requires_arg]
             requires_to_process = list(requires)
             for r in requires:
                 if r.startswith('rpmlib'):
