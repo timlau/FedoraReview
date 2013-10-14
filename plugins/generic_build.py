@@ -98,14 +98,14 @@ class BuildCheckBase(CheckBase):
         return no_errors, result + '\n'
 
 
-def _mock_root_setup(while_what):
+def _mock_root_setup(while_what, force=False):
     ''' Wrap mock --init. '''
 
     class DependencyInstallError(ReviewError):
         ''' Raised when a package in local repo can't be installed. '''
         pass
 
-    Mock.init()
+    Mock.init(force)
     if Settings.repo:
         repodir = Settings.repo
         if not repodir.startswith('/'):
@@ -251,7 +251,7 @@ class CheckPackageInstalls(BuildCheckBase):
                 self.log.info('Packages required by --no-build are'
                               ' not installed: ' + ', '.join(bad_ones))
             return
-        _mock_root_setup('While installing built packages')
+        _mock_root_setup('While installing built packages', force=True)
         rpms = Mock.get_package_rpm_paths(self.spec)
         self.log.info('Installing built package(s)')
         output = Mock.install(rpms)

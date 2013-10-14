@@ -470,6 +470,10 @@ class _Mock(HelpersMixin):
                 return False
             return True
 
+        cmd = self._mock_cmd()
+        cmd.append('--init')
+        self._run_cmd(cmd, '--init')
+        cmd = self._mock_cmd()
         rpms = filter(is_not_installed, packages)
         if len(rpms) == 0:
             return
@@ -480,15 +484,16 @@ class _Mock(HelpersMixin):
         cmd.extend(rpms)
         return self._run_cmd(cmd, 'Install')
 
-    def init(self):
+    def init(self, force=False):
         """ Run a mock --init command. """
-        try:
-            self._rpm_eval('%{_libdir}')
-            self.log.debug("Avoiding init of working mock root")
-            return
-        except (CalledProcessError, OSError):
-            pass
-        self.log.info("Re-initializing mock build root")
+        if not force:
+            try:
+                self._rpm_eval('%{_libdir}')
+                self.log.debug("Avoiding init of working mock root")
+                return
+            except (CalledProcessError, OSError):
+                pass
+            self.log.info("Re-initializing mock build root")
         cmd = ["mock"]
         if hasattr(Settings, 'mock_config') and Settings.mock_config:
             cmd.extend(['-r', Settings.mock_config])
