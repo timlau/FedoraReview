@@ -42,6 +42,9 @@ Requires:       yum-utils
 # Let's be consistent with the name used on fedorahosted
 provides:       FedoraReview = %{version}-%{release}
 
+Provides:       %{name}-php-phpci = %{version}-%{release}
+Obsoletes:      %{name}-php-phpci < %{version}-%{release}
+
 
 %description
 This tool automates much of the dirty work when reviewing a package
