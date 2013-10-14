@@ -33,7 +33,10 @@ Requires:       python-bugzilla
 Requires:       python-kitchen
 Requires:       python-straight-plugin
 Requires:       rpm-python
-Requires:       rpmdevtools
+# licensecheck used to be in rpmdevtools, moved to devscripts later
+# this is compatible with both situations without ifdefs
+Requires:       %{_bindir}/licensecheck
+
 Requires:       yum-utils
 
 # Let's be consistent with the name used on fedorahosted
