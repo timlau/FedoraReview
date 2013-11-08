@@ -30,6 +30,7 @@ import glob
 import os
 import os.path
 import shutil
+import subprocess
 import sys
 
 # pylint: disable=W0611
@@ -303,6 +304,9 @@ class CheckInitDeps(BuildCheckBase):
         self.needs = ['CheckRpmlintInstalled']
 
     def run(self):
+        # Dirty work-around for
+        # https://bugzilla.redhat.com/show_bug.cgi?id=1028332
+        subprocess.call(['yum', '-q', 'clean', 'all'])
         deps.init()
         self.set_passed(self.NA)
 
