@@ -10,6 +10,8 @@
 - Added new XML report designed for batch testing( #197).
 - Fixed a bad bug where deprecations was honored in non-applicable
   shell tests (498fa464b).
+- Make paths in licensecheck.txt realtive to source dir (ee29d7e).
+- Handle inconsistent yum caches (bz #1028332).
 
 0.5.0
 =====
