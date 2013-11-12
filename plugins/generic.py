@@ -661,7 +661,8 @@ class CheckLicenseField(GenericCheckBase):
                 f.write('\n' + license_ + '\n')
                 f.write('-' * len(license_) + '\n')
                 for path in sorted(files_by_license[license_]):
-                    f.write(path + '\n')
+                    relpath = re.sub('.*BUILD/', '', path)
+                    f.write(relpath + '\n')
 
     @staticmethod
     def _get_source_dir():
