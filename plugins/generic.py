@@ -1399,7 +1399,7 @@ class CheckStaticLibs(GenericCheckBase):
                 if not (pkg.endswith('-static') or pkg.endswith('-devel')):
                     bad_names.append(pkg)
                 rpm_pkg = self.rpms.get(pkg)
-                ok = [r for r in rpm_pkg.requires if r.endswith('-static')]
+                ok = [r for r in rpm_pkg.provides if r.endswith('-static')]
                 if not ok:
                     no_provides.append(pkg)
         if names:
