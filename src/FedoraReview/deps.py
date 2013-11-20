@@ -188,7 +188,7 @@ def listpaths(pkg_filename):
             files.append(path)
 
 
-class Deps:
+class Deps(object):
     ''' Models the dependencies. '''
 
     def list_owners(self, path):

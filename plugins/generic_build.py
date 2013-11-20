@@ -159,6 +159,7 @@ class CheckBuild(BuildCheckBase):
         self.needs = ['CheckResultdir']
 
     def run(self):
+        # pylint: disable=W0632
 
         def listfiles():
             ''' Generate listing of dirs and files in each package. '''

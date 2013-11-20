@@ -121,7 +121,7 @@ class HelpersMixin(object):
         if p.returncode != 0:
             log = Settings.get_logger()
             log.debug("Cannot unpack " + archive)
-            log.debug("Status: %d, stdout: %s, stderr: %s"
+            log.debug("Status: %d, stdout: %s, stderr: %s."
                        % (p.returncode, str(stdout), str(stderr)))
         return p.returncode == 0
 

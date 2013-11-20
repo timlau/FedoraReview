@@ -91,7 +91,7 @@ class AbstractCheck(object):
     Equality:
       - Tests are considered equal if they have the same name.
     """
-    # pylint: disable=R0201
+    # pylint: disable=R0201,C0103,W0223
 
     __metaclass__ = ABCMeta
 
