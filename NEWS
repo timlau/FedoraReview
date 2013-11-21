@@ -7,10 +7,11 @@
 - Add a fonts plugin running repo-fonts-audit (#215).
 - Enhance systemd config files handling (#214, #193).
 - Update CheckStaticLibs to current GL (#222).
+- CheckStaticLibs: fix typo causing false positives (bz 1012873).
 - Added new XML report designed for batch testing( #197).
 - Fixed a bad bug where deprecations was honored in non-applicable
   shell tests (498fa464b).
-- Make paths in licensecheck.txt realtive to source dir (ee29d7e).
+- Make paths in licensecheck.txt relative to source dir (ee29d7e).
 - Handle inconsistent yum caches (bz #1028332).
 
 0.5.0
