@@ -57,7 +57,7 @@ def download_scratch_rpms(task_ids, arches=[], koji_session=None, koji_baseurl=N
                 else:
                     download = True
                 if download:
-                    urlgrabber.grabber.urlgrab(BASEURL + base_path + '/' + filename,
+                    urlgrabber.grabber.urlgrab(koji_baseurl + base_path + '/' + filename,
                                                progress_obj=prog_meter)
 
 if __name__ == '__main__':
