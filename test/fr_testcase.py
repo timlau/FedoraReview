@@ -123,7 +123,7 @@ class FR_TestCase(unittest.TestCase):
         ''' Run all tests for a test spec.... '''
         # pylint: disable=C0111,W0212
 
-        class Null:
+        class Null(object):
             def write(self, msg):
                 pass
 
