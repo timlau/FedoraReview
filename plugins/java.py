@@ -8,9 +8,6 @@ class Registry(RegistryBase):
     ''' Register all checks in this file in group 'Java'. '''
 
     group = 'Java'
-    name = 'fedora-review-plugin-java'
-    version = '0.1'
-    build_id = Registry.get_build_id(__file__)
 
     def is_applicable(self):
         ''' Return True if this is a java package. '''
@@ -36,7 +33,7 @@ class CheckJavaPlugin(CheckBase):
 
     def run_on_applicable(self):
         """ Use the is_applicable() defined in main group: """
-        if self.registry.is_plugin_installed():
+        if self.checks.external_plugin_installed(self.registry.group):
             self.set_passed(self.NA)
         else:
             self.set_passed(self.FAIL)
