@@ -111,63 +111,6 @@ class RegistryBase(AbstractRegistry):
     def __init__(self, checks, path=None):      # pylint: disable=W0613
         AbstractRegistry.__init__(self, checks)
 
-    @staticmethod
-    def get_build_id(path):
-        ''' get the build_id from a file. Filename is deduced from
-        path by replacing .py with .build. File should contain just
-        the build id, it's used verbatim.
-        '''
-        file_ = os.path.basename(path).replace('.py', '.build')
-        id_path = os.path.join(os.path.dirname(path), file_)
-        with open(id_path) as f:
-             return f.read().strip()
-
-
-    def get_plugin_nvr(self):
-        """
-        NOTES:
-        The name-scheme enforcing is nice IMHO. However, we have multiple
-        problems here:
-           - The interface should really be uniform, a plugin still in
-             f-r mainline should return f-r's nvr, shouldn't it? It's
-             sort of a vendor thing IMHO.
-           - Using rpm means that we always will refer to the installed
-             variant.  Problems when running git snapshots or basically
-             anything not installed - so far we have promised only to access
-             plugins in the instance we are running.
-           - The 'release' part is problematic for reasons above: what is
-             the release of a git snapshot?
-           - Also, we need a build-id, this is really the only way to
-             manage variants which are not released. And we need to handle
-             that imho. We could use the release field for either release
-             or build-id, but why?
-
-        Ergo: the plugins must carry their own version information, f-r
-        nvr should be the default and if release should be used it should
-        be part of the version field. Something like
-
-            class Javaplugin....
-               ...
-               group = 'java.guidelines'
-               name = 'java_guidelines'
-               version = '0.1'
-               build_id = self.registry.get_build_id(__file__)
-
-        This is to require plugins to carry their own version
-        and name hardcoded in source. The build_id is the an exception,
-        it can't be checked in (because it's unknown until after commit).
-        So, require the build_id in a separate file, presumably done by
-        a git post-commit. File sits in same directory as plugin source.
-        -------
-        Return information about plugin for current group. Default
-        implementation returns nvr for fedora-review.
-
-        Return tuple is (name, version, build_id). Not really required, we
-        have the attributes. nvr is used all over the place as an
-        object with attributes, a tuple might cause some confusion.
-        """
-        return self.name, self.version, self.build_id
-
     def is_plugin_installed(self):
         """
         NOTE: why is this needed?
