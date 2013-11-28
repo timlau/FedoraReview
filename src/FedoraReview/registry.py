@@ -111,15 +111,6 @@ class RegistryBase(AbstractRegistry):
     def __init__(self, checks, path=None):      # pylint: disable=W0613
         AbstractRegistry.__init__(self, checks)
 
-    def is_plugin_installed(self):
-        """
-        NOTE: why is this needed?
-
-        Return True if there is external plugin for current group is installed
-        or False otherwise
-        """
-        return self.name != 'fedora-review'
-
     def is_applicable(self):
         return self.registry.is_applicable()
 
