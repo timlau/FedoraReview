@@ -71,7 +71,7 @@ class AbstractRegistry(object):
     # pylint: disable=R0201,W0613
 
     group = 'Undefined'
-    name  = 'fedora-review'
+    external_plugin = False
     version = __version__
     build_id = BUILD_ID
 
