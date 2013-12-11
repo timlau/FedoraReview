@@ -511,7 +511,7 @@ class TestMisc(FR_TestCase):
         check = ApplicableCheckJavaPlugin(ChecksMockup())
         check.checks.spec = spec
         check.run()
-        self.assertTrue(check.is_pending)
+        self.assertTrue(check.is_failed)
 
     def test_spec_file(self):
         ''' Test the SpecFile class'''
