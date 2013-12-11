@@ -491,9 +491,17 @@ class TestMisc(FR_TestCase):
         from plugins.java import CheckJavaPlugin
 
         class ChecksMockup(object):
-            pass
+            def is_external_plugin_installed(self, name):
+                return False
 
         class ApplicableCheckJavaPlugin(CheckJavaPlugin):
+            class Registry(object):
+                group = "Java"
+                version = "1.2.3"
+                build_id = "somebuild"
+
+            registry = Registry()
+
             def is_applicable(self):
                 return True
 
