@@ -488,19 +488,19 @@ class TestMisc(FR_TestCase):
         ''' Test the ChecktestSkip check. '''
         # pylint: disable=F0401,R0201,C0111
 
-        from plugins.java import CheckTestSkip
+        from plugins.java import CheckJavaPlugin
 
         class ChecksMockup(object):
             pass
 
-        class ApplicableCheckTestSkip(CheckTestSkip):
+        class ApplicableCheckJavaPlugin(CheckJavaPlugin):
             def is_applicable(self):
                 return True
 
         self.init_test('test_misc',
                        argv=['-n', 'python-test', '--no-build'])
         spec = SpecFile(os.path.join(os.getcwd(), 'jettison.spec'))
-        check = ApplicableCheckTestSkip(ChecksMockup())
+        check = ApplicableCheckJavaPlugin(ChecksMockup())
         check.checks.spec = spec
         check.run()
         self.assertTrue(check.is_pending)
