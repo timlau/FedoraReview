@@ -18,11 +18,12 @@
 '''
 Test module registration support
 '''
-
 import inspect
+
 
 from review_error import ReviewError
 from settings import Settings
+from version import __version__, BUILD_ID
 
 
 class _Flag(object):
@@ -56,9 +57,11 @@ class _Flag(object):
 class AbstractRegistry(object):
     """
     The overall interface for a plugin module is that it must
-    contain a class Registry. This has a single function register()
-    which return a list of checks defined by the module. It also
-    defines the flags used by the module.
+    contain a class Registry. This has:
+      - A single function register() which return a list of checks
+        defined by the module.
+      - Registration of flags, also in the register() function
+      - Metadata: name, version etc.
 
     A plugin module serves a specific group such as 'java', 'PHP',
     or 'generic'. The group property reflects that group, and the
@@ -68,6 +71,9 @@ class AbstractRegistry(object):
     # pylint: disable=R0201,W0613
 
     group = 'Undefined'
+    external_plugin = False
+    version = __version__
+    build_id = BUILD_ID
 
     class Flag(_Flag):
         ''' A value defined in a check, set by user e. g., EPEL5. '''

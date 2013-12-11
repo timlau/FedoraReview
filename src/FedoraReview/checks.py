@@ -329,6 +329,14 @@ class Checks(_ChecksLoader):
                       key=lambda t: len(self.checkdict[t].deprecates),
                       reverse=True)
 
+    def is_external_plugin_installed(self, group_name):
+        ''' Return True if external plugin install for given group. '''
+        for reg_group, registry in self.groups.iteritems():
+            basename = reg_group.split('.')[0]
+            if basename == group_name and registry.external_plugin:
+                return True
+        return False
+
     def run_checks(self, output=sys.stdout, writedown=True):
         ''' Run all checks. '''
 

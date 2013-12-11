@@ -1,92 +1,99 @@
 #-*- coding: utf-8 -*-
+"""This is an example file of a language specific plugin
 
-# This is an example file of a language specific plugin
+This plugin aims to implement Fedora Packaging Guidelines for Java[1]
+as a fedora-review plugin.
 
+[1] https://fedoraproject.org/wiki/Packaging:Java
+"""
 
+import re
 from FedoraReview import CheckBase, RegistryBase
 
 
 class Registry(RegistryBase):
-    """ Register all checks in this file in group "R". """
-
-    group = 'R'
+    """ Dotted named extends the base group, here 'Java'. """
+    group = 'Java.guidelines'
+    external_plugin = True
+    version = "1.2.3"
+    build_id = "git59cacae"
 
     def is_applicable(self):
-        return self.checks.spec.name.startswith("R-")
+        """ Use the is_applicable() defined in main group: """
+        return self.checks.groups['Java'].is_applicable()
+
+class JavaCheckBase(CheckBase):
+    """Base check for Java checks containing miscellaneous functions"""
+
+    def __init__(self, base):
+        CheckBase.__init__(self, base, __file__)
+
+    def _is_maven_pkg(self):
+        """Returns True if this is likely Maven package"""
+        for build_r in self.spec.build_requires:
+            if 'maven-local' in build_r:
+                return True
+        return False
+
+    def _is_xmvn_pkg(self):
+        """Returns True if this package is being built with XMvn (new style
+        Maven packaging)"""
+        return self.spec.find_re('[^#]*%mvn_build')
+
+    def _get_javadoc_sub(self):
+        """Returns name of javadoc rpm or None if no such subpackage
+        exists."""
+        for pkg in self.spec.packages:
+            if pkg.endswith('-javadoc'):
+                return pkg
+        return None
 
 
-class RCheckBase(CheckBase):
-    """ Base class for all R specific checks. """
+class CheckJavadoc(JavaCheckBase):
+    """Check if javadoc subpackage exists and contains documentation"""
 
-    def __init__(self, checks):
-        CheckBase.__init__(self, checks, __file__)
-
-
-class  RCheckBuildRequires(RCheckBase):
-    """ Check if the BuildRequires have the mandatory elements. """
-
-    def __init__(self, checks):
-        RCheckBase.__init__(self, checks)
-        self.url = 'http://fedoraproject.org/wiki/Packaging:R'
-        self.text = 'Package contains the mandatory BuildRequires.'
+    def __init__(self, base):
+        JavaCheckBase.__init__(self, base)
+        self.url = 'https://fedoraproject.org/wiki/Packaging:Java' \
+                   '#Javadoc_installation'
+        self.text = "Javadoc documentation files are generated and " \
+                    "included in -javadoc subpackage"
         self.automatic = True
 
     def run_on_applicable(self):
-        """
-        Overriding run_on_applicable means that this code will run
-        if is_applicable() is True.
-        """
+        """ run check for java packages """
+        pkg = self._get_javadoc_sub()
+        if not pkg:
+            self.set_passed(self.FAIL, "No javadoc subpackage present")
+            return
 
-        br = self.spec.get_build_requires()
-        passed = 'R-devel' in br and 'tex(latex)' in br
-        self.set_passed(self.PASS if passed else self.FAIL)
+        # and now look for at least one html file
+        if self.rpms.find('*.html', pkg):
+            self.set_passed(self.PASS)
+            return
+        self.set_passed(self.FAIL, "No javadoc html files found in %s" % pkg)
 
 
-class RCheckLatestVersionIsPackaged(RCheckBase):
-    """ Check if the lastest version is packaged. """
+class CheckNewStyleMaven(JavaCheckBase):
+    """Maven packages should use new style packaging style"""
 
-    # This class attribute is used to override an existing test, typically
-    # a generic one.
-    # For example, in R FedoraReview can quite safely check if it is the
-    # latest version which have been packaged, but there is a generic
-    # check for that as in most cases it won't be possible do to so.
-    # Here we therefore specify how to turn off this generic check
-    # and keep only this specific one.
-
-    deprecates = [CheckLatestVersionIsPackaged]
+    group = "Maven"
 
     def __init__(self, base):
-        CheckBase.__init__(self, base)
-        self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
-        self.text = 'Latest version is packaged.'
+        JavaCheckBase.__init__(self, base)
+        self.text = """Maven packages should use new style packaging"""
+        self.url = 'https://fedoraproject.org/wiki/Packaging:Java#Apache_Maven'
         self.automatic = True
-        self.type = 'SHOULD'
+        self.type = 'MUST'
 
     def run(self):
-        """
-        A function overriding run is always called, no matter what kind
-        of package. Normally,you should first test whether the test
-        is applicable and quit if not.
-        """
+        if self._is_maven_pkg() and self._is_xmvn_pkg():
+            self.set_passed(self.PASS)
+        elif self._is_maven_pkg():
+            self.set_passed(self.FAIL, "If possible update your package to "
+                            "latest guidelines")
+        else:
+            self.set_passed(self.NA)
 
-        # See if the package should be checked. If not, disable output:
-        #     set_passed(self.NA)
-        #     return
 
-        # do something...
-
-        # Access the spec file via:
-        #  self.spec
-        # the spec file itself is at:
-        #  self.spec.lines
-        # Access the srpm via:
-        #  self.srpm
-
-        # Return a simple 'approved' ([x])
-        #     self.set_passed(self.PASS)
-        # a failure[!]  with a Note: message:
-        #     self.set_passed(self.FAIL, 'test failed because...')
-        # or a pending [ ] status:
-        #     self.set_passed(self.PENDING)
-
-# Other classes doing other tests....
+# vim: set expandtab ts=4 sw=4:
