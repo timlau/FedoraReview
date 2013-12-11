@@ -33,7 +33,7 @@ class CheckJavaPlugin(CheckBase):
 
     def run_on_applicable(self):
         """ Use the is_applicable() defined in main group: """
-        if self.checks.external_plugin_installed(self.registry.group):
+        if self.checks.is_external_plugin_installed(self.registry.group):
             self.set_passed(self.NA)
         else:
             self.set_passed(self.FAIL)
