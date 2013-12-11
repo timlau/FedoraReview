@@ -44,11 +44,6 @@ the results without understanding them.
 """
 
 
-def _print_version():
-    ''' Handle --version option. '''
-    print('fedora-review version ' + __version__ + ' ' + BUILD_FULL)
-
-
 class _Nvr(object):
     ''' Simple name-version-release container. '''
 
@@ -185,6 +180,17 @@ class ReviewHelper(object):
             for victim in dep.deprecates:
                 print '    ' + victim
 
+    @staticmethod
+    def _print_version():
+        ''' Handle --version option. '''
+        print('fedora-review version ' + __version__ + ' ' + BUILD_FULL)
+        print('external plugins:')
+        checks_lister = ChecksLister()
+        for registry in checks_lister.groups.itervalues():
+            if registry.external_plugin:
+                print "{r.group} version {r.version} {r.build_id}".format(
+                    r=registry)
+
     def _do_run(self, outfile=None):
         ''' Initiate, download url:s, run checks a write report. '''
         Settings.init()
@@ -196,7 +202,7 @@ class ReviewHelper(object):
             self._list_flags()
             make_report = False
         elif Settings.version:
-            _print_version()
+            self._print_version()
             make_report = False
         elif Settings.list_plugins:
             self._list_plugins()
