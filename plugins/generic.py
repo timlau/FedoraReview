@@ -352,14 +352,8 @@ class CheckDefattr(GenericCheckBase):
                 if line.startswith('%defattr('):
                     has_defattr = True
                     break
-        if has_defattr and self.flags['EPEL5']:
-            self.set_passed(self.PASS)
-        elif has_defattr and not self.flags['EPEL5']:
-            self.set_passed(self.PENDING,
-                            '%defattr present but not needed')
-        elif not has_defattr and self.flags['EPEL5']:
-            self.set_passed(self.FAIL,
-                            '%defattr missing, required by EPEL5')
+        if has_defattr:
+            self.set_passed(self.PENDING, '%defattr present but not needed')
         else:
             self.set_passed(self.NA)
 
