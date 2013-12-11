@@ -14,6 +14,9 @@ from FedoraReview import CheckBase, RegistryBase
 class Registry(RegistryBase):
     """ Dotted named extends the base group, here 'Java'. """
     group = 'Java.guidelines'
+    external_plugin = True
+    version = "1.2.3"
+    build_id = "git59cacae"
 
     def is_applicable(self):
         """ Use the is_applicable() defined in main group: """
