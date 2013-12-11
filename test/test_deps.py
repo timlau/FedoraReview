@@ -39,7 +39,7 @@ DEPLIST_OK = set(["bash",
                   "python-kitchen",
                   "python-straight-plugin",
                   "rpm-python",
-                  "rpmdevtools"])
+                  "devscripts-minimal"])
 
 
 DIRLIST_OK = set(["/usr/share/doc/ruby-racc-1.4.5",
