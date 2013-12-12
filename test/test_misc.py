@@ -404,7 +404,7 @@ class TestMisc(FR_TestCase):
         ''' Test review_helper error handling. '''
         # pylint: disable=C0111,W0212
 
-        class Null:
+        class Null(object):
             def write(self, msg):
                 pass
 
@@ -486,7 +486,7 @@ class TestMisc(FR_TestCase):
 
     def test_java_spec(self):
         ''' Test the ChecktestSkip check. '''
-        # pylint: disable=F0401,R0201,C0111
+        # pylint: disable=F0401,R0201,C0111,,W0613
 
         from plugins.java import CheckJavaPlugin
 

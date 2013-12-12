@@ -29,7 +29,7 @@ import srcpath                                   # pylint: disable=W0611
 from fr_testcase import FR_TestCase, FEDORA
 
 
-class Testspec():
+class Testspec(object):
     ''' Simple container for testdata. '''
     pass
 
