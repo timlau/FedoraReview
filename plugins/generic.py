@@ -1494,7 +1494,7 @@ class CheckNoNameConflict(GenericCheckBase):
             try:
                 p.get_package_info(name)
                 return True
-            except fedora.client.AppError:
+            except (fedora.client.AppError, fedora.client.ServerError):
                 return False
 
         try:
