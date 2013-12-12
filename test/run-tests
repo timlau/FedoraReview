@@ -50,7 +50,7 @@ cd $(dirname $(readlink -fn $0))
 cd ..
 
 logfile="$PWD/dist/build.log"
-{
+tee $logfile <  <( {
     if [[ -n "$PIP_INSTALL" || ! -d fedorareviewenv ]]; then
         install_virtenv
     fi
@@ -92,7 +92,7 @@ logfile="$PWD/dist/build.log"
         pep8 --config pep8.conf src/FedoraReview plugins
     fi
 
-} 2>&1 | tee $logfile
+} 2>&1 )
 
 exit $status
 
