@@ -1,5 +1,8 @@
 0.5.1
 =====
+- Added framework for moving plugins out of the fedora-review
+  source tree; the java plugin is now external. This feature
+  is still experimental.
 - Hide some tests when they are not applicable (#229).
 - Fix a bug in make_dist (#228).
 - Added stub plugins for Ocaml and Haskell allowing static linkage
@@ -13,6 +16,8 @@
   shell tests (498fa464b).
 - Make paths in licensecheck.txt relative to source dir (ee29d7e).
 - Handle inconsistent yum caches (bz #1028332).
+- Fix some EPEL5 glitches (bz #1040353, bz #1040369).
+- Add command line option to koji-download-scratch (bz #1027616).
 
 0.5.0
 =====
