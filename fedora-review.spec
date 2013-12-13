@@ -4,9 +4,12 @@
 # See notes in make_release which patches this.
 #global     git_tag  .fa1afe1
 
+# Support jenkins build number if available.
+%global     build_nr %(echo "${BUILD_NUMBER:+.}${BUILD_NUMBER:-%%{nil\\}}")
+
 Name:       fedora-review
-Version:    0.5.0
-Release:    1%{?git_tag}%{?dist}
+Version:    0.5.1
+Release:    1%{?build_nr}%{?git_tag}%{?dist}
 Summary:    Review tool for fedora rpm packages
 
 License:    GPLv2+
@@ -30,11 +33,17 @@ Requires:       python-bugzilla
 Requires:       python-kitchen
 Requires:       python-straight-plugin
 Requires:       rpm-python
-Requires:       rpmdevtools
+# licensecheck used to be in rpmdevtools, moved to devscripts later
+# this is compatible with both situations without ifdefs
+Requires:       %{_bindir}/licensecheck
+
 Requires:       yum-utils
 
 # Let's be consistent with the name used on fedorahosted
 provides:       FedoraReview = %{version}-%{release}
+
+Provides:       %{name}-php-phpci = %{version}-%{release}
+Obsoletes:      %{name}-php-phpci < %{version}-%{release}
 
 
 %description
@@ -49,7 +58,7 @@ for the Fedora Package Collection like:
     * Generate a review template, which becomes the starting
       point for the review work.
 
-The tool is composed of a plugins, one for each supported language.
+The tool is composed of plugins, one for each supported language.
 As of today, there is plugins for C/C++, Ruby, java, R, perl and
 python.  There is also support for external tests that can be written
 in a simple way in bash.
@@ -61,16 +70,6 @@ Requires: %{name} = %{version}-%{release}
 
 %description tests
 Tests are packaged separately due to space concerns.
-
-
-%package php-phpci
-Summary:  Run phpci static analyzer on php packages
-Requires: %{name} = %{version}-%{release}
-Requires: php-bartlett-PHP-CompatInfo
-
-%description php-phpci
-Bash plugin running the phpci static analyzer on php packages,
-see http://php5.laurent-laville.org/compatinfo/.
 
 
 %prep
@@ -98,9 +97,9 @@ cp -ar test "$RPM_BUILD_ROOT%{_datadir}/%{name}"
 cd test
 export REVIEW_LOGLEVEL=warning
 export MAKE_RELEASE=1
-mock --quiet -r fedora-17-i386 --init
-mock --quiet -r fedora-16-i386 --init
-mock --quiet -r fedora-17-i386 --uniqueext=hugo --init
+mock --quiet -r fedora-19-i386 --init
+mock --quiet -r fedora-18-i386 --init
+mock --quiet -r fedora-19-i386 --uniqueext=hugo --init
 python -m unittest discover -f
 %endif
 
@@ -116,19 +115,21 @@ python -m unittest discover -f
 %dir %{_datadir}/%{name}
 %{_datadir}/%{name}/plugins
 %{_datadir}/%{name}/scripts
-%exclude %{_datadir}/%{name}/scripts/php-phpci.sh
 
 %files tests
 %doc test/README.test
 %{_datadir}/%{name}/test
 
-%files php-phpci
-%{_datadir}/%{name}/scripts/php-phpci.sh
-
 
 %changelog
+* Wed Sep 4 2013 Alec Leamas <leamas@nowhere.net> 0.5.0-1.001.fa1afe1
+- Generic post-release nightly build entry
+
 * Mon Aug 19 2013 Stanislav Ochotnicky <sochotnicky@redhat.com> 0.5.0-1
 - Updating to upstream 0.5.0
+
+* Mon Apr 29 2013 Stanislav Ochotnicky <sochotnicky@redhat.com> - 0.4.1-1
+- Updating to upstream 0.4.1
 
 * Mon Jan 28 2013 Stanislav Ochotnicky <sochotnicky@redhat.com> - 0.4.0-1
 - Updating to upstream 0.4.0

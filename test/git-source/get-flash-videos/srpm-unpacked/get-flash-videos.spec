@@ -95,6 +95,6 @@ make test
 * Sun Feb 05 2012 Alec Leamas <alec@nowhere.com> 1.24-2.20120205git8abc6c6
 - Moving to latest git
 
-* Sat Jan 31 2012 Alec Leamas <alec@nowhere.com>             1.24-1
+* Tue Jan 31 2012 Alec Leamas <alec@nowhere.com>             1.24-1
 - Intial packaging
 

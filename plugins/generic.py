@@ -26,7 +26,7 @@ import rpm
 
 from glob import glob
 from StringIO import StringIO
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, CalledProcessError
 try:
     from subprocess import check_output          # pylint: disable=E0611
 except ImportError:
@@ -60,10 +60,15 @@ class Registry(RegistryBase):
 
     def register_flags(self):
         epel5 = self.Flag('EPEL5', 'Review package for EPEL5', __file__)
-        disttag = self.Flag('DISTTAG', 'Default disttag e. g. "fc21".',
+        disttag = self.Flag('DISTTAG',
+                            'Default disttag e. g., "fc21".',
                             __file__)
+        batch = self.Flag('BATCH',
+                          'Disable all build, install, rpmlint etc. tasks',
+                           __file__)
         self.checks.flags.add(epel5)
         self.checks.flags.add(disttag)
+        self.checks.flags.add(batch)
 
     def is_applicable(self):
         return True
@@ -137,6 +142,7 @@ class CheckBuildCompilerFlags(GenericCheckBase):
                     'justifies otherwise.'
         self.automatic = True
         self.type = 'MUST'
+        self.needs.append('generic-large-data')      # Ensure unpacked rpms
 
     def run(self):
         archs = self.checks.spec.expand_tag('BuildArchs')
@@ -281,6 +287,47 @@ class CheckCleanBuildroot(GenericCheckBase):
             self.set_passed(self.PASS)
 
 
+class CheckDaemonCompileFlags(GenericCheckBase):
+    '''
+    MUST: Sensitive code should use hardened build flags.
+    '''
+    def __init__(self, base):
+        GenericCheckBase.__init__(self, base)
+        self.url = 'http://fedoraproject.org/wiki/Packaging:Guidelines?' \
+                   'rd=Packaging/Guidelines#Compiler_flags'
+        self.text = 'Package uses hardened build flags if required to.'
+        self.automatic = True
+        self.needs.append('generic-large-data')      # Ensure unpacked rpms
+
+    def run(self):
+        extra = ''
+        rpms_dir = os.path.join(ReviewDirs.root, 'rpms-unpacked')
+        try:
+            cmd = 'find %s -perm -4000' % rpms_dir
+            with open('/dev/null', 'w') as f:
+                suids = check_output(cmd.split(), stderr=f).strip().split()
+        except CalledProcessError:
+            self.log.info('Cannot run find command: ' + cmd)
+            suids = []
+        else:
+            suids = [os.path.basename(s) for s in suids]
+            if suids:
+                extra += 'suid files: ' + ', '.join(suids)
+
+        systemd_files = self.rpms.find_all('/lib/systemd/system/*')
+        if systemd_files:
+            files = [os.path.basename(f) for f in systemd_files]
+            extra += 'Systemd files (daemon?): ' + ', '.join(files)
+
+        if not extra:
+            self.set_passed(self.NA)
+        elif self.spec.find_re(r'[^# ]*%global\s+_hardened_build\s+1'):
+            self.set_passed(self.PASS, extra)
+        else:
+            extra += ' and not %global _hardened_build'
+            self.set_passed(self.FAIL, extra)
+
+
 class CheckDefattr(GenericCheckBase):
     '''
     MUST: Permissions on files must be set properly.  Executables
@@ -305,16 +352,10 @@ class CheckDefattr(GenericCheckBase):
                 if line.startswith('%defattr('):
                     has_defattr = True
                     break
-        if has_defattr and self.flags['EPEL5']:
-            self.set_passed(self.PASS)
-        elif has_defattr and not self.flags['EPEL5']:
-            self.set_passed(self.PENDING,
-                            '%defattr present but not needed')
-        elif not has_defattr and self.flags['EPEL5']:
-            self.set_passed(self.FAIL,
-                            '%defattr missing, required by EPEL5')
+        if has_defattr:
+            self.set_passed(self.PENDING, '%defattr present but not needed')
         else:
-            self.set_passed(self.PASS)
+            self.set_passed(self.NA)
 
 
 class CheckDescMacros(GenericCheckBase):
@@ -614,7 +655,8 @@ class CheckLicenseField(GenericCheckBase):
                 f.write('\n' + license_ + '\n')
                 f.write('-' * len(license_) + '\n')
                 for path in sorted(files_by_license[license_]):
-                    f.write(path + '\n')
+                    relpath = re.sub('.*BUILD/', '', path)
+                    f.write(relpath + '\n')
 
     @staticmethod
     def _get_source_dir():
@@ -1001,11 +1043,13 @@ class CheckOwnDirs(GenericCheckBase):
         '''
 
         # pylint: disable=R0912
-        def resolve(requires):
+        def resolve(requires_arg):
             '''
-            Resolve list of symbols to packages in srpm or by repoquery.
+            Resolve list of symbols to packages in srpm or by repoquery,
+            skipping any version requirements.
             '''
             pkgs = []
+            requires = [re.split('[<=>]+', r)[0] for r in requires_arg]
             requires_to_process = list(requires)
             for r in requires:
                 if r.startswith('rpmlib'):
@@ -1349,7 +1393,7 @@ class CheckStaticLibs(GenericCheckBase):
                 if not (pkg.endswith('-static') or pkg.endswith('-devel')):
                     bad_names.append(pkg)
                 rpm_pkg = self.rpms.get(pkg)
-                ok = [r for r in rpm_pkg.requires if r.endswith('-static')]
+                ok = [r for r in rpm_pkg.provides if r.endswith('-static')]
                 if not ok:
                     no_provides.append(pkg)
         if names:
@@ -1370,8 +1414,15 @@ class CheckSystemdScripts(GenericCheckBase):
         GenericCheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:Guidelines'
         self.text = 'Package contains  systemd file(s) if in need.'
-        self.automatic = False
+        self.automatic = True
         self.type = 'MUST'
+        self.needs.append('CheckDaemonCompileFlags')
+
+    def run_on_applicable(self):
+        if self.checks.checkdict['CheckDaemonCompileFlags'].is_na:
+            self.set_passed(self.PENDING)
+        else:
+            self.set_passed(self.PASS)
 
 
 class CheckUTF8Filenames(GenericCheckBase):
@@ -1443,7 +1494,7 @@ class CheckNoNameConflict(GenericCheckBase):
             try:
                 p.get_package_info(name)
                 return True
-            except fedora.client.AppError:
+            except (fedora.client.AppError, fedora.client.ServerError):
                 return False
 
         try:
@@ -1521,7 +1572,7 @@ class CheckUpdateDesktopDatabase(GenericCheckBase):
                     ' %postun if package contains desktop file(s)' \
                     ' with a MimeType: entry.'
         self.automatic = True
-        self.needs.append('check-large-docs')   # Needed to unpack rpms
+        self.needs.append('generic-large-docs')   # Needed to unpack rpms
         self.type = 'MUST'
 
     def run(self):
@@ -1731,10 +1782,8 @@ class CheckSourceDownloads(GenericCheckBase):
         if not failed_src:
             self.set_passed(self.PASS)
             return
-        self.set_passed(self.FAIL, "Could not download " +
-                                   ', '.join([s.tag for s in failed_src]))
-
-
+        failed = ', '.join([s.tag  + ': ' + s.specurl for s in failed_src])
+        self.set_passed(self.FAIL, "Could not download " + failed)
 
 
 #

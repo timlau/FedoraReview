@@ -1,3 +1,24 @@
+0.5.1
+=====
+- Added framework for moving plugins out of the fedora-review
+  source tree; the java plugin is now external. This feature
+  is still experimental.
+- Hide some tests when they are not applicable (#229).
+- Fix a bug in make_dist (#228).
+- Added stub plugins for Ocaml and Haskell allowing static linkage
+  (#220, #221).
+- Add a fonts plugin running repo-fonts-audit (#215).
+- Enhance systemd config files handling (#214, #193).
+- Update CheckStaticLibs to current GL (#222).
+- CheckStaticLibs: fix typo causing false positives (bz 1012873).
+- Added new XML report designed for batch testing( #197).
+- Fixed a bad bug where deprecations was honored in non-applicable
+  shell tests (498fa464b).
+- Make paths in licensecheck.txt relative to source dir (ee29d7e).
+- Handle inconsistent yum caches (bz #1028332).
+- Fix some EPEL5 glitches (bz #1040353, bz #1040369).
+- Add command line option to koji-download-scratch (bz #1027616).
+
 0.5.0
 =====
 - Removing the only php test which is outdated (5addbb4).
@@ -6,7 +27,7 @@
 - Automate several directory ownership checks (#187).
 - Support display and modification of active plugins, initiated by
   discussion in bz 989946. Adds plugin and flag feedback to template.
-  New --display-plugins and --plugins options.
+- New --display-plugins and --plugins options.
 - New DISTTAG flag used when disttag can't be deduced from prebuilt
   packages (09304f2).
 - Add hint if package has ExclusiveArch in deps (#166).
@@ -15,8 +36,8 @@
 - Fix bug for packages with a '++' in their name (bz 971977).
 - Fix bug for check-desktop-database (#127, bz 952593).
 - Preserve modification times when unpacking srpm and rpms (bz 982101).
-- Don't flag remove %buildroot/path as error (bz 972672).
-- Run rpmlint also on srpm (bz 981977).
+- Don't flag remove %buildroot/path as error (bz 972672)
+- Run rpmlint also on srpm (bz 981977)
 - Stability tested on > 12000 packages. Fixes:
     + Corner case  .desktop files (544eca2, 18cc82f).
     + Macros in %files line (7566e91).

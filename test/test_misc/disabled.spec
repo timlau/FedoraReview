@@ -1,9 +1,7 @@
 # sitelib for noarch packages, sitearch for others (remove the unneeded one)
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
 
-%global _hardened_build 1
-
-Name:           python-test
+Name:           disabled
 Version:        1.0
 Release:        1%{?dist}
 Summary:        A test package for review testing
@@ -11,7 +9,7 @@ Summary:        A test package for review testing
 Group:          Development/Languages
 License:        GPLv2+
 URL:            http://timlau.fedorapeople.org/files/test/review-test
-Source0:        http://timlau.fedorapeople.org/files/test/review-test/%{name}-%{version}.tar.gz
+Source0:        %{name}-%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildArch:      noarch

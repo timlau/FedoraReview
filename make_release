@@ -103,9 +103,12 @@ if [ ! "$1" = '-q' ]; then
 fi
 
 cd $startdir
+[ -d dist ] || mkdir dist
+build_nr="${BUILD_NUMBER:+.}${BUILD_NUMBER}"
 timestamp=$(LC_TIME=C date +'* %a %b %d %Y')
 sed -r  -e 's/git_tag[ ]*\.[0-9a-f]*/git_tag  '".$BUILD_ID/" \
         -e '/%changelog/,/^$/ s/[0-9a-f]{7}/'"$BUILD_ID/" \
+        -e '/%changelog/,/^$/ s/[.][0-9]{3}[.]/'"${build_nr}./" \
         -e '/%changelog/,/^$/ s/\*.*201[0-9]/'"$timestamp/" \
     < fedora-review.spec  > dist/fedora-review.spec
 echo

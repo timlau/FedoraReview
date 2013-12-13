@@ -91,7 +91,7 @@ class AbstractCheck(object):
     Equality:
       - Tests are considered equal if they have the same name.
     """
-    # pylint: disable=R0201
+    # pylint: disable=R0201,C0103,W0223
 
     __metaclass__ = ABCMeta
 
@@ -183,6 +183,10 @@ class GenericCheck(AbstractCheck):
     log        = property(lambda self: self.checks.log)
     rpms       = property(lambda self: self.checks.rpms)
 
+    def run(self):
+        ''' GenericCheck is usually used indirectly through CheckBase '''
+        raise NotImplementedError("Use CheckBase as parent for your Check")
+
     @property
     def name(self):                              # pylint: disable=E0202
         ''' The check's name. '''
@@ -264,6 +268,7 @@ class TestResult(object):
     type = property(lambda self: self.check.type)
     group = property(lambda self: self.check.group)
     deprecates = property(lambda self: self.check.deprecates)
+    is_failed = property(lambda self: self.check.is_failed)
 
     state = property(lambda self: self.result)
 
@@ -289,16 +294,41 @@ class TestResult(object):
                                 self.wrapper.subsequent_indent +
                                 "Note: " + self.output_extra)
             strbuf.write('\n'.join(extra_lines))
-            if self.check.is_failed:
+            if self.is_failed:
                 see = self.wrapper.wrap(
                                 self.wrapper.subsequent_indent +
-                                "See: " + self.check.url)
+                                "See: " + self.url)
                 strbuf.write("\n" + "\n".join(see))
 
         return strbuf.getvalue()
 
     def __str__(self):
         self.get_text()
+
+
+class SimpleTestResult(TestResult):
+    ''' Simple, failed result not based on a check. '''
+    # pylint: disable=W0212,W0231
+
+    def __set_name(self, n):
+        ''' property setter. '''
+        self._name = n
+
+    def __set_type(self, t):
+        ''' property setter. '''
+        self._type = t
+
+    name = property(lambda self: self._name, __set_name)
+    type = property(lambda self: self._type, __set_type)
+    output_extra = property(lambda self: self._output_extra)
+    is_failed = property(lambda self: True)
+
+    def __init__(self, name, text, extra):
+        ''' Create a  printable, failed result. '''
+        self._name = name
+        self._type = 'ERROR'
+        self.text = text
+        self._output_extra = extra
 
 
 

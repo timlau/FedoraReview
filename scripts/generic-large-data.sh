@@ -14,6 +14,10 @@ if unpack_rpms; then
     declare -A sizes
     sum=0
     cd rpms-unpacked
+    noarchs="$( ls -d *noarch.rpm  2>/dev/null || echo '' )"
+    if [ "$noarchs" = "$( ls -d *rpm )" ]; then
+        exit $FR_NOT_APPLICABLE
+    fi
     for rpm in *; do
         [[ "$rpm" == *noarch.rpm ]]  && continue
         [ -d "$rpm/$datadir" ] || continue

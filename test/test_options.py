@@ -118,7 +118,7 @@ class TestOptions(FR_TestCase):
         """ test -d/--display option. """
         # pylint: disable=C0111
 
-        class Logger:
+        class Logger(object):
 
             def __init__(self):
                 self.lines = []
@@ -180,7 +180,10 @@ class TestOptions(FR_TestCase):
             path = glob(pattern)[0]
             return os.stat(path).st_mtime
 
+        loglevel = os.environ['REVIEW_LOGLEVEL']
+        os.environ['REVIEW_LOGLEVEL'] = 'ERROR'
         self.init_opt_test(['-b', '818805'], 'options')
+        os.environ['REVIEW_LOGLEVEL'] = loglevel
         bug = BugzillaBug(Settings.bug)
         bug.find_urls()
         bug.download_files()
@@ -190,7 +193,10 @@ class TestOptions(FR_TestCase):
         del bug
 
         os.chdir(self.startdir)
+        loglevel = os.environ['REVIEW_LOGLEVEL']
+        os.environ['REVIEW_LOGLEVEL'] = 'ERROR'
         self.init_opt_test(['-cb', '818805'], 'options')
+        os.environ['REVIEW_LOGLEVEL'] = loglevel
         bug = BugzillaBug(Settings.bug)
         bug.find_urls()
         bug.download_files()

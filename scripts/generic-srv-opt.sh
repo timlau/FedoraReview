@@ -1,6 +1,6 @@
 #!/bin/bash
 # @group: Generic
-# @name: check-srv-opt-local
+# @name: generic-srv-opt
 # @url: http://fedoraproject.org/wiki/Packaging/Guidelines#PackageDocumentation
 # @text: Packages must not store files under /srv, /opt or /usr/local
 # @type: MUST

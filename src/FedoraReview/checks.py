@@ -24,7 +24,6 @@ import os
 import sys
 import time
 
-from glob import glob
 from operator import attrgetter
 from straight.plugin import load                  # pylint: disable=F0401
 
@@ -32,68 +31,13 @@ from datasrc import RpmDataSource, BuildFilesSource, SourcesDataSource
 from settings import Settings
 from srpm_file import SRPMFile
 from spec_file import SpecFile
-from review_dirs import ReviewDirs
 from review_error import ReviewError
 from xdg_dirs import XdgDirs
+from reports import write_xml_report, write_template
 
 
-HEADER = """
-This is a review *template*. Besides handling the [ ]-marked tests you are
-also supposed to fix the template before pasting into bugzilla:
-- Add issues you find to the list of issues on top. If there isn't such
-  a list, create one.
-- Add your own remarks to the template checks.
-- Add new lines marked [!] or [?] when you discover new things not
-  listed by fedora-review.
-- Change or remove any text in the template which is plain wrong. In this
-  case you could also file a bug against fedora-review
-- Remove the "[ ] Manual check required", you will not have any such lines
-  in what you paste.
-- Remove attachments which you deem not really useful (the rpmlint
-  ones are mandatory, though)
-- Remove this text
-
-
-
-Package Review
-==============
-
-Legend:
-[x] = Pass, [!] = Fail, [-] = Not applicable, [?] = Not evaluated
-[ ] = Manual review needed
-
-"""
-
-
-def _write_section(results, output):
-    ''' Print a {SHOULD,MUST, EXTRA} section. '''
-
-    def hdr(group):
-        ''' Return header this test is printed under. '''
-        if '.' in group:
-            return group.split('.')[0]
-        return group
-
-    def result_key(result):
-        ''' Return key used to sort results. '''
-        if result.check.is_failed:
-            return '0' + str(result.check.sort_key)
-        elif result.check.is_pending:
-            return '1' + str(result.check.sort_key)
-        elif result.check.is_passed:
-            return '2' + str(result.check.sort_key)
-        else:
-            return '3' + str(result.check.sort_key)
-
-    groups = list(set([hdr(test.group) for test in results]))
-    for group in sorted(groups):
-        res = filter(lambda t: hdr(t.group) == group, results)
-        if not res:
-            continue
-        res = sorted(res, key=result_key)
-        output.write('\n' + group + ':\n')
-        for r in res:
-            output.write(r.get_text() + '\n')
+_BATCH_EXCLUDED = 'CheckBuild,CheckPackageInstalls,CheckRpmlintInstalled,' \
+    'CheckNoNameConflict,CheckInitDeps,CheckRpmlint'
 
 
 class _CheckDict(dict):
@@ -106,6 +50,7 @@ class _CheckDict(dict):
         - On insertion, items listed in the 'deprecates'property
           are removed.
     """
+    # pylint: disable=R0904
 
     def __init__(self, *args, **kwargs):
         dict.__init__(self)
@@ -115,26 +60,12 @@ class _CheckDict(dict):
 
     def __setitem__(self, key, value):
 
-        def log_kill(victim, killer):
-            ''' Log test skipped due to deprecation. '''
-            self.log.debug("Skipping %s in %s, deprecated by %s in %s" %
-                              (victim.name, victim.defined_in,
-                               killer.name, killer.defined_in))
-
         def log_duplicate(first, second):
             ''' Log warning for duplicate test. '''
             self.log.warning("Duplicate checks %s in %s, %s in %s" %
                               (first.name, first.defined_in,
                               second.name, second.defined_in))
 
-        for victim in value.deprecates:
-            if victim in self.iterkeys():
-                log_kill(self[victim], value)
-                del(self[victim])
-        for killer in self.itervalues():
-            if key in killer.deprecates:
-                log_kill(value, killer)
-                return
         if key in self.iterkeys():
             log_duplicate(value, self[key])
         dict.__setitem__(self, key, value)
@@ -172,6 +103,25 @@ class _CheckDict(dict):
         self.clear()
         self.extend(needed)
         delattr(self[check_name], 'result')
+
+    def fix_deprecations(self, key):
+        ''' Remove deprecated tests, needs Registry.is_applicable(). '''
+
+        def log_kill(victim, killer):
+            ''' Log test skipped due to deprecation. '''
+            self.log.debug("Skipping %s in %s, deprecated by %s in %s" %
+                              (victim.name, victim.defined_in,
+                               killer.name, killer.defined_in))
+
+        value = self[key]
+        for victim in value.deprecates:
+            if victim in self.iterkeys():
+                log_kill(self[victim], value)
+                del(self[victim])
+        for killer in self.itervalues():
+            if key in killer.deprecates:
+                log_kill(value, killer)
+                return
 
 
 class _Flags(dict):
@@ -219,6 +169,8 @@ class _ChecksLoader(object):
         elif Settings.exclude:
             self.exclude_checks(Settings.exclude)
         self._update_flags()
+        if self.flags['BATCH']:
+            self.exclude_checks(_BATCH_EXCLUDED)
 
     def _update_flags(self):
         ''' Update registered flags with user -D settings. '''
@@ -252,6 +204,9 @@ class _ChecksLoader(object):
             tests = registry.register(plugin)
             self.checkdict.extend(tests)
             self.groups[registry.group] = registry
+        for c in self.checkdict:
+            if not self.checkdict[c].registry:
+                self.checkdict[c].registry = self.groups[c.group]
         sys.path.remove(XdgDirs.app_datadir)
         sys.path.remove(appdir)
 
@@ -336,7 +291,10 @@ class Checks(_ChecksLoader):
         Check that check 'name' havn't already run and that all checks
         listed in 'needs' have run i. e., it's ready to run.
         """
-        check = self.checkdict[name]
+        try:
+            check = self.checkdict[name]
+        except KeyError:
+            return False
         if check.is_run:
             return False
         if check.registry.is_user_enabled() and not \
@@ -353,6 +311,31 @@ class Checks(_ChecksLoader):
             elif not self.checkdict[dep].is_run:
                 return False
         return True
+
+    def deprecate(self):
+        ''' Mark all deprecated tests as run. '''
+        allkeys = list(self.checkdict.iterkeys())
+        for c in allkeys:
+            if not c in self.checkdict:
+                continue
+            if self.checkdict[c].is_applicable():
+                self.checkdict.fix_deprecations(c)
+
+    def _get_ready_to_run(self):
+        ''' Return checks ready to run, deprecating checks first. '''
+        names = list(self.checkdict.iterkeys())
+        tests_to_run = filter(self._ready_to_run, names)
+        return sorted(tests_to_run,
+                      key=lambda t: len(self.checkdict[t].deprecates),
+                      reverse=True)
+
+    def is_external_plugin_installed(self, group_name):
+        ''' Return True if external plugin install for given group. '''
+        for reg_group, registry in self.groups.iteritems():
+            basename = reg_group.split('.')[0]
+            if basename == group_name and registry.external_plugin:
+                return True
+        return False
 
     def run_checks(self, output=sys.stdout, writedown=True):
         ''' Run all checks. '''
@@ -379,70 +362,32 @@ class Checks(_ChecksLoader):
         issues = []
         results = []
         attachments = []
+        has_deprecated = False
 
-        names = list(self.checkdict.iterkeys())
-
-        tests_to_run = filter(self._ready_to_run, names)
+        tests_to_run = self._get_ready_to_run()
         self._clock = time.time()
         while tests_to_run != []:
             for name in tests_to_run:
+                if self.checkdict[name].deprecates and not has_deprecated:
+                    self.deprecate()
+                    has_deprecated = True
+                    break
                 run_check(name)
-            tests_to_run = filter(self._ready_to_run, names)
+            tests_to_run = self._get_ready_to_run()
 
         if writedown:
             key_getter = attrgetter('group', 'type', 'name')
-            self.show_output(output,
-                             sorted(results, key=key_getter),
-                             issues,
-                             attachments)
+            write_template(output,
+                           sorted(results, key=key_getter),
+                           issues,
+                           attachments)
+            write_xml_report(self.spec, results)
         else:
             with open('.testlog.txt', 'w') as f:
                 for r in results:
                     f.write('\n' + 24 * ' '
                             + "('%s', '%s')," % (r.state, r.name))
 
-    @staticmethod
-    def show_output(output, results, issues, attachments):
-        ''' Print test results on output. '''
-
-        def dump_local_repo():
-            ''' print info on --local-repo rpms used. '''
-            repodir = Settings.repo
-            if not repodir.startswith('/'):
-                repodir = os.path.join(ReviewDirs.startdir, repodir)
-            rpms = glob(os.path.join(repodir, '*.rpm'))
-            output.write("\nBuilt with local dependencies:\n")
-            for rpm in rpms:
-                output.write("    " + rpm + '\n')
-
-        output.write(HEADER)
-
-        if issues:
-            output.write("\nIssues:\n=======\n")
-            for fail in issues:
-                fail.set_leader('- ')
-                fail.set_indent(2)
-                output.write(fail.get_text() + "\n")
-            results = [r for r in results if not r in issues]
-
-        output.write("\n\n===== MUST items =====\n")
-        musts = filter(lambda r: r.type == 'MUST', results)
-        _write_section(musts, output)
-
-        output.write("\n===== SHOULD items =====\n")
-        shoulds = filter(lambda r: r.type == 'SHOULD', results)
-        _write_section(shoulds, output)
-
-        output.write("\n===== EXTRA items =====\n")
-        extras = filter(lambda r: r.type == 'EXTRA', results)
-        _write_section(extras, output)
-
-        for a in sorted(attachments):
-            output.write('\n\n')
-            output.write(a.__str__())
-
-        if Settings.repo:
-            dump_local_repo()
 
 
 # vim: set expandtab ts=4 sw=4:

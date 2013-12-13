@@ -1,13 +1,13 @@
 
-Summary: A garbage collector for C and C++ 
-Name:    gc	
+Summary: A garbage collector for C and C++
+Name:    gc
 %global base_ver 7.2
 Version: 7.2c
 Release: 3%{?dist}
 
 Group:   System Environment/Libraries
 License: BSD
-Url:     http://www.hpl.hp.com/personal/Hans_Boehm/gc/	
+Url:     http://www.hpl.hp.com/personal/Hans_Boehm/gc/
 Source0: http://www.hpl.hp.com/personal/Hans_Boehm/gc/gc_source/gc-%{version}%{?pre}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
@@ -15,7 +15,7 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 ## upstream patches
 
-BuildRequires: automake libtool 
+BuildRequires: automake libtool
 BuildRequires: pkgconfig
 
 # rpmforge compatibility
@@ -23,11 +23,11 @@ Obsoletes: libgc < %{version}-%{release}
 Provides:  libgc = %{version}-%{release}
 
 %description
-The Boehm-Demers-Weiser conservative garbage collector can be 
+The Boehm-Demers-Weiser conservative garbage collector can be
 used as a garbage collecting replacement for C malloc or C++ new.
 
 %package devel
-Summary: Libraries and header files for %{name} development 
+Summary: Libraries and header files for %{name} development
 Group:   Development/Libraries
 Requires: %{name}%{?_isa} = %{version}-%{release}
 Obsoletes: libgc-devel < %{version}-%{release}
@@ -38,11 +38,11 @@ Provides:  libgc-devel = %{version}-%{release}
 %package -n libatomic_ops-devel
 Summary:   Atomic memory update operations
 Group:     Development/Libraries
-# libatomic_ops.a is MIT 
-# libatomic_ops_gpl.a is GPLv2+ 
+# libatomic_ops.a is MIT
+# libatomic_ops_gpl.a is GPLv2+
 License:   MIT and GPLv2+
 Provides:  libatomic_ops-static = %{version}-%{release}
-%description -n libatomic_ops-devel 
+%description -n libatomic_ops-devel
 Provides implementations for atomic memory update operations on a
 number of architectures. This allows direct use of these in reasonably
 portable code. Unlike earlier similar packages, this one explicitly
@@ -81,7 +81,7 @@ make %{?_smp_mflags} -C libatomic_ops
 %install
 rm -rf %{buildroot}
 
-make install DESTDIR=%{buildroot} 
+make install DESTDIR=%{buildroot}
 make install DESTDIR=%{buildroot} -C libatomic_ops
 
 install -p -D -m644 doc/gc.man	%{buildroot}%{_mandir}/man3/gc.3
@@ -104,10 +104,10 @@ rm -rf %{buildroot}
 %post   -p /sbin/ldconfig
 %postun -p /sbin/ldconfig
 
-%files 
+%files
 %defattr(-,root,root,-)
 %doc doc/README
-%doc doc/README.changes doc/README.contributors 
+%doc doc/README.changes doc/README.contributors
 %doc doc/README.environment doc/README.linux
 %{_libdir}/libcord.so.1*
 %{_libdir}/libgc.so.1*
@@ -160,7 +160,7 @@ rm -rf %{buildroot}
 
 * Mon May 14 2012 Rex Dieter <rdieter@fedoraproject.org>
 - 7.2-1
-- gc-7.2 (final) 
+- gc-7.2 (final)
 
 * Fri Mar 02 2012 Rex Dieter <rdieter@fedoraproject.org> 7.2-0.7.alpha6
 - libatomic_ops: use -DAO_USE_PTHREAD_DEFS on ARMv5
@@ -192,7 +192,7 @@ rm -rf %{buildroot}
 * Fri Jul 24 2009 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 7.1-9
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_12_Mass_Rebuild
 
-* Sat Jul 16 2009 Rex Dieter <rdieter@fedoraproject.org. - 7.1-8
+* Thu Jul 16 2009 Rex Dieter <rdieter@fedoraproject.org. - 7.1-8
 - FTBFS gc-7.1-7.fc11 (#511365)
 
 * Tue Feb 24 2009 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 7.1-7
@@ -218,7 +218,7 @@ rm -rf %{buildroot}
 - gc-7.1
 - purge rpaths
 
-* Fri Feb 08 2008 Rex Dieter <rdieter@fedoraproject.org> 7.0-7 
+* Fri Feb 08 2008 Rex Dieter <rdieter@fedoraproject.org> 7.0-7
 - respin (gcc43)
 
 * Wed Aug 29 2007 Rex Dieter <rdieter[AT]fedoraproject.org> 7.0-6
@@ -252,11 +252,11 @@ rm -rf %{buildroot}
 * Fri Mar 03 2006 Rex Dieter <rexdieter[AT]users.sf.net> 6.7-1
 - 6.7
 
-* Wed Mar 1 2006 Rex Dieter <rexdieter[AT]users.sf.net> 
+* Wed Mar 1 2006 Rex Dieter <rexdieter[AT]users.sf.net>
 - fc5: gcc/glibc respin
 
 * Fri Feb 10 2006 Rex Dieter <rexdieter[AT]users.sf.net> 6.6-5
-- gcc(4.1) patch 
+- gcc(4.1) patch
 
 * Thu Dec 01 2005 Rex Dieter <rexdieter[AT]users.sf.net> 6.6-4
 - Provides: libgc(-devel)
@@ -273,7 +273,7 @@ rm -rf %{buildroot}
 * Wed May 25 2005 Rex Dieter <rexdieter[AT]users.sf.net> 6.5-1
 - 6.5
 
-* Fri Apr  7 2005 Michael Schwendt <mschwendt[AT]users.sf.net>
+* Thu Apr  7 2005 Michael Schwendt <mschwendt[AT]users.sf.net>
 - rebuilt
 
 * Wed Jan 26 2005 Rex Dieter <rexdieter[AT]users.sf.net> 0:6.4-2
@@ -305,16 +305,16 @@ rm -rf %{buildroot}
 - OK, put manpage in man3.
 
 * Thu Oct 02 2003 Rex Dieter <rexdieter at sf.net> 0:6.2-0.fdr.2
-- drop manpage pending feedback from developer. 
+- drop manpage pending feedback from developer.
 
 * Tue Sep 30 2003 Rex Dieter <rexdieter at sf.net> 0:6.2-0.fdr.1
-- fix manpage location 
+- fix manpage location
 - remove .la file (it appears unnecessary after all, thanks to opendl patch)
 - remove cvs tag from description
 - touchup -devel desc/summary.
 - macro update to support Fedora Core
 
-* Thu Sep 11 2003 Rex Dieter <rexdieter at sf.net> 0:6.2-0.fdr.0 
+* Thu Sep 11 2003 Rex Dieter <rexdieter at sf.net> 0:6.2-0.fdr.0
 - 6.2 release.
 - update license (BSD)
 - Consider building with: --enable-parallel-mark

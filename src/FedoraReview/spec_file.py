@@ -21,9 +21,10 @@ Spec file management.
 
 import re
 import rpm
+import sys
 import urllib
 
-from review_error import ReviewError
+from review_error import ReviewError, SpecParseReviewError
 from settings import Settings
 from mock import Mock
 
@@ -33,6 +34,14 @@ def _lines_in_string(s, raw):
     if raw:
         return s
     return [l.strip() for l in s.split('\n') if l]
+
+
+class _Null(object):
+    ''' Dummy sink. '''
+
+    def write(self, s):
+        ''' Like /dev/null. '''
+        pass
 
 
 class SpecFile(object):
@@ -45,31 +54,43 @@ class SpecFile(object):
        - lines: list of all lines in spec file
        - spec: rpm python spec object.
     '''
-    # pylint: disable=W0212
+    # pylint: disable=W0212,W0201
 
     def __init__(self, filename, flags=None):
 
         def update_macros():
             ''' Update build macros from mock target configuration. '''
-            macros = ['%rhel', '%fedora', '%_build_arch', '%_arch']
+            macros = ['%dist', '%rhel', '%fedora', '%_build_arch', '%_arch']
             for macro in macros:
                 expanded = Mock.get_macro(macro, self, flags)
                 if not expanded.startswith('%'):
-                    rpm.addMacro(macro, expanded)
+                    rpm.delMacro(macro[1:])
+                    rpm.addMacro(macro[1:], expanded)
+
+        def parse_spec():
+            ''' Let rpm parse the spec and build spec.spec (sic!). '''
+            try:
+                self.spec = rpm.TransactionSet().parseSpec(self.filename)
+            except Exception as ex:
+                raise SpecParseReviewError(
+                    "Can't parse specfile: " + ex.__str__())
 
         self.log = Settings.get_logger()
         self.filename = filename
         self.lines = []
-        try:
-            self.spec = rpm.TransactionSet().parseSpec(self.filename)
-        except Exception as ex:
-            raise ReviewError("Can't parse specfile: " + ex.__str__())
+        self._get_lines(filename)
+        self._process_fonts_pkg()
+        stdout = sys.stdout
+        sys.stdout = _Null()
+        parse_spec()
+        sys.stdout = stdout
+        self._packages = None
         self.name_vers_rel = [self.expand_tag(rpm.RPMTAG_NAME),
                               self.expand_tag(rpm.RPMTAG_VERSION),
-                              self.expand_tag(rpm.RPMTAG_RELEASE)]
-        self._packages = None
-        self._get_lines(filename)
+                              '*']
         update_macros()
+        parse_spec()
+        self.name_vers_rel[2] = self.expand_tag(rpm.RPMTAG_RELEASE)
 
     name = property(lambda self: self.name_vers_rel[0])
     version = property(lambda self: self.name_vers_rel[1])
@@ -84,7 +105,8 @@ class SpecFile(object):
             try:
                 return Mock.get_package_rpm_path(nvr)
             except ReviewError:
-                self.log.warning("Package %s not built" % pkg)
+                self.log.warning("Package %s-%s-%s not built"
+                                     % (nvr.name, nvr.version, nvr.release))
                 return None
 
         pkgs = [p.header[rpm.RPMTAG_NAME] for p in self.spec.packages]
@@ -109,6 +131,16 @@ class SpecFile(object):
             else:
                 last = None
 
+    def _process_fonts_pkg(self):
+        ''' If found, expand %_font_pkg macro. '''
+        expanded = []
+        for l in self.lines:
+            if not '%_font_pkg' in l:
+                expanded.append(l)
+            else:
+                expanded.extend(rpm.expandMacro(l).split('\n'))
+        self.lines = expanded
+
     def _get_pkg_by_name(self, pkg_name):
         '''
         Return package with given name. pgk_name == None
@@ -123,6 +155,7 @@ class SpecFile(object):
 
     def _get_sources(self, _type='Source'):
         ''' Get SourceX/PatchX lines with macros resolved '''
+
         result = {}
         for (url, num, flags) in self.spec.sources:
             # rpmspec.h, rpm.org ticket #123
@@ -134,8 +167,8 @@ class SpecFile(object):
                 result[tag] = \
                     self.spec.sourceHeader.format(urllib.unquote(url))
             except Exception:
-                raise ReviewError("Cannot parse %s url %s"
-                                       % (tag, url))
+                raise SpecParseReviewError("Cannot parse %s url %s"
+                                            % (tag, url))
         return result
 
     def _parse_files_pkg_name(self, line):
@@ -146,7 +179,10 @@ class SpecFile(object):
         while tokens:
             token = tokens.pop(0)
             if token == '-n':
-                return tokens.pop(0)
+                name = tokens.pop(0)
+                if name.startswith('-'):
+                    name = name[1:]
+                return name
             elif token == '-f':
                 tokens.pop(0)
             else:
@@ -163,13 +199,9 @@ class SpecFile(object):
         lines = None
         for line in [l.strip() for l in self.lines]:
             if lines is None:
-                # Dragons: nasty fix for #209. This will not produce a
-                # working %files list, but is seemingly "good enough"
-                # for font packages. Proper solution is to patch rpm.
-                if line.startswith('%_font_pkg'):
-                    line = '%files -n ' + pkg_name
                 if line.startswith('%files'):
-                    if self._parse_files_pkg_name(line) == pkg_name:
+                    name = self._parse_files_pkg_name(line)
+                    if pkg_name.endswith(name):
                         lines = []
                 continue
             line = rpm.expandMacro(line)

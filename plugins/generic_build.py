@@ -30,6 +30,7 @@ import glob
 import os
 import os.path
 import shutil
+import subprocess
 import sys
 
 # pylint: disable=W0611
@@ -98,14 +99,14 @@ class BuildCheckBase(CheckBase):
         return no_errors, result + '\n'
 
 
-def _mock_root_setup(while_what):
+def _mock_root_setup(while_what, force=False):
     ''' Wrap mock --init. '''
 
     class DependencyInstallError(ReviewError):
         ''' Raised when a package in local repo can't be installed. '''
         pass
 
-    Mock.init()
+    Mock.init(force)
     if Settings.repo:
         repodir = Settings.repo
         if not repodir.startswith('/'):
@@ -158,6 +159,7 @@ class CheckBuild(BuildCheckBase):
         self.needs = ['CheckResultdir']
 
     def run(self):
+        # pylint: disable=W0632
 
         def listfiles():
             ''' Generate listing of dirs and files in each package. '''
@@ -251,7 +253,7 @@ class CheckPackageInstalls(BuildCheckBase):
                 self.log.info('Packages required by --no-build are'
                               ' not installed: ' + ', '.join(bad_ones))
             return
-        _mock_root_setup('While installing built packages')
+        _mock_root_setup('While installing built packages', force=True)
         rpms = Mock.get_package_rpm_paths(self.spec)
         self.log.info('Installing built package(s)')
         output = Mock.install(rpms)
@@ -303,6 +305,9 @@ class CheckInitDeps(BuildCheckBase):
         self.needs = ['CheckRpmlintInstalled']
 
     def run(self):
+        # Dirty work-around for
+        # https://bugzilla.redhat.com/show_bug.cgi?id=1028332
+        subprocess.call(['yum', '-q', 'clean', 'all'])
         deps.init()
         self.set_passed(self.NA)
 

@@ -60,6 +60,8 @@ def _run_script(script):
 
 def _get_tag(paths):
     ''' Return common disttag from prebuilt files, possibly "" '''
+    if not paths:
+        return ''
     releases = [p.rsplit('-', 2)[2] for p in paths]
     releases = [r.rsplit('.', 2)[0] for r in releases]
     if not len(set(releases)) == 1:
@@ -69,7 +71,7 @@ def _get_tag(paths):
 
 
 def _get_tag_from_flags(self, flags):
-    ''' Retrieve disttag from user defined falg value. '''
+    ''' Retrieve disttag from user defined flag value. '''
     if flags['DISTTAG']:
         self.log.info("Using disttag from DISTTAG flag.")
         return flags['DISTTAG'].value
@@ -84,16 +86,19 @@ def _get_tag_from_flags(self, flags):
 def _add_disttag_macros(macros, tag):
     ''' Add macros derived from disttag. '''
     if tag.startswith('el'):
-        macros['%epel'] = tag
+        macros['%epel'] = tag[2:]
         macros['%fedora'] = '%fedora'
     else:
-        macros['%fedora'] = tag
+        macros['%fedora'] = tag[2:]
         macros['%epel'] = '%epel'
+    macros['%dist'] = '.' + tag
     return macros
 
 
 def _add_buildarch_macros(macros, paths):
     ''' Add macros derived from buildarch. '''
+    if not paths:
+        return '', macros
     arches = [p.rsplit('.', 2)[1] for p in paths]
     if set(arches) == set(['noarch']):
         buildarch = 'noarch'
@@ -124,7 +129,7 @@ class _Mock(HelpersMixin):
 
     def _get_default_macros(self):
         ''' Evaluate macros using rpm in mock. '''
-        tags = '%fedora %epel %buildarch %_libdir %_isa %arch'
+        tags = '%dist %fedora %epel %buildarch %_libdir %_isa %arch'
         macros = {}
         values = self._rpm_eval(tags).split()
         taglist = tags.split()
@@ -465,6 +470,10 @@ class _Mock(HelpersMixin):
                 return False
             return True
 
+        cmd = self._mock_cmd()
+        cmd.append('--init')
+        self._run_cmd(cmd, '--init')
+        cmd = self._mock_cmd()
         rpms = filter(is_not_installed, packages)
         if len(rpms) == 0:
             return
@@ -475,15 +484,16 @@ class _Mock(HelpersMixin):
         cmd.extend(rpms)
         return self._run_cmd(cmd, 'Install')
 
-    def init(self):
+    def init(self, force=False):
         """ Run a mock --init command. """
-        try:
-            self._rpm_eval('%{_libdir}')
-            self.log.debug("Avoiding init of working mock root")
-            return
-        except (CalledProcessError, OSError):
-            pass
-        self.log.info("Re-initializing mock build root")
+        if not force:
+            try:
+                self._rpm_eval('%{_libdir}')
+                self.log.debug("Avoiding init of working mock root")
+                return
+            except (CalledProcessError, OSError):
+                pass
+            self.log.info("Re-initializing mock build root")
         cmd = ["mock"]
         if hasattr(Settings, 'mock_config') and Settings.mock_config:
             cmd.extend(['-r', Settings.mock_config])

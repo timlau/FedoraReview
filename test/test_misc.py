@@ -123,34 +123,6 @@ class TestMisc(FR_TestCase):
         all_files = src.find_all('*')
         self.assertEqual(len(all_files), 8)
 
-    def test_ccpp_gnulib(self):
-        ''' test ccpp bundled gnulib  '''
-        # pylint: disable=F0401,R0201,C0111,W0613
-
-        from plugins.ccpp import CheckBundledGnulib
-
-        class ChecksMockup(object):
-            pass
-
-        class BuildSrcMockup(object):
-            def find(self, what):
-                return True
-
-        class ApplicableCheckBundledGnulib(CheckBundledGnulib):
-            def is_applicable(self):
-                return True
-
-        self.init_test('test_misc',
-                       argv=['-n', 'python-test', '--cache',
-                             '--no-build'])
-        check = ApplicableCheckBundledGnulib(ChecksMockup())
-        check.checks.spec = SpecFile(os.path.join(os.getcwd(),
-                                                  'python-test.spec'))
-        check.checks.buildsrc = BuildSrcMockup()
-        check.checks.rpms = RpmDataSource(check.checks.spec)
-        check.run()
-        self.assertTrue(check.is_failed)
-
     def test_generic_static(self):
         ''' test generic static -a checks  '''
         # pylint: disable=F0401,R0201,C0111,W0613
@@ -181,10 +153,94 @@ class TestMisc(FR_TestCase):
                                                   'python-test.spec'))
         check.checks.rpms = RpmsMockup()
         check.run()
-        note = check.result.output_extra
+
+    def test_ccpp_gnulib(self):
+        ''' test ccpp bundled gnulib  '''
+        # pylint: disable=F0401,R0201,C0111,W0613
+
+        from plugins.ccpp import CheckBundledGnulib
+
+        class ChecksMockup(object):
+            pass
+
+        class BuildSrcMockup(object):
+            def find(self, what):
+                return True
+
+        class ApplicableCheckBundledGnulib(CheckBundledGnulib):
+            def is_applicable(self):
+                return True
+
+        self.init_test('test_misc',
+                       argv=['-n', 'python-test', '--cache',
+                             '--no-build'])
+        check = ApplicableCheckBundledGnulib(ChecksMockup())
+        check.checks.spec = SpecFile(os.path.join(os.getcwd(),
+                                                  'python-test.spec'))
+        check.checks.buildsrc = BuildSrcMockup()
+        check.checks.rpms = RpmDataSource(check.checks.spec)
+        check.run()
         self.assertTrue(check.is_failed)
-        self.assertTrue('Illegal package name: python-test' in note)
-        self.assertTrue('Does not provide -static: python-test' in note)
+
+    def test_disabled(self):
+        ''' test normally disabled checks  '''
+        # pylint: disable=F0401,R0201,C0111,W0613,W0201
+
+        from plugins.generic_should import CheckSourceComment
+        from plugins.generic import CheckDefattr
+        from FedoraReview.datasrc import SourcesDataSource
+
+        class ChecksMockup(object):
+
+            def __init__(self):
+
+                class Data(object):
+                    pass
+
+                self.data = Data()
+
+        self.init_test('test_misc',
+                       argv=['-pn', 'disabled', '--cache',
+                             '--no-build'])
+        checks = ChecksMockup()
+        checks.spec = SpecFile(os.path.join(os.getcwd(), 'disabled.spec'))
+        checks.sources = SourcesDataSource(checks.spec)
+        checks.flags = {'EPEL5': False}
+        check = CheckSourceComment(checks)
+        check.run()
+        self.assertTrue(check.is_pending)
+        check = CheckDefattr(checks)
+        check.run()
+        self.assertTrue(check.is_pending)
+
+    def test_hardened_build(self):
+        ''' test %global _hardened_build  '''
+        # pylint: disable=F0401,R0201,C0111,W0613
+
+        from plugins.generic import CheckDaemonCompileFlags
+
+        class ChecksMockup(object):
+            pass
+
+        class RpmsMockup(object):
+
+            def find_all(self, what):
+                return ['a_file']
+
+        self.init_test('test_misc',
+                       argv=['-n', 'python-test', '--cache',
+                             '--no-build'])
+        check = CheckDaemonCompileFlags(ChecksMockup())
+        check.checks.spec = SpecFile(os.path.join(os.getcwd(),
+                                                  'python-test.spec'))
+        check.checks.rpms = RpmsMockup()
+        check.checks.log = self.log
+        check.run()
+        self.assertTrue(check.is_passed)
+        check.checks.spec = SpecFile(os.path.join(os.getcwd(),
+                                                  'disabled.spec'))
+        check.run()
+        self.assertTrue(check.is_failed)
 
     def test_rm_buildroot(self):
         ''' test rm -rf $BUILDROOT/a_path '''
@@ -348,7 +404,7 @@ class TestMisc(FR_TestCase):
         ''' Test review_helper error handling. '''
         # pylint: disable=C0111,W0212
 
-        class Null:
+        class Null(object):
             def write(self, msg):
                 pass
 
@@ -407,9 +463,12 @@ class TestMisc(FR_TestCase):
     @unittest.skipIf(FAST_TEST, 'slow test disabled by REVIEW_FAST_TEST')
     def test_mock_uniqueext(self):
         ''' Test --uniqueext option. '''
+        loglevel = os.environ['REVIEW_LOGLEVEL']
+        os.environ['REVIEW_LOGLEVEL'] = 'ERROR'
         self.init_test('mock-uniqueext',
                        argv=['-cn', 'python-test'],
                        options='--uniqueext=hugo')
+        os.environ['REVIEW_LOGLEVEL'] = loglevel
         bug = NameBug('python-test')
         bug.find_urls()
         bug.download_files()
@@ -427,24 +486,32 @@ class TestMisc(FR_TestCase):
 
     def test_java_spec(self):
         ''' Test the ChecktestSkip check. '''
-        # pylint: disable=F0401,R0201,C0111
+        # pylint: disable=F0401,R0201,C0111,,W0613
 
-        from plugins.java import CheckTestSkip
+        from plugins.java import CheckJavaPlugin
 
         class ChecksMockup(object):
-            pass
+            def is_external_plugin_installed(self, name):
+                return False
 
-        class ApplicableCheckTestSkip(CheckTestSkip):
+        class ApplicableCheckJavaPlugin(CheckJavaPlugin):
+            class Registry(object):
+                group = "Java"
+                version = "1.2.3"
+                build_id = "somebuild"
+
+            registry = Registry()
+
             def is_applicable(self):
                 return True
 
         self.init_test('test_misc',
                        argv=['-n', 'python-test', '--no-build'])
         spec = SpecFile(os.path.join(os.getcwd(), 'jettison.spec'))
-        check = ApplicableCheckTestSkip(ChecksMockup())
+        check = ApplicableCheckJavaPlugin(ChecksMockup())
         check.checks.spec = spec
         check.run()
-        self.assertTrue(check.is_pending)
+        self.assertTrue(check.is_failed)
 
     def test_spec_file(self):
         ''' Test the SpecFile class'''
@@ -466,7 +533,7 @@ class TestMisc(FR_TestCase):
         spec = SpecFile(os.path.join(os.getcwd(), 'python-test.spec'))
         self.assertEqual(spec.name, 'python-test')
         self.assertEqual(spec.version, '1.0')
-        dist = check_output('rpm --eval %dist', shell=True).strip()
+        dist = Mock.get_macro('%dist', None, {})
         self.assertEqual(spec.release, '1' + dist)
         self.assertEqual(spec.expand_tag('Release'), '1' + dist)
         self.assertEqual(spec.expand_tag('License'), 'GPLv2+')
@@ -644,9 +711,12 @@ class TestMisc(FR_TestCase):
 
     def test_md5sum_diff_fail(self):
         ''' Complete MD5sum test expected to fail. '''
+        loglevel = os.environ['REVIEW_LOGLEVEL']
+        os.environ['REVIEW_LOGLEVEL'] = 'ERROR'
         self.init_test('md5sum-diff-fail',
                        argv=['-rpn', 'python-test', '--cache',
                              '--no-build'])
+        os.environ['REVIEW_LOGLEVEL'] = loglevel
         bug = NameBug('python-test')
         bug.find_urls()
         checks = Checks(bug.spec_file, bug.srpm_file).get_checks()
@@ -701,9 +771,12 @@ class TestMisc(FR_TestCase):
 
     def test_bad_specfile(self):
         ''' Specfile with syntactic errors test. '''
+        loglevel = os.environ['REVIEW_LOGLEVEL']
+        os.environ['REVIEW_LOGLEVEL'] = 'ERROR'
         self.init_test('bad-spec',
                        argv=['-n', 'python-test', '-p', '--cache',
-                             '--no-build'])
+                             '--no-build', '-D', 'DISTTAG=fc19'])
+        os.environ['REVIEW_LOGLEVEL'] = loglevel
         bug = NameBug('python-test')
         check = self.run_single_check(bug, 'CheckSpecAsInSRPM')
         self.assertTrue(check.is_failed)
@@ -785,8 +858,11 @@ class TestMisc(FR_TestCase):
 
     def test_bad_specname(self):
         ''' Specfile with bad name test. '''
+        loglevel = os.environ['REVIEW_LOGLEVEL']
+        os.environ['REVIEW_LOGLEVEL'] = 'ERROR'
         self.init_test('bad-specname',
                        argv=['-rn', 'python-test', '--cache'])
+        os.environ['REVIEW_LOGLEVEL'] = loglevel
         bug = NameBug('python-test')
         bug.find_urls()
         bug.download_files()

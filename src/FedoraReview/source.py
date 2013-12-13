@@ -36,6 +36,7 @@ class Source(HelpersMixin):
     Attributes:
          - tag: as defined in specfile e. g., 'Source0'
          - url: complete url, possibly file://
+         - specurl: url as given in spec.
          - extract_dir: where extract() places unpacked source.
          - filename: local filename
          - local_src: points to local upstream copy provided by user,
@@ -56,6 +57,7 @@ class Source(HelpersMixin):
                 self.log.info("Downloading (%s): %s" % (tag, url))
 
         HelpersMixin.__init__(self)
+        self.specurl = url
         self.extract_dir = None
         self.tag = tag
         self.downloaded = True

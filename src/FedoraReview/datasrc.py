@@ -32,7 +32,7 @@ from settings import Settings
 from source import Source
 
 
-class AbstractDataSource():
+class AbstractDataSource(object):
     '''
      A collection of file containers.
        - The contained files can be retrieved either for a

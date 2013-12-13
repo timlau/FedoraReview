@@ -77,6 +77,9 @@ class CheckBuildroot(GenericShouldCheckBase):
         self.url = 'http://fedoraproject.org/wiki/' \
                    'Packaging/Guidelines#BuildRoot_tag'
         self.text = 'Buildroot is not present'
+        if self.flags['EPEL5']:
+            self.text = \
+                "Explicit BuildRoot: tag as required by EPEL5 present."
         self.automatic = True
         self.type = 'SHOULD'
 
@@ -289,6 +292,9 @@ class CheckFullVerReqSub(GenericShouldCheckBase):
     def run(self):
         bad_pkgs = []
         archs = self.checks.spec.expand_tag('BuildArchs')
+        if len(self.spec.packages) == 1:
+            self.set_passed(self.NA)
+            return
         if len(archs) == 1 and archs[0].lower() == 'noarch':
             isa = ''
         else:
@@ -466,7 +472,7 @@ class CheckSourceComment(GenericShouldCheckBase):
                 passed = False
 
         if passed:
-            self.set_passed(self.PASS)
+            self.set_passed(self.NA)
         else:
             self.set_passed(self.PENDING,
                 'Package contains tarball without URL, check comments')

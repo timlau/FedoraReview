@@ -304,6 +304,10 @@ class Registry(AbstractRegistry):
             _create_env(self.checks)
             self.set_passed(self.NA)
 
+        def is_applicable(self):
+            '''' Always True, we want this to happen. '''
+            return True
+
     def __init__(self, checks):
         AbstractRegistry.__init__(self, checks)
         self.groups = checks.groups
@@ -475,6 +479,10 @@ class ShellCheck(GenericCheck):
                     self.log.error("Malformed plugin log: " + line)
                 self.log.log(level, msg)
         os.unlink(logfile)
+
+    def is_applicable(self):
+        ''' Return is_applicable() for proper group. '''
+        return self.groups[self.group].is_applicable()
 
     def run(self):
         ''' Run the check. '''

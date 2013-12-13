@@ -86,7 +86,6 @@ class TestExt(FR_TestCase):
         checks.checkdict['CreateEnvCheck'].run()
         checks.checkdict['unittest-test2'].run()
         self.assertTrue(checks.checkdict['unittest-test2'].is_pending)
-        self.assertNotIn('CheckLargeDocs', checks.checkdict)
 
     def test_sh_attach(self):
         ''' Test shell attachments. '''
@@ -122,7 +121,7 @@ class TestExt(FR_TestCase):
         checks = Checks(bug.spec_file, bug.srpm_file)
         check = checks.checkdict['CheckBuildCompleted'].run()
         check = checks.checkdict['CreateEnvCheck'].run()
-        check = checks.checkdict['check-srv-opt-local']
+        check = checks.checkdict['generic-srv-opt']
         check.run()
         self.assertTrue('/srv' in check.result.output_extra)
         self.assertTrue('/opt' in check.result.output_extra)

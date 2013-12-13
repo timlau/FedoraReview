@@ -1,0 +1,13 @@
+#!/bin/bash
+# Handle different messages defs in pre-1.0 and 1.0 pylint.
+
+vers=$( pylint --version 2>/dev/null | grep ^pylint | cut -d ' ' -f2 )
+if [[ "$vers" = 1* ]]; then
+    # Add messaeg W0110, only exists in 1.0+
+    sed '/^disable=/s/$/,W0110/' pylint.conf > pylint-1.conf
+    pylint ${*/pylint.conf/pylint-1.conf}
+else
+    pylint $*
+fi
+
+

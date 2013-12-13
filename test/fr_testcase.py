@@ -36,7 +36,7 @@ from FedoraReview.review_helper import ReviewHelper
 
 STARTDIR = os.getcwd()
 
-VERSION = '0.5.0'
+VERSION = '0.5.1'
 
 RELEASE = '18'
 
@@ -123,11 +123,11 @@ class FR_TestCase(unittest.TestCase):
         ''' Run all tests for a test spec.... '''
         # pylint: disable=C0111,W0212
 
-        class Null:
+        class Null(object):
             def write(self, msg):
                 pass
 
-        argv = ['-rn', spec.testcase, '-x', 'check-large-docs',
+        argv = ['-rn', spec.testcase, '-x', 'generic-large-docs',
                 '--no-build']
         argv.extend(spec.args)
         self.init_test(spec.testcase, wd=spec.workdir, argv=argv)

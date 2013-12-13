@@ -6,13 +6,15 @@
 [ -d BUILD ] ||  exit $FR_NOT_APPLICABLE
 
 rpm -q php-bartlett-PHP-CompatInfo &> /dev/null || {
-    echo "Cannot find phpci, install php-bartlett-PHP-CompatInfo"
+    errmsg="phpcompatinfo not found. Install php-bartlett-PHP-CompatInfo"
+    errmsg="$errmsg package to get a more comprehensive php review."
+    echo "$errmsg"
     exit $FR_FAIL
 }
 
 cp  /etc/pear/PHP_CompatInfo/phpcompatinfo.xml.dist phpcompatinfo.xml
 sed -i '/consoleProgress/s/true/false/' phpcompatinfo.xml
-phpci --configuration=phpcompatinfo.xml print \
+phpcompatinfo --configuration=phpcompatinfo.xml print \
     --recursive --report full --report-file $PWD/phpci.log \
     $PWD/BUILD/*
 echo "phpci static analyze results in $PWD/phpci.log"
