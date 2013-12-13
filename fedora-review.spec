@@ -1,3 +1,7 @@
+# needed for test content
+%{?perl_default_filter}
+%global __provides_exclude_from %{perl_vendorarch}/auto/.*\\.so$|%{perl_archlib}/.*\\.so$|%{_docdir}|%{_datadir}/fedora-review/
+
 #invoke with "--with tests" to enable tests
 %bcond_with tests
 
