@@ -404,7 +404,7 @@ class TestMisc(FR_TestCase):
         ''' Test review_helper error handling. '''
         # pylint: disable=C0111,W0212
 
-        class Null:
+        class Null(object):
             def write(self, msg):
                 pass
 
@@ -486,24 +486,32 @@ class TestMisc(FR_TestCase):
 
     def test_java_spec(self):
         ''' Test the ChecktestSkip check. '''
-        # pylint: disable=F0401,R0201,C0111
+        # pylint: disable=F0401,R0201,C0111,,W0613
 
-        from plugins.java import CheckTestSkip
+        from plugins.java import CheckJavaPlugin
 
         class ChecksMockup(object):
-            pass
+            def is_external_plugin_installed(self, name):
+                return False
 
-        class ApplicableCheckTestSkip(CheckTestSkip):
+        class ApplicableCheckJavaPlugin(CheckJavaPlugin):
+            class Registry(object):
+                group = "Java"
+                version = "1.2.3"
+                build_id = "somebuild"
+
+            registry = Registry()
+
             def is_applicable(self):
                 return True
 
         self.init_test('test_misc',
                        argv=['-n', 'python-test', '--no-build'])
         spec = SpecFile(os.path.join(os.getcwd(), 'jettison.spec'))
-        check = ApplicableCheckTestSkip(ChecksMockup())
+        check = ApplicableCheckJavaPlugin(ChecksMockup())
         check.checks.spec = spec
         check.run()
-        self.assertTrue(check.is_pending)
+        self.assertTrue(check.is_failed)
 
     def test_spec_file(self):
         ''' Test the SpecFile class'''

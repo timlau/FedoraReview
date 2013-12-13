@@ -183,6 +183,10 @@ class GenericCheck(AbstractCheck):
     log        = property(lambda self: self.checks.log)
     rpms       = property(lambda self: self.checks.rpms)
 
+    def run(self):
+        ''' GenericCheck is usually used indirectly through CheckBase '''
+        raise NotImplementedError("Use CheckBase as parent for your Check")
+
     @property
     def name(self):                              # pylint: disable=E0202
         ''' The check's name. '''

@@ -118,7 +118,7 @@ class TestOptions(FR_TestCase):
         """ test -d/--display option. """
         # pylint: disable=C0111
 
-        class Logger:
+        class Logger(object):
 
             def __init__(self):
                 self.lines = []
