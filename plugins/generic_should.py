@@ -77,13 +77,13 @@ class CheckBuildroot(GenericShouldCheckBase):
         self.url = 'http://fedoraproject.org/wiki/' \
                    'Packaging/Guidelines#BuildRoot_tag'
         self.text = 'Buildroot is not present'
-        if self.flags['EPEL5']:
-            self.text = \
-                "Explicit BuildRoot: tag as required by EPEL5 present."
         self.automatic = True
         self.type = 'SHOULD'
 
     def run(self):
+        if self.flags['EPEL5']:
+            self.text = \
+                "Explicit BuildRoot: tag as required by EPEL5 present."
         br_tags = self.spec.find_all_re('^BuildRoot')
         if len(br_tags) == 0:
             if self.flags['EPEL5']:
