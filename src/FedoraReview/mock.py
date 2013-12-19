@@ -311,7 +311,7 @@ class _Mock(HelpersMixin):
 
         def get_package_srpm_path(spec):
             ''' Return path to srpm given a spec. '''
-            pattern = '%s-%s*' % (spec.name, spec.version)
+            pattern = '*%s-%s-%s*' % (spec.name, spec.version, spec.release)
             paths = self._get_rpm_paths(pattern)
             paths = [p for p in paths if p.endswith('.src.rpm')]
             if len(paths) == 0:
