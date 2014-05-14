@@ -12,10 +12,24 @@ rpm -q php-bartlett-PHP-CompatInfo &> /dev/null || {
     exit $FR_FAIL
 }
 
-cp  /etc/pear/PHP_CompatInfo/phpcompatinfo.xml.dist phpcompatinfo.xml
-sed -i '/consoleProgress/s/true/false/' phpcompatinfo.xml
-phpcompatinfo --configuration=phpcompatinfo.xml print \
-    --recursive --report full --report-file $PWD/phpci.log \
+LOG=$PWD/phpci.log
+
+if [ -f /etc/phpcompatinfo.json ]
+then
+  cd BUILD/*
+  phpcompatinfo \
+     --no-ansi --no-interaction \
+     analyser:run . \
+     Extension Class Constant Function Interface Namespace Trait \
+     >$LOG
+  cd ../..
+else
+  cp  /etc/pear/PHP_CompatInfo/phpcompatinfo.xml.dist phpcompatinfo.xml
+  sed -i '/consoleProgress/s/true/false/' phpcompatinfo.xml
+  phpcompatinfo --configuration=phpcompatinfo.xml print \
+    --recursive --report full --report-file $LOG \
     $PWD/BUILD/*
-echo "phpci static analyze results in $PWD/phpci.log"
+fi
+
+echo -e "$(phpcompatinfo --version) static analyze\nresults in $LOG"
 exit $FR_PASS
