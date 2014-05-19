@@ -101,9 +101,9 @@ cp -ar test "$RPM_BUILD_ROOT%{_datadir}/%{name}"
 cd test
 export REVIEW_LOGLEVEL=warning
 export MAKE_RELEASE=1
+mock --quiet -r fedora-20-i386 --init
 mock --quiet -r fedora-19-i386 --init
-mock --quiet -r fedora-18-i386 --init
-mock --quiet -r fedora-19-i386 --uniqueext=hugo --init
+mock --quiet -r fedora-20-i386 --uniqueext=hugo --init
 python -m unittest discover -f
 %endif
 
