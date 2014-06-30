@@ -36,6 +36,7 @@ Requires:       python-BeautifulSoup
 Requires:       python-bugzilla
 Requires:       python-kitchen
 Requires:       python-straight-plugin
+Requires:       packagedb-cli
 Requires:       rpm-python
 # licensecheck used to be in rpmdevtools, moved to devscripts later
 # this is compatible with both situations without ifdefs
