@@ -91,9 +91,9 @@ tee $logfile <  <( {
         echo '---- pep8 ----'
         pep8 --config pep8.conf src/FedoraReview plugins
     fi
-
+    exit $status
 } 2>&1 )
 
-exit $status
+exit $?
 
 # vim: set expandtab ts=4 sw=4:
