@@ -1,3 +1,7 @@
+# needed for test content
+%{?perl_default_filter}
+%global __provides_exclude_from %{perl_vendorarch}/auto/.*\\.so$|%{perl_archlib}/.*\\.so$|%{_docdir}|%{_datadir}/fedora-review/
+
 #invoke with "--with tests" to enable tests
 %bcond_with tests
 
@@ -8,7 +12,7 @@
 %global     build_nr %(echo "${BUILD_NUMBER:+.}${BUILD_NUMBER:-%%{nil\\}}")
 
 Name:       fedora-review
-Version:    0.5.1
+Version:    0.5.2
 Release:    1%{?build_nr}%{?git_tag}%{?dist}
 Summary:    Review tool for fedora rpm packages
 
@@ -32,6 +36,7 @@ Requires:       python-BeautifulSoup
 Requires:       python-bugzilla
 Requires:       python-kitchen
 Requires:       python-straight-plugin
+Requires:       packagedb-cli
 Requires:       rpm-python
 # licensecheck used to be in rpmdevtools, moved to devscripts later
 # this is compatible with both situations without ifdefs
@@ -97,9 +102,9 @@ cp -ar test "$RPM_BUILD_ROOT%{_datadir}/%{name}"
 cd test
 export REVIEW_LOGLEVEL=warning
 export MAKE_RELEASE=1
+mock --quiet -r fedora-20-i386 --init
 mock --quiet -r fedora-19-i386 --init
-mock --quiet -r fedora-18-i386 --init
-mock --quiet -r fedora-19-i386 --uniqueext=hugo --init
+mock --quiet -r fedora-20-i386 --uniqueext=hugo --init
 python -m unittest discover -f
 %endif
 
@@ -122,6 +127,9 @@ python -m unittest discover -f
 
 
 %changelog
+* Thu Jul 3 2014 Stanislav Ochotnicky <sochotnicky@redhat.com> 0.5.2-1
+- Updating to upstream 0.5.2
+
 * Wed Sep 4 2013 Alec Leamas <leamas@nowhere.net> 0.5.0-1.001.fa1afe1
 - Generic post-release nightly build entry
 

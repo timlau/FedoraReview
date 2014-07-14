@@ -1,3 +1,17 @@
+0.5.2
+=====
+- Add perl filter for fedora-review tests to prevent perl module provides
+  generation
+- Move buildroot check text modification (modified bz 1040353)
+- Modify SRPM wildcard search for SCL usage
+- Ensure base plugin is initiated before add-ons (bz 1044580)
+- Deps: Handle malformed output from rpm (bz 1049042)
+- Fix usage of check_output on el6 in reports (bz 1063132)
+- php-compatinfo: Update for now cli syntax (bz 1097659)
+- fedora-create-review: fix bugzilla query for existing reviews
+- Move to new pkgdb2client API for pkgdb
+- Testsuite fixes
+
 0.5.1
 =====
 - Added framework for moving plugins out of the fedora-review

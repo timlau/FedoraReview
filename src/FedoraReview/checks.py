@@ -199,7 +199,9 @@ class _ChecksLoader(object):
         sys.path.insert(0, appdir)
         sys.path.insert(0, XdgDirs.app_datadir)
         plugins = load('plugins')
-        for plugin in plugins:
+        for plugin in sorted(plugins, key=lambda p: len(p.__name__)):
+            if plugin.__name__ == 'plugins.plugins':
+                continue
             registry = plugin.Registry(self)
             tests = registry.register(plugin)
             self.checkdict.extend(tests)

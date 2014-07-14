@@ -19,7 +19,6 @@
 """ Functions to create the xml report. """
 
 import os.path
-import subprocess
 import xml.etree.ElementTree as ET
 import xml.dom.minidom
 
@@ -28,6 +27,14 @@ from glob import glob
 from review_dirs import ReviewDirs
 from settings import Settings
 from version import __version__, BUILD_FULL
+
+# pylint: disable=W0611
+try:
+    from subprocess import check_output
+except ImportError:
+    from FedoraReview.el_compat import check_output
+# pylint: enable=W0611
+
 
 _HEADER = """
 This is a review *template*. Besides handling the [ ]-marked tests you are
@@ -63,7 +70,7 @@ def _get_specfile():
     if len(spec) != 1:
         return '?', '?'
     path = spec[0].strip()
-    cs = subprocess.check_output(['sha224sum', path]).split()[0]
+    cs = check_output(['sha224sum', path]).split()[0]
     path = path.rsplit('/', 1)[1]
     return path, cs
 

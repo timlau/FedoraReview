@@ -36,9 +36,9 @@ from FedoraReview.review_helper import ReviewHelper
 
 STARTDIR = os.getcwd()
 
-VERSION = '0.5.1'
+VERSION = '0.5.2'
 
-RELEASE = '18'
+RELEASE = '19'
 
 try:
     urlopen('http://bugzilla.redhat.com')

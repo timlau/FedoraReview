@@ -245,7 +245,7 @@ class ReviewRequest(object):
         """
         bugbz = self.bzclient.query(
                 {#'bug_status': ['CLOSED'],
-                 'short_desc': "Request: {0} -.*".format(self.info['name']),
+                 'short_desc': "Request: {0} -".format(self.info['name']),
                  'short_desc_type': 'allwordssubstr',
                  'query_format': 'advanced',
                  'component': 'Package Review'})

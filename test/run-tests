@@ -50,7 +50,7 @@ cd $(dirname $(readlink -fn $0))
 cd ..
 
 logfile="$PWD/dist/build.log"
-tee $logfile <  <( {
+( {
     if [[ -n "$PIP_INSTALL" || ! -d fedorareviewenv ]]; then
         install_virtenv
     fi
@@ -67,8 +67,8 @@ tee $logfile <  <( {
     PYTHONPATH=src ./update-version || :
     cd test
         export REVIEW_LOGLEVEL=${REVIEW_LOGLEVEL:-warning}
-        for root in '-' fedora-18-i386 fedora-19-i386 \
-                    "fedora-18-i386 --uniqueext=hugo"
+        for root in '-' fedora-19-i386 fedora-20-i386 \
+                    "fedora-19-i386 --uniqueext=hugo"
         do
             init_mockroot $root
         done
@@ -91,9 +91,12 @@ tee $logfile <  <( {
         echo '---- pep8 ----'
         pep8 --config pep8.conf src/FedoraReview plugins
     fi
+    exit $status
+} 2>&1 ) & > $logfile
+testpid=$!
+tail -f $logfile --pid=$testpid
+wait $testpid
 
-} 2>&1 )
-
-exit $status
+exit $?
 
 # vim: set expandtab ts=4 sw=4:

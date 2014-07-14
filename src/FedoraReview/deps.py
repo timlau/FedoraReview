@@ -99,7 +99,11 @@ def list_dirs(pkg_filename):
             line = rpm.stdout.next().strip()
         except StopIteration:
             return dirs
-        path, mode = line.rsplit(None, 10)[0:5:4]
+        try:
+            path, mode = line.rsplit(None, 10)[0:5:4]
+        except ValueError:
+            # E. g., when given '(contains no files)'
+            continue
         mode = int(mode, 8)
         if mode & 040000:
             dirs.append(path)
@@ -180,7 +184,11 @@ def listpaths(pkg_filename):
             line = rpm.stdout.next().strip()
         except StopIteration:
             return dirs, files
-        path, mode = line.rsplit(None, 10)[0:5:4]
+        try:
+            path, mode = line.rsplit(None, 10)[0:5:4]
+        except ValueError:
+            # E. g., when given '(contains no files)'
+            continue
         mode = int(mode, 8)
         if mode & 040000:
             dirs.append(path)
