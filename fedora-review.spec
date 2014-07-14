@@ -6,13 +6,13 @@
 %bcond_with tests
 
 # See notes in make_release which patches this.
-%global     git_tag  .fa1afe1
+#global     git_tag  .fa1afe1
 
 # Support jenkins build number if available.
 %global     build_nr %(echo "${BUILD_NUMBER:+.}${BUILD_NUMBER:-%%{nil\\}}")
 
 Name:       fedora-review
-Version:    0.5.1
+Version:    0.5.2
 Release:    1%{?build_nr}%{?git_tag}%{?dist}
 Summary:    Review tool for fedora rpm packages
 
@@ -127,6 +127,9 @@ python -m unittest discover -f
 
 
 %changelog
+* Thu Jul 3 2014 Stanislav Ochotnicky <sochotnicky@redhat.com> 0.5.2-1
+- Updating to upstream 0.5.2
+
 * Wed Sep 4 2013 Alec Leamas <leamas@nowhere.net> 0.5.0-1.001.fa1afe1
 - Generic post-release nightly build entry
 
