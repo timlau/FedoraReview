@@ -1479,7 +1479,7 @@ class CheckNoNameConflict(GenericCheckBase):
         GenericCheckBase.__init__(self, base)
         self.url = "https://fedoraproject.org/wiki/Packaging/" \
                    "NamingGuidelines#Conflicting_Package_Names"
-        self.text = 'Package do not use a name that already exist'
+        self.text = 'Package does not use a name that already exists.'
         self.automatic = True
         self.type = 'MUST'
 
@@ -1501,7 +1501,7 @@ class CheckNoNameConflict(GenericCheckBase):
             if already_exist(name.lower()) or already_exist(name):
                 self.set_passed(
                     self.FAIL,
-                    'A package already exist with this name, please check'
+                    'A package with this name already exists.  Please check'
                     ' https://admin.fedoraproject.org/pkgdb/acls/name/'
                     + name)
             else:
