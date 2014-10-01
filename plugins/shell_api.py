@@ -40,6 +40,7 @@ ENVIRON_TEMPLATE = """
 # shell API plugin. No need to modify it or anything.
 #
 
+declare -f +x module
 unset $(env | sed -n 's/=.*//p')
 PATH=/bin:/usr/bin:/sbin/:/usr/sbin
 
