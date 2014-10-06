@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 '''
 Haskell specifics checks, http://fedoraproject.org/wiki/Packaging:Haskell
@@ -39,4 +39,4 @@ class HaskellCheckStaticLibs(HaskellCheckBase):
         self.automatic = True
 
     def run_on_applicable(self):
-        self.set_passed(self.PASS)
+        self.set_passed(self.NA)
