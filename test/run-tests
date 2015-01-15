@@ -31,7 +31,7 @@ function init_mockroot()
        root="-r $*"
        rootmsg="$*"
     fi
-    mock -q $root --shell  "echo $rootmsg OK >/dev/null" || {
+    mock -q $root --chroot --  "echo $rootmsg OK >/dev/null" || {
         echo "Re-initializing mock root $rootmsg"
         mock -q $root  --init
     }

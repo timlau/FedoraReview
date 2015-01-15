@@ -40,7 +40,7 @@ from review_error import ReviewError
 
 
 _RPMLINT_SCRIPT = """
-mock  @config@ --shell << 'EOF'
+mock  @config@ --chroot -- << 'EOF'
 echo 'rpmlint:'
 rpmlint @rpm_names@
 echo 'rpmlint-done:'
@@ -229,7 +229,7 @@ class _Mock(HelpersMixin):
         if self._topdir:
             return
         cmd = self._mock_cmd()
-        cmd.extend(['-q', '--shell', 'rpm --eval %_topdir'])
+        cmd.extend(['-q', '--chroot', '--', 'rpm --eval %_topdir'])
         try:
             self._topdir = check_output(cmd).strip()
             self.log.debug("_topdir: " + str(self._topdir))
@@ -241,7 +241,7 @@ class _Mock(HelpersMixin):
     def _clear_rpm_db(self):
         """ Mock install uses host's yum -> bad rpm database. """
         cmd = self._mock_cmd()
-        cmd.extend(['--shell', 'rm -f /var/lib/rpm/__db*'])
+        cmd.extend(['--shell', "'rm -f /var/lib/rpm/__db*'"])
         self._run_cmd(cmd)
 
     def _get_rpm_paths(self, pattern):
@@ -255,7 +255,7 @@ class _Mock(HelpersMixin):
     def _rpm_eval(self, arg):
         ''' Run rpm --eval <arg> inside mock, return output. '''
         cmd = self._mock_cmd()
-        cmd.extend(['--quiet', '--shell', 'rpm --eval \\"' + arg + '\\"'])
+        cmd.extend(['--quiet', '--chroot', '--', 'rpm --eval "' + arg + '"'])
         return check_output(cmd).decode('utf-8').strip()
 
 # Last (cached?) output from rpmlint, list of lines.
@@ -363,7 +363,7 @@ class _Mock(HelpersMixin):
     def clear_builddir(self):
         ''' Remove all sources installed in BUILD. '''
         cmd = self._mock_cmd()
-        cmd.append('--shell')
+        cmd += ['--chroot', '--']
         cmd.append('rm -rf $(rpm --eval %_builddir)/*')
         errmsg = self._run_cmd(cmd)
         if errmsg:
@@ -383,7 +383,7 @@ class _Mock(HelpersMixin):
     def is_installed(self, package):
         ''' Return true iff package is installed in mock chroot. '''
         cmd = self._mock_cmd()
-        cmd.append('--shell')
+        cmd += ('--chroot', '--')
         cmd.append('"rpm -q ' + package + '" &>/dev/null')
         cmd = ' '.join(cmd)
         rc = call(cmd, shell=True)
@@ -403,7 +403,7 @@ class _Mock(HelpersMixin):
             self.log.warning("Cannot run mock --copyin: " + errmsg)
             return errmsg
         cmd = self._mock_cmd()
-        cmd.append('--shell')
+        cmd += ['--chroot', '--']
         script = 'rpm -i ' + os.path.basename(srpm.filename) + '; '
         script += 'rpmbuild --nodeps -bp $(rpm --eval %_specdir)/' \
                   + srpm.name + '.spec;'
@@ -411,7 +411,7 @@ class _Mock(HelpersMixin):
         cmd.append(script)
         errmsg = self._run_cmd(cmd)
         if errmsg:
-            self.log.warning("Cannot run mock --shell rpmbuild -bp: "
+            self.log.warning("Cannot run mock --chroot rpmbuild -bp: "
                              + errmsg)
             return errmsg
         return None
