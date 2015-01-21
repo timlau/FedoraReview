@@ -745,13 +745,13 @@ class CheckLicensInDoc(GenericCheckBase):
         self.text = 'If (and only if) the source package includes' \
                     ' the text of the license(s) in its own file,' \
                     ' then that file, containing the text of the'  \
-                    ' license(s) for the package is included in %doc.'
+                    ' license(s) for the package is included in %license.'
         self.automatic = True
         self.type = 'MUST'
 
     def run(self):
         """ Check if there is a license file and if it is present in the
-        %doc section.
+        %license section.
         """
 
         licenses = []
