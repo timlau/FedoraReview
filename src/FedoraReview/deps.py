@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -43,6 +43,9 @@ def list_deps(pkgs):
 
     if not isinstance(pkgs, list):
         pkgs = [pkgs]
+    if not pkgs:
+        return []
+
     cmd = ['repoquery', '-C', '--requires', '--resolve']
     cmd.extend(pkgs)
     Settings.get_logger().debug("Running: " + ' '.join(cmd))
