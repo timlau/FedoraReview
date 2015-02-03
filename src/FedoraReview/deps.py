@@ -69,6 +69,8 @@ def resolve(reqs):
 
     if not isinstance(reqs, list):
         reqs = [reqs]
+    if not reqs:
+        return []
     cmd = ['repoquery', '-C', '--whatprovides']
     cmd.extend(reqs)
     Settings.get_logger().debug("Running: " + ' '.join(cmd))
