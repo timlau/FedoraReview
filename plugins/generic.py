@@ -60,6 +60,7 @@ class Registry(RegistryBase):
 
     def register_flags(self):
         epel5 = self.Flag('EPEL5', 'Review package for EPEL5', __file__)
+        epel6 = self.Flag('EPEL6', 'Review package for EPEL6', __file__)
         disttag = self.Flag('DISTTAG',
                             'Default disttag e. g., "fc21".',
                             __file__)
@@ -67,6 +68,7 @@ class Registry(RegistryBase):
                           'Disable all build, install, rpmlint etc. tasks',
                            __file__)
         self.checks.flags.add(epel5)
+        self.checks.flags.add(epel6)
         self.checks.flags.add(disttag)
         self.checks.flags.add(batch)
 
@@ -742,16 +744,24 @@ class CheckLicensInDoc(GenericCheckBase):
         GenericCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/' \
                    'Packaging/LicensingGuidelines#License_Text'
+        if not (self.flags['EPEL5'] or self.flags['EPEL6']):
+            self._license_flag = 'L'
+            self._license_macro = '%license'
+        else:
+            self._license_flag = 'd'
+            self._license_macro = '%doc'
+
         self.text = 'If (and only if) the source package includes' \
                     ' the text of the license(s) in its own file,' \
                     ' then that file, containing the text of the'  \
-                    ' license(s) for the package is included in %license.'
+                    ' license(s) for the package is included in %s.' % \
+                    self._license_macro
         self.automatic = True
         self.type = 'MUST'
 
     def run(self):
         """ Check if there is a license file and if it is present in the
-        %license section.
+        %license section (%doc for EPEL5 and EPEL6).
         """
 
         licenses = []
@@ -765,17 +775,34 @@ class CheckLicensInDoc(GenericCheckBase):
             self.set_passed(self.PENDING)
             return
 
+        flagged_files = []
         docs = []
         for pkg in self.spec.packages:
             nvr = self.spec.get_package_nvr(pkg)
             rpm_path = Mock.get_package_rpm_path(nvr)
-            cmd = 'rpm -qldp ' + rpm_path
+            cmd = 'rpm -qp%s %s' % (self._license_flag, rpm_path)
             doclist = check_output(cmd.split())
-            docs.extend(doclist.split())
-        docs = map(lambda f: f.split('/')[-1], docs)
+            flagged_files.extend(doclist.split())
+        flagged_files = map(lambda f: f.split('/')[-1], flagged_files)
+
+        if self._license_flag == 'L':
+            for pkg in self.spec.packages:
+                nvr = self.spec.get_package_nvr(pkg)
+                rpm_path = Mock.get_package_rpm_path(nvr)
+                cmd = 'rpm -qpd %s' % rpm_path
+                doclist = check_output(cmd.split())
+                docs.extend(doclist.split())
+            docs = map(lambda f: f.split('/')[-1], docs)
 
         for _license in licenses:
-            if not _license in docs:
+            if _license in docs:
+                self.log.debug("Found " + _license +
+                               " marked as %doc instead of %license")
+                self.set_passed(self.FAIL,
+                                "License file %s is marked as %%doc" \
+                                " instead of %%license" % _license)
+                return
+            if not _license in flagged_files:
                 self.log.debug("Cannot find " + _license +
                                " in doclist")
                 self.set_passed(self.FAIL,
