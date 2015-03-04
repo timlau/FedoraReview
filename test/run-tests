@@ -6,7 +6,7 @@
 #
 #    -q  Don't run static checks, just run test
 #
-# Requires: python-virtualenv, python-pip
+# Requires: python-virtualenv, python-pip, python-unitttest2
 
 
 function install_virtenv()
@@ -49,6 +49,7 @@ export PATH=/bin:/usr/bin:/sbin:/usr/sbin
 cd $(dirname $(readlink -fn $0))
 cd ..
 
+test -d $PWD/dist || mkdir $PWD/dist
 logfile="$PWD/dist/build.log"
 ( {
     if [[ -n "$PIP_INSTALL" || ! -d fedorareviewenv ]]; then
