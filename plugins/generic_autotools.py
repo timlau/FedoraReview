@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -24,12 +24,12 @@ from subprocess import Popen, PIPE
 from FedoraReview import CheckBase, RegistryBase, ReviewDirs
 
 
-#########################################
-## STILL COMMONLY USED OBSOLETE MACROS ##
-##                                     ##
-## Any suggestion for newer check here ##
-## would be appreciated.               ##
-#########################################
+#######################################
+# STILL COMMONLY USED OBSOLETE MACROS #
+#                                     #
+# Any suggestion for newer check here #
+# would be appreciated.               #
+#######################################
 
 _OBS_M4S_AUTOMAKE = [
     'AM_CONFIG_HEADER',
@@ -71,8 +71,9 @@ class AutotoolsCheckBase(CheckBase):
 
         # construct text wrapper
         self.wrapper = textwrap.TextWrapper(break_long_words=False,
-                drop_whitespace=True, replace_whitespace=True,
-                fix_sentence_endings=True)
+                                            drop_whitespace=True,
+                                            replace_whitespace=True,
+                                            fix_sentence_endings=True)
 
     def text_wrap(self, text, width=76):
         ''' wrap the text on the specified character '''
@@ -106,7 +107,7 @@ class AutotoolsCheckBase(CheckBase):
         self.log.debug("autotools used: " + ' '.join(self.used_tools))
 
 
-## CHECKERS ##
+# CHECKERS #
 
 class CheckAutotoolsObsoletedMacros(AutotoolsCheckBase):
     ''' obsolete macros (shorthly m4s) checker '''
@@ -127,7 +128,7 @@ class CheckAutotoolsObsoletedMacros(AutotoolsCheckBase):
         trace_cmd = ["grep", "-E", "-n", "-o"]
 
         for tool in self.used_tools:
-            if not tool in _OBSOLETE_CHECKS:
+            if tool not in _OBSOLETE_CHECKS:
                 # shouldn't be neccessary
                 continue
 
@@ -174,10 +175,10 @@ class CheckAutotoolsObsoletedMacros(AutotoolsCheckBase):
                 stdout, stderr = p.communicate()
             except IOError:
                 self.set_passed(self.PENDING,
-                        "error while tracing autoconf.ac")
+                                "error while tracing autoconf.ac")
                 return
 
-            if not p.returncode in [0, 1]:
+            if p.returncode not in [0, 1]:
                 msg = "grep returns bad exit value %d: " % p.returncode \
                     + stderr
                 self.set_passed(self.PENDING, msg)
@@ -188,7 +189,7 @@ class CheckAutotoolsObsoletedMacros(AutotoolsCheckBase):
             for m4_line in m4_lines:
                 line, m4 = m4_line.split(':')
 
-                if not m4 in self.warn_items:
+                if m4 not in self.warn_items:
                     self.warn_items[m4] = []
 
                 self.warn_items[m4].append({

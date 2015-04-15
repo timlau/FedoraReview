@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -82,7 +82,7 @@ class BuildCheckBase(CheckBase):
         for line in out.split('\n'):
             if line and len(line) > 0:
                 self.rpmlint_output.append(line)
-        no_errors, msg  = self.check_rpmlint_errors(out, self.log)
+        no_errors, msg = self.check_rpmlint_errors(out, self.log)
         return no_errors, msg if msg else out
 
     def rpmlint(self):
@@ -188,7 +188,7 @@ class CheckBuild(BuildCheckBase):
                 return
             else:
                 self.log.info(
-                        'No valid cache, building despite --no-build.')
+                    'No valid cache, building despite --no-build.')
         _mock_root_setup("While building")
         Mock.build(self.srpm.filename)
         listfiles()
@@ -263,7 +263,7 @@ class CheckPackageInstalls(BuildCheckBase):
             attachments = [
                 self.Attachment('Installation errors', output, 3)]
             self.set_passed(self.FAIL,
-                           "Installation errors (see attachment)",
+                            "Installation errors (see attachment)",
                             attachments)
 
 
@@ -337,7 +337,7 @@ class CheckBuildCompleted(BuildCheckBase):
         plugins = self.checks.get_plugins(False)
         text += 'Disabled plugins: ' + ', '.join(plugins) + '\n'
         flags = [f for f in self.checks.flags.iterkeys()
-            if not self.checks.flags[f]]
+                 if not self.checks.flags[f]]
         flags = ', '.join(flags) if flags else 'None'
         text += 'Disabled flags: ' + flags + '\n'
         return self.Attachment('', text, 10)
@@ -360,7 +360,7 @@ class CheckBuildCompleted(BuildCheckBase):
                 shutil.rmtree('BUILD')
         os.symlink(Mock.get_builddir('BUILD'), 'BUILD')
         self.log.info('Active plugins: ' +
-                          ', '.join(self.checks.get_plugins(True)))
+                      ', '.join(self.checks.get_plugins(True)))
         self.set_passed(self.NA, None, [self.setup_attachment()])
 
 

@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -49,7 +49,7 @@ def in_list(what, list_):
     for item in list_:
         if not item:
             return False
-        if not what in item:
+        if what not in item:
             return False
     return True
 
@@ -66,7 +66,7 @@ class Registry(RegistryBase):
                             __file__)
         batch = self.Flag('BATCH',
                           'Disable all build, install, rpmlint etc. tasks',
-                           __file__)
+                          __file__)
         self.checks.flags.add(epel5)
         self.checks.flags.add(epel6)
         self.checks.flags.add(disttag)
@@ -126,9 +126,10 @@ class CheckBundledLibs(GenericCheckBase):
             if m:
                 check_dirs.add(m.group(1) + m.group(2))
         if check_dirs:
-            self.set_passed(self.PENDING,
-                        'Especially check following dirs for bundled code: '
-                        + ', '.join(check_dirs))
+            self.set_passed(
+                self.PENDING,
+                'Especially check following dirs for bundled code: '
+                + ', '.join(check_dirs))
         else:
             self.set_passed(self.PENDING)
 
@@ -348,7 +349,7 @@ class CheckDefattr(GenericCheckBase):
         has_defattr = False
         for pkg in self.spec.packages:
             if pkg.endswith('-debuginfo'):
-                #auto-generated %defattr, ignore
+                # auto-generated %defattr, ignore
                 continue
             for line in self.spec.get_files(pkg):
                 if line.startswith('%defattr('):
@@ -702,8 +703,8 @@ class CheckLicenseField(GenericCheckBase):
 
         def license_is_valid(_license):
             ''' Test that license from licencecheck is parsed OK. '''
-            return not 'UNKNOWN' in _license and \
-                not 'GENERATED' in _license
+            return 'UNKNOWN' not in _license and \
+                'GENERATED' not in _license
 
         files_by_license = {}
         raw_file = StringIO(raw_text)
@@ -719,7 +720,7 @@ class CheckLicenseField(GenericCheckBase):
             license_ = license_.strip()
             if not license_is_valid(license_):
                 license_ = self.unknown_license
-            if not license_ in files_by_license.iterkeys():
+            if license_ not in files_by_license.iterkeys():
                 files_by_license[license_] = []
             files_by_license[license_].append(file_)
         return files_by_license
@@ -820,10 +821,10 @@ class CheckLicensInDoc(GenericCheckBase):
                 self.log.debug("Found " + _license +
                                " marked as %doc instead of %license")
                 self.set_passed(self.FAIL,
-                                "License file %s is marked as %%doc" \
+                                "License file %s is marked as %%doc"
                                 " instead of %%license" % _license)
                 return
-            if not _license in flagged_files:
+            if _license not in flagged_files:
                 self.log.debug("Cannot find " + _license +
                                " in doclist")
                 self.set_passed(self.FAIL,
@@ -961,7 +962,7 @@ class CheckNameCharset(GenericCheckBase):
         output = ''
         passed = True
         for char in self.spec.name:
-            if not char in allowed_chars:
+            if char not in allowed_chars:
                 output += '^'
                 passed = False
             else:
@@ -1132,7 +1133,7 @@ class CheckOwnDirs(GenericCheckBase):
             for p in rpm_paths:
                 path = p.rsplit('/', 1)[0]  # We own leaf, for sure.
                 while path:
-                    if not path in rpm_paths:
+                    if path not in rpm_paths:
                         if path in pkg_deps_paths:
                             break
                         else:
@@ -1142,7 +1143,7 @@ class CheckOwnDirs(GenericCheckBase):
             bad_dirs = list(set(bad_dirs))
             self.set_passed(self.PENDING,
                             "Directories without known owners: "
-                                 + ', '.join(bad_dirs))
+                            + ', '.join(bad_dirs))
         else:
             self.set_passed(self.PASS)
 
@@ -1347,8 +1348,7 @@ class CheckSourceMD5(GenericCheckBase):
         passed = True
         text = ''
         try:
-            sources = [self.sources.get(s)
-                           for s in self.sources.get_all()]
+            sources = [self.sources.get(s) for s in self.sources.get_all()]
             passed, text = self.check_checksums(sources)
             if not passed:
                 passed, diff = self.make_diff(sources)
@@ -1542,7 +1542,7 @@ class CheckNoNameConflict(GenericCheckBase):
             try:
                 p.get_package(name)
                 return True
-            except (pkgdb2client.PkgDBException):
+            except pkgdb2client.PkgDBException:
                 return False
 
         try:
@@ -1629,8 +1629,8 @@ class CheckUpdateDesktopDatabase(GenericCheckBase):
             ''' Return True if the file fname contains a MimeType entry. '''
             nvr = self.spec.get_package_nvr(pkg)
             rpm_dirs = glob(os.path.join(ReviewDirs.root,
-                                        'rpms-unpacked',
-                                        pkg + '-' + nvr.version + '*'))
+                                         'rpms-unpacked',
+                                         pkg + '-' + nvr.version + '*'))
             path = os.path.join(rpm_dirs[0], fname[1:])
             if os.path.isdir(path):
                 return False

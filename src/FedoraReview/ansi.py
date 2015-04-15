@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+#     -*- coding: utf-8 -*-
 
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
 import sys
 import curses
 # pylint: disable=W1401
+# pylint: disable=bad-whitespace
 
 BLACK   = "\033[1;30m"
 RED     = "\033[1;31m"
@@ -83,3 +84,6 @@ def color_supported():
         return False
     except curses.error:
         return False
+
+
+# vim: set expandtab ts=4 sw=4:

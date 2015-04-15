@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -63,7 +63,7 @@ class _CheckDict(dict):
         def log_duplicate(first, second):
             ''' Log warning for duplicate test. '''
             self.log.warning("Duplicate checks %s in %s, %s in %s" %
-                              (first.name, first.defined_in,
+                             (first.name, first.defined_in,
                               second.name, second.defined_in))
 
         if key in self.iterkeys():
@@ -110,14 +110,14 @@ class _CheckDict(dict):
         def log_kill(victim, killer):
             ''' Log test skipped due to deprecation. '''
             self.log.debug("Skipping %s in %s, deprecated by %s in %s" %
-                              (victim.name, victim.defined_in,
-                               killer.name, killer.defined_in))
+                           (victim.name, victim.defined_in,
+                            killer.name, killer.defined_in))
 
         value = self[key]
         for victim in value.deprecates:
             if victim in self.iterkeys():
                 log_kill(self[victim], value)
-                del(self[victim])
+                del self[victim]
         for killer in self.itervalues():
             if key in killer.deprecates:
                 log_kill(value, killer)
@@ -176,7 +176,7 @@ class _ChecksLoader(object):
         ''' Update registered flags with user -D settings. '''
         for flag_opt in Settings.flags:
             try:
-                if not '=' in flag_opt:
+                if '=' not in flag_opt:
                     key = flag_opt
                     self.flags[flag_opt].activate()
                 else:
@@ -195,7 +195,7 @@ class _ChecksLoader(object):
         self.groups = {}
 
         appdir = os.path.realpath(
-                        os.path.join(os.path.dirname(__file__)))
+            os.path.join(os.path.dirname(__file__)))
         sys.path.insert(0, appdir)
         sys.path.insert(0, XdgDirs.app_datadir)
         plugins = load('plugins')
@@ -303,12 +303,12 @@ class Checks(_ChecksLoader):
             check.registry.user_enabled_value():
                 return False
         for dep in check.needs:
-            if not dep in self.checkdict:
+            if dep not in self.checkdict:
                 self.log.warning('%s depends on deprecated %s' %
-                                    (name, dep))
+                                 (name, dep))
                 self.log.warning('Removing %s, cannot resolve deps' %
                                  name)
-                del(self.checkdict[name])
+                del self.checkdict[name]
                 return True
             elif not self.checkdict[dep].is_run:
                 return False
@@ -318,7 +318,7 @@ class Checks(_ChecksLoader):
         ''' Mark all deprecated tests as run. '''
         allkeys = list(self.checkdict.iterkeys())
         for c in allkeys:
-            if not c in self.checkdict:
+            if c not in self.checkdict:
                 continue
             if self.checkdict[c].is_applicable():
                 self.checkdict.fix_deprecations(c)
@@ -351,7 +351,7 @@ class Checks(_ChecksLoader):
             check.run()
             now = time.time()
             self.log.debug('    %s completed: %.3f seconds'
-                               % (name, (now - self._clock)))
+                           % (name, (now - self._clock)))
             self._clock = now
             attachments.extend(check.attachments)
             result = check.result
@@ -389,7 +389,6 @@ class Checks(_ChecksLoader):
                 for r in results:
                     f.write('\n' + 24 * ' '
                             + "('%s', '%s')," % (r.state, r.name))
-
 
 
 # vim: set expandtab ts=4 sw=4:

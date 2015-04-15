@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -18,7 +18,6 @@
 
 ''' Tools for helping Fedora package reviewers '''
 
-# pylint: disable=R0924
 
 import argparse
 import grp
@@ -50,7 +49,7 @@ def _check_mock_grp():
     if 'REVIEW_NO_MOCKGROUP_CHECK' in os.environ:
         return
     mock_gid = grp.getgrnam('mock')[2]
-    if not mock_gid in os.getgroups():
+    if mock_gid not in os.getgroups():
         raise ReviewError(mock_msg)
 
 
@@ -62,24 +61,24 @@ def _add_modes(modes):
                        help='Use local files <name>.spec and <name>*.src.rpm'
                        ' in current dir or, when using --rpm-spec, use'
                        ' <name> as path to srpm.')
-    modes.add_argument('-u', '--url', default = None, dest='url',
+    modes.add_argument('-u', '--url', default=None, dest='url',
                        metavar='<url>',
                        help='Use another bugzilla, using complete'
                        ' url to bug page.')
-    modes.add_argument('-d', '--display-checks', default = False,
+    modes.add_argument('-d', '--display-checks', default=False,
                        action='store_true', dest='list_checks',
                        help='List all available checks.')
-    modes.add_argument('-f', '--display-flags', default = False,
+    modes.add_argument('-f', '--display-flags', default=False,
                        action='store_true', dest='list_flags',
                        help='List all available flags.')
-    modes.add_argument('-g', '--display-plugins', default = False,
+    modes.add_argument('-g', '--display-plugins', default=False,
                        action='store_true', dest='list_plugins',
                        help='List all available plugins.')
-    modes.add_argument('-V', '--version', default = False,
+    modes.add_argument('-V', '--version', default=False,
                        action='store_true',
                        help='Display version information and exit.')
     modes.add_argument('-h', '--help', action='help',
-                       help = 'Display this help message')
+                       help='Display this help message')
 
 
 def _add_optionals(optional):
@@ -90,15 +89,15 @@ def _add_optionals(optional):
                           default=True, dest='use_colors')
     optional.add_argument('-c', '--cache', action='store_true',
                           dest='cache',
-                          help = 'Do not redownload files from bugzilla,'
+                          help='Do not redownload files from bugzilla,'
                           ' use the ones in the cache.')
     optional.add_argument('-D', '--define', metavar='<flag>',
                           action='append', dest='flags', default=[],
-                          help = 'Define a flag like --define EPEL5 or '
+                          help='Define a flag like --define EPEL5 or '
                           ' -D EPEL5=1')
     optional.add_argument('-L', '--local-repo', metavar='<rpm directory>',
                           dest='repo',
-                          help = 'directory with rpms to install together with'
+                          help='directory with rpms to install together with'
                           ' reviewed package during build and install phases.')
     optional.add_argument('-m', '--mock-config', metavar='<config>',
                           dest='mock_config',
@@ -109,10 +108,10 @@ def _add_optionals(optional):
                           help='Do not print review report.')
     optional.add_argument('--no-build', action='store_true',
                           dest='nobuild',
-                          help = 'Do not rebuild or install the srpm, use last'
+                          help='Do not rebuild or install the srpm, use last'
                           ' built one in mock. Implies --cache')
     optional.add_argument('-o', '--mock-options', metavar='<mock options>',
-                          default = '--no-cleanup-after --no-clean',
+                          default='--no-cleanup-after --no-clean',
                           dest='mock_options',
                           help='Options to specify to mock for the build,'
                           ' defaults to --no-cleanup-after --no-clean')
@@ -121,13 +120,13 @@ def _add_optionals(optional):
                           help='Alternative bugzilla URL')
     optional.add_argument('-P', '--plugins',
                           metavar='<plugin>',
-                          dest='plugins_arg', default = None,
+                          dest='plugins_arg', default=None,
                           help='List of plugins to enable or disable hard'
-                             ' e. g., "Java:off,C/C++"')
+                               ' e. g., "Java:off,C/C++"')
     optional.add_argument('-p', '--prebuilt', action='store_true',
-                          dest='prebuilt', default = False,
+                          dest='prebuilt', default=False,
                           help='When using -n <name>, use'
-                              ' prebuilt rpms in current directory.')
+                          ' prebuilt rpms in current directory.')
     optional.add_argument('-s', '--single', metavar='<test>',
                           help='Single test to run, as named by '
                           '--display-checks.')
@@ -200,7 +199,7 @@ class ColoredFormatter(logging.Formatter):
         return ret
 
 
-class _Settings(object):                         # pylint: disable=R0902,R0924
+class _Settings(object):                         # pylint: disable=R0902
     """
     FedoraReview singleton Config Setting based on command line options.
     All config values are accessed as attributes.
@@ -264,9 +263,9 @@ class _Settings(object):                         # pylint: disable=R0902,R0924
         self.resultdir = m.groups()[0] if m else None
         m = re.search('--configdir=([^ ]+)', self.mock_options)
         self.configdir = m.groups()[0] if m else None
-        if not 'no-cleanup-after' in self.mock_options:
+        if 'no-cleanup-after' not in self.mock_options:
             self.mock_options += ' --no-cleanup-after'
-        if not 'no-cleanup-after' in self.mock_options:
+        if 'no-cleanup-after' not in self.mock_options:
             self.mock_options += ' --no-cleanup-after'
         if not re.search('clean($|[ ])', self.mock_options):
             self.mock_options += ' --no-clean'
@@ -339,6 +338,7 @@ class _Settings(object):                         # pylint: disable=R0902,R0924
         if not lvl:
             if 'REVIEW_LOGLEVEL' in os.environ:
                 try:
+                    # pylint: disable=eval-used
                     lvl = eval('logging.' +
                                os.environ['REVIEW_LOGLEVEL'].upper())
                 except (ValueError, SyntaxError):
@@ -353,7 +353,7 @@ class _Settings(object):                         # pylint: disable=R0902,R0924
                                 format='%(asctime)s %(name)-12s'
                                        ' %(levelname)-8s %(message)s',
                                 datefmt='%m-%d %H:%M',
-                                filename= SESSION_LOG,
+                                filename=SESSION_LOG,
                                 filemode='w')
         self._log_config_done = True
 

@@ -518,7 +518,7 @@ class ShellCheck(GenericCheck):
             self.log.warning(
                 'Illegal return from %s, code %d, output: %s' %
                 (self.defined_in, retval,
-                'stdout:' + str(stdout) + ' stderr:' + str(stderr)))
+                 'stdout:' + str(stdout) + ' stderr:' + str(stderr)))
             self.set_passed(self.PENDING, 'Test run failed')
 
 # vim: set expandtab ts=4 sw=4:

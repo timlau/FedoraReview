@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -123,7 +123,7 @@ class RegistryBase(AbstractRegistry):
         tests = []
         id_and_classes = inspect.getmembers(plugin, inspect.isclass)
         for c in id_and_classes:
-            if not 'Check' in c[0]:
+            if 'Check' not in c[0]:
                 continue
             if c[0].endswith('Base'):
                 continue

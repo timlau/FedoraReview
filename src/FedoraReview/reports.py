@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -15,6 +15,8 @@
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 # (C) 2011 - Tim Lauridsen <timlau@fedoraproject.org>
+
+# pylint: disable=cell-var-from-loop
 
 """ Functions to create the xml report. """
 
@@ -96,6 +98,7 @@ def _write_section(results, output):
             return '3' + str(result.check.sort_key)
 
     groups = list(set([hdr(test.group) for test in results]))
+    res = None
     for group in sorted(groups):
         res = filter(lambda t: hdr(t.group) == group, results)
         if not res:
@@ -127,7 +130,7 @@ def write_template(output, results, issues, attachments):
             fail.set_leader('- ')
             fail.set_indent(2)
             output.write(fail.get_text() + "\n")
-        results = [r for r in results if not r in issues]
+        results = [r for r in results if r not in issues]
 
     output.write("\n\n===== MUST items =====\n")
     musts = filter(lambda r: r.type == 'MUST', results)

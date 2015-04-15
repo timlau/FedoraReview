@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -103,7 +103,7 @@ class Source(HelpersMixin):
     # True if the source is a local file in srpm, false if a downloaded
     # url or tarball provided by user.
     local = property(lambda self: (not self.is_url or not self.downloaded)
-                                  and not self.local_src)
+                     and not self.local_src)
 
     # True if downloadable, but the uri couldn't be accessed.
     is_failed = property(lambda self: self.is_url and not self.downloaded)

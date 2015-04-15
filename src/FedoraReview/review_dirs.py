@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -15,6 +15,8 @@
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 # (C) 2011 - Tim Lauridsen <timlau@fedoraproject.org>
+
+# pylint: disable=bad-whitespace
 
 '''
 Tools for helping Fedora package reviewers
@@ -43,8 +45,9 @@ class _ReviewDirs(object):
     class ResultDirNotEmptyError(ReviewError):
         ''' Thrown when trying to reuse old review dir without --cache. '''
         def __init__(self):
-            ReviewError.__init__(self,
-                 'The resultdir is not empty, I cannot handle this')
+            ReviewError.__init__(
+                self,
+                'The resultdir is not empty, I cannot handle this')
 
     class ReviewDirExistsError(ReviewError):
         ''' The review dir is already in place. '''
@@ -129,8 +132,7 @@ class _ReviewDirs(object):
                                                        SRPM_UNPACKED))
     upstream = property(lambda self: os.path.join(self.wdir, UPSTREAM))
     upstream_unpacked = property(lambda self:
-                                     os.path.join(self.wdir,
-                                                  UPSTREAM_UNPACKED))
+                                 os.path.join(self.wdir, UPSTREAM_UNPACKED))
     results = property(lambda self: os.path.join(self.wdir, RESULTS))
 
 

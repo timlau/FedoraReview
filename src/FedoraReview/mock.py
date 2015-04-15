@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -103,7 +103,7 @@ def _add_buildarch_macros(macros, paths):
     if set(arches) == set(['noarch']):
         buildarch = 'noarch'
     else:
-        buildarch = [a for a in arches if not a is 'noarch'][0]
+        buildarch = [a for a in arches if a is not 'noarch'][0]
     macros['%buildarch'] = buildarch
     if buildarch == 'x86_64':
         macros['%_libdir'] = '/usr/lib64'
@@ -150,7 +150,7 @@ class _Mock(HelpersMixin):
             _arch = check_output('rpm --eval %_arch'.split()).strip()
         except CalledProcessError:
             raise ReviewError("Can't evaluate 'rpm --eval %_arch")
-        if buildarch is 'x86_64' and not _arch is 'x86_64':
+        if buildarch is 'x86_64' and _arch is not 'x86_64':
             raise ReviewError("Can't build x86_64 on i86 host")
         return macros
 
@@ -172,7 +172,7 @@ class _Mock(HelpersMixin):
         if Settings.uniqueext:
             self.mock_root += Settings.uniqueext
 
-        if not 'rawhide' in self.mock_root:
+        if 'rawhide' not in self.mock_root:
             self.log.info('WARNING: Probably non-rawhide buildroot used. ' +
                           'Rawhide should be used for most package reviews')
 
@@ -235,7 +235,7 @@ class _Mock(HelpersMixin):
             self.log.debug("_topdir: " + str(self._topdir))
         except (CalledProcessError, OSError):
             self.log.info("Cannot evaluate %topdir in mock, using"
-                             " hardcoded /builddir/build")
+                          " hardcoded /builddir/build")
             self._topdir = '/builddir/build'
 
     def _clear_rpm_db(self):
@@ -356,7 +356,7 @@ class _Mock(HelpersMixin):
         opt = Settings.mock_options
         if not opt:
             opt = ''
-        if not 'resultdir' in opt:
+        if 'resultdir' not in opt:
             opt += ' --resultdir=' + ReviewDirs.results + ' '
         return opt
 
@@ -427,7 +427,7 @@ class _Mock(HelpersMixin):
             cmd += ' -q'
         cmd += ' --rebuild'
         cmd += ' ' + filename + ' 2>&1 | tee build.log'
-        if not Settings.verbose and not ' -q' in cmd:
+        if not Settings.verbose and ' -q' not in cmd:
             cmd += ' | egrep "Results and/or logs|ERROR" '
         self.log.debug('Build command: %s' % cmd)
         rc = call(cmd, shell=True)

@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -15,6 +15,8 @@
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 # (C) 2011 - Tim Lauridsen <timlau@fedoraproject.org>
+
+# pylint: disable=bad-whitespace
 
 ''' Basic definitions: AbstractCheck + descendants, TestResult.  '''
 
@@ -197,6 +199,7 @@ class GenericCheck(AbstractCheck):
         Set if the test is passed, failed or N/A and set optional
         extra output and/or attachments to be shown in repost.
         '''
+        # pylint: disable=attribute-defined-outside-init
 
         self.attachments = attachments if attachments else []
         if result in ['not_applicable', self.NA, None]:
@@ -275,9 +278,9 @@ class TestResult(object):
     def set_indent(self, indent):
         ''' Set indentation level for get_text (int, defaults to 5). '''
         # pylint: disable=W0201
-        self.wrapper = TextWrapper(width = 78,
-                                   subsequent_indent = " " * indent,
-                                   break_long_words = False, )
+        self.wrapper = TextWrapper(width=78,
+                                   subsequent_indent=" " * indent,
+                                   break_long_words=False, )
 
     def set_leader(self, leader):
         ''' Set the leading string, defaults to [!], [ ], [-], etc. '''
@@ -291,13 +294,11 @@ class TestResult(object):
         if self.output_extra and self.output_extra != "":
             strbuf.write("\n")
             extra_lines = self.wrapper.wrap(
-                                self.wrapper.subsequent_indent +
-                                "Note: " + self.output_extra)
+                self.wrapper.subsequent_indent + "Note: " + self.output_extra)
             strbuf.write('\n'.join(extra_lines))
             if self.is_failed:
                 see = self.wrapper.wrap(
-                                self.wrapper.subsequent_indent +
-                                "See: " + self.url)
+                    self.wrapper.subsequent_indent + "See: " + self.url)
                 strbuf.write("\n" + "\n".join(see))
 
         return strbuf.getvalue()
@@ -329,7 +330,6 @@ class SimpleTestResult(TestResult):
         self._type = 'ERROR'
         self.text = text
         self._output_extra = extra
-
 
 
 # vim: set expandtab ts=4 sw=4:

@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -163,8 +163,6 @@ class RpmFile(object):
         return self._format_deps(self.header[rpm.RPMTAG_PROVIDENAME],
                                  self.header[rpm.RPMTAG_PROVIDEVERSION],
                                  self.header[rpm.RPMTAG_PROVIDEFLAGS])
-
-
 
 
 # vim: set expandtab ts=4 sw=4:

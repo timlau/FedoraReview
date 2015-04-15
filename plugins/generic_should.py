@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -110,7 +110,7 @@ class CheckBuildroot(GenericShouldCheckBase):
                 self.set_passed(self.PASS)
             else:
                 self.set_passed(self.PENDING,
-                               'Buildroot: present but not needed')
+                                'Buildroot: present but not needed')
         else:
             self.set_passed(self.FAIL,
                             'Invalid buildroot found: %s' % br)
@@ -195,8 +195,8 @@ class CheckFileRequires(GenericShouldCheckBase):
 
         def get_requires(rpm_name, requires):
             ''' Return printable requirements for a rpm. '''
-            requires = filter(lambda s: not 'rpmlib' in s, requires)
-            requires = filter(lambda s: not 'GLIBC' in s, requires)
+            requires = filter(lambda s: 'rpmlib' not in s, requires)
+            requires = filter(lambda s: 'GLIBC' not in s, requires)
             requires = sorted(list(set(requires)))
             hdr = rpm_name + ' (rpmlib, GLIBC filtered):'
             requires.insert(0, hdr)
@@ -288,7 +288,7 @@ class CheckFullVerReqSub(GenericShouldCheckBase):
                 if pkg.endswith(pkg_end):
                     continue
             reqs = ''.join(self.rpms.get(pkg).format_requires)
-            if not regex in reqs:
+            if regex not in reqs:
                 bad_pkgs.append(pkg)
         if bad_pkgs:
             self.set_passed(self.PENDING,
@@ -409,7 +409,7 @@ class CheckPkgConfigFiles(GenericShouldCheckBase):
         extra = ''
         for pkg in files_by_pkg.iterkeys():
             for fn in files_by_pkg[pkg]:
-                if not '-devel' in pkg:
+                if '-devel' not in pkg:
                     passed = 'pending'
                     extra += '%s : %s\n' % (pkg, fn)
         self.set_passed(passed, extra)
@@ -453,7 +453,8 @@ class CheckSourceComment(GenericShouldCheckBase):
         if passed:
             self.set_passed(self.NA)
         else:
-            self.set_passed(self.PENDING,
+            self.set_passed(
+                self.PENDING,
                 'Package contains tarball without URL, check comments')
 
 
@@ -694,7 +695,7 @@ class CheckUpdateMimeDatabase(GenericShouldCheckBase):
                 using.append(pkg)
                 rpm_pkg = self.rpms.get(pkg)
                 if not in_list('update-mime-database',
-                                [rpm_pkg.postun, rpm_pkg.post]):
+                               [rpm_pkg.postun, rpm_pkg.post]):
                     failed = True
         if not using:
             self.set_passed(self.NA)
@@ -703,6 +704,4 @@ class CheckUpdateMimeDatabase(GenericShouldCheckBase):
         self.set_passed(self.FAIL if failed else self.PENDING, text)
 
 
-
-#
 # vim: set expandtab ts=4 sw=4:
