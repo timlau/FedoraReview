@@ -154,27 +154,6 @@ class CheckClean(GenericShouldCheckBase):
                 self.set_passed(self.PASS)
 
 
-class CheckDistTag(GenericShouldCheckBase):
-    ''' Disttag %{?dist} is present in Release: '''
-
-    def __init__(self, base):
-        GenericShouldCheckBase.__init__(self, base)
-        self.url = 'https://fedoraproject.org/wiki/Packaging:DistTag'
-        self.text = 'Dist tag is present (not strictly required in GL).'
-        self.automatic = True
-        self.type = 'SHOULD'
-
-    def run(self):
-        rel_tags = self.spec.find_all_re(r'^Release\s*:')
-        found = in_list('%{?dist}', rel_tags)
-        if len(rel_tags) > 1:
-            self.set_passed(found, 'Multiple Release: tags found')
-        elif len(rel_tags) == 0:
-            self.set_passed(found, 'No Release: tags found')
-        else:
-            self.set_passed(found)
-
-
 class CheckContainsLicenseText(GenericShouldCheckBase):
     ''' Handle missing license info.  '''
 
