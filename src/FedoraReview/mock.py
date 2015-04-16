@@ -39,13 +39,8 @@ from settings import Settings
 from review_error import ReviewError
 
 
-_RPMLINT_SCRIPT = """
-mock  @config@ --chroot -- << 'EOF'
-echo 'rpmlint:'
-rpmlint @rpm_names@
-echo 'rpmlint-done:'
-EOF
-"""
+_RPMLINT_SCRIPT = " mock  @config@ --chroot " \
+    """ "echo 'rpmlint:'; rpmlint @rpm_names@; echo 'rpmlint-done:'" """
 
 
 def _run_script(script):
