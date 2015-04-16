@@ -422,6 +422,7 @@ class _Mock(HelpersMixin):
         Raises ReviewError on build errors, return
         nothing.
         """
+        self.clear_builddir()
         cmd = ' '.join(self._mock_cmd())
         if Settings.log_level > logging.INFO:
             cmd += ' -q'
