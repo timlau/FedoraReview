@@ -179,17 +179,22 @@ def write_xml_report(spec, results):
 
     def add_xml_result(root, result):
         ''' Add a failed result to the xml report as a <result> tag. '''
+
+        def txt2utf(txt):
+            ''' Convert txt to utf-8. '''
+            return unicode(txt, encoding='utf-8', errors='replace')
+
         path = root.find('metadata/file').attrib['given-path']
         results = root.find('results')
         issue = ET.SubElement(results,
                               'issue',
                               {'test-id': result.name,
                                'severity': result.type})
-        ET.SubElement(issue, 'message').text = result.text
+        ET.SubElement(issue, 'message').text = txt2utf(result.text)
         location = ET.SubElement(issue, 'location')
         ET.SubElement(location, 'file', {'given-path': path})
         if result.output_extra:
-            ET.SubElement(issue, 'notes').text = result.output_extra
+            ET.SubElement(issue, 'notes').text = txt2utf(result.output_extra)
         return root
 
     root = create_xmltree(spec)
@@ -197,6 +202,6 @@ def write_xml_report(spec, results):
         if result.is_failed:
             root = add_xml_result(root, result)
     dom = xml.dom.minidom.parseString(ET.tostring(root))
-    prettyxml = dom.toprettyxml(indent='    ')
+    prettyxml = dom.toprettyxml(indent='    ', encoding='utf-8')
     with open('report.xml', 'w') as f:
         f.write(prettyxml)
