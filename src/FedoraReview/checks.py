@@ -270,6 +270,7 @@ class Checks(_ChecksLoader):
         _ChecksLoader.__init__(self)
         self.spec = SpecFile(spec_file, self.flags)
         self.srpm = SRPMFile(srpm_file)
+        self.srpm.unpack()
         self.data = self.Data()
         self.data.rpms = RpmDataSource(self.spec)
         self.data.buildsrc = BuildFilesSource()
