@@ -445,11 +445,11 @@ class CheckDevelFilesInDevel(GenericCheckBase):
         self.type = 'MUST'
 
 
-class CheckDistTag(GenericShouldCheckBase):
+class CheckDistTag(GenericCheckBase):
     ''' Disttag %{?dist} is present in Release: '''
 
     def __init__(self, base):
-        GenericShouldCheckBase.__init__(self, base)
+        GenericCheckBase.__init__(self, base)
         self.url = 'https://fedoraproject.org/wiki/Packaging:DistTag'
         self.text = 'Dist tag is present.'
         self.automatic = True
