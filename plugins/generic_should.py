@@ -130,7 +130,7 @@ class CheckClean(GenericShouldCheckBase):
 
     def run(self):
         has_clean = False
-        sec_clean = self.spec.find_re('%clean')
+        sec_clean = self.spec.find_re('^[ ]*%clean')
         if sec_clean:
             sec_clean = self.spec.get_section('%clean', raw=True)
             buildroot = rpm.expandMacro('%{buildroot}')
