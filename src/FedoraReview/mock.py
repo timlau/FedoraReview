@@ -324,6 +324,11 @@ class _Mock(HelpersMixin):
             result.append(get_package_srpm_path(spec))
         return result
 
+    def get_package_debuginfo_paths(self, nvr):
+        ''' Return paths to debuginfo rpms for given nvr.  '''
+        pattern = '%s-*debuginfo*-%s-*' % (nvr.name, nvr.version)
+        return self._get_rpm_paths(pattern)
+
     def get_builddir(self, subdir=None):
         """ Return the directory which corresponds to %_topdir inside
         mock. Optional subdir argument is added to returned path.

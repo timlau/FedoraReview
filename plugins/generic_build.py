@@ -90,11 +90,12 @@ class BuildCheckBase(CheckBase):
         """
         return self.run_rpmlint([self.filename])
 
-    def rpmlint_rpms(self):
+    def rpmlint_rpms(self, rpms=None):
         """ Runs rpmlint against the used rpms - prebuilt or built in mock.
         """
         # pylint: disable=E1123
-        rpms = Mock.get_package_rpm_paths(self.spec, with_srpm=True)
+        if rpms is None:
+            rpms = Mock.get_package_rpm_paths(self.spec, with_srpm=True)
         no_errors, result = self.run_rpmlint(rpms)
         return no_errors, result + '\n'
 
@@ -302,6 +303,36 @@ class CheckRpmlintInstalled(BuildCheckBase):
             self.set_passed(self.FAIL, 'Mock build failed')
 
 
+class CheckRpmlintDebuginfo(BuildCheckBase):
+    '''
+    EXTRA: Not in guidelines, but running rpmlint on the debuginfo
+    package occasionally reveals things otherwise not found.
+    '''
+    def __init__(self, base):
+        BuildCheckBase.__init__(self, base)
+        self.url = 'http://fedoraproject.org/wiki/' \
+                   'Packaging/Guidelines#rpmlint'
+        self.text = 'Rpmlint is run on debuginfo package(s).'
+        self.automatic = True
+        self.type = 'EXTRA'
+        self.needs = ['CheckRpmlintInstalled']
+
+    def run(self):
+        if not self.checks.checkdict['CheckPackageInstalls'].is_passed:
+            self.set_passed(self.NA)
+            return self.NA
+        rpms = Mock.get_package_debuginfo_paths(self.spec.get_package_nvr())
+        if not rpms:
+            self.set_passed(self.NA)
+            return self.NA
+        no_errors, retcode = self.rpmlint_rpms(rpms)
+        text = 'No rpmlint messages.' if no_errors else \
+                         'There are rpmlint messages (see attachment).'
+        attachments = \
+            [self.Attachment('Rpmlint (debuginfo)', retcode + '\n', 6)]
+        self.set_passed(self.PASS, text, attachments)
+
+
 class CheckInitDeps(BuildCheckBase):
     ''' EXTRA: Setup the repoquery wrapper.  No output in report '''
 
@@ -309,7 +340,7 @@ class CheckInitDeps(BuildCheckBase):
         BuildCheckBase.__init__(self, base)
         self.automatic = True
         self.type = 'EXTRA'
-        self.needs = ['CheckRpmlintInstalled']
+        self.needs = ['CheckRpmlintDebuginfo']
 
     def run(self):
         # Dirty work-around for
