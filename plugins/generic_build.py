@@ -260,6 +260,8 @@ class CheckPackageInstalls(BuildCheckBase):
             return
         _mock_root_setup('While installing built packages', force=True)
         rpms = Mock.get_package_rpm_paths(self.spec)
+        rpms.extend(
+            Mock.get_package_debuginfo_paths(self.spec.get_package_nvr()))
         self.log.info('Installing built package(s)')
         output = Mock.install(rpms)
         if not output:
@@ -292,12 +294,14 @@ class CheckRpmlintInstalled(BuildCheckBase):
             return
         if self.checks.checkdict['CheckPackageInstalls'].is_passed:
             rpms = Mock.get_package_rpm_paths(self.spec)
+            rpms.extend(
+                Mock.get_package_debuginfo_paths(self.spec.get_package_nvr()))
             no_errors, retcode = Mock.rpmlint_rpms(rpms)
             text = 'No rpmlint messages.' if no_errors else \
                              'There are rpmlint messages (see attachment).'
             attachments = \
                 [self.Attachment('Rpmlint (installed packages)',
-                                 retcode + '\n', 5)]
+                                 retcode + '\n', 7)]
             self.set_passed(self.PASS, text, attachments)
         else:
             self.set_passed(self.FAIL, 'Mock build failed')
