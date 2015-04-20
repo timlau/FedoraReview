@@ -48,7 +48,7 @@ class UrlBug(AbstractBug):
             tmpfile = urllib.urlretrieve(self.bug_url)[0]
         soup = BeautifulSoup(open(tmpfile))
         links = soup.findAll('a')
-        hrefs = map(lambda l: l['href'], links)
+        hrefs = [l.get('href') for l in links if l.get('href')]
         found = []
         for href in reversed(hrefs):
             href = href.encode('ascii', 'ignore')
