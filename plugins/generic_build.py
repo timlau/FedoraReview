@@ -242,6 +242,10 @@ class CheckPackageInstalls(BuildCheckBase):
         return bad_ones
 
     def run(self):
+        if not Mock.is_available():
+            self.set_passed(self.PENDING,
+                            "No installation test done (mock unavailable)")
+            return
         if Settings.nobuild:
             bad_ones = self.check_build_installed()
             if bad_ones == []:
@@ -282,6 +286,9 @@ class CheckRpmlintInstalled(BuildCheckBase):
         self.needs = ['CheckPackageInstalls']
 
     def run(self):
+        if not Mock.is_available():
+            self.set_passed(self.NA)
+            return
         if self.checks.checkdict['CheckPackageInstalls'].is_passed:
             rpms = Mock.get_package_rpm_paths(self.spec)
             no_errors, retcode = Mock.rpmlint_rpms(rpms)
@@ -344,6 +351,8 @@ class CheckBuildCompleted(BuildCheckBase):
 
     def run(self):
         if not Mock.is_available():
+            self.log.info(
+                "Mock unavailable, build and installation not checked.")
             self.set_passed(self.NA)
             return
         Mock.clear_builddir()
