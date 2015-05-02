@@ -137,9 +137,13 @@ class CheckResultdir(BuildCheckBase):
         self.text = 'Resultdir need to be empty before review'
 
     def run(self):
-        if len(glob.glob(os.path.join(Mock.resultdir, '*.*'))) != 0 \
-            and not (Settings.nobuild or Settings.prebuilt):
+        if Settings.nobuild or Settings.prebuilt:
+            self.set_passed(self.NA)
+            return
+        for f in glob.glob(os.path.join(Mock.resultdir, '*.*')):
+            if not f.endswith('.log'):
                 raise self.NotEmptyError()       # pylint: disable=W0311
+            os.unlink(f)
         self.set_passed(self.NA)
 
 

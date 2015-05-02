@@ -206,6 +206,7 @@ class _Mock(HelpersMixin):
             ''' Format stdout + stderr. '''
             return header + " output: " + str(out) + ' ' + str(err)
 
+        header = header if header else ""
         self.log.debug(header + ' command: ' + ', '.join(cmd))
         try:
             p = Popen(cmd, stdout=PIPE, stderr=STDOUT)
@@ -214,7 +215,7 @@ class _Mock(HelpersMixin):
         except OSError:
             logging.error("Command failed", exc_info=True)
             return "Command utterly failed. See logs for details"
-        if p.returncode != 0:
+        if p.returncode != 0 and header:
             logging.info(header + " command returned error code %i",
                          p.returncode)
         return None if p.returncode == 0 else str(output)
@@ -237,7 +238,7 @@ class _Mock(HelpersMixin):
         """ Mock install uses host's yum -> bad rpm database. """
         cmd = self._mock_cmd()
         cmd.extend(['--shell', "'rm -f /var/lib/rpm/__db*'"])
-        self._run_cmd(cmd)
+        self._run_cmd(cmd, None)
 
     def _get_rpm_paths(self, pattern):
         ''' Return paths matching a rpm name pattern. '''
