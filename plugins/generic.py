@@ -911,8 +911,8 @@ class CheckMakeinstall(GenericCheckBase):
         GenericCheckBase.__init__(self, base)
         self.url = 'http://fedoraproject.org/wiki/Packaging/Guidelines' \
                    '#Why_the_.25makeinstall_macro_should_not_be_used'
-        self.text = "Package use %makeinstall only when make install' \
-                    ' DESTDIR=... doesn't work."
+        self.text = "Package use %makeinstall only when make install" \
+                    " DESTDIR=... doesn't work."
         self.automatic = True
         self.type = 'MUST'
 

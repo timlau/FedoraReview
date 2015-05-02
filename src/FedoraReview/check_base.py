@@ -278,7 +278,7 @@ class TestResult(object):
     def set_indent(self, indent):
         ''' Set indentation level for get_text (int, defaults to 5). '''
         # pylint: disable=W0201
-        self.wrapper = TextWrapper(width=78,
+        self.wrapper = TextWrapper(width=75,
                                    subsequent_indent=" " * indent,
                                    break_long_words=False, )
 
