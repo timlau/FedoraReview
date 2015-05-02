@@ -219,10 +219,10 @@ class TestChecks(FR_TestCase):
         spec.testcase = 'logback'
         spec.workdir = 'logback'
         spec.groups_ok = ['Generic.build', 'Generic', 'Generic.should',
-                          'Java']
+                          'Java', 'Java.guidelines', 'Maven']
         spec.expected = [('na', 'CheckResultdir'),
                          ('pending', 'CheckBuild'),
-                         ('fail', 'CheckJavaPlugin'),
+                         ('na', 'CheckJavaPlugin'),
                          ('na', 'CheckDaemonCompileFlags'),
                          ('pass', 'CheckRpmlint'),
                          ('pass', 'CheckPackageInstalls'),
