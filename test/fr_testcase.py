@@ -36,7 +36,7 @@ from FedoraReview.review_helper import ReviewHelper
 
 STARTDIR = os.getcwd()
 
-VERSION = '0.5.2'
+VERSION = '0.5.3'
 
 RELEASE = '19'
 
