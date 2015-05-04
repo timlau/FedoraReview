@@ -26,7 +26,9 @@ BuildRequires:  python-argparse
 BuildRequires:  python-BeautifulSoup
 BuildRequires:  python-bugzilla
 BuildRequires:  python-straight-plugin
+%if 0%{?rhel} < 7
 BuildRequires:  python-unittest2
+%endif
 BuildRequires:  python2-devel
 BuildRequires:  rpm-python
 
@@ -130,27 +132,68 @@ python -m unittest discover -f
 * Tue May 12 2015 Alec Leamas <leamas.alec@gmail.com> - 0.5.3-2.fa1afe1
 - Generic post-release entry.
 
-* Thu Jul 3 2014 Stanislav Ochotnicky <sochotnicky@redhat.com> 0.5.2-1
-- Updating to upstream 0.5.2
+* Mon May 04 2015 Pierre-Yves Chibon <pingou@pingoured.fr> - 0.5.3-1
+- Update to 0.5.3
 
-* Wed Sep 4 2013 Alec Leamas <leamas@nowhere.net> 0.5.0-1.001.fa1afe1
-- Generic post-release nightly build entry
+* Wed Apr 22 2015 Adam Miller <maxamillion@fedoraproject.org> - 0.5.2-3
+- Add conditional for unittest2 for epel7 (thanks mcepl@redhat.com for the fix)
 
-* Mon Aug 19 2013 Stanislav Ochotnicky <sochotnicky@redhat.com> 0.5.0-1
+* Mon Jan 19 2015 Stanislav Ochotnicky <sochotnicky@redhat.com> - 0.5.2-2
+- Add patch for rhbz#1151943
+
+* Mon Jul 14 2014 Stanislav Ochotnicky <sochotnicky@redhat.com> - 0.5.2-1
+- Update to latest upstream bugfix release
+
+* Sat Jun 07 2014 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.5.1-3
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_21_Mass_Rebuild
+
+* Mon Jan 13 2014 Stanislav Ochotnicky <sochotnicky@redhat.com> - 0.5.1-2
+- Backport fixes for several bugs
+- Resolves: rhbz#1044580
+- Resolves: rhbz#1049042
+
+* Fri Dec 13 2013 Stanislav Ochotnicky <sochotnicky@redhat.com> - 0.5.1-1
+- Update to latest upstream (0.5.1)
+
+* Tue Oct 15 2013 Stanislav Ochotnicky <sochotnicky@redhat.com> - 0.5.0-3
+- Really use phpcompatinfo instead of phpci
+
+* Mon Oct 14 2013 Stanislav Ochotnicky <sochotnicky@redhat.com> - 0.5.0-2
+- Fix requires for licensecheck (#1016309)
+- Remove separate php plugin subpackage (#971875)
+
+* Fri Aug 30 2013 Stanislav Ochotnicky <sochotnicky@redhat.com> - 0.5.0-1
 - Updating to upstream 0.5.0
 
+* Sat Aug 03 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.4.1-4
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_20_Mass_Rebuild
+
+* Wed Jul 17 2013 Petr Pisar <ppisar@redhat.com> - 0.4.1-3
+- Perl 5.18 rebuild
+
+* Thu May 30 2013 Stanislav Ochotnicky <sochotnicky@redhat.com> - 0.4.1-2
+- Backport fix for #967571
+
 * Mon Apr 29 2013 Stanislav Ochotnicky <sochotnicky@redhat.com> - 0.4.1-1
-- Updating to upstream 0.4.1
+- Update to latest upstream version
+
+* Tue Feb 19 2013 Stanislav Ochotnicky <sochotnicky@redhat.com> - 0.4.0-4
+- Fix rhbz912182
+- Reorganize patches a bit
+
+* Fri Feb  8 2013 Stanislav Ochotnicky <sochotnicky@redhat.com> - 0.4.0-3
+- Fix rhbz908830 and rhbz908830
+- Add patch for REVIEW_NO_MOCKGROUP_TEST environment variable
+- Remove old patch
+
+* Mon Feb 04 2013 Pierre-Yves Chibon <pingou@pingoured.fr> - 0.4.0-2
+- Add Patch0 (0001-Fix-syntax-error.patch) from Ralph Bean fixing fedora-create-review
 
 * Mon Jan 28 2013 Stanislav Ochotnicky <sochotnicky@redhat.com> - 0.4.0-1
 - Updating to upstream 0.4.0
 
-* Tue Oct 30 2012 Alec Leamas <leamas@nowhere.net> - 0.3.1-3.fa1afe1
-- Provisionary post-release placeholder (nothing yet really released)
-- Post-release capabilities using make_release script and %%git_tag
-- Update symlinking of plugin/script dirs (from 3.1.1 release branch)
-- Add test subpackage
-- Added %%check and %%bcond tests
+* Wed Nov 07 2012 Pierre-Yves Chibon <pingou@pingoured.fr> - 0.3.1-3
+- Backport from upstream's git fix to RHBZ#874246 (Patch0)
 
 * Thu Oct 25 2012 Stanislav Ochotnicky <sochotnicky@redhat.com> - 0.3.1-2
 - Add symlink to scripts directory so they are loaded

@@ -8,6 +8,7 @@
 # Creating release:
 #   - Update version in version.tmpl, test/fr_testcase.py and
 #     fedora-review.spec.
+#   - Import upstream changes of spec changelog.
 #   - Comment %git_tag ("%global  %gittag" -> "#global gittag")
 #     in specfile.
 #
