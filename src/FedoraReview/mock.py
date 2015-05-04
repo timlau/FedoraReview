@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -39,13 +39,8 @@ from settings import Settings
 from review_error import ReviewError
 
 
-_RPMLINT_SCRIPT = """
-mock  @config@ --shell << 'EOF'
-echo 'rpmlint:'
-rpmlint @rpm_names@
-echo 'rpmlint-done:'
-EOF
-"""
+_RPMLINT_SCRIPT = " mock  @config@ --chroot " \
+    """ "echo 'rpmlint:'; rpmlint @rpm_names@; echo 'rpmlint-done:'" """
 
 
 def _run_script(script):
@@ -103,7 +98,7 @@ def _add_buildarch_macros(macros, paths):
     if set(arches) == set(['noarch']):
         buildarch = 'noarch'
     else:
-        buildarch = [a for a in arches if not a is 'noarch'][0]
+        buildarch = [a for a in arches if a is not 'noarch'][0]
     macros['%buildarch'] = buildarch
     if buildarch == 'x86_64':
         macros['%_libdir'] = '/usr/lib64'
@@ -150,7 +145,7 @@ class _Mock(HelpersMixin):
             _arch = check_output('rpm --eval %_arch'.split()).strip()
         except CalledProcessError:
             raise ReviewError("Can't evaluate 'rpm --eval %_arch")
-        if buildarch is 'x86_64' and not _arch is 'x86_64':
+        if buildarch is 'x86_64' and _arch is not 'x86_64':
             raise ReviewError("Can't build x86_64 on i86 host")
         return macros
 
@@ -172,7 +167,7 @@ class _Mock(HelpersMixin):
         if Settings.uniqueext:
             self.mock_root += Settings.uniqueext
 
-        if not 'rawhide' in self.mock_root:
+        if 'rawhide' not in self.mock_root:
             self.log.info('WARNING: Probably non-rawhide buildroot used. ' +
                           'Rawhide should be used for most package reviews')
 
@@ -211,6 +206,7 @@ class _Mock(HelpersMixin):
             ''' Format stdout + stderr. '''
             return header + " output: " + str(out) + ' ' + str(err)
 
+        header = header if header else ""
         self.log.debug(header + ' command: ' + ', '.join(cmd))
         try:
             p = Popen(cmd, stdout=PIPE, stderr=STDOUT)
@@ -219,7 +215,7 @@ class _Mock(HelpersMixin):
         except OSError:
             logging.error("Command failed", exc_info=True)
             return "Command utterly failed. See logs for details"
-        if p.returncode != 0:
+        if p.returncode != 0 and header:
             logging.info(header + " command returned error code %i",
                          p.returncode)
         return None if p.returncode == 0 else str(output)
@@ -229,20 +225,20 @@ class _Mock(HelpersMixin):
         if self._topdir:
             return
         cmd = self._mock_cmd()
-        cmd.extend(['-q', '--shell', 'rpm --eval %_topdir'])
+        cmd.extend(['-q', '--chroot', '--', 'rpm --eval %_topdir'])
         try:
             self._topdir = check_output(cmd).strip()
             self.log.debug("_topdir: " + str(self._topdir))
         except (CalledProcessError, OSError):
             self.log.info("Cannot evaluate %topdir in mock, using"
-                             " hardcoded /builddir/build")
+                          " hardcoded /builddir/build")
             self._topdir = '/builddir/build'
 
     def _clear_rpm_db(self):
         """ Mock install uses host's yum -> bad rpm database. """
         cmd = self._mock_cmd()
-        cmd.extend(['--shell', 'rm -f /var/lib/rpm/__db*'])
-        self._run_cmd(cmd)
+        cmd.extend(['--shell', "'rm -f /var/lib/rpm/__db*'"])
+        self._run_cmd(cmd, None)
 
     def _get_rpm_paths(self, pattern):
         ''' Return paths matching a rpm name pattern. '''
@@ -255,7 +251,7 @@ class _Mock(HelpersMixin):
     def _rpm_eval(self, arg):
         ''' Run rpm --eval <arg> inside mock, return output. '''
         cmd = self._mock_cmd()
-        cmd.extend(['--quiet', '--shell', 'rpm --eval \\"' + arg + '\\"'])
+        cmd.extend(['--quiet', '--chroot', '--', 'rpm --eval "' + arg + '"'])
         return check_output(cmd).decode('utf-8').strip()
 
 # Last (cached?) output from rpmlint, list of lines.
@@ -329,6 +325,11 @@ class _Mock(HelpersMixin):
             result.append(get_package_srpm_path(spec))
         return result
 
+    def get_package_debuginfo_paths(self, nvr):
+        ''' Return paths to debuginfo rpms for given nvr.  '''
+        pattern = '%s-*debuginfo*-%s-*' % (nvr.name, nvr.version)
+        return self._get_rpm_paths(pattern)
+
     def get_builddir(self, subdir=None):
         """ Return the directory which corresponds to %_topdir inside
         mock. Optional subdir argument is added to returned path.
@@ -356,14 +357,14 @@ class _Mock(HelpersMixin):
         opt = Settings.mock_options
         if not opt:
             opt = ''
-        if not 'resultdir' in opt:
+        if 'resultdir' not in opt:
             opt += ' --resultdir=' + ReviewDirs.results + ' '
         return opt
 
     def clear_builddir(self):
         ''' Remove all sources installed in BUILD. '''
         cmd = self._mock_cmd()
-        cmd.append('--shell')
+        cmd += ['--chroot', '--']
         cmd.append('rm -rf $(rpm --eval %_builddir)/*')
         errmsg = self._run_cmd(cmd)
         if errmsg:
@@ -383,7 +384,7 @@ class _Mock(HelpersMixin):
     def is_installed(self, package):
         ''' Return true iff package is installed in mock chroot. '''
         cmd = self._mock_cmd()
-        cmd.append('--shell')
+        cmd += ('--chroot', '--')
         cmd.append('"rpm -q ' + package + '" &>/dev/null')
         cmd = ' '.join(cmd)
         rc = call(cmd, shell=True)
@@ -403,7 +404,7 @@ class _Mock(HelpersMixin):
             self.log.warning("Cannot run mock --copyin: " + errmsg)
             return errmsg
         cmd = self._mock_cmd()
-        cmd.append('--shell')
+        cmd += ['--chroot', '--']
         script = 'rpm -i ' + os.path.basename(srpm.filename) + '; '
         script += 'rpmbuild --nodeps -bp $(rpm --eval %_specdir)/' \
                   + srpm.name + '.spec;'
@@ -411,7 +412,7 @@ class _Mock(HelpersMixin):
         cmd.append(script)
         errmsg = self._run_cmd(cmd)
         if errmsg:
-            self.log.warning("Cannot run mock --shell rpmbuild -bp: "
+            self.log.warning("Cannot run mock --chroot rpmbuild -bp: "
                              + errmsg)
             return errmsg
         return None
@@ -422,12 +423,13 @@ class _Mock(HelpersMixin):
         Raises ReviewError on build errors, return
         nothing.
         """
+        self.clear_builddir()
         cmd = ' '.join(self._mock_cmd())
         if Settings.log_level > logging.INFO:
             cmd += ' -q'
         cmd += ' --rebuild'
         cmd += ' ' + filename + ' 2>&1 | tee build.log'
-        if not Settings.verbose and not ' -q' in cmd:
+        if not Settings.verbose and ' -q' not in cmd:
             cmd += ' | egrep "Results and/or logs|ERROR" '
         self.log.debug('Build command: %s' % cmd)
         rc = call(cmd, shell=True)

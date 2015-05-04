@@ -1,3 +1,21 @@
+0.5.3
+=====
+- Handle new mock version leaving log fils in resultdir (#251).
+- Small report layout fixes [61b9323].
+- Install and run rpmlint on debug packages (bz #1114331).
+- Adapt PHP plugin for upcoming phpcompatingo v4 (#248).
+- Handle unavailable mock (#234, sort of).
+- Handle links without 'href' attribute (#235).
+- Don't care about %%clean (bz #1112410).
+- Test fixes, for now runs locally but not on jenkins.
+- Restore pylint and pep8 conformance.
+- Restore rpmlint of installed packages.
+- Handle UTF-8 in XML report (bz #1112667).
+- Always clear builddir before build (bz #1171601).
+- Always unpack srpm (bz #1194657).
+- Make CheckDistTag mandatory (#243)
+- fedora-create-review: Ensure upload is readable (#246).
+
 0.5.2
 =====
 - Add perl filter for fedora-review tests to prevent perl module provides

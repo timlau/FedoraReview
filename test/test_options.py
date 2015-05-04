@@ -182,27 +182,27 @@ class TestOptions(FR_TestCase):
 
         loglevel = os.environ['REVIEW_LOGLEVEL']
         os.environ['REVIEW_LOGLEVEL'] = 'ERROR'
-        self.init_opt_test(['-b', '818805'], 'options')
+        self.init_opt_test(['-b', '1079967'], 'options')
         os.environ['REVIEW_LOGLEVEL'] = loglevel
         bug = BugzillaBug(Settings.bug)
         bug.find_urls()
         bug.download_files()
-        srpm_org_time = get_mtime('srpm/openerp-client*.src.rpm')
+        srpm_org_time = get_mtime('srpm/fedwatch*.src.rpm')
         Checks(bug.spec_file, bug.srpm_file)
-        upstream_org_time = get_mtime('upstream/openerp-client*.gz')
+        upstream_org_time = get_mtime('upstream/fedwatch*.gz')
         del bug
 
         os.chdir(self.startdir)
         loglevel = os.environ['REVIEW_LOGLEVEL']
         os.environ['REVIEW_LOGLEVEL'] = 'ERROR'
-        self.init_opt_test(['-cb', '818805'], 'options')
+        self.init_opt_test(['-cb', '1079967'], 'options')
         os.environ['REVIEW_LOGLEVEL'] = loglevel
         bug = BugzillaBug(Settings.bug)
         bug.find_urls()
         bug.download_files()
-        srpm_new_time = get_mtime('srpm/openerp-client*.src.rpm')
+        srpm_new_time = get_mtime('srpm/fedwatch*.src.rpm')
         Checks(bug.spec_file, bug.srpm_file)
-        upstream_new_time = get_mtime('upstream/openerp-client*.gz')
+        upstream_new_time = get_mtime('upstream/fedwatch*.gz')
 
         self.assertEqual(upstream_org_time, upstream_new_time, 'upstream')
         self.assertEqual(srpm_org_time, srpm_new_time, 'srpm')

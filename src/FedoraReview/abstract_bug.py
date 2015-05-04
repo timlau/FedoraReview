@@ -13,10 +13,12 @@
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 # (C) 2011 - Tim Lauridsen <timlau@@fedoraproject.org>
+
 '''
 Common bug base class. A Bug is a filter that provides usable URL:s to
 srpm and spec file given some kind of key when created.
 '''
+
 import os.path
 import tempfile
 
@@ -132,12 +134,12 @@ class AbstractBug(HelpersMixin):
     def _check_cache(self):
         ''' return True iff srpm and spec are in srpm dir . '''
         name = self.get_name()
-        assert(name != '?')
+        assert name != '?'
         specs = glob(os.path.join(ReviewDirs.srpm,
                                   name + '*.spec'))
         found = len(specs)
         srpms = glob(os.path.join(ReviewDirs.srpm,
-                     name + '*.src.rpm'))
+                                  name + '*.src.rpm'))
         found += len(srpms)
         if found == 2:
             self.spec_file = specs[0]
@@ -182,6 +184,7 @@ class AbstractBug(HelpersMixin):
 
     def find_urls(self):
         """ Retrieve the page and parse for srpm and spec url. """
+        # pylint: disable=bare-except
         try:
             self.find_srpm_url()
             self.log.info("  --> SRPM url: " + self.srpm_url)

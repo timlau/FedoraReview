@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -82,7 +82,7 @@ class BuildCheckBase(CheckBase):
         for line in out.split('\n'):
             if line and len(line) > 0:
                 self.rpmlint_output.append(line)
-        no_errors, msg  = self.check_rpmlint_errors(out, self.log)
+        no_errors, msg = self.check_rpmlint_errors(out, self.log)
         return no_errors, msg if msg else out
 
     def rpmlint(self):
@@ -90,11 +90,12 @@ class BuildCheckBase(CheckBase):
         """
         return self.run_rpmlint([self.filename])
 
-    def rpmlint_rpms(self):
+    def rpmlint_rpms(self, rpms=None):
         """ Runs rpmlint against the used rpms - prebuilt or built in mock.
         """
         # pylint: disable=E1123
-        rpms = Mock.get_package_rpm_paths(self.spec, with_srpm=True)
+        if rpms is None:
+            rpms = Mock.get_package_rpm_paths(self.spec, with_srpm=True)
         no_errors, result = self.run_rpmlint(rpms)
         return no_errors, result + '\n'
 
@@ -136,9 +137,13 @@ class CheckResultdir(BuildCheckBase):
         self.text = 'Resultdir need to be empty before review'
 
     def run(self):
-        if len(glob.glob(os.path.join(Mock.resultdir, '*.*'))) != 0 \
-            and not (Settings.nobuild or Settings.prebuilt):
+        if Settings.nobuild or Settings.prebuilt:
+            self.set_passed(self.NA)
+            return
+        for f in glob.glob(os.path.join(Mock.resultdir, '*.*')):
+            if not f.endswith('.log'):
                 raise self.NotEmptyError()       # pylint: disable=W0311
+            os.unlink(f)
         self.set_passed(self.NA)
 
 
@@ -188,7 +193,7 @@ class CheckBuild(BuildCheckBase):
                 return
             else:
                 self.log.info(
-                        'No valid cache, building despite --no-build.')
+                    'No valid cache, building despite --no-build.')
         _mock_root_setup("While building")
         Mock.build(self.srpm.filename)
         listfiles()
@@ -242,6 +247,10 @@ class CheckPackageInstalls(BuildCheckBase):
         return bad_ones
 
     def run(self):
+        if not Mock.is_available():
+            self.set_passed(self.PENDING,
+                            "No installation test done (mock unavailable)")
+            return
         if Settings.nobuild:
             bad_ones = self.check_build_installed()
             if bad_ones == []:
@@ -255,6 +264,8 @@ class CheckPackageInstalls(BuildCheckBase):
             return
         _mock_root_setup('While installing built packages', force=True)
         rpms = Mock.get_package_rpm_paths(self.spec)
+        rpms.extend(
+            Mock.get_package_debuginfo_paths(self.spec.get_package_nvr()))
         self.log.info('Installing built package(s)')
         output = Mock.install(rpms)
         if not output:
@@ -263,7 +274,7 @@ class CheckPackageInstalls(BuildCheckBase):
             attachments = [
                 self.Attachment('Installation errors', output, 3)]
             self.set_passed(self.FAIL,
-                           "Installation errors (see attachment)",
+                            "Installation errors (see attachment)",
                             attachments)
 
 
@@ -282,17 +293,52 @@ class CheckRpmlintInstalled(BuildCheckBase):
         self.needs = ['CheckPackageInstalls']
 
     def run(self):
+        if not Mock.is_available():
+            self.set_passed(self.NA)
+            return
         if self.checks.checkdict['CheckPackageInstalls'].is_passed:
             rpms = Mock.get_package_rpm_paths(self.spec)
+            rpms.extend(
+                Mock.get_package_debuginfo_paths(self.spec.get_package_nvr()))
             no_errors, retcode = Mock.rpmlint_rpms(rpms)
             text = 'No rpmlint messages.' if no_errors else \
                              'There are rpmlint messages (see attachment).'
             attachments = \
                 [self.Attachment('Rpmlint (installed packages)',
-                                 retcode + '\n', 5)]
+                                 retcode + '\n', 7)]
             self.set_passed(self.PASS, text, attachments)
         else:
             self.set_passed(self.FAIL, 'Mock build failed')
+
+
+class CheckRpmlintDebuginfo(BuildCheckBase):
+    '''
+    EXTRA: Not in guidelines, but running rpmlint on the debuginfo
+    package occasionally reveals things otherwise not found.
+    '''
+    def __init__(self, base):
+        BuildCheckBase.__init__(self, base)
+        self.url = 'http://fedoraproject.org/wiki/' \
+                   'Packaging/Guidelines#rpmlint'
+        self.text = 'Rpmlint is run on debuginfo package(s).'
+        self.automatic = True
+        self.type = 'EXTRA'
+        self.needs = ['CheckRpmlintInstalled']
+
+    def run(self):
+        if not self.checks.checkdict['CheckPackageInstalls'].is_passed:
+            self.set_passed(self.NA)
+            return self.NA
+        rpms = Mock.get_package_debuginfo_paths(self.spec.get_package_nvr())
+        if not rpms:
+            self.set_passed(self.NA)
+            return self.NA
+        no_errors, retcode = self.rpmlint_rpms(rpms)
+        text = 'No rpmlint messages.' if no_errors else \
+                         'There are rpmlint messages (see attachment).'
+        attachments = \
+            [self.Attachment('Rpmlint (debuginfo)', retcode + '\n', 6)]
+        self.set_passed(self.PASS, text, attachments)
 
 
 class CheckInitDeps(BuildCheckBase):
@@ -302,7 +348,7 @@ class CheckInitDeps(BuildCheckBase):
         BuildCheckBase.__init__(self, base)
         self.automatic = True
         self.type = 'EXTRA'
-        self.needs = ['CheckRpmlintInstalled']
+        self.needs = ['CheckRpmlintDebuginfo']
 
     def run(self):
         # Dirty work-around for
@@ -337,13 +383,15 @@ class CheckBuildCompleted(BuildCheckBase):
         plugins = self.checks.get_plugins(False)
         text += 'Disabled plugins: ' + ', '.join(plugins) + '\n'
         flags = [f for f in self.checks.flags.iterkeys()
-            if not self.checks.flags[f]]
+                 if not self.checks.flags[f]]
         flags = ', '.join(flags) if flags else 'None'
         text += 'Disabled flags: ' + flags + '\n'
         return self.Attachment('', text, 10)
 
     def run(self):
         if not Mock.is_available():
+            self.log.info(
+                "Mock unavailable, build and installation not checked.")
             self.set_passed(self.NA)
             return
         Mock.clear_builddir()
@@ -360,7 +408,7 @@ class CheckBuildCompleted(BuildCheckBase):
                 shutil.rmtree('BUILD')
         os.symlink(Mock.get_builddir('BUILD'), 'BUILD')
         self.log.info('Active plugins: ' +
-                          ', '.join(self.checks.get_plugins(True)))
+                      ', '.join(self.checks.get_plugins(True)))
         self.set_passed(self.NA, None, [self.setup_attachment()])
 
 

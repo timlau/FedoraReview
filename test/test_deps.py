@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -38,6 +38,7 @@ DEPLIST_OK = set(["bash",
                   "python-bugzilla",
                   "python-kitchen",
                   "python-straight-plugin",
+                  "packagedb-cli",
                   "rpm-python",
                   "devscripts-minimal"])
 
@@ -48,7 +49,7 @@ DIRLIST_OK = set(["/usr/share/doc/ruby-racc-1.4.5",
                   "/usr/share/ruby/vendor_ruby/racc"])
 DIRLIST_PKG = 'ruby-racc/ruby-racc/results/ruby-racc-1.4.5-9.fc17.noarch.rpm'
 
-OWNERS_OK = set(['rpm', 'yum', 'fedora-release'])
+OWNERS_OK = set(['rpm', 'yum', 'fedora-repos'])
 
 
 class TestDeps(unittest.TestCase):

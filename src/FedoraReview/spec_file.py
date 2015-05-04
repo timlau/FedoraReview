@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -106,7 +106,7 @@ class SpecFile(object):
                 return Mock.get_package_rpm_path(nvr)
             except ReviewError:
                 self.log.warning("Package %s-%s-%s not built"
-                                     % (nvr.name, nvr.version, nvr.release))
+                                 % (nvr.name, nvr.version, nvr.release))
                 return None
 
         pkgs = [p.header[rpm.RPMTAG_NAME] for p in self.spec.packages]
@@ -135,7 +135,7 @@ class SpecFile(object):
         ''' If found, expand %_font_pkg macro. '''
         expanded = []
         for l in self.lines:
-            if not '%_font_pkg' in l:
+            if '%_font_pkg' not in l:
                 expanded.append(l)
             else:
                 expanded.extend(rpm.expandMacro(l).split('\n'))
@@ -168,7 +168,7 @@ class SpecFile(object):
                     self.spec.sourceHeader.format(urllib.unquote(url))
             except Exception:
                 raise SpecParseReviewError("Cannot parse %s url %s"
-                                            % (tag, url))
+                                           % (tag, url))
         return result
 
     def _parse_files_pkg_name(self, line):
@@ -210,8 +210,9 @@ class SpecFile(object):
                 lines.append(line)
             elif line.startswith('%'):
                 token = re.split(r'\s|\(', line)[0]
-                if not token in ['%ghost', '%doc', '%docdir', '%license',
-                    '%verify', '%attr', '%config', '%dir', '%defattr']:
+                if token not in ['%ghost', '%doc', '%docdir', '%license',
+                                 '%verify', '%attr', '%config', '%dir',
+                                 '%defattr']:
                         break
                 else:
                     lines.append(line)

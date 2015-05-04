@@ -14,8 +14,14 @@ rpm -q php-bartlett-PHP-CompatInfo &> /dev/null || {
 
 LOG=$PWD/phpci.log
 
-if [ -f /etc/phpcompatinfo.json ]
+if [ -x /usr/share/php-bartlett-PHP-CompatInfo/fedora-review-check ]
 then
+  # Version > 4
+  /usr/share/php-bartlett-PHP-CompatInfo/fedora-review-check $LOG $PWD/BUILD/*
+
+elif [ -f /etc/phpcompatinfo.json ]
+then
+  # Version > 3
   cd BUILD/*
   phpcompatinfo \
      --no-ansi --no-interaction \
@@ -23,7 +29,9 @@ then
      Extension Class Constant Function Interface Namespace Trait \
      >$LOG
   cd ../..
+
 else
+  # Older versions
   cp  /etc/pear/PHP_CompatInfo/phpcompatinfo.xml.dist phpcompatinfo.xml
   sed -i '/consoleProgress/s/true/false/' phpcompatinfo.xml
   phpcompatinfo --configuration=phpcompatinfo.xml print \

@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """Java language specific checks are in a separate plugin"""
 
 from FedoraReview import CheckBase, RegistryBase

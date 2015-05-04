@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -15,6 +15,9 @@
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 # (C) 2011 - Tim Lauridsen <timlau@fedoraproject.org>
+
+# pylint: disable=cell-var-from-loop
+
 '''
 Tools for helping Fedora package reviewers
 '''
@@ -73,13 +76,13 @@ class ReviewHelper(object):
         ''' Create a review report'''
         clock = time.time()
         self.log.info('Getting .spec and .srpm Urls from : '
-                       + self.bug.get_location())
+                      + self.bug.get_location())
 
         Settings.dump()
         if not self.bug.find_urls():
             raise self.HelperError('Cannot find .spec or .srpm URL(s)')
         self.log.debug("find_urls completed: %.3f"
-                           % (time.time() - clock))
+                       % (time.time() - clock))
         clock = time.time()
 
         if not ReviewDirs.is_inited:
@@ -166,7 +169,7 @@ class ReviewHelper(object):
         files = list(set([c.defined_in for c in checks_list]))
         list_data_by_file(files, checks_list)
         deps_list = filter(lambda c: c.needs != [] and
-                               c.needs != ['CheckBuildCompleted'],
+                           c.needs != ['CheckBuildCompleted'],
                            checks_list)
         for dep in deps_list:
             print'Dependencies: ' + dep.name + ': ' + \
@@ -183,6 +186,7 @@ class ReviewHelper(object):
     @staticmethod
     def _print_version():
         ''' Handle --version option. '''
+        # pylint: disable=superfluous-parens
         print('fedora-review version ' + __version__ + ' ' + BUILD_FULL)
         print('external plugins:')
         checks_lister = ChecksLister()
@@ -223,9 +227,10 @@ class ReviewHelper(object):
 
     def run(self, outfile=None):
         ''' Load urls, run checks and make report, '''
+        # pylint: disable=bare-except
         started_at = time.time()
         self.log.debug('fedora-review ' + __version__ + ' ' +
-                         BUILD_FULL + ' started')
+                       BUILD_FULL + ' started')
         self.log.debug("Command  line: " + ' '.join(sys.argv))
         try:
             rcode = 0
@@ -250,7 +255,7 @@ class ReviewHelper(object):
                            '(logs in ' + Settings.session_log + ')')
             rcode = 1
         self.log.debug("Report completed:  %.3f seconds"
-                           % (time.time() - started_at))
+                       % (time.time() - started_at))
         return rcode
 
 

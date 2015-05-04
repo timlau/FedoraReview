@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -56,7 +56,7 @@ class SRPMFile(HelpersMixin):
         rc = call(cmd, shell=True)
         if rc != 0:
             self.log.warn(
-                    "Cannot unpack %s into %s" % (self.filename, wdir))
+                "Cannot unpack %s into %s" % (self.filename, wdir))
         else:
             self._unpacked_src = wdir
         os.chdir(oldpwd)
@@ -66,7 +66,7 @@ class SRPMFile(HelpersMixin):
         self.filename = os.path.basename(path)
         self.unpack(path)
         files = glob(os.path.join(self._unpacked_src, '*'))
-        if not self.filename in [os.path.basename(f) for f in files]:
+        if self.filename not in [os.path.basename(f) for f in files]:
             self.log.error(
                 'Trying to unpack non-existing source: ' + path)
             return None
@@ -81,7 +81,7 @@ class SRPMFile(HelpersMixin):
                                  extract_dir)
         if not rv:
             self.log.debug("Cannot unpack %s, so probably not an "
-                    "archive. Copying instead" % self.filename)
+                           "archive. Copying instead" % self.filename)
             shutil.copy(os.path.join(self._unpacked_src, self.filename),
                         extract_dir)
         return extract_dir
@@ -97,7 +97,7 @@ class SRPMFile(HelpersMixin):
         if not src_files:
             self.log.warn('No unpacked sources found (!)')
             return "ERROR"
-        if not filename in [os.path.basename(f) for f in src_files]:
+        if filename not in [os.path.basename(f) for f in src_files]:
             self.log.warn('Cannot find source: ' + filename)
             return "ERROR"
         path = os.path.join(self._unpacked_src, filename)

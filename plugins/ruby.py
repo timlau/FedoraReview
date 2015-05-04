@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 ''' Checks for ruby and rubygem packages.'''
 
 import re
@@ -305,7 +305,7 @@ class GemCheckDoesntHaveNonGemSubpackage(GemCheckBase):
     def __init__(self, base):
         GemCheckBase.__init__(self, base)
         self.url = _gl_fmt_uri({'section':
-                               'Packaging_for_Gem_and_non-Gem_use'})
+                                'Packaging_for_Gem_and_non-Gem_use'})
         self.text = 'Gem package must not define a non-gem subpackage'
         self.automatic = True
 
@@ -336,8 +336,8 @@ class GemCheckRequiresRubygems(GemCheckBase):
                 if pkg_name.endswith(suffix):
                     continue
             rpm_pkg = self.rpms.get(pkg_name)
-            if not 'rubygems' in rpm_pkg.requires and \
-                    not 'ruby(rubygems)' in rpm_pkg.requires:
+            if 'rubygems' not in rpm_pkg.requires and \
+                    'ruby(rubygems)' not in rpm_pkg.requires:
                 failed.append(pkg_name)
         if failed:
             text = 'Requires: rubygems missing in ' + ', '.join(failed)

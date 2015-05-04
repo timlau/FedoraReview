@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 ''' PHP specifics checks, http://fedoraproject.org/wiki/Packaging:PHP '''
 

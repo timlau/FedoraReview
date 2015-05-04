@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 """ R specifics checks """
 # Let's disable the complain about how short R is
@@ -72,8 +72,8 @@ class RCheckBase(CheckBase):
                     version = ver.replace('Version:', '').strip()
                 else:
                     self.log.warning(
-                        " * Found two version of the package in %s" % (
-                        " ".join(versionok)))
+                        " * Found two version of the package in %s"
+                        % (" ".join(versionok)))
         return version
 
 
@@ -94,8 +94,9 @@ class RCheckBuildRequires(RCheckBase):
         if set(tocheck).intersection(set(brs)):
             self.set_passed(self.PASS)
         else:
-            self.set_passed(self.FAIL, 'Missing BuildRequires on %s' %
-                        ', '.join(set(tocheck).difference(set(brs))))
+            self.set_passed(self.FAIL,
+                            'Missing BuildRequires on %s'
+                            % ', '.join(set(tocheck).difference(set(brs))))
 
 
 class RCheckRequires(RCheckBase):
@@ -111,9 +112,9 @@ class RCheckRequires(RCheckBase):
     def run_on_applicable(self):
         """ Run the check """
         brs = self.spec.get_requires()
-        if ('R' in brs and not 'R-core' in brs):
+        if 'R' in brs and 'R-core' not in brs:
             self.set_passed(self.FAIL,
-                "Package should requires R-core rather than R")
+                            "Package should requires R-core rather than R")
         else:
             self.set_passed('R-core' in brs)
 
@@ -161,14 +162,16 @@ class RCheckLatestVersionIsPackaged(RCheckBase):
         cur_version = self.spec.expand_tag('Version')
         up_version = self.get_upstream_r_package_version()
         if up_version is None:
-            self.set_passed(self.PENDING,
+            self.set_passed(
+                self.PENDING,
                 'The package does not come from one of the standard sources')
             return
         up_version = up_version.replace('-', '.')
 
-        self.set_passed(up_version == cur_version, "Latest upstream " +
-                "version is %s, packaged version is %s" %
-                (up_version, cur_version))
+        self.set_passed(
+            up_version == cur_version,
+            "Latest upstream version is %s, packaged version is %s"
+            % (up_version, cur_version))
 
 
 class RCheckCheckMacro(RCheckBase):
@@ -215,7 +218,7 @@ class RCheckInstallSection(RCheckBase):
                 ('/R/library' in line or 'rlibdir' in line):
                 b_dir = True
             if rpm.expandMacro("test -d %{packname}/src && "
-            "(cd %{packname}/src; rm -f *.o *.so)") in line:
+                               "(cd %{packname}/src; rm -f *.o *.so)") in line:
                 b_test = True
             if 'rm' in line and 'R.css' in line:
                 b_rm = True

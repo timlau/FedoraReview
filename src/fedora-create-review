@@ -330,10 +330,13 @@ class ReviewRequest(object):
 
     def upload_files(self):
         """ Upload the spec file and the src.rpm files into
-        fedorapeople.org."""
+        fedorapeople.org, ensuring readable mode."""
         print 'Uploading files into fedorapeople'
         self.log.debug('Target: %s' % self.settings.upload_target)
-
+        for path in [self.specfile, self.srpmfile ]:
+            mode = os.stat(path)[0]
+            mode |= stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH
+            os.chmod(path, mode)
         cmd = ['scp', self.specfile, self.srpmfile,
             self.username + "@" + self.settings.upload_target]
         self.log.debug(cmd)

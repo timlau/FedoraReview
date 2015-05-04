@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
 #    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #    MA  02110-1301 USA.
 #
-# pylint: disable=C0103,R0904,R0913,W0201
+# pylint: disable=C0103,R0904,R0913,W0201,bad-continuation
 # (C) 2011 - Tim Lauridsen <timlau@fedoraproject.org>
 '''
 Unit checks for automatic test of fedora review guidelines
@@ -98,11 +98,11 @@ class TestChecks(FR_TestCase):
                         ('pending', 'CheckSystemdScripts'),
                         ('pending', 'CheckMacros'),
                         ('pending', 'CheckFunctionAsDescribed'),
-                        ('pass', 'CheckLicensInDoc'),
+                        ('fail', 'CheckLicensInDoc'),
                         ('pending', 'CheckRequires'),
                         ('pending', 'CheckCodeAndContent'),
                         ('pass', 'CheckNameCharset'),
-                        ('pass', 'CheckIllegalSpecTags'),
+                        ('fail', 'CheckIllegalSpecTags'),
                         ('pass', 'CheckSpecName'),
                         ('pending', 'CheckDevelFilesInDevel'),
                         ('pending', 'CheckSpecLegibility'),
@@ -182,12 +182,12 @@ class TestChecks(FR_TestCase):
                         ('pending', 'CheckSystemdScripts'),
                         ('pending', 'CheckMacros'),
                         ('pending', 'CheckFunctionAsDescribed'),
-                        ('pass', 'CheckLicensInDoc'),
+                        ('fail', 'CheckLicensInDoc'),
                         ('pending', 'CheckRequires'),
                         ('pending', 'CheckCodeAndContent'),
                         ('pass', 'CheckNameCharset'),
                         ('pass', 'GemCheckExcludesGemCache'),
-                        ('pass', 'CheckIllegalSpecTags'),
+                        ('fail', 'CheckIllegalSpecTags'),
                         ('pass', 'CheckSpecName'),
                         ('pending', 'CheckNoConflicts'),
                         ('pass', 'GemCheckDoesntHaveNonGemSubpackage'),
@@ -219,10 +219,10 @@ class TestChecks(FR_TestCase):
         spec.testcase = 'logback'
         spec.workdir = 'logback'
         spec.groups_ok = ['Generic.build', 'Generic', 'Generic.should',
-                          'Java']
+                          'Java', 'Java.guidelines', 'Maven']
         spec.expected = [('na', 'CheckResultdir'),
                          ('pending', 'CheckBuild'),
-                         ('fail', 'CheckJavaPlugin'),
+                         ('na', 'CheckJavaPlugin'),
                          ('na', 'CheckDaemonCompileFlags'),
                          ('pass', 'CheckRpmlint'),
                          ('pass', 'CheckPackageInstalls'),
@@ -270,11 +270,11 @@ class TestChecks(FR_TestCase):
                          ('pending', 'CheckSystemdScripts'),
                          ('pending', 'CheckMacros'),
                          ('pending', 'CheckFunctionAsDescribed'),
-                         ('pass', 'CheckLicensInDoc'),
+                         ('fail', 'CheckLicensInDoc'),
                          ('pending', 'CheckRequires'),
                          ('pending', 'CheckCodeAndContent'),
                          ('pass', 'CheckNameCharset'),
-                         ('pass', 'CheckIllegalSpecTags'),
+                         ('fail', 'CheckIllegalSpecTags'),
                          ('pass', 'CheckSpecName'),
                          ('pending', 'CheckDevelFilesInDevel'),
                          ('pending', 'CheckSpecLegibility'),
@@ -391,13 +391,13 @@ class TestChecks(FR_TestCase):
                          ('pending', 'CheckSystemdScripts'),
                          ('pending', 'CheckMacros'),
                          ('pending', 'CheckFunctionAsDescribed'),
-                         ('pass', 'CheckLicensInDoc'),
+                         ('fail', 'CheckLicensInDoc'),
                          ('pending', 'CheckRequires'),
                          ('pass', 'CheckPkgConfigFiles'),
                          ('pending', 'CheckCodeAndContent'),
                          ('pass', 'CheckNameCharset'),
                          ('pass', 'CheckLibToolArchives'),
-                         ('pass', 'CheckIllegalSpecTags'),
+                         ('fail', 'CheckIllegalSpecTags'),
                          ('pass', 'CheckAutotoolsObsoletedMacros'),
                          ('pass', 'CheckSpecName'),
                          ('pending', 'CheckDevelFilesInDevel'),

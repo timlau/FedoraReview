@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+#    -*- coding: utf-8 -*-
 
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -40,7 +40,7 @@ ENVIRON_TEMPLATE = """
 # shell API plugin. No need to modify it or anything.
 #
 
-unset $(env | sed -n 's/=.*//p')
+declare -f +x module
 PATH=/bin:/usr/bin:/sbin/:/usr/sbin
 
 FR_FLAGS_generator
@@ -350,8 +350,8 @@ class Registry(AbstractRegistry):
 
 class ShellCheck(GenericCheck):
     """ A single test  defined by a shell plugin. """
-    DEFAULT_GROUP  = 'Generic'
-    DEFAULT_TYPE   = 'MUST'
+    DEFAULT_GROUP = 'Generic'
+    DEFAULT_TYPE = 'MUST'
     implementation = 'script'
 
     def __init__(self, registry, path):
@@ -474,6 +474,7 @@ class ShellCheck(GenericCheck):
             for line in f.readlines():
                 try:
                     tag, msg = line.split(':')
+                    # pylint: disable=eval-used
                     level = eval('logging.' + tag.upper())
                 except (ValueError, AttributeError):
                     self.log.error("Malformed plugin log: " + line)
@@ -488,7 +489,7 @@ class ShellCheck(GenericCheck):
         ''' Run the check. '''
         if self.is_run:
             return
-        if not self.group in self.groups:
+        if self.group not in self.groups:
             self.set_passed(self.PENDING,
                             "Test run failed: illegal group")
             self.log.warning('Illegal group %s in %s' %
@@ -497,7 +498,8 @@ class ShellCheck(GenericCheck):
         if not self.groups[self.group].is_applicable():
             self.set_passed(self.NA)
             return
-        cmd = 'source ./review-env.sh; source ' + self.defined_in
+        cmd = 'env -i bash -c "source ./review-env.sh; source %s"' % \
+            self.defined_in
         retval, stdout, stderr = self._do_run(cmd)
         self._handle_log_messages()
         attachments = self._get_attachments()
@@ -516,7 +518,7 @@ class ShellCheck(GenericCheck):
             self.log.warning(
                 'Illegal return from %s, code %d, output: %s' %
                 (self.defined_in, retval,
-                'stdout:' + str(stdout) + ' stderr:' + str(stderr)))
+                 'stdout:' + str(stdout) + ' stderr:' + str(stderr)))
             self.set_passed(self.PENDING, 'Test run failed')
 
 # vim: set expandtab ts=4 sw=4:

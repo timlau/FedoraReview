@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """ Test module for C/C++  based packages. """
 
 import re
@@ -64,8 +64,8 @@ class CheckLDConfig(CCppCheckBase):
             rpm = RpmFile(pkg, nvr.version, nvr.release)
             if not self.rpms.find_re(self.sofiles_regex, pkg):
                 continue
-            if not rpm.post or not '/sbin/ldconfig' in rpm.post or \
-                not rpm.postun or not '/sbin/ldconfig' in rpm.postun:
+            if not rpm.post or '/sbin/ldconfig' not in rpm.post or \
+                not rpm.postun or '/sbin/ldconfig' not in rpm.postun:
                     bad_pkgs.append(pkg)
         if bad_pkgs:
             self.set_passed(self.FAIL,
@@ -102,7 +102,7 @@ class CheckHeaderFiles(CCppCheckBase):
                 if path.startswith('/usr/src/debug/') and '-debuginfo' in pkg:
                     continue
                 # All other .h files should be in a -devel package.
-                if not '-devel' in pkg:
+                if '-devel' not in pkg:
                     passed = False
                     extra += "%s : %s\n" % (pkg, path)
         self.set_passed(passed, extra)
@@ -170,7 +170,7 @@ class CheckSoFiles(CCppCheckBase):
 
         if bad_list:
             attachments = [self.Attachment('Unversioned so-files',
-                "\n".join(bad_list))]
+                                           "\n".join(bad_list))]
 
         self.set_passed(passed, extra, attachments)
 

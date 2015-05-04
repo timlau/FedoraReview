@@ -83,7 +83,7 @@ class AbstractDataSource(object):
     def find(self, glob_pattern, container=None):
         ''' Find first file matching glob_pattern, or None. '''
         self.init()
-        if container and not container in self.containers:
+        if container and container not in self.containers:
             raise ValueError('DataSource: bad source: ' + container)
         if hasattr(glob_pattern, 'match'):
             return self.find_re(glob_pattern, container)
@@ -96,7 +96,7 @@ class AbstractDataSource(object):
     def find_re(self, regex, container=None):
         ''' Find first file matching regex, or None. '''
         self.init()
-        if container and not container in self.containers:
+        if container and container not in self.containers:
             raise ValueError('DataSource: bad source: ' + container)
         if isinstance(regex, str):
             regex = re.compile(regex, re.IGNORECASE)
@@ -109,7 +109,7 @@ class AbstractDataSource(object):
     def find_all(self, glob_pattern, container=None):
         ''' List of all files matching glob_pattern. '''
         self.init()
-        if container and not container in self.containers:
+        if container and container not in self.containers:
             raise ValueError('DataSource: bad source: ' + container)
         if hasattr(glob_pattern, 'match'):
             return self.find_all_re(glob_pattern, container)
@@ -123,7 +123,7 @@ class AbstractDataSource(object):
     def find_all_re(self, regex, container=None):
         ''' List of all files matching regex. '''
         self.init()
-        if container and not container in self.containers:
+        if container and container not in self.containers:
             raise ValueError('DataSource: bad source: ' + container)
         if isinstance(regex, str):
             regex = re.compile(regex, re.IGNORECASE)
@@ -176,7 +176,7 @@ class BuildFilesSource(AbstractDataSource):
 
     def get_filelist(self, container=None):
         self.init()
-        if container and not container in self.containers:
+        if container and container not in self.containers:
             raise ValueError('BuildFilesSource: illegal rootdir')
         if self.files is None:
             self.files = []
@@ -215,7 +215,7 @@ class RpmDataSource(AbstractDataSource):
 
     def get_filelist(self, container=None):
         self.init()
-        if container and not container in self.containers:
+        if container and container not in self.containers:
             raise ValueError('RpmSource: bad package: ' + container)
         if container:
             return self.rpms_by_pkg[container].filelist
@@ -268,7 +268,7 @@ class SourcesDataSource(AbstractDataSource):
                        len(self.files_by_tag[source.tag]))
 
     def get_filelist(self, container=None):
-        if container and not container in self.containers:
+        if container and container not in self.containers:
             raise ValueError('SourcesDataSource: bad package: '
                              + container)
         if container:
@@ -285,7 +285,7 @@ class SourcesDataSource(AbstractDataSource):
         if not tag:
             tag = 'Source0'
             self.log.warning('Retrieving default source as Source0')
-        if not tag in self.sources_by_tag.iterkeys():
+        if tag not in self.sources_by_tag.iterkeys():
             return None
         return self.sources_by_tag[tag]
 

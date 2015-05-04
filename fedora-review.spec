@@ -6,7 +6,7 @@
 %bcond_with tests
 
 # See notes in make_release which patches this.
-#global     git_tag  .fa1afe1
+%global     git_tag  .fa1afe1
 
 # Support jenkins build number if available.
 %global     build_nr %(echo "${BUILD_NUMBER:+.}${BUILD_NUMBER:-%%{nil\\}}")

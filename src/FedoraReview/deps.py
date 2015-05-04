@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -35,7 +35,7 @@ def init():
         check_output(['yum', 'makecache'])
     except subprocess.CalledProcessError:
         Settings.get_logger().warning(
-                            "Cannot run yum makecache, trouble ahead")
+            "Cannot run yum makecache, trouble ahead")
 
 
 def list_deps(pkgs):
@@ -43,6 +43,9 @@ def list_deps(pkgs):
 
     if not isinstance(pkgs, list):
         pkgs = [pkgs]
+    if not pkgs:
+        return []
+
     cmd = ['repoquery', '-C', '--requires', '--resolve']
     cmd.extend(pkgs)
     Settings.get_logger().debug("Running: " + ' '.join(cmd))
@@ -66,6 +69,8 @@ def resolve(reqs):
 
     if not isinstance(reqs, list):
         reqs = [reqs]
+    if not reqs:
+        return []
     cmd = ['repoquery', '-C', '--whatprovides']
     cmd.extend(reqs)
     Settings.get_logger().debug("Running: " + ' '.join(cmd))
@@ -127,8 +132,8 @@ def list_owners(paths):
             continue
         path_owners = [p.strip() for p in path_owners]
         if path_owners and path_owners[0]:
-            path_owners = [p for p in path_owners
-                               if not p.startswith('error:')]
+            path_owners =  \
+                [p for p in path_owners if not p.startswith('error:')]
         if not path_owners or not path_owners[0]:
             continue
         paths_to_exam.remove(paths[i])

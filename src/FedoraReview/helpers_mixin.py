@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -139,7 +139,7 @@ class HelpersMixin(object):
                            lines)
         if len(err_lines) == 0:
             Settings.get_logger().debug('Cannot parse rpmlint output: '
-                                         + out)
+                                        + out)
             return False, 'Cannot parse rpmlint output:'
 
         res = problems.search(err_lines[-1])

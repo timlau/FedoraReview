@@ -6,7 +6,7 @@
 #
 #    -q  Don't run static checks, just run test
 #
-# Requires: python-virtualenv, python-pip
+# Requires: python-virtualenv, python-pip, python-unitttest2
 
 
 function install_virtenv()
@@ -31,7 +31,7 @@ function init_mockroot()
        root="-r $*"
        rootmsg="$*"
     fi
-    mock -q $root --shell  "echo $rootmsg OK >/dev/null" || {
+    mock -q $root --chroot --  "echo $rootmsg OK >/dev/null" || {
         echo "Re-initializing mock root $rootmsg"
         mock -q $root  --init
     }
@@ -49,6 +49,7 @@ export PATH=/bin:/usr/bin:/sbin:/usr/sbin
 cd $(dirname $(readlink -fn $0))
 cd ..
 
+test -d $PWD/dist || mkdir $PWD/dist
 logfile="$PWD/dist/build.log"
 ( {
     if [[ -n "$PIP_INSTALL" || ! -d fedorareviewenv ]]; then
@@ -86,7 +87,9 @@ logfile="$PWD/dist/build.log"
     if [ -z "$quick" ]; then
         echo
         echo '---- pylint ----'
-        PYTHONPATH=src ./run-pylint --rcfile=pylint.conf -f parseable src plugins
+        PYTHONPATH=src ./run-pylint --rcfile=pylint.conf \
+            --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" \
+            src plugins
         echo
         echo '---- pep8 ----'
         pep8 --config pep8.conf src/FedoraReview plugins
