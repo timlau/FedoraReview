@@ -12,8 +12,8 @@
 %global     build_nr %(echo "${BUILD_NUMBER:+.}${BUILD_NUMBER:-%%{nil\\}}")
 
 Name:       fedora-review
-Version:    0.5.2
-Release:    1%{?build_nr}%{?git_tag}%{?dist}
+Version:    0.5.3
+Release:    2%{?build_nr}%{?git_tag}%{?dist}
 Summary:    Review tool for fedora rpm packages
 
 License:    GPLv2+
@@ -127,6 +127,9 @@ python -m unittest discover -f
 
 
 %changelog
+* Tue May 12 2015 Alec Leamas <leamas.alec@gmail.com> - 0.5.3-2.fa1afe1
+- Generic post-release entry.
+
 * Thu Jul 3 2014 Stanislav Ochotnicky <sochotnicky@redhat.com> 0.5.2-1
 - Updating to upstream 0.5.2
 

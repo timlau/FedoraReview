@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@ from FedoraReview.review_helper import ReviewHelper
 
 STARTDIR = os.getcwd()
 
-VERSION = '0.5.2'
+VERSION = '0.5.3'
 
 RELEASE = '19'
 
@@ -55,7 +55,7 @@ class FR_TestCase(unittest.TestCase):
     ''' Common base class for all tests. '''
 
     BUILDROOT = "fedora-%s-i386" % RELEASE
-    BASE_URL  = 'https://fedorahosted.org/releases/F/e/FedoraReview/'
+    BASE_URL = 'https://fedorahosted.org/releases/F/e/FedoraReview/'
 
     @staticmethod
     def abs_file_url(path):
