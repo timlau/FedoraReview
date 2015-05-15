@@ -353,7 +353,7 @@ class CheckInitDeps(BuildCheckBase):
     def run(self):
         # Dirty work-around for
         # https://bugzilla.redhat.com/show_bug.cgi?id=1028332
-        subprocess.call(['yum', '-q', 'clean', 'all'])
+        subprocess.call(['dnf', '-q', 'clean', 'all'])
         deps.init()
         self.set_passed(self.NA)
 
