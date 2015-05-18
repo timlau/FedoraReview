@@ -32,6 +32,7 @@ BuildRequires:  python-unittest2
 BuildRequires:  python2-devel
 BuildRequires:  rpm-python
 
+Requires:       packagedb-cli
 Requires:       fedora-packager
 Requires:       python-argparse
 Requires:       python-BeautifulSoup
@@ -74,6 +75,7 @@ in a simple way in bash.
 %package tests
 Summary: Test and test data files for fedora-review
 Requires: %{name} = %{version}-%{release}
+Requires: python-nose
 
 %description tests
 Tests are packaged separately due to space concerns.
