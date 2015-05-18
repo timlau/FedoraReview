@@ -7,7 +7,7 @@
 #    -q  Don't run static checks, just run test
 #
 # Requires: python-virtualenv, python-pip, python-unitttest2
-
+#    python-nose, rpmlint, devscripts-minimal, packagedb-cli
 
 function install_virtenv()
 {
@@ -68,8 +68,8 @@ logfile="$PWD/dist/build.log"
     PYTHONPATH=src ./update-version || :
     cd test
         export REVIEW_LOGLEVEL=${REVIEW_LOGLEVEL:-warning}
-        for root in '-' fedora-19-i386 fedora-20-i386 \
-                    "fedora-19-i386 --uniqueext=hugo"
+        for root in '-' fedora-20-i386 fedora-20-i386 \
+                    "fedora-20-i386 --uniqueext=hugo"
         do
             init_mockroot $root
         done

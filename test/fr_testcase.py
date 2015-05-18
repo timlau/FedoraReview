@@ -38,7 +38,7 @@ STARTDIR = os.getcwd()
 
 VERSION = '0.5.3'
 
-RELEASE = '19'
+RELEASE = '20'
 
 try:
     urlopen('http://bugzilla.redhat.com')
