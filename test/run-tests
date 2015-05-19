@@ -87,8 +87,9 @@ logfile="$PWD/dist/build.log"
     if [ -z "$quick" ]; then
         echo
         echo '---- pylint ----'
+        MSG_TEMPLATE="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}"
         PYTHONPATH=src ./run-pylint --rcfile=pylint.conf \
-            --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" \
+            --msg-template=\"$MSG_TEMPLATE\" \
             src plugins
         echo
         echo '---- pep8 ----'
