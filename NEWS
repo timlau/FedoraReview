@@ -1,3 +1,9 @@
+0.6.0
+=====
+- Use DNF instead of yum. This requires f22 or higher, the dnf
+  versions available in f21 does not make it (#250).
+- Add missing import to fedora-create-review (bz 1221638)
+
 0.5.3
 =====
 - Handle new mock version leaving log fils in resultdir (#251).

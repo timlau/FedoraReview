@@ -32,10 +32,10 @@ def init():
     # Might be solvable, see
     # https://bugs.launchpad.net/ubuntu/+source/packagekit/+bug/1008106
     try:
-        check_output(['yum', 'makecache'])
+        check_output(['dnf', 'makecache'])
     except subprocess.CalledProcessError:
         Settings.get_logger().warning(
-            "Cannot run yum makecache, trouble ahead")
+            "Cannot run dnf makecache, trouble ahead")
 
 
 def list_deps(pkgs):
@@ -46,18 +46,25 @@ def list_deps(pkgs):
     if not pkgs:
         return []
 
-    cmd = ['repoquery', '-C', '--requires', '--resolve']
-    cmd.extend(pkgs)
+    # Find deps for each pkg individually (old yum repoquery allowed you to
+    # specify multiple packages at once, but dnf repoquery only allows one at a
+    # time).  Then concatenate all those lists of deps together and return
+    return [elem for list_ in map(list_deps_one, pkgs) for elem in list_]
+
+
+def list_deps_one(pkg):
+    ''' Return list of deps for a single package. '''
+    cmd = ['dnf', 'repoquery', '-q', '-C', '--requires', '--resolve', pkg]
     Settings.get_logger().debug("Running: " + ' '.join(cmd))
     try:
-        yum = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+        dnf = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     except OSError:
         Settings.get_logger().warning("Cannot run " + " ".join(cmd))
         return []
     deps = []
     while True:
         try:
-            line = yum.stdout.next().strip()
+            line = dnf.stdout.next().strip()
         except StopIteration:
             return list(set(deps))
         name = line.rsplit('.', 2)[0]
@@ -71,20 +78,36 @@ def resolve(reqs):
         reqs = [reqs]
     if not reqs:
         return []
-    cmd = ['repoquery', '-C', '--whatprovides']
-    cmd.extend(reqs)
+
+    # Apply resolution to each req individually (old yum repoquery allowed you
+    # to specify multiple packages at once, but dnf repoquery only allows one
+    # at a time).  Then concatenate all those lists of providers together
+    # and return.
+    return [elem for list_ in map(resolve_one, reqs) for elem in list_]
+
+
+def resolve_one(req):
+    ''' Return the packages providing the req symbol. '''
+    cmd = ['dnf', 'repoquery', '-C', '--whatprovides', req]
     Settings.get_logger().debug("Running: " + ' '.join(cmd))
+
     try:
-        yum = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+        dnf = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     except OSError:
         Settings.get_logger().warning("Cannot run " + " ".join(cmd))
         return []
+
     pkgs = []
     while True:
         try:
-            line = yum.stdout.next().strip()
+            line = dnf.stdout.next().strip()
         except StopIteration:
             return list(set(pkgs))
+
+        # Skip a line from dnf repoquery that should've gone to stderr
+        if ' metadata ' in line:
+            continue
+
         pkg = line.rsplit('.', 2)[0]
         pkgs.append(pkg.rsplit('-', 2)[0])
 
@@ -139,7 +162,7 @@ def list_owners(paths):
         paths_to_exam.remove(paths[i])
         owners.extend(path_owners)
     for path in paths_to_exam:
-        cmd = ['repoquery', '-C', '-qf', path]
+        cmd = ['dnf', 'repoquery', '-C', '--quiet', '--file', path]
         Settings.get_logger().debug("Running: " + ' '.join(cmd))
         try:
             lines = check_output(cmd).split()
@@ -157,17 +180,31 @@ def list_owners(paths):
 
 def list_paths(pkgs):
     ''' Return list of all files in pkgs (single name or list). '''
-    cmd = ['repoquery', '-C', '-l']
-    if isinstance(pkgs, list):
-        cmd.extend(pkgs)
-    else:
-        cmd.append(pkgs)
+    if not pkgs:
+        return []
+    if not isinstance(pkgs, list):
+        pkgs = [pkgs]
+
+    # Get all file paths for each package individually (old yum repoquery
+    # allowed you to specify multiple packages at once, but dnf repoquery only
+    # allows one at a time).  Then concatenate all those lists of files
+    # together and return.
+    Settings.get_logger().debug("listing files in: " + ' '.join(pkgs))
+    return [elem for list_ in map(list_paths_one, pkgs) for elem in list_]
+
+
+def list_paths_one(pkg):
+    ''' Return list of all files in a pkg. '''
+    if not pkg:
+        return []
+    cmd = ['dnf', 'repoquery', '-C', '-l', pkg]
+
     Settings.get_logger().debug("Running: " + ' '.join(cmd))
     try:
         Settings.get_logger().debug("Running: " + ' '.join(cmd))
         paths = check_output(cmd)
     except OSError:
-        Settings.get_logger().warning("Cannot run repoquery")
+        Settings.get_logger().warning("Cannot run dnf repoquery")
         return []
     return paths.split()
 

@@ -527,9 +527,6 @@ class TestMisc(FR_TestCase):
 
         self.init_test('test_misc',
                        argv=['-n', 'python-test', '--no-build'])
-        dest = Mock.get_builddir('SOURCES')
-        if not os.path.exists(dest):
-            os.makedirs(dest)
         spec = SpecFile(os.path.join(os.getcwd(), 'python-test.spec'))
         self.assertEqual(spec.name, 'python-test')
         self.assertEqual(spec.version, '1.0')

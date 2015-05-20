@@ -16,7 +16,7 @@ function get_spec()
 # Get spec file for a given package
 {
     if [ -z "${srpm_by_pkg[$1]}" ]; then
-        srpm=$( repoquery -C --qf '%{SOURCERPM}' $1 )
+        srpm=$( dnf repoquery -C --qf '%{SOURCERPM}' $1 )
         srpm="${srpm%-*}"
         srpm="${srpm%-*}"
         srpm_by_pkg[$1]="$srpm"
@@ -45,7 +45,7 @@ function resolve()
         [ -f $dep.spec ] || deps="$deps $dep"
     done
     [ -z "$deps" ] && return
-    deps=$(repoquery -C --requires --resolve $deps)
+    deps=$(dnf repoquery -C --requires --resolve $deps)
     for dep in $deps; do
         pkg=${dep%-*}
         pkg=${pkg%-*}

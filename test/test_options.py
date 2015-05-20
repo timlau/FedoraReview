@@ -96,22 +96,20 @@ class TestOptions(FR_TestCase):
     def test_url(self):
         """ Test -url option """
         self.init_opt_test(
-            ['-u', 'https://bugzilla.rpmfusion.org/show_bug.cgi?id=2200'])
+            ['-u', 'https://bugzilla.redhat.com/show_bug.cgi?id=1199184'])
         bug = UrlBug(Settings.url)
 
         bug.find_urls()
-        home = 'https://dl.dropbox.com/u/17870887/get-flash-videos'
-        expected = os.path.join(home,
-                'get-flash-videos-1.24-4.20120409gita965329.fc16.src.rpm')
+        home = 'https://leamas.fedorapeople.org/fedora-review/testdata'
+        expected = os.path.join(home, 'DecodeIR-2.45-1.fc21.src.rpm')
         self.assertEqual(expected, bug.srpm_url)
-        expected = os.path.join(home, 'get-flash-videos.spec')
+        expected = os.path.join(home, 'DecodeIR.spec')
         self.assertEqual(expected, bug.spec_url)
 
         bug.download_files()
-        expected = os.path.abspath(
-            'srpm/get-flash-videos-1.24-4.20120409gita965329.fc16.src.rpm')
+        expected = os.path.abspath('srpm/DecodeIR-2.45-1.fc21.src.rpm')
         self.assertEqual(expected, bug.srpm_file)
-        expected = os.path.abspath('srpm/get-flash-videos.spec')
+        expected = os.path.abspath('srpm/DecodeIR.spec')
         self.assertEqual(expected, bug.spec_file)
 
     def test_display(self):

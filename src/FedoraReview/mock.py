@@ -235,7 +235,7 @@ class _Mock(HelpersMixin):
             self._topdir = '/builddir/build'
 
     def _clear_rpm_db(self):
-        """ Mock install uses host's yum -> bad rpm database. """
+        """ Mock install uses host's dnf -> bad rpm database. """
         cmd = self._mock_cmd()
         cmd.extend(['--shell', "'rm -f /var/lib/rpm/__db*'"])
         self._run_cmd(cmd, None)
