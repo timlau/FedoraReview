@@ -44,8 +44,11 @@ Requires:       rpm-python
 # licensecheck used to be in rpmdevtools, moved to devscripts later
 # this is compatible with both situations without ifdefs
 Requires:       %{_bindir}/licensecheck
-
+%if 0%{?fedora} > 21
+Requires:       dnf-plugins-core
+%else
 Requires:       yum-utils
+%endif
 
 # Let's be consistent with the name used on fedorahosted
 provides:       FedoraReview = %{version}-%{release}
