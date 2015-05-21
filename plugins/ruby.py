@@ -4,7 +4,7 @@
 import re
 import rpm
 
-from FedoraReview import CheckBase, RegistryBase
+from FedoraReview import CheckBase, Mock, RegistryBase
 
 _GUIDELINES_URI = 'http://fedoraproject.org/wiki/Packaging:Ruby'
 _GUIDELINES_SECTION_URI = '%(uri)s#%%(section)s' % {'uri': _GUIDELINES_URI}
@@ -342,8 +342,14 @@ class GemCheckRequiresRubygems(GemCheckBase):
         self.type = 'MUST'
 
     def run_on_applicable(self):
-        # it seems easier to check whether .gem is not present in rpms
-        # than to examine %files
+        try:
+            fedora_vers = int(Mock.get_macro("%fedora", self.spec, self.flags))
+        except ValueError:
+            # EPEL?
+            fedora_vers = 20
+        if fedora_vers > 20:
+            self.set_passed(self.NA)
+            return
         failed = []
         for pkg_name in self.spec.packages:
             for suffix in ['-doc', '-fonts', '-devel']:
