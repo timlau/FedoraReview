@@ -332,6 +332,32 @@ class GemCheckDoesntHaveNonGemSubpackage(GemCheckBase):
             self.set_passed(self.PASS)
 
 
+class GemCheckObsoleteRequiresRubygems(GemCheckBase):
+    """ gems should not have obsolete Requires: rubygem """
+    def __init__(self, base):
+        GemCheckBase.__init__(self, base)
+        self.url = _gl_fmt_uri({'section': 'RubyGems'})
+        self.text = 'gems should not require rubygems package'
+        self.automatic = True
+        self.type = 'SHOULD'
+
+    def run_on_applicable(self):
+        try:
+            fedora_vers = int(Mock.get_macro("%fedora", self.spec, self.flags))
+        except ValueError:
+            # EPEL?
+            fedora_vers = 20
+        if fedora_vers <= 20:
+            self.set_passed(self.NA)
+            return
+        failed = self.spec.find_re(r'Requires:\s*rubygem\s*$')
+        if failed:
+            text = 'Obsolete %s  found in spec' % failed
+            self.set_passed(self.FAIL, text)
+        else:
+            self.set_passed(self.PASS)
+
+
 class GemCheckRequiresRubygems(GemCheckBase):
     """ gems should have Requires: rubygem """
     def __init__(self, base):
