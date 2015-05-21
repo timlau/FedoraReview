@@ -75,6 +75,14 @@ python.  There is also support for external tests that can be written
 in a simple way in bash.
 
 
+%package plugin-ruby
+Summary: Enhanced ruby tests for fedora-review
+Requires: %{name} = %{version}-%{release}
+
+%description plugin-ruby
+fedora-review ruby-specific tests, not installed by default.
+
+
 %package tests
 Summary: Test and test data files for fedora-review
 Requires: %{name} = %{version}-%{release}
@@ -126,7 +134,11 @@ python -m unittest discover -f
 %{_mandir}/man1/fedora-create-review.1.*
 %dir %{_datadir}/%{name}
 %{_datadir}/%{name}/plugins
+%exclude %{_datadir}/%{name}/plugins/ruby.py
 %{_datadir}/%{name}/scripts
+
+%files plugin-ruby
+%{_datadir}/%{name}/plugins/ruby.py
 
 %files tests
 %doc test/README.test
