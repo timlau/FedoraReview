@@ -77,6 +77,20 @@ class NonGemCheckBase(CheckBase):
         return _is_nongem(self.spec)
 
 
+class DisableCheckRubyPlugin(RubyCheckBase):
+    ''' Disabke the plugin check code in generic_should.  '''
+    def __init__(self, base):
+        RubyCheckBase.__init__(self, base)
+        self.url = 'https:not-used'
+        self.text = 'not-used'
+        self.automatic = True
+        self.type = 'EXTRA'
+        self.deprecates = ["CheckRubyPlugin"]
+
+    def run(self):
+        self.set_passed(self.NA)
+
+
 class RubyCheckNotRequiresRubyAbi(RubyCheckBase):
     """ Check if package doesn't require ruby(abi) """
     def __init__(self, base):

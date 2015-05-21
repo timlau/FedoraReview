@@ -442,6 +442,26 @@ class CheckPkgConfigFiles(GenericShouldCheckBase):
         self.set_passed(passed, extra)
 
 
+class CheckRubyPlugin(GenericShouldCheckBase):
+    '''
+    EXTRA: If this is ruby code, the ruby plugin should be installed
+    This test is overridden (i. e., disabled) by the plugin if installed.
+    '''
+    def __init__(self, base):
+        GenericShouldCheckBase.__init__(self, base)
+        self.url = 'https://fedorahosted.org/FedoraReview'
+        self.text = 'When checking ruby code, install the ruby plugin.'
+        self.automatic = True
+        self.type = 'EXTRA'
+
+    def run(self):
+        self.set_passed(self.NA)
+        if self.spec.name.startswith('ruby-'):
+            self.set_passed(self.FAIL)
+        if self.spec.name.startswith('rubygem-'):
+            self.set_passed(self.FAIL)
+
+
 class CheckScriptletSanity(GenericShouldCheckBase):
     '''
     SHOULD: If scriptlets are used, those scriptlets must be sane.
