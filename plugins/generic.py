@@ -626,6 +626,8 @@ class CheckIllegalSpecTags(GenericCheckBase):
         passed = True
         output = ''
         for tag in ('Packager', 'Vendor', 'PreReq', 'Copyright'):
+            if not self.spec.find_re(r'^\s*' + tag + r'\s*:'):
+                continue
             value = self.spec.expand_tag(tag)
             if value:
                 passed = False
