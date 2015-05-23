@@ -297,6 +297,33 @@ class CheckFullVerReqSub(GenericShouldCheckBase):
             self.set_passed(self.PASS)
 
 
+class CheckIllegalSpecTags(GenericShouldCheckBase):
+    ''' Thou shall not use illegal spec tags. '''
+
+    def __init__(self, base):
+        GenericShouldCheckBase.__init__(self, base)
+        self.url = 'http://fedoraproject.org/wiki/Packaging:Guidelines#Tags'
+        self.text = 'Packager, Vendor, PreReq, Copyright tags should not be ' \
+                    'in spec file'
+        self.automatic = True
+        self.type = 'SHOULD'
+
+    def run(self):
+        passed = True
+        output = ''
+        for tag in ('Packager', 'Vendor', 'PreReq', 'Copyright'):
+            if not self.spec.find_re(r'^\s*' + tag + r'\s*:'):
+                continue
+            value = self.spec.expand_tag(tag)
+            if value:
+                passed = False
+                output += 'Found : %s: %s\n' % (tag, value)
+        if not passed:
+            self.set_passed(passed, output)
+        else:
+            self.set_passed(passed)
+
+
 class CheckLatestVersionIsPackaged(GenericShouldCheckBase):
     ''' We package latest version, don't we? '''
 
@@ -671,6 +698,31 @@ class CheckBundledFonts(GenericShouldCheckBase):
                 break
         else:
             self.set_passed(self.NA)
+
+
+class CheckSourceDownloads(GenericShouldCheckBase):
+    ''' Check that sources could be downloaded from their URI. '''
+
+    def __init__(self, base):
+        GenericShouldCheckBase.__init__(self, base)
+        self.url = 'http://fedoraproject.org/wiki/Packaging:Guidelines' \
+                   '#Tags'
+        self.text = 'Sources can be downloaded from URI in Source: tag'
+        self.automatic = True
+        self.type = 'SHOULD'
+
+    def run(self):
+        sources = [self.sources.get(s) for s in self.sources.get_all()]
+        url_src = [s for s in sources if s.is_url]
+        if not url_src:
+            self.set_passed(self.NA)
+            return
+        failed_src = [s for s in url_src if s.is_failed]
+        if not failed_src:
+            self.set_passed(self.PASS)
+            return
+        failed = ', '.join([s.tag  + ': ' + s.specurl for s in failed_src])
+        self.set_passed(self.FAIL, "Could not download " + failed)
 
 
 class CheckUpdateMimeDatabase(GenericShouldCheckBase):
