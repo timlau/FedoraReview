@@ -212,7 +212,7 @@ class SpecFile(object):
                 token = re.split(r'\s|\(', line)[0]
                 if token not in ['%ghost', '%doc', '%docdir', '%license',
                                  '%verify', '%attr', '%config', '%dir',
-                                 '%defattr']:
+                                 '%defattr', '%exclude']:
                         break
                 else:
                     lines.append(line)
