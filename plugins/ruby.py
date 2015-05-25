@@ -173,12 +173,8 @@ class RubyCheckTestsRun(RubyCheckBase):
         self.type = 'SHOULD'
 
     def run_on_applicable(self):
-        # check_section = self.spec.get_section('%check')
-        # Bug in rpm, see
-        # http://lists.rpm.org/pipermail/rpm-maint/2013-August/thread.html
-        # (or perhaps later) for patch from leamas.
-        found = bool(self.spec.find_re('^[^#]*%check'))
-        self.set_passed(self.PASS if found else self.FAIL)
+        check_section = self.spec.get_section('%check')
+        self.set_passed(self.PASS if check_section else self.FAIL)
 
 
 class RubyCheckTestsNotRunByRake(RubyCheckBase):
