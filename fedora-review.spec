@@ -110,6 +110,7 @@ bash < restore-links.sh
 rm restore-links.sh remember-links
 cd ..
 cp -ar test "$RPM_BUILD_ROOT%{_datadir}/%{name}"
+cp -a pep8.conf pylint.conf "$RPM_BUILD_ROOT%{_datadir}/%{name}"
 
 
 %check
@@ -117,9 +118,9 @@ cp -ar test "$RPM_BUILD_ROOT%{_datadir}/%{name}"
 cd test
 export REVIEW_LOGLEVEL=warning
 export MAKE_RELEASE=1
+mock --quiet -r fedora-21-i386 --init
 mock --quiet -r fedora-20-i386 --init
-mock --quiet -r fedora-19-i386 --init
-mock --quiet -r fedora-20-i386 --uniqueext=hugo --init
+mock --quiet -r fedora-21-i386 --uniqueext=hugo --init
 python -m unittest discover -f
 %endif
 
@@ -136,6 +137,8 @@ python -m unittest discover -f
 %{_datadir}/%{name}/plugins
 %exclude %{_datadir}/%{name}/plugins/ruby.py
 %{_datadir}/%{name}/scripts
+%{_datadir}/%{name}/pep8.conf
+%{_datadir}/%{name}/pylint.conf
 
 %files plugin-ruby
 %{_datadir}/%{name}/plugins/ruby.py
@@ -148,6 +151,7 @@ python -m unittest discover -f
 %changelog
 * Tue May 12 2015 Alec Leamas <leamas.alec@gmail.com> - 0.6.0-1.fa1afe1
 - Generic post-release entry.
+- Added pep8.conf and pylint.conf to package
 
 * Mon May 04 2015 Pierre-Yves Chibon <pingou@pingoured.fr> - 0.5.3-1
 - Update to 0.5.3
