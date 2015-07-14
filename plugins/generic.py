@@ -1525,7 +1525,7 @@ class CheckNoNameConflict(GenericCheckBase):
                 self.set_passed(
                     self.FAIL,
                     'A package with this name already exists.  Please check'
-                    ' https://admin.fedoraproject.org/pkgdb/acls/name/'
+                    ' https://admin.fedoraproject.org/pkgdb/package/'
                     + name)
             else:
                 self.set_passed(self.PASS)
