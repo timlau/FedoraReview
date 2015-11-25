@@ -478,7 +478,7 @@ class _Mock(HelpersMixin):
         cmd.append('--init')
         self._run_cmd(cmd, '--init')
         cmd = self._mock_cmd()
-        rpms = filter(is_not_installed, packages)
+        rpms = filter(is_not_installed, list(set(packages)))
         if len(rpms) == 0:
             return
         self._clear_rpm_db()
