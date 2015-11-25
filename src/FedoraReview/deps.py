@@ -39,22 +39,15 @@ def init():
 
 
 def list_deps(pkgs):
-    ''' Return list of all dependencies for named pkg. '''
+    ''' Return list of all dependencies for named pkgs (scalar or list). '''
 
     if not isinstance(pkgs, list):
         pkgs = [pkgs]
     if not pkgs:
         return []
 
-    # Find deps for each pkg individually (old yum repoquery allowed you to
-    # specify multiple packages at once, but dnf repoquery only allows one at a
-    # time).  Then concatenate all those lists of deps together and return
-    return [elem for list_ in map(list_deps_one, pkgs) for elem in list_]
-
-
-def list_deps_one(pkg):
-    ''' Return list of deps for a single package. '''
-    cmd = ['dnf', 'repoquery', '-q', '-C', '--requires', '--resolve', pkg]
+    cmd = ['dnf', 'repoquery', '-q', '-C', '--requires', '--resolve']
+    cmd.extend(list(set(pkgs)))
     Settings.get_logger().debug("Running: " + ' '.join(cmd))
     try:
         dnf = subprocess.Popen(cmd, stdout=subprocess.PIPE)
@@ -78,6 +71,7 @@ def resolve(reqs):
         reqs = [reqs]
     if not reqs:
         return []
+    reqs = list(set(reqs))
 
     # Apply resolution to each req individually (old yum repoquery allowed you
     # to specify multiple packages at once, but dnf repoquery only allows one
@@ -185,23 +179,11 @@ def list_paths(pkgs):
     if not isinstance(pkgs, list):
         pkgs = [pkgs]
 
-    # Get all file paths for each package individually (old yum repoquery
-    # allowed you to specify multiple packages at once, but dnf repoquery only
-    # allows one at a time).  Then concatenate all those lists of files
-    # together and return.
-    Settings.get_logger().debug("listing files in: " + ' '.join(pkgs))
-    return [elem for list_ in map(list_paths_one, pkgs) for elem in list_]
-
-
-def list_paths_one(pkg):
-    ''' Return list of all files in a pkg. '''
-    if not pkg:
-        return []
-    cmd = ['dnf', 'repoquery', '-C', '-l', pkg]
+    cmd = ['dnf', 'repoquery', '-C', '-l']
+    cmd.extend(list(set(pkgs)))
 
     Settings.get_logger().debug("Running: " + ' '.join(cmd))
     try:
-        Settings.get_logger().debug("Running: " + ' '.join(cmd))
         paths = check_output(cmd)
     except OSError:
         Settings.get_logger().warning("Cannot run dnf repoquery")
