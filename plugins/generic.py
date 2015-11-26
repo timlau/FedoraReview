@@ -762,7 +762,9 @@ class CheckLicensInDoc(GenericCheckBase):
         """
 
         licenses = []
-        for potentialfile in ['COPYING', 'LICEN', 'copying', 'licen']:
+        for potentialfile in ['COPYING', 'copying',
+                              'LICEN', 'licen',
+                              'COPYRIGHT', 'copyright']:
             pattern = '*' + potentialfile + '*'
             licenses.extend(self.rpms.find_all(pattern))
         licenses = filter(lambda l: not self.rpms.find(l + '/*'),
