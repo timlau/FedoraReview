@@ -706,7 +706,12 @@ class CheckLicenseField(GenericCheckBase):
             self.log.debug("Scanning sources in " + source_dir)
             if os.path.exists(source_dir):
                 cmd = 'licensecheck -r ' + source_dir
-                out = check_output(cmd, shell=True)
+                try:
+                    out = check_output(cmd, shell=True)
+                except (OSError, CalledProcessError) as err:
+                    self.set_passed(self.PENDING,
+                                    "Cannot run licensecheck: " + str(err))
+                    return
                 self.log.debug("Got license reply, length: %d" % len(out))
                 files_by_license = self._parse_licenses(out)
                 filename = os.path.join(ReviewDirs.root,
@@ -726,7 +731,7 @@ class CheckLicenseField(GenericCheckBase):
                                 len(files_by_license[self.unknown_license])
                 msg += ' Detailed output of licensecheck in ' + filename
             self.set_passed(self.PENDING, msg)
-        except OSError, e:
+        except OSError as e:
             self.log.error('OSError: %s' % str(e))
             msg = ' Programmer error: ' + e.strerror
             self.set_passed(self.PENDING, msg)
