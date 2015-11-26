@@ -163,7 +163,7 @@ Comma-separated list of test(s) to exclude, as listed by --display-checks.
 A test which depends on an excluded test, will run.
 .SH THE REVIEW DIRECTORY
 The review directory is created with a name corresponding to the command line
-options. The package name is always part of the name, sometime also the bug number.
+options. The package name is always part of the name, sometimes also the bug number.
 Here is:
 .TP 4
 review.txt
@@ -192,7 +192,7 @@ Used for dependencies specfiles when EXARCH flag is set, otherwise empty.
 .TP 4
 BUILD link
 Points to the mock directory containing the sources used in
-the build. These sources have been created and modifified by the %prep
+the build. These sources have been created and modified by the %prep
 stuff in the spec file. The link is only valid direct after the run,
 it's overwritten next time mock executes.
 .TP 4
@@ -231,8 +231,8 @@ Invoke fedora-review using --prebuilt, --name options and --rpm-spec:
 fedora-review --rpm-spec --prebuilt --name my-package
 
 .SH URL limitations
-fedora-review handles two types of URL: the spec and srpm url found in
-e. g. the bugzilla page, and the source url(s) found in the spec file.
+fedora-review handles two types of URLs: the spec and srpm url found in
+e. g., the bugzilla page and the source url(s) found in the spec file.
 
 For the srpm and spec file url:
 .IP \(bu 3
