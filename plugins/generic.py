@@ -787,7 +787,7 @@ class CheckLicensInDoc(GenericCheckBase):
             rpm_path = Mock.get_package_rpm_path(nvr)
             cmd = 'rpm -qp%s %s' % (self._license_flag, rpm_path)
             doclist = check_output(cmd.split())
-            flagged_files.extend(doclist.split())
+            flagged_files.extend(doclist.split('\n'))
         flagged_files = map(lambda f: f.split('/')[-1], flagged_files)
 
         if self._license_flag == 'L':
@@ -796,7 +796,7 @@ class CheckLicensInDoc(GenericCheckBase):
                 rpm_path = Mock.get_package_rpm_path(nvr)
                 cmd = 'rpm -qpL %s' % rpm_path
                 qpL_list = check_output(cmd.split())
-                qpL_files.extend(qpL_list.split())
+                qpL_files.extend(qpL_list.split('\n'))
             qpL_files = map(lambda f: f.split('/')[-1], qpL_files)
 
         for _license in licenses:
