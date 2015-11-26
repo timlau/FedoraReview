@@ -282,6 +282,7 @@ class ReviewRequest(object):
             bzurl = 'https://bugzilla.redhat.com'
         else:
             bzurl = 'https://partner-bugzilla.redhat.com'
+            print "Using test bugzilla at: " + bzurl
 
         self.username = args.username
         if not self.username:
