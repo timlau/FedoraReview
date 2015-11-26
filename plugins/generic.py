@@ -760,6 +760,7 @@ class CheckLicensInDoc(GenericCheckBase):
         """ Check if there is a license file and if it is present in the
         %license section (%doc for EPEL5 and EPEL6).
         """
+        # pylint: disable=invalid-name
 
         licenses = []
         for potentialfile in ['COPYING', 'copying',
@@ -775,7 +776,7 @@ class CheckLicensInDoc(GenericCheckBase):
             return
 
         flagged_files = []
-        docs = []
+        qpL_files = []
         for pkg in self.spec.packages:
             nvr = self.spec.get_package_nvr(pkg)
             rpm_path = Mock.get_package_rpm_path(nvr)
@@ -788,18 +789,17 @@ class CheckLicensInDoc(GenericCheckBase):
             for pkg in self.spec.packages:
                 nvr = self.spec.get_package_nvr(pkg)
                 rpm_path = Mock.get_package_rpm_path(nvr)
-                cmd = 'rpm -qpd %s' % rpm_path
-                doclist = check_output(cmd.split())
-                docs.extend(doclist.split())
-            docs = map(lambda f: f.split('/')[-1], docs)
+                cmd = 'rpm -qpL %s' % rpm_path
+                qpL_list = check_output(cmd.split())
+                qpL_files.extend(qpL_list.split())
+            qpL_files = map(lambda f: f.split('/')[-1], qpL_files)
 
         for _license in licenses:
-            if _license in docs:
-                self.log.debug("Found " + _license +
-                               " marked as %doc instead of %license")
-                self.set_passed(self.FAIL,
-                                "License file %s is marked as %%doc"
-                                " instead of %%license" % _license)
+            if self._license_flag == 'L' and _license not in qpL_files:
+                self.log.debug("Found " + _license + " not marked as %license")
+                self.set_passed(
+                    self.FAIL,
+                    "License file %s is not marked as %%license" % _license)
                 return
             if _license not in flagged_files:
                 self.log.debug("Cannot find " + _license +
