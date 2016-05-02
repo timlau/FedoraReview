@@ -1,3 +1,28 @@
+0.6.1
+=====
+
+- spec: Make plugin-ruby a separate package.
+- Fix handling of license files w blanks (bz #1229412).
+- Handle licensecheck crash gracefully (bz #1241481).
+- Fix bad check for %license (bz #1231019).
+- Add COPYRIGHT to license files (bz #1232814).
+- fedora-create-review: --test: Print used bz (#266).
+- fedora-review.1: typo (#262).
+- Optimize some dnf operations (#1275275).
+- De-duplicate installed rpms (bz #1264803).
+- Clean up koji-download-scratch and create-review (#260), add options
+  --logs and --nodebug to skip downloading logs and debuginfo packages
+- Generate correct PkgDB URL in CheckNoNameConflict
+- Use rpm to find %check section (#225).
+- fedora-review.1: Add info on bugz (#237, sort of).
+- ruby: Add test for obsolete R:rubygem, %fedora > 20 (bz 1128094).
+- ruby: Disable check for R: rubygem when %fedora > 20 (bz #1128094).
+- generic_should, ruby: Add plugin checking code.
+- generic: Move SHOULD checks to generic_should.
+- Fix false positive for Packager: tag (bz #1146442).
+- Fix command line options w spaces (bz #1192184).
+
+
 0.6.0
 =====
 - Use DNF instead of yum. This requires f22 or higher, the dnf

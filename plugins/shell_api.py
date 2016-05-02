@@ -180,6 +180,8 @@ def _settings_generator():
         value = Settings.__dict__[key]
         if not value:
             value = ''
+        if isinstance(value, str):
+            value = value.replace('"', r'\"')
         body += 'FR_SETTINGS[%s]="%s"\n' % (key, value)
     return body
 

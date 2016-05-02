@@ -611,31 +611,6 @@ class CheckGuidelines(GenericCheckBase):
         self.type = 'MUST'
 
 
-class CheckIllegalSpecTags(GenericCheckBase):
-    ''' Thou shall not use illegal spec tags. '''
-
-    def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
-        self.url = 'http://fedoraproject.org/wiki/Packaging:Guidelines#Tags'
-        self.text = 'Packager, Vendor, PreReq, Copyright tags should not be ' \
-                    'in spec file'
-        self.automatic = True
-        self.type = 'SHOULD'
-
-    def run(self):
-        passed = True
-        output = ''
-        for tag in ('Packager', 'Vendor', 'PreReq', 'Copyright'):
-            value = self.spec.expand_tag(tag)
-            if value:
-                passed = False
-                output += 'Found : %s: %s\n' % (tag, value)
-        if not passed:
-            self.set_passed(passed, output)
-        else:
-            self.set_passed(passed)
-
-
 class CheckLargeDocs(GenericCheckBase):
     '''
     MUST: Large documentation files must go in a -doc subpackage.
@@ -731,7 +706,12 @@ class CheckLicenseField(GenericCheckBase):
             self.log.debug("Scanning sources in " + source_dir)
             if os.path.exists(source_dir):
                 cmd = 'licensecheck -r ' + source_dir
-                out = check_output(cmd, shell=True)
+                try:
+                    out = check_output(cmd, shell=True)
+                except (OSError, CalledProcessError) as err:
+                    self.set_passed(self.PENDING,
+                                    "Cannot run licensecheck: " + str(err))
+                    return
                 self.log.debug("Got license reply, length: %d" % len(out))
                 files_by_license = self._parse_licenses(out)
                 filename = os.path.join(ReviewDirs.root,
@@ -751,7 +731,7 @@ class CheckLicenseField(GenericCheckBase):
                                 len(files_by_license[self.unknown_license])
                 msg += ' Detailed output of licensecheck in ' + filename
             self.set_passed(self.PENDING, msg)
-        except OSError, e:
+        except OSError as e:
             self.log.error('OSError: %s' % str(e))
             msg = ' Programmer error: ' + e.strerror
             self.set_passed(self.PENDING, msg)
@@ -785,9 +765,12 @@ class CheckLicensInDoc(GenericCheckBase):
         """ Check if there is a license file and if it is present in the
         %license section (%doc for EPEL5 and EPEL6).
         """
+        # pylint: disable=invalid-name
 
         licenses = []
-        for potentialfile in ['COPYING', 'LICEN', 'copying', 'licen']:
+        for potentialfile in ['COPYING', 'copying',
+                              'LICEN', 'licen',
+                              'COPYRIGHT', 'copyright']:
             pattern = '*' + potentialfile + '*'
             licenses.extend(self.rpms.find_all(pattern))
         licenses = filter(lambda l: not self.rpms.find(l + '/*'),
@@ -798,31 +781,30 @@ class CheckLicensInDoc(GenericCheckBase):
             return
 
         flagged_files = []
-        docs = []
+        qpL_files = []
         for pkg in self.spec.packages:
             nvr = self.spec.get_package_nvr(pkg)
             rpm_path = Mock.get_package_rpm_path(nvr)
             cmd = 'rpm -qp%s %s' % (self._license_flag, rpm_path)
             doclist = check_output(cmd.split())
-            flagged_files.extend(doclist.split())
+            flagged_files.extend(doclist.split('\n'))
         flagged_files = map(lambda f: f.split('/')[-1], flagged_files)
 
         if self._license_flag == 'L':
             for pkg in self.spec.packages:
                 nvr = self.spec.get_package_nvr(pkg)
                 rpm_path = Mock.get_package_rpm_path(nvr)
-                cmd = 'rpm -qpd %s' % rpm_path
-                doclist = check_output(cmd.split())
-                docs.extend(doclist.split())
-            docs = map(lambda f: f.split('/')[-1], docs)
+                cmd = 'rpm -qpL %s' % rpm_path
+                qpL_list = check_output(cmd.split())
+                qpL_files.extend(qpL_list.split('\n'))
+            qpL_files = map(lambda f: f.split('/')[-1], qpL_files)
 
         for _license in licenses:
-            if _license in docs:
-                self.log.debug("Found " + _license +
-                               " marked as %doc instead of %license")
-                self.set_passed(self.FAIL,
-                                "License file %s is marked as %%doc"
-                                " instead of %%license" % _license)
+            if self._license_flag == 'L' and _license not in qpL_files:
+                self.log.debug("Found " + _license + " not marked as %license")
+                self.set_passed(
+                    self.FAIL,
+                    "License file %s is not marked as %%license" % _license)
                 return
             if _license not in flagged_files:
                 self.log.debug("Cannot find " + _license +
@@ -1550,7 +1532,7 @@ class CheckNoNameConflict(GenericCheckBase):
                 self.set_passed(
                     self.FAIL,
                     'A package with this name already exists.  Please check'
-                    ' https://admin.fedoraproject.org/pkgdb/acls/name/'
+                    ' https://admin.fedoraproject.org/pkgdb/package/'
                     + name)
             else:
                 self.set_passed(self.PASS)
@@ -1807,31 +1789,6 @@ class CheckInfoInstall(GenericCheckBase):
             return
         text = 'Texinfo .info file(s) in ' + ', '.join(using)
         self.set_passed(self.FAIL if failed else self.PENDING, text)
-
-
-class CheckSourceDownloads(GenericCheckBase):
-    ''' Check that sources could be downloaded from their URI. '''
-
-    def __init__(self, base):
-        GenericCheckBase.__init__(self, base)
-        self.url = 'http://fedoraproject.org/wiki/Packaging:Guidelines' \
-                   '#Tags'
-        self.text = 'Sources can be downloaded from URI in Source: tag'
-        self.automatic = True
-        self.type = 'SHOULD'
-
-    def run(self):
-        sources = [self.sources.get(s) for s in self.sources.get_all()]
-        url_src = [s for s in sources if s.is_url]
-        if not url_src:
-            self.set_passed(self.NA)
-            return
-        failed_src = [s for s in url_src if s.is_failed]
-        if not failed_src:
-            self.set_passed(self.PASS)
-            return
-        failed = ', '.join([s.tag  + ': ' + s.specurl for s in failed_src])
-        self.set_passed(self.FAIL, "Could not download " + failed)
 
 
 #

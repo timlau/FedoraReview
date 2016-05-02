@@ -133,7 +133,7 @@ class TestChecks(FR_TestCase):
                         ('pending', 'CheckObeysFHS'),
                         ('pass', 'GemCheckProperName'),
                         ('pass', 'CheckFileRequires'),
-                        ('pending', 'GemCheckUsesMacros'),
+                        ('pass', 'GemCheckUsesMacros'),
                         ('pending', 'CheckSupportAllArchs'),
                         ('pending', 'GemCheckFilePlacement'),
                         ('pass', 'RubyCheckBuildArchitecture'),

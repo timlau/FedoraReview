@@ -24,6 +24,7 @@ import logging
 import os
 import os.path
 import re
+import shlex
 
 from glob import glob
 from subprocess import call, Popen, PIPE, STDOUT, CalledProcessError
@@ -197,7 +198,7 @@ class _Mock(HelpersMixin):
         cmd = ["mock"]
         if Settings.mock_config:
             cmd.extend(['-r', Settings.mock_config])
-        cmd.extend(self.get_mock_options().split())
+        cmd.extend(shlex.split(self.get_mock_options()))
         return cmd
 
     def _run_cmd(self, cmd, header='Mock'):
@@ -424,7 +425,8 @@ class _Mock(HelpersMixin):
         nothing.
         """
         self.clear_builddir()
-        cmd = ' '.join(self._mock_cmd())
+        mock_cmd = ['"' + s + '"' for s in self._mock_cmd()]
+        cmd = ' '.join(mock_cmd)
         if Settings.log_level > logging.INFO:
             cmd += ' -q'
         cmd += ' --rebuild'
@@ -476,7 +478,7 @@ class _Mock(HelpersMixin):
         cmd.append('--init')
         self._run_cmd(cmd, '--init')
         cmd = self._mock_cmd()
-        rpms = filter(is_not_installed, packages)
+        rpms = filter(is_not_installed, list(set(packages)))
         if len(rpms) == 0:
             return
         self._clear_rpm_db()
@@ -499,7 +501,7 @@ class _Mock(HelpersMixin):
         cmd = ["mock"]
         if hasattr(Settings, 'mock_config') and Settings.mock_config:
             cmd.extend(['-r', Settings.mock_config])
-        for option in self.get_mock_options().split():
+        for option in shlex.split(self.get_mock_options()):
             if option.startswith('--uniqueext'):
                 cmd.append(option)
             if option.startswith('--configdir'):

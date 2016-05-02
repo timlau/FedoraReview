@@ -1,18 +1,19 @@
 # needed for test content
 %{?perl_default_filter}
-%global __provides_exclude_from %{perl_vendorarch}/auto/.*\\.so$|%{perl_archlib}/.*\\.so$|%{_docdir}|%{_datadir}/fedora-review/
+%global __provides_exclude_from %{?_provides_exclude_from:%_provides_exclude_from|}%{_datadir}/fedora-review/
+%global __requires_exclude_from %{?_requires_exclude_from:%_requires_exclude_from|}%{_datadir}/fedora-review/test/
 
 #invoke with "--with tests" to enable tests
 %bcond_with tests
 
 # See notes in make_release which patches this.
-#global     git_tag  .fa1afe1
+## global     git_tag  .fa1afe1
 
 # Support jenkins build number if available.
 %global     build_nr %(echo "${BUILD_NUMBER:+.}${BUILD_NUMBER:-%%{nil\\}}")
 
 Name:       fedora-review
-Version:    0.6.0
+Version:    0.6.1
 Release:    1%{?build_nr}%{?git_tag}%{?dist}
 Summary:    Review tool for fedora rpm packages
 
@@ -75,6 +76,14 @@ python.  There is also support for external tests that can be written
 in a simple way in bash.
 
 
+%package plugin-ruby
+Summary: Enhanced ruby tests for fedora-review
+Requires: %{name} = %{version}-%{release}
+
+%description plugin-ruby
+fedora-review ruby-specific tests, not installed by default.
+
+
 %package tests
 Summary: Test and test data files for fedora-review
 Requires: %{name} = %{version}-%{release}
@@ -102,6 +111,7 @@ bash < restore-links.sh
 rm restore-links.sh remember-links
 cd ..
 cp -ar test "$RPM_BUILD_ROOT%{_datadir}/%{name}"
+cp -a pep8.conf pylint.conf "$RPM_BUILD_ROOT%{_datadir}/%{name}"
 
 
 %check
@@ -109,9 +119,9 @@ cp -ar test "$RPM_BUILD_ROOT%{_datadir}/%{name}"
 cd test
 export REVIEW_LOGLEVEL=warning
 export MAKE_RELEASE=1
+mock --quiet -r fedora-21-i386 --init
 mock --quiet -r fedora-20-i386 --init
-mock --quiet -r fedora-19-i386 --init
-mock --quiet -r fedora-20-i386 --uniqueext=hugo --init
+mock --quiet -r fedora-21-i386 --uniqueext=hugo --init
 python -m unittest discover -f
 %endif
 
@@ -126,7 +136,13 @@ python -m unittest discover -f
 %{_mandir}/man1/fedora-create-review.1.*
 %dir %{_datadir}/%{name}
 %{_datadir}/%{name}/plugins
+%exclude %{_datadir}/%{name}/plugins/ruby.py
 %{_datadir}/%{name}/scripts
+%{_datadir}/%{name}/pep8.conf
+%{_datadir}/%{name}/pylint.conf
+
+%files plugin-ruby
+%{_datadir}/%{name}/plugins/ruby.py
 
 %files tests
 %doc test/README.test
@@ -134,8 +150,20 @@ python -m unittest discover -f
 
 
 %changelog
-* Tue May 12 2015 Alec Leamas <leamas.alec@gmail.com> - 0.6.0-1.fa1afe1
+* Tue May 12 2015 Alec Leamas <leamas.alec@gmail.com> - 0.6.1-1.fa1afe1
 - Generic post-release entry.
+
+* Tue Feb 16 2016 Orion Poplawski <orion@cora.nwra.com> - 0.6.0-4
+- Exclude test content from perl requires
+
+* Wed Feb 03 2016 Fedora Release Engineering <releng@fedoraproject.org> - 0.6.0-3
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_24_Mass_Rebuild
+
+* Wed Jun 17 2015 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.6.0-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_23_Mass_Rebuild
+
+* Wed May 20 2015 Alec Leamas <leamas.alec@gmail.com> - 0.6.0-1.afb5485
+- Update to 0.6.0
 
 * Mon May 04 2015 Pierre-Yves Chibon <pingou@pingoured.fr> - 0.5.3-1
 - Update to 0.5.3

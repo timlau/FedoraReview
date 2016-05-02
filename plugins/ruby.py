@@ -4,7 +4,7 @@
 import re
 import rpm
 
-from FedoraReview import CheckBase, RegistryBase
+from FedoraReview import CheckBase, Mock, RegistryBase
 
 _GUIDELINES_URI = 'http://fedoraproject.org/wiki/Packaging:Ruby'
 _GUIDELINES_SECTION_URI = '%(uri)s#%%(section)s' % {'uri': _GUIDELINES_URI}
@@ -75,6 +75,20 @@ class NonGemCheckBase(CheckBase):
     def is_applicable(self):
         """ Return true for pure ruby packages"""
         return _is_nongem(self.spec)
+
+
+class DisableCheckRubyPlugin(RubyCheckBase):
+    ''' Disabke the plugin check code in generic_should.  '''
+    def __init__(self, base):
+        RubyCheckBase.__init__(self, base)
+        self.url = 'https:not-used'
+        self.text = 'not-used'
+        self.automatic = True
+        self.type = 'EXTRA'
+        self.deprecates = ["CheckRubyPlugin"]
+
+    def run(self):
+        self.set_passed(self.NA)
 
 
 class RubyCheckNotRequiresRubyAbi(RubyCheckBase):
@@ -159,12 +173,8 @@ class RubyCheckTestsRun(RubyCheckBase):
         self.type = 'SHOULD'
 
     def run_on_applicable(self):
-        # check_section = self.spec.get_section('%check')
-        # Bug in rpm, see
-        # http://lists.rpm.org/pipermail/rpm-maint/2013-August/thread.html
-        # (or perhaps later) for patch from leamas.
-        found = bool(self.spec.find_re('^[^#]*%check'))
-        self.set_passed(self.PASS if found else self.FAIL)
+        check_section = self.spec.get_section('%check')
+        self.set_passed(self.PASS if check_section else self.FAIL)
 
 
 class RubyCheckTestsNotRunByRake(RubyCheckBase):
@@ -318,6 +328,32 @@ class GemCheckDoesntHaveNonGemSubpackage(GemCheckBase):
             self.set_passed(self.PASS)
 
 
+class GemCheckObsoleteRequiresRubygems(GemCheckBase):
+    """ gems should not have obsolete Requires: rubygem """
+    def __init__(self, base):
+        GemCheckBase.__init__(self, base)
+        self.url = _gl_fmt_uri({'section': 'RubyGems'})
+        self.text = 'gems should not require rubygems package'
+        self.automatic = True
+        self.type = 'SHOULD'
+
+    def run_on_applicable(self):
+        try:
+            fedora_vers = int(Mock.get_macro("%fedora", self.spec, self.flags))
+        except ValueError:
+            # EPEL?
+            fedora_vers = 20
+        if fedora_vers <= 20:
+            self.set_passed(self.NA)
+            return
+        failed = self.spec.find_re(r'Requires:\s*rubygem\s*$')
+        if failed:
+            text = 'Obsolete %s  found in spec' % failed
+            self.set_passed(self.FAIL, text)
+        else:
+            self.set_passed(self.PASS)
+
+
 class GemCheckRequiresRubygems(GemCheckBase):
     """ gems should have Requires: rubygem """
     def __init__(self, base):
@@ -328,8 +364,14 @@ class GemCheckRequiresRubygems(GemCheckBase):
         self.type = 'MUST'
 
     def run_on_applicable(self):
-        # it seems easier to check whether .gem is not present in rpms
-        # than to examine %files
+        try:
+            fedora_vers = int(Mock.get_macro("%fedora", self.spec, self.flags))
+        except ValueError:
+            # EPEL?
+            fedora_vers = 20
+        if fedora_vers > 20:
+            self.set_passed(self.NA)
+            return
         failed = []
         for pkg_name in self.spec.packages:
             for suffix in ['-doc', '-fonts', '-devel']:
