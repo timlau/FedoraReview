@@ -1,18 +1,19 @@
 # needed for test content
 %{?perl_default_filter}
-%global __provides_exclude_from %{perl_vendorarch}/auto/.*\\.so$|%{perl_archlib}/.*\\.so$|%{_docdir}|%{_datadir}/fedora-review/
+%global __provides_exclude_from %{?_provides_exclude_from:%_provides_exclude_from|}%{_datadir}/fedora-review/
+%global __requires_exclude_from %{?_requires_exclude_from:%_requires_exclude_from|}%{_datadir}/fedora-review/test/
 
 #invoke with "--with tests" to enable tests
 %bcond_with tests
 
 # See notes in make_release which patches this.
-%global     git_tag  .fa1afe1
+## global     git_tag  .fa1afe1
 
 # Support jenkins build number if available.
 %global     build_nr %(echo "${BUILD_NUMBER:+.}${BUILD_NUMBER:-%%{nil\\}}")
 
 Name:       fedora-review
-Version:    0.6.0
+Version:    0.6.1
 Release:    1%{?build_nr}%{?git_tag}%{?dist}
 Summary:    Review tool for fedora rpm packages
 
@@ -149,9 +150,20 @@ python -m unittest discover -f
 
 
 %changelog
-* Tue May 12 2015 Alec Leamas <leamas.alec@gmail.com> - 0.6.0-1.fa1afe1
+* Tue May 12 2015 Alec Leamas <leamas.alec@gmail.com> - 0.6.1-1.fa1afe1
 - Generic post-release entry.
-- Added pep8.conf and pylint.conf to package
+
+* Tue Feb 16 2016 Orion Poplawski <orion@cora.nwra.com> - 0.6.0-4
+- Exclude test content from perl requires
+
+* Wed Feb 03 2016 Fedora Release Engineering <releng@fedoraproject.org> - 0.6.0-3
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_24_Mass_Rebuild
+
+* Wed Jun 17 2015 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.6.0-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_23_Mass_Rebuild
+
+* Wed May 20 2015 Alec Leamas <leamas.alec@gmail.com> - 0.6.0-1.afb5485
+- Update to 0.6.0
 
 * Mon May 04 2015 Pierre-Yves Chibon <pingou@pingoured.fr> - 0.5.3-1
 - Update to 0.5.3
