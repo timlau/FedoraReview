@@ -398,7 +398,7 @@ class GemCheckGemInstallMacro(GemCheckBase):
         self.type = 'SHOULD'
 
     def run_on_applicable(self):
-        gem_install_re = re.compile(r'^.*gem\s+install', re.I)
+        gem_install_re = re.compile(r'^[^#]*gem\s+install', re.I)
         self.set_passed(
             self.FAIL if self.spec.find_re(gem_install_re) else self.PASS)
 
